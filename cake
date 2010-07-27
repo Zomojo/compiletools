@@ -1,6 +1,7 @@
-#!/usr/bin/python
+#!/usr/bin/python -u
 
 
+import md5
 import sys
 import commands
 import os
@@ -11,18 +12,54 @@ class UserException (Exception):
         Exception.__init__(self, text)
 
 
-BUILD_COMMAND = ("gcc " +
-                "-I deps/3rdparty/lwip/lwip/src/include/ipv4 " + 
-                "-I deps/3rdparty/lwip/lwip/src/include " + 
-                "-I deps/3rdparty/lwip/lwip/src/include " + 
-                "-I deps/3rdparty/lwip/ " + 
-                "-I . ")
 
-LINK_COMMAND = "-lstdc++"
+def environ(variable, default):
+    if default is None:
+        if not variable in os.environ:
+            raise UserException("Couldn't find required environment variable " + variable)
+        return os.environ[variable]
+    else:
+        if not variable in os.environ:
+            return default
+        else:
+            return os.environ[variable]
 
-def usage():
+def parse_etc():
+    """parses /etc/cake as if it was part of the environment.
+    os.environ has higher precedence
+    """
+    if os.path.exists("/etc/cake"):
+        f = open("/etc/cake")
+        lines = f.readlines()
+        f.close()
+        
+        for l in lines:
+            if l.startswith("#"):
+                continue
+            l = l.strip()            
+            
+            if len(l) == 0:
+                continue            
+            key = l[0:l.index("=")].strip()
+            value = l[l.index("=") + 1:].strip()
+            
+            for k in os.environ:
+                value = value.replace("$" + k, os.environ[k])
+                value = value.replace("${" + k + "}", os.environ[k])            
+            
+            if not key in os.environ:
+                os.environ[key] = str(value)
+
+
+
+
+def usage(msg = ""):
+    if len(msg) > 0:
+        print >> sys.stderr, msg
+        print >> sys.stderr, ""
     print >> sys.stderr, "Usage: cake [main.cpp]"
-    print >> sys.stderr, "Cake is a zero-config, fast, C++ builder"
+    print >> sys.stderr, "Cake is a zero-config, fast, C++ builder."
+    print >> sys.stderr, ""
     sys.exit(1)
 
 
@@ -43,12 +80,6 @@ def extractOption(text, option):
         
     except ValueError:
         return None, text
-
-
-try:
-    os.mkdir("bin")
-except:
-    pass
 
 
 def munge(filename):
@@ -79,7 +110,7 @@ def parse_dependencies(deps_file, source_file):
         text = f.read(1024)        
                 
         while True:
-            result, text = extractOption(text, "//#CCFLAGS=")
+            result, text = extractOption(text, "//#CXXFLAGS=")
             if result is None:
                 break
             else:
@@ -121,7 +152,7 @@ def get_dependencies_for(source_file):
             return headers, sources, ccflags, linkflags
         
     # failed, regenerate dependencies
-    cmd = BUILD_COMMAND + " -MM -MF " + deps_file + " " + source_file 
+    cmd = CC + " -MM -MF " + deps_file + " " + source_file 
     status, output = commands.getstatusoutput(cmd)
     if status != 0:
         raise UserException(output)
@@ -161,6 +192,12 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause):
         insert_dependencies(sources, ignored, s, linkflags, copy)
 
 
+def try_set_variant(variant):
+    global CC, CXXFLAGS, LINKFLAGS
+    CC = environ("CAKE_" + variant.upper() + "_CC", None)
+    CXXFLAGS = environ("CAKE_" + variant.upper() + "_CXXFLAGS", None)
+    LINKFLAGS = environ("CAKE_" + variant.upper() + "_LINKFLAGS", None)
+
 def lazily_write(filename, newtext):
     oldtext = ""
     try:
@@ -174,8 +211,12 @@ def lazily_write(filename, newtext):
         f.write(newtext)
         f.close()
 
+def objectname(source, entry):
+    ccflags, cause, headers = entry
+    h = md5.md5(" ".join([c for c in ccflags]) + " " + CXXFLAGS).hexdigest()
+    return munge(source) + str(len(str(ccflags))) + "-" + h + ".o"
 
-def generate_makefile(source, output_name):
+def generate_makefile(source, output_name, makefile_filename):
     """Given a source filename, generates a makefile"""
 
     sources = {}
@@ -186,15 +227,15 @@ def generate_makefile(source, output_name):
 
     lines = []    
     for s in sources:
-        obj = munge(s) + ".o"
+        obj = objectname(s, sources[s])
         ccflags, cause, headers = sources[s]
         
         lines.append(obj + " : " + " ".join(headers + [s]))
-        lines.append("\t" + BUILD_COMMAND + " -c " + " " + s + " " " -o " + munge(s) + ".o" + " " + " ".join(ccflags))
+        lines.append("\t" + CC + " -c " + " " + s + " " " -o " + obj + " " + " ".join(ccflags) + " " + CXXFLAGS)
         lines.append("")
     
-    lines.append( output_name + " : " + " ".join([munge(s) + ".o" for s in  sources]) + " Makefile")
-    lines.append("\t" + BUILD_COMMAND + " " + " " .join([munge(s) + ".o" for s in  sources]) + " " + LINK_COMMAND + " " + " ".join([l for l in linkflags]) + " -o " + output_name )
+    lines.append( output_name + " : " + " ".join([objectname(s, sources[s]) for s in  sources]) + " " + makefile_filename)
+    lines.append("\t" + CC + " " + " " .join([objectname(s, sources[s]) for s in  sources]) + " " + LINKFLAGS + " " + " ".join([l for l in linkflags]) + " -o " + output_name )
     lines.append("")
     
     newtext = "\n".join(lines)
@@ -204,28 +245,135 @@ def cpus():
     status, output = commands.getstatusoutput("cat /proc/cpuinfo | grep cpu.cores | head -1 | cut -f2 -d\":\"")
     return output.strip()
 
+def do_generate(source, output):
+    makefilename = munge(source) + ".Makefile"
+    text = generate_makefile(source, output, makefilename)
+    lazily_write(makefilename, text)
+    
+def do_build(source, output, quiet):
+    makefilename = munge(source) + ".Makefile"
+    result = os.system("make " + {True:"-s ",False:""}[quiet] + "-f " + makefilename + " " + output + " -j" + cpus())
+    if result != 0:
+        sys.exit(result)
+
+def do_run(output, args):
+    os.execvp(output, [output] + args)
+
+
+
+
 def main():
+    global CC, CXXFLAGS, LINKFLAGS
         
     if len(sys.argv) < 2:
         usage()
+        
+    # parse arguments
+    args = sys.argv[1:]
+    cppfile = None
+    appargs = []
+    output = None
+    
+    generate = True
+    build = True
+    run = True
+    quiet = False
+    
+    for a in args:        
+        if cppfile is None:            
+            if a.startswith("--CC="):
+                CC = a[a.index("=")+1:]
+                continue
+            
+            if a.startswith("--output="):
+                output = a[a.index("=")+1:]
+                continue
+                
+            if a.startswith("--variant="):
+                variant = a[a.index("=")+1:]      
+                try_set_variant(variant)
+                continue
+                
+            if a.startswith("--quiet"):
+                quiet = True
+                continue
+                
+            if a == "--generate":
+                generate = True
+                build = False
+                run = False
+                continue
+            
+            if a == "--build":
+                generate = True
+                build = True
+                run = False
+                continue
+                
+            if a == "--run":
+                generate = True
+                build = True
+                run = False
+                continue
+            
+            if a.startswith("--LINKFLAGS="):
+                LINKFLAGS = a[a.index("=")+1:]
+                continue
+            
+            if a.startswith("--CXXFLAGS="):
+                CXXFLAGS = a[a.index("=")+1:]
+                continue
+            
+            if a.startswith("--"):
+                usage("Invalid option " + a)
+        
+            cppfile = a
+        else:
+            appargs.append(a)
+    
+    if cppfile is None:
+        usage("You must specify a filename.")
+    
+    if not os.path.exists(cppfile):
+        print >> sys.stderr, cppfile + " not found."
+        sys.exit(1)
 
-    source = sys.argv[1]
-    output = os.path.splitext("bin/" + os.path.split(source)[1])[0]
-    text = generate_makefile(source, output)
-    makefilename = munge(source) + ".Makefile"
-    lazily_write(makefilename, text)
+    if output is None:
+        output = os.path.splitext("bin/" + os.path.split(cppfile)[1])[0]
     
-    # make
-    os.system("make -s -f " + makefilename + " " + output + " -j" + cpus())
+    if generate:
+        do_generate(cppfile, output)
     
-    # run
-    os.execvp(output, sys.argv[1:])
+    if build:
+        do_build(cppfile, output, quiet)
+        
+    if run:
+        do_run(output, appargs)
     return
     
 
 try:
+    
+    # data
+    CC = "g++"
+    LINKFLAGS = ""
+    CXXFLAGS = ""
+    parse_etc()
+    CC = environ("CAKE_CC", CC)
+    LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
+    CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
+
+    try:
+        os.mkdir("bin")
+    except:
+        pass
+
+    
     main()
 except SystemExit:
     raise
+except UserException, e:
+    print >> sys.stderr, str(e)
+    sys.exit(1)
 except KeyboardInterrupt:
     sys.exit(1)
