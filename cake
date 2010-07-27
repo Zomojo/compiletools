@@ -51,15 +51,51 @@ def parse_etc():
                 os.environ[key] = str(value)
 
 
+usage_text = """
+
+Usage: cake [compilation args] filename.cpp [app args]
+
+cake generates and runs C++ executables with almost no configuration.
+
+Options:
+
+    --generate             Only runs the makefile generation step, does not build or run.
+    --build                Only runs the makefile generation and build steps, does not run.
+    --run (default)        Builds and runs the executable.
+    --output=<filename>    Overrides the output filename.
+    --variant=<vvv>        Reads the CAKE_<vvv>_CC, CAKE_<vvv>_CXXFLAGS and CAKE_<vvv>_LINKFLAGS
+                           environment variables to determine the build flags.
+                          
+    --CC=<compiler>        Sets the compiler command.
+    --CXXFLAGS=<flags>     Sets the compilation flags for all cpp files in the build.
+    --LINKFLAGS=<flags>    Sets the flags used while linking.
+
+
+Source annotations (embed in your hpp and cpp files as magic comments):
+
+     //#CXXFLAGS=<flags>   Appends the given options to the compile step.
+     //#LINKFLAGS=<flags>  Appends the given options to the link step
+
+             
+Environment Variables:
+
+    CAKE_CCFLAGS           Sets the compiler command.
+    CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
+    CAKE_LINKFLAGS         Sets the flags used while linking.
+
+Environment variables can also be set in /etc/cake, which has the lowest priority when finding
+compilation settings.
+
+"""
 
 
 def usage(msg = ""):
     if len(msg) > 0:
         print >> sys.stderr, msg
         print >> sys.stderr, ""
-    print >> sys.stderr, "Usage: cake [main.cpp]"
-    print >> sys.stderr, "Cake is a zero-config, fast, C++ builder."
-    print >> sys.stderr, ""
+        
+    print >> sys.stderr, usage_text.strip() + "\n"
+    
     sys.exit(1)
 
 
@@ -372,6 +408,9 @@ try:
     main()
 except SystemExit:
     raise
+except IOError,e :
+    print >> sys.stderr, str(e)
+    sys.exit(1)
 except UserException, e:
     print >> sys.stderr, str(e)
     sys.exit(1)
