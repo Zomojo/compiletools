@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+
 import sys
 import commands
 import os
@@ -20,9 +21,10 @@ BUILD_COMMAND = ("gcc " +
 LINK_COMMAND = "-lstdc++"
 
 def usage():
-    print >> sys.stderr, "Usage: buildlist.py [main.cpp]"
-    print >> sys.stderr, "Generates a build list based on a single main.cpp file"
+    print >> sys.stderr, "Usage: cake [main.cpp]"
+    print >> sys.stderr, "Cake is a zero-config, fast, C++ builder"
     sys.exit(1)
+
 
 def extractOption(text, option):
     """Extracts the given option from the text, returning the value
@@ -120,7 +122,6 @@ def get_dependencies_for(source_file):
         
     # failed, regenerate dependencies
     cmd = BUILD_COMMAND + " -MM -MF " + deps_file + " " + source_file 
-    print cmd
     status, output = commands.getstatusoutput(cmd)
     if status != 0:
         raise UserException(output)
@@ -150,9 +151,6 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause):
     for l in newlinkflags:
         linkflags[l] = True
     
-    # output make rule
-    #print os.path.splitext(new_file)[0] + ".o : " + " ".join(new_headers + [new_file]);
-    
     copy = cause[:]
     copy.append(new_file)
     
@@ -163,16 +161,28 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause):
         insert_dependencies(sources, ignored, s, linkflags, copy)
 
 
-def main():
-        
-    if len(sys.argv) != 2:
-        usage()
+def lazily_write(filename, newtext):
+    oldtext = ""
+    try:
+        f = open(filename)
+        oldtext = f.read()
+        f.close()
+    except:
+        pass        
+    if newtext != oldtext:
+        f = open(filename, "w")
+        f.write(newtext)
+        f.close()
+
+
+def generate_makefile(source, output_name):
+    """Given a source filename, generates a makefile"""
 
     sources = {}
     ignored = []
     linkflags = {}
     cause = []
-    insert_dependencies(sources, ignored, sys.argv[1], linkflags, cause)
+    insert_dependencies(sources, ignored, source, linkflags, cause)
 
     lines = []    
     for s in sources:
@@ -183,35 +193,34 @@ def main():
         lines.append("\t" + BUILD_COMMAND + " -c " + " " + s + " " " -o " + munge(s) + ".o" + " " + " ".join(ccflags))
         lines.append("")
     
-    lines.append("a.out : " + " ".join([munge(s) + ".o" for s in  sources]) + " Makefile")
-    lines.append("\t" + BUILD_COMMAND + " " + " " .join([munge(s) + ".o" for s in  sources]) + " " + LINK_COMMAND + " " + " ".join([l for l in linkflags]))
+    lines.append( output_name + " : " + " ".join([munge(s) + ".o" for s in  sources]) + " Makefile")
+    lines.append("\t" + BUILD_COMMAND + " " + " " .join([munge(s) + ".o" for s in  sources]) + " " + LINK_COMMAND + " " + " ".join([l for l in linkflags]) + " -o " + output_name )
     lines.append("")
     
     newtext = "\n".join(lines)
-    oldtext = ""
-    try:
-        f = open("Makefile")
-        oldtext = f.read()
-        f.close()
-    except:
-        pass        
-    if newtext != oldtext:
-        f = open("Makefile", "w")
-        f.write(newtext)
-        f.close()        
-    sys.exit(0)
+    return newtext
+
+def cpus():
+    status, output = commands.getstatusoutput("cat /proc/cpuinfo | grep cpu.cores | head -1 | cut -f2 -d\":\"")
+    return output.strip()
+
+def main():
+        
+    if len(sys.argv) < 2:
+        usage()
+
+    source = sys.argv[1]
+    output = os.path.splitext("bin/" + os.path.split(source)[1])[0]
+    text = generate_makefile(source, output)
+    makefilename = munge(source) + ".Makefile"
+    lazily_write(makefilename, text)
     
-    for s in sources:
-        ccflags, cause = sources[s]
-        cmd = "ccache " + BUILD_COMMAND + " -c " + " " + s + " " " -o " + s + ".o" + " " + " ".join(ccflags)
-        print cmd 
-        result = os.system(cmd)
-        if result != 0:
-            sys.exit(1)
-    cmd = "time " + BUILD_COMMAND + " " + " " .join([s + ".o" for s in  sources]) + " " + LINK_COMMAND + " " + " ".join([l for l in linkflags])
-    print cmd
-    os.system(cmd)
+    # make
+    os.system("make -s -f " + makefilename + " " + output + " -j" + cpus())
     
+    # run
+    os.execvp(output, sys.argv[1:])
+    return
     
 
 try:
