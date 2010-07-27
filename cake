@@ -135,8 +135,8 @@ def parse_dependencies(deps_file, source_file):
     files = list(Set([os.path.normpath(x) for x in files]))
     files.sort()
     
-    headers = [h for h in files if h.endswith(".hpp")]
-    sources = [h for h in files if h.endswith(".cpp")]
+    headers = [os.path.normpath(h) for h in files if h.endswith(".hpp")]
+    sources = [os.path.normpath(h) for h in files if h.endswith(".cpp")]
     
     # determine ccflags and linkflags
     ccflags = {}
@@ -212,7 +212,7 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause):
     # recursive step
     new_headers, new_sources, newccflags, newlinkflags = get_dependencies_for(new_file)
     
-    sources[new_file] = (newccflags, cause, new_headers)
+    sources[os.path.normpath(new_file)] = (newccflags, cause, new_headers)
     
     # merge in link options
     for l in newlinkflags:
