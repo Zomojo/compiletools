@@ -174,21 +174,31 @@ def main():
     cause = []
     insert_dependencies(sources, ignored, sys.argv[1], linkflags, cause)
 
-    f = open("Makefile", "w")
+    lines = []    
     for s in sources:
         obj = munge(s) + ".o"
         ccflags, cause, headers = sources[s]
         
-        print >> f, obj + " : " + " ".join(headers + [s])
-        print >> f, "\t" + BUILD_COMMAND + " -c " + " " + s + " " " -o " + munge(s) + ".o" + " " + " ".join(ccflags)
-        print >> f, ""
+        lines.append(obj + " : " + " ".join(headers + [s]))
+        lines.append("\t" + BUILD_COMMAND + " -c " + " " + s + " " " -o " + munge(s) + ".o" + " " + " ".join(ccflags))
+        lines.append("")
     
-    print >> f, "a.out : " + " ".join([munge(s) + ".o" for s in  sources])
-    print >> f, "\t" + BUILD_COMMAND + " " + " " .join([munge(s) + ".o" for s in  sources]) + " " + LINK_COMMAND + " " + " ".join([l for l in linkflags])
-    print >> f, ""
+    lines.append("a.out : " + " ".join([munge(s) + ".o" for s in  sources]) + " Makefile")
+    lines.append("\t" + BUILD_COMMAND + " " + " " .join([munge(s) + ".o" for s in  sources]) + " " + LINK_COMMAND + " " + " ".join([l for l in linkflags]))
+    lines.append("")
     
-    f.close()
-        
+    newtext = "\n".join(lines)
+    oldtext = ""
+    try:
+        f = open("Makefile")
+        oldtext = f.read()
+        f.close()
+    except:
+        pass        
+    if newtext != oldtext:
+        f = open("Makefile", "w")
+        f.write(newtext)
+        f.close()        
     sys.exit(0)
     
     for s in sources:
