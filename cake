@@ -313,8 +313,13 @@ def generate_rules(source, output_name, generate_test, makefilename):
     definition.append("\t" + CC + " " + " " .join([objectname(s, sources[s]) for s in  sources]) + " " + LINKFLAGS + " " + " ".join([l for l in linkflags]) + " -o " + output_name )
     rules[output_name] = "\n".join(definition)
     
-    # TODO: test_rule
-    
+    if generate_test:
+        definition = []
+        test = output_name + ".passed"
+        definition.append( test + " : " + output_name )
+        definition.append( "\t" + "rm -f " + test + " && " + output_name + " && touch " + test)
+        rules[test] = "\n".join(definition) 
+        
     return rules
 
 
@@ -355,7 +360,7 @@ def do_generate(source_to_output, tests):
     all_rules = {}
     for source in source_to_output:
         makefilename = munge(source) + ".Makefile"
-        rules = generate_rules(source, source_to_output[source], source in tests, makefilename)
+        rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename)
         all_rules.update(rules)
         
         render_makefile(makefilename, rules)
