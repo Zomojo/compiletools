@@ -118,8 +118,14 @@ def extractOption(text, option):
         return None, text
 
 
-def munge(filename):
-    return "bin/" + filename.replace("/", "@")
+def munge(to_munge):
+    if isinstance(to_munge, dict):
+        if len(to_munge) == 1:
+            return "bin/" + "@@".join([x for x in to_munge]).replace("/", "@")
+        else:
+            return "bin/" + md5.md5(str([x for x in to_munge])).hexdigest()
+    else:    
+        return "bin/" + to_munge.replace("/", "@")
 
 
 def parse_dependencies(deps_file, source_file):
@@ -164,9 +170,15 @@ def parse_dependencies(deps_file, source_file):
     
     return headers, sources, ccflags, linkflags    
 
+dependency_cache = {}
 
 def get_dependencies_for(source_file):
-    """Converts a gcc make command into a set of headers and source dependencies"""
+    """Converts a gcc make command into a set of headers and source dependencies"""    
+    
+    global dependency_cache
+    
+    if source_file in dependency_cache:
+        return dependency_cache[source_file]
 
     deps_file = munge(source_file) + ".deps"
     
@@ -189,7 +201,9 @@ def get_dependencies_for(source_file):
                     all_good = False
                     break
         if all_good:
-            return headers, sources, ccflags, linkflags
+            result = headers, sources, ccflags, linkflags
+            dependency_cache[source_file] = result
+            return result
         
     # failed, regenerate dependencies
     cmd = CC + " -MM -MF " + deps_file + " " + source_file 
@@ -197,7 +211,9 @@ def get_dependencies_for(source_file):
     if status != 0:
         raise UserException(output)
 
-    return parse_dependencies(deps_file, source_file)
+    result = parse_dependencies(deps_file, source_file)
+    dependency_cache[source_file] = result
+    return result
 
 
 def insert_dependencies(sources, ignored, new_file, linkflags, cause):
@@ -256,43 +272,92 @@ def objectname(source, entry):
     h = md5.md5(" ".join([c for c in ccflags]) + " " + CXXFLAGS).hexdigest()
     return munge(source) + str(len(str(ccflags))) + "-" + h + ".o"
 
-def generate_makefile(source, output_name, makefile_filename):
-    """Given a source filename, generates a makefile"""
 
+
+def generate_rules(source, output_name, generate_test, makefilename):
+    """
+    Generates a set of make rules for the given source.
+    If generate_test is true, also generates a test run rule.
+    """
+    
+    rules = {}
     sources = {}
     ignored = []
     linkflags = {}
     cause = []
+        
     insert_dependencies(sources, ignored, source, linkflags, cause)
-
-    lines = []    
+    
+    # compile rule for each object
     for s in sources:
         obj = objectname(s, sources[s])
         ccflags, cause, headers = sources[s]
         
-        lines.append(obj + " : " + " ".join(headers + [s]))
-        lines.append("\t" + CC + " -c " + " " + s + " " " -o " + obj + " " + " ".join(ccflags) + " " + CXXFLAGS)
-        lines.append("")
+        definition = []
+        definition.append(obj + " : " + " ".join(headers + [s])) 
+        definition.append("\t" + CC + " -c " + " " + s + " " " -o " + obj + " " + " ".join(ccflags) + " " + CXXFLAGS)
+        rules[obj] = "\n".join(definition)
+
+    # link rule
+    definition = []
+    definition.append( output_name + " : " + " ".join([objectname(s, sources[s]) for s in  sources]) + " " + makefilename)
+    definition.append("\t" + CC + " " + " " .join([objectname(s, sources[s]) for s in  sources]) + " " + LINKFLAGS + " " + " ".join([l for l in linkflags]) + " -o " + output_name )
+    rules[output_name] = "\n".join(definition)
     
-    lines.append( output_name + " : " + " ".join([objectname(s, sources[s]) for s in  sources]) + " " + makefile_filename)
-    lines.append("\t" + CC + " " + " " .join([objectname(s, sources[s]) for s in  sources]) + " " + LINKFLAGS + " " + " ".join([l for l in linkflags]) + " -o " + output_name )
-    lines.append("")
+    # TODO: test_rule
     
-    newtext = "\n".join(lines)
-    return newtext
+    return rules
+
+
+def render_makefile(makefilename, rules):
+    """Renders a set of rules as a makefile"""
+    
+    rules_as_list = [rules[r] for r in rules]
+    rules_as_list.sort()
+    
+    objects = [r for r in rules]
+    objects.sort()
+    
+    # top-level build rule
+    text = []
+    text.append("all : " + " ".join(objects))
+    text.append("")
+    
+    for rule in rules_as_list:
+        text.append(rule)
+        text.append("")        
+    
+    text = "\n".join(text)
+    lazily_write(makefilename, text)
+
 
 def cpus():
-    status, output = commands.getstatusoutput("cat /proc/cpuinfo | grep cpu.cores | head -1 | cut -f2 -d\":\"")
-    return output.strip()
+    f = open("/proc/cpuinfo")
+    t = [x for x in f.readlines() if x.startswith("cpu cores")][0].split(":")[1]
+    f.close()
+    #status, output = commands.getstatusoutput("cat /proc/cpuinfo | grep cpu.cores | head -1 | cut -f2 -d\":\"")
+    #return output.strip()
+    return t.strip()
 
-def do_generate(source, output):
-    makefilename = munge(source) + ".Makefile"
-    text = generate_makefile(source, output, makefilename)
-    lazily_write(makefilename, text)
+
+def do_generate(source_to_output, tests):
+    """Generates all needed makefiles"""
+
+    all_rules = {}
+    for source in source_to_output:
+        makefilename = munge(source) + ".Makefile"
+        rules = generate_rules(source, source_to_output[source], source in tests, makefilename)
+        all_rules.update(rules)
+        
+        render_makefile(makefilename, rules)
+        
+    combined_filename = munge(source_to_output) + ".Makefile"
+    render_makefile(combined_filename, all_rules)
+    return combined_filename
+
     
-def do_build(source, output, quiet):
-    makefilename = munge(source) + ".Makefile"
-    result = os.system("make -r " + {True:"-s ",False:""}[quiet] + "-f " + makefilename + " " + output + " -j" + cpus())
+def do_build(makefilename, quiet):
+    result = os.system("make -r " + {True:"-s ",False:""}[quiet] + "-f " + makefilename + " -j" + cpus())
     if result != 0:
         sys.exit(result)
 
@@ -312,23 +377,21 @@ def main():
     args = sys.argv[1:]
     cppfile = None
     appargs = []
-    output = None
+    nextOutput = None
     
     generate = True
     build = True
-    run = True
     quiet = False
+    to_build = {}    
+    inTests = False
+    tests = []
     
     for a in args:        
         if cppfile is None:            
             if a.startswith("--CC="):
                 CC = a[a.index("=")+1:]
                 continue
-            
-            if a.startswith("--output="):
-                output = a[a.index("=")+1:]
-                continue
-                
+                            
             if a.startswith("--variant="):
                 variant = a[a.index("=")+1:]      
                 try_set_variant(variant)
@@ -341,20 +404,12 @@ def main():
             if a == "--generate":
                 generate = True
                 build = False
-                run = False
                 continue
             
             if a == "--build":
                 generate = True
                 build = True
-                run = False
-                continue
-                
-            if a == "--run":
-                generate = True
-                build = True
-                run = False
-                continue
+                continue                
             
             if a.startswith("--LINKFLAGS="):
                 LINKFLAGS = a[a.index("=")+1:]
@@ -364,31 +419,46 @@ def main():
                 CXXFLAGS = a[a.index("=")+1:]
                 continue
             
+            if a == "--begintests":                
+                inTests = True
+                continue
+                
+            if a == "--endtests":
+                inTests = False
+                continue
+            
+            if a == "--help":
+                usage()
+            
             if a.startswith("--"):
                 usage("Invalid option " + a)
-        
-            cppfile = a
-        else:
-            appargs.append(a)
+                
+            if a.startswith("--output="):
+                nextOutput = a[a.index("=")+1:]
+                continue
+                
+            if nextOutput is None:
+                nextOutput = os.path.splitext("bin/" + os.path.split(a)[1])[0]
+
+            to_build[a] = nextOutput
+            if inTests:
+                tests.append(nextOutput)
+            nextOutput = None
+            
     
-    if cppfile is None:
+    if len(to_build) == 0:
         usage("You must specify a filename.")
     
-    if not os.path.exists(cppfile):
-        print >> sys.stderr, cppfile + " not found."
-        sys.exit(1)
-
-    if output is None:
-        output = os.path.splitext("bin/" + os.path.split(cppfile)[1])[0]
-    
+    for c in to_build:
+        if not os.path.exists(c):
+            print >> sys.stderr, c + " is not found."
+            sys.exit(1)
+            
     if generate:
-        do_generate(cppfile, output)
+        makefilename = do_generate(to_build, tests)
     
     if build:
-        do_build(cppfile, output, quiet)
-        
-    if run:
-        do_run(output, appargs)
+        do_build(makefilename, quiet)        
     return
     
 
@@ -420,3 +490,4 @@ except UserException, e:
     sys.exit(1)
 except KeyboardInterrupt:
     sys.exit(1)
+
