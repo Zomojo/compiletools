@@ -128,7 +128,7 @@ def parse_dependencies(deps_file, source_file):
     f = open(deps_file)
     text = f.read()
     f.close()    
-    
+
     files = text.split(":")[1]
     files = files.replace("\\", " ").replace("\t"," ").replace("\n", " ")
     files = [x for x in files.split(" ") if len(x) > 0]
@@ -173,17 +173,21 @@ def get_dependencies_for(source_file):
     # try and reuse the existing if possible    
     if os.path.exists(deps_file):
         deps_mtime = os.stat(deps_file).st_mtime
-        headers, sources, ccflags, linkflags  = parse_dependencies(deps_file, source_file)
-    
         all_good = True
-        for s in headers + [source_file]:
-            try:
-                if os.stat(s).st_mtime > deps_mtime:
+        try:
+            headers, sources, ccflags, linkflags  = parse_dependencies(deps_file, source_file)
+        except:
+            all_good = False
+    
+        if all_good:
+            for s in headers + [source_file]:
+                try:
+                    if os.stat(s).st_mtime > deps_mtime:
+                        all_good = False
+                        break
+                except: # missing file counts as a miss
                     all_good = False
                     break
-            except: # missing file counts as a miss
-                all_good = False
-                break
         if all_good:
             return headers, sources, ccflags, linkflags
         
@@ -288,7 +292,7 @@ def do_generate(source, output):
     
 def do_build(source, output, quiet):
     makefilename = munge(source) + ".Makefile"
-    result = os.system("make " + {True:"-s ",False:""}[quiet] + "-f " + makefilename + " " + output + " -j" + cpus())
+    result = os.system("make -r " + {True:"-s ",False:""}[quiet] + "-f " + makefilename + " " + output + " -j" + cpus())
     if result != 0:
         sys.exit(result)
 
