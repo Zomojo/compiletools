@@ -1,6 +1,6 @@
 #!/usr/bin/python -u
 
-
+import cPickle
 import md5
 import sys
 import commands
@@ -128,12 +128,18 @@ def munge(to_munge):
         return "bin/" + to_munge.replace("/", "@")
 
 
-def parse_dependencies(deps_file, source_file):
-    """Parses a dependencies file"""
+def force_get_dependencies_for(deps_file, source_file):
+    """Recalculates the dependencies and caches them for a given source file"""
     
-    f = open(deps_file)
+    cmd = CC + " -MM -MF " + deps_file + ".tmp " + source_file
+    status, output = commands.getstatusoutput(cmd)
+    if status != 0:
+        raise UserException(output)
+
+    f = open(deps_file + ".tmp")
     text = f.read()
-    f.close()    
+    f.close()
+    os.unlink(deps_file + ".tmp")
 
     files = text.split(":")[1]
     files = files.replace("\\", " ").replace("\t"," ").replace("\n", " ")
@@ -167,8 +173,13 @@ def parse_dependencies(deps_file, source_file):
             
         f.close()
         pass
+
+    # cache
+    f = open(deps_file, "w")
+    cPickle.dump((headers, sources, ccflags, linkflags), f)
+    f.close()
     
-    return headers, sources, ccflags, linkflags    
+    return headers, sources, ccflags, linkflags
 
 dependency_cache = {}
 
@@ -186,8 +197,11 @@ def get_dependencies_for(source_file):
     if os.path.exists(deps_file):
         deps_mtime = os.stat(deps_file).st_mtime
         all_good = True
+        
         try:
-            headers, sources, ccflags, linkflags  = parse_dependencies(deps_file, source_file)
+            f = open(deps_file)            
+            headers, sources, ccflags, linkflags  = cPickle.load(f)
+            f.close()
         except:
             all_good = False
     
@@ -206,12 +220,7 @@ def get_dependencies_for(source_file):
             return result
         
     # failed, regenerate dependencies
-    cmd = CC + " -MM -MF " + deps_file + " " + source_file 
-    status, output = commands.getstatusoutput(cmd)
-    if status != 0:
-        raise UserException(output)
-
-    result = parse_dependencies(deps_file, source_file)
+    result = force_get_dependencies_for(deps_file, source_file)
     dependency_cache[source_file] = result
     return result
 
