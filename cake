@@ -59,9 +59,8 @@ cake generates and runs C++ executables with almost no configuration.
 
 Options:
 
-    --generate             Only runs the makefile generation step, does not build or run.
-    --build                Only runs the makefile generation and build steps, does not run.
-    --run (default)        Builds and runs the executable.
+    --generate             Only runs the makefile generation step, does not build.
+    --build                Builds the given targets (default).
     --output=<filename>    Overrides the output filename.
     --variant=<vvv>        Reads the CAKE_<vvv>_CC, CAKE_<vvv>_CXXFLAGS and CAKE_<vvv>_LINKFLAGS
                            environment variables to determine the build flags.
