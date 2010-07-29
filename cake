@@ -69,6 +69,16 @@ Options:
     --CC=<compiler>        Sets the compiler command.
     --CXXFLAGS=<flags>     Sets the compilation flags for all cpp files in the build.
     --LINKFLAGS=<flags>    Sets the flags used while linking.
+    
+    --begintests           Starts a test block. The cpp files following this declaration will
+                           generate executables which are then run.
+                           
+    --endtests             Ends a test block.
+    
+    --beginpost            Starts a post execution block. The commands given after this will be
+                           run verbatim after each build. Useful for running integration tests,
+                           or generating tarballs, uploading to a website etc.
+    --endpost              Ends a post execution block.
 
 
 Source annotations (embed in your hpp and cpp files as magic comments):
@@ -85,6 +95,20 @@ Environment Variables:
 
 Environment variables can also be set in /etc/cake, which has the lowest priority when finding
 compilation settings.
+
+
+Example usage:
+
+This command-line generates bin/position-checker and bin/position-tally in release mode.
+It also generates several tests into the bin directory and runs them. If they are
+all successful, integration_test.sh is run.
+
+   cake apps/position-checker.cpp apps/position-tally.cpp \\
+        --begintests tests/*.cpp --endtests \\
+        --beginpost ./integration_test.sh \\
+        --variant=release
+
+
 
 """
 
@@ -354,7 +378,7 @@ def cpus():
     return t.strip()
 
 
-def do_generate(source_to_output, tests):
+def do_generate(source_to_output, tests, post_steps):
     """Generates all needed makefiles"""
 
     all_rules = {}
@@ -365,7 +389,17 @@ def do_generate(source_to_output, tests):
         
         render_makefile(makefilename, rules)
         
-    combined_filename = munge(source_to_output) + ".Makefile"
+    combined_filename = munge(source_to_output) + ".combined.Makefile"
+
+
+    previous = [r for r in all_rules]
+    for s in post_steps:
+        passed = "bin/" + md5.md5(s).hexdigest() + ".passed"
+        rule = passed + " : " + " ".join(previous) + "\n"
+        rule += "\trm -f " + passed + " && " + s + " && touch " + passed        
+        all_rules[passed] = rule
+        previous = s
+    
     render_makefile(combined_filename, all_rules)
     return combined_filename
 
@@ -398,7 +432,9 @@ def main():
     quiet = False
     to_build = {}    
     inTests = False
+    inPost = False
     tests = []
+    post_steps = []
     
     for a in args:        
         if cppfile is None:            
@@ -433,11 +469,25 @@ def main():
                 CXXFLAGS = a[a.index("=")+1:]
                 continue
             
-            if a == "--begintests":                
+            if a == "--beginpost": 
+                if inTests:
+                    usage("--beginpost cannot occur inside a --begintests block")
+                inPost = True
+                continue
+            
+            if a == "--endpost":
+                inPost = False
+                continue
+                
+            if a == "--begintests": 
+                if inPost:
+                    usage("--begintests cannot occur inside a --beginpost block")
                 inTests = True
                 continue
                 
             if a == "--endtests":
+                if not inTests:
+                    usage("--endtests can only follow --begintests")
                 inTests = False
                 continue
             
@@ -454,9 +504,12 @@ def main():
             if nextOutput is None:
                 nextOutput = os.path.splitext("bin/" + os.path.split(a)[1])[0]
 
-            to_build[a] = nextOutput
-            if inTests:
-                tests.append(nextOutput)
+            if inPost:
+                post_steps.append(a)
+            else:
+                to_build[a] = nextOutput
+                if inTests:
+                    tests.append(nextOutput)
             nextOutput = None
             
     
@@ -469,7 +522,7 @@ def main():
             sys.exit(1)
             
     if generate:
-        makefilename = do_generate(to_build, tests)
+        makefilename = do_generate(to_build, tests, post_steps)
     
     if build:
         do_build(makefilename, quiet)        
