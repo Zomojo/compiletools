@@ -278,7 +278,7 @@ def lazily_write(filename, newtext):
 
 def objectname(source, entry):
     ccflags, cause, headers = entry
-    h = md5.md5(" ".join([c for c in ccflags]) + " " + CXXFLAGS).hexdigest()
+    h = md5.md5(" ".join([c for c in ccflags]) + " " + CXXFLAGS + " " + CC).hexdigest()
     return munge(source) + str(len(str(ccflags))) + "-" + h + ".o"
 
 
