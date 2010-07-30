@@ -438,7 +438,7 @@ def do_generate(source_to_output, tests, post_steps):
 def do_build(makefilename, quiet):
     result = os.system("make -r " + {True:"-s ",False:""}[quiet] + "-f " + makefilename + " -j" + cpus())
     if result != 0:
-        sys.exit(result)
+        sys.exit(1)
 
 def do_run(output, args):
     os.execvp(output, [output] + args)
@@ -547,7 +547,11 @@ def main():
     if len(to_build) == 0:
         usage("You must specify a filename.")
     
-    for c in to_build:
+    for c in to_build.keys()[:]:
+        if len(c.strip()) == 0:
+            del to_build[c]
+            continue
+        
         if not os.path.exists(c):
             print >> sys.stderr, c + " is not found."
             sys.exit(1)
@@ -556,7 +560,7 @@ def main():
         makefilename = do_generate(to_build, tests, post_steps)
     
     if build:
-        do_build(makefilename, quiet)        
+        do_build(makefilename, quiet)
     return
     
 

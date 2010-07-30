@@ -1,7 +1,7 @@
 CAKE_CC = ccache g++ -I . -I deps/3rdparty/lwip -I ./deps/3rdparty/lwip/lwip/src/include/ -I ./deps/3rdparty/lwip/lwip/src/include/ipv4/
 
 CAKE_CXXFLAGS=-fPIC -g
-CAKE_LINKFLAGS=-fPIC
+CAKE_LINKFLAGS=-fPIC" -B/usr/lib/binutils-2.18/"
 
 CAKE_DEBUG_CC = $CAKE_CC
 CAKE_DEBUG_CXXFLAGS=$CAKE_CXXFLAGS -Wall
@@ -18,3 +18,6 @@ CAKE_PROFILE_LINKFLAGS=-O3 -Wall -pg -g
 CAKE_COVERAGE_CC = g++
 CAKE_COVERAGE_CXXFLAGS=-fPIC -O0 -fno-inline -Wall -g -fprofile-arcs -ftest-coverage
 CAKE_COVERAGE_LINKFLAGS=-fPIC -O0 -fno-inline -Wall -g -fprofile-arcs -ftest-coverage
+
+
+#"-pg -DNDEBUG -DZPROFILE -O3"
