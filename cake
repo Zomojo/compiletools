@@ -103,6 +103,7 @@ Options:
                           
     --CC=<compiler>        Sets the compiler command.
     --CXXFLAGS=<flags>     Sets the compilation flags for all cpp files in the build.
+    --append-CXXFLAGS=...  Appends the given text to the compiler commands. Use for adding search paths etc.
     --LINKFLAGS=<flags>    Sets the flags used while linking.
     
     --begintests           Starts a test block. The cpp files following this declaration will
@@ -479,6 +480,7 @@ def main():
     inPost = False
     tests = []
     post_steps = []
+    append_cxxflags = []
     
     for a in args:        
         if cppfile is None:            
@@ -511,6 +513,10 @@ def main():
             
             if a.startswith("--LINKFLAGS="):
                 LINKFLAGS = a[a.index("=")+1:]
+                continue
+            
+            if a.startswith("--append-CXXFLAGS="):
+                append_cxxflags = a[a.index("=")+1:]
                 continue
             
             if a.startswith("--CXXFLAGS="):
@@ -559,8 +565,11 @@ def main():
                 if inTests:
                     tests.append(nextOutput)
             nextOutput = None
-            
     
+    # compiler takes extra options
+    if len(append_cxxflags) > 0:
+        CC = CC + " " + append_cxxflags
+        
     if len(to_build) == 0:
         usage("You must specify a filename.")
     
