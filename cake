@@ -7,11 +7,43 @@ import commands
 import os
 from sets import Set
 
+
+class OrderedSet:
+    """A set that preserves the order of insertion"""
+    
+    def __init__(self, init = ()):
+        self.ordered = []
+        self.unordered = {}
+        
+        for s in init:
+            self.insert(s)
+    
+    def insert(self, e):
+        if e in self.unordered:
+            return
+        self.ordered.append(e)
+        self.unordered[e] = True
+    
+    def __repr__(self):
+        return repr(self.ordered)
+        
+    def __contains__(self, e):
+        return self.unordered.__contains__(e)
+        
+    def __len__(self):
+        return self.ordered.__len__()
+        
+    def __iter__(self):
+        return self.ordered.__iter__()
+             
+        
+    
+
 class UserException (Exception):
     def __init__(self, text):
         Exception.__init__(self, text)
 
-
+   
 
 def environ(variable, default):
     if default is None:
@@ -175,7 +207,7 @@ def force_get_dependencies_for(deps_file, source_file):
     
     # determine ccflags and linkflags
     ccflags = {}
-    linkflags = {}
+    linkflags = OrderedSet()
     for h in headers + [source_file]:
         f = open(h)
         text = f.read(1024)        
@@ -191,7 +223,7 @@ def force_get_dependencies_for(deps_file, source_file):
             if result is None:
                 break
             else:
-                linkflags[result] = True
+                linkflags.insert(result)
                 
             
         f.close()
@@ -268,7 +300,7 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause):
     
     # merge in link options
     for l in newlinkflags:
-        linkflags[l] = True
+        linkflags.insert(l)
     
     copy = cause[:]
     copy.append(new_file)
@@ -315,7 +347,7 @@ def generate_rules(source, output_name, generate_test, makefilename):
     rules = {}
     sources = {}
     ignored = []
-    linkflags = {}
+    linkflags = OrderedSet()
     cause = []
         
     insert_dependencies(sources, ignored, source, linkflags, cause)
@@ -333,7 +365,7 @@ def generate_rules(source, output_name, generate_test, makefilename):
     # link rule
     definition = []
     definition.append( output_name + " : " + " ".join([objectname(s, sources[s]) for s in  sources]) + " " + makefilename)
-    definition.append("\t" + CC + " " + " " .join([objectname(s, sources[s]) for s in  sources]) + " " + LINKFLAGS + " " + " ".join([l for l in linkflags]) + " -o " + output_name )
+    definition.append("\t" + CC + " -o " + output_name + " " + " " .join([objectname(s, sources[s]) for s in  sources])  + " " + LINKFLAGS + " " + " ".join(linkflags) )
     rules[output_name] = "\n".join(definition)
     
     if generate_test:
