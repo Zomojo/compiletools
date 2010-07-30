@@ -207,13 +207,15 @@ def force_get_dependencies_for(deps_file, source_file):
     files = list(Set([os.path.normpath(x) for x in files]))
     files.sort()
     
-    headers = [os.path.normpath(h) for h in files if h.endswith(".hpp")]
+    headers = [os.path.normpath(h) for h in files if h.endswith(".hpp") or h.endswith(".h")]
     sources = [os.path.normpath(h) for h in files if h.endswith(".cpp")]
     
     # determine ccflags and linkflags
     ccflags = {}
     linkflags = OrderedSet()
+    
     for h in headers + [source_file]:
+        path = os.path.split(h)[0]    
         f = open(h)
         text = f.read(1024)        
                 
@@ -222,13 +224,15 @@ def force_get_dependencies_for(deps_file, source_file):
             if result is None:
                 break
             else:
+                print result, path
+                result = result.replace("${path}", path)
                 ccflags[result] = True
         while True:
             result, text = extractOption(text, "//#LINKFLAGS=")
             if result is None:
                 break
             else:
-                linkflags.insert(result)
+                linkflags.insert(result.replace("${path}", path))
                 
             
         f.close()
