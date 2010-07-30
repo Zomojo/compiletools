@@ -91,6 +91,10 @@ cake generates and runs C++ executables with almost no configuration.
 
 Options:
 
+    --help                 Shows this message.
+    --quiet                Doesn't output progress messages.
+    --verbose              Outputs the result of build commands (doesn't run make with -s)
+
     --generate             Only runs the makefile generation step, does not build.
     --build                Builds the given targets (default).
     --output=<filename>    Overrides the output filename.
@@ -338,7 +342,7 @@ def objectname(source, entry):
 
 
 
-def generate_rules(source, output_name, generate_test, makefilename):
+def generate_rules(source, output_name, generate_test, makefilename, quiet):
     """
     Generates a set of make rules for the given source.
     If generate_test is true, also generates a test run rule.
@@ -359,12 +363,16 @@ def generate_rules(source, output_name, generate_test, makefilename):
         
         definition = []
         definition.append(obj + " : " + " ".join(headers + [s])) 
+        if not quiet:
+            definition.append("\t" + "@echo ... " + s)
         definition.append("\t" + CC + " -c " + " " + s + " " " -o " + obj + " " + " ".join(ccflags) + " " + CXXFLAGS)
         rules[obj] = "\n".join(definition)
 
     # link rule
     definition = []
     definition.append( output_name + " : " + " ".join([objectname(s, sources[s]) for s in  sources]) + " " + makefilename)
+    if not quiet:
+        definition.append("\t" + "@echo ... " + output_name)
     definition.append("\t" + CC + " -o " + output_name + " " + " " .join([objectname(s, sources[s]) for s in  sources])  + " " + LINKFLAGS + " " + " ".join(linkflags) )
     rules[output_name] = "\n".join(definition)
     
@@ -372,6 +380,8 @@ def generate_rules(source, output_name, generate_test, makefilename):
         definition = []
         test = output_name + ".passed"
         definition.append( test + " : " + output_name )
+        if not quiet:
+            definition.append("\t" + "@echo ... test " + output_name)
         definition.append( "\t" + "rm -f " + test + " && " + output_name + " && touch " + test)
         rules[test] = "\n".join(definition) 
         
@@ -409,13 +419,13 @@ def cpus():
     return t.strip()
 
 
-def do_generate(source_to_output, tests, post_steps):
+def do_generate(source_to_output, tests, post_steps, quiet):
     """Generates all needed makefiles"""
 
     all_rules = {}
     for source in source_to_output:
         makefilename = munge(source) + ".Makefile"
-        rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename)
+        rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet)
         all_rules.update(rules)
         
         render_makefile(makefilename, rules)
@@ -427,6 +437,8 @@ def do_generate(source_to_output, tests, post_steps):
     for s in post_steps:
         passed = "bin/" + md5.md5(s).hexdigest() + ".passed"
         rule = passed + " : " + " ".join(previous) + "\n"
+        if not quiet:
+            rule += "\t" + "echo ... post " + s
         rule += "\trm -f " + passed + " && " + s + " && touch " + passed        
         all_rules[passed] = rule
         previous = s
@@ -435,8 +447,8 @@ def do_generate(source_to_output, tests, post_steps):
     return combined_filename
 
     
-def do_build(makefilename, quiet):
-    result = os.system("make -r " + {True:"-s ",False:""}[quiet] + "-f " + makefilename + " -j" + cpus())
+def do_build(makefilename, verbose):
+    result = os.system("make -r " + {False:"-s ",True:""}[verbose] + "-f " + makefilename + " -j" + cpus())
     if result != 0:
         sys.exit(1)
 
@@ -461,6 +473,7 @@ def main():
     generate = True
     build = True
     quiet = False
+    verbose = False
     to_build = {}    
     inTests = False
     inPost = False
@@ -476,6 +489,10 @@ def main():
             if a.startswith("--variant="):
                 variant = a[a.index("=")+1:]      
                 try_set_variant(variant)
+                continue
+                
+            if a.startswith("--verbose"):
+                verbose = True
                 continue
                 
             if a.startswith("--quiet"):
@@ -557,10 +574,10 @@ def main():
             sys.exit(1)
             
     if generate:
-        makefilename = do_generate(to_build, tests, post_steps)
+        makefilename = do_generate(to_build, tests, post_steps, quiet)
     
     if build:
-        do_build(makefilename, quiet)
+        do_build(makefilename, verbose)
     return
     
 
