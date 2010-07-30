@@ -521,17 +521,17 @@ def main():
                     usage("--endtests can only follow --begintests")
                 inTests = False
                 continue
+
+            if a.startswith("--output="):
+                nextOutput = a[a.index("=")+1:]
+                continue
             
             if a == "--help":
                 usage()
             
             if a.startswith("--"):
                 usage("Invalid option " + a)
-                
-            if a.startswith("--output="):
-                nextOutput = a[a.index("=")+1:]
-                continue
-                
+                                
             if nextOutput is None:
                 nextOutput = os.path.splitext("bin/" + os.path.split(a)[1])[0]
 
