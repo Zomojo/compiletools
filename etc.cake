@@ -19,5 +19,6 @@ CAKE_COVERAGE_CC = g++ -I .
 CAKE_COVERAGE_CXXFLAGS=-fPIC -O0 -fno-inline -Wall -g -fprofile-arcs -ftest-coverage
 CAKE_COVERAGE_LINKFLAGS=-fPIC -O0 -fno-inline -Wall -g -fprofile-arcs -ftest-coverage
 
-
-#"-pg -DNDEBUG -DZPROFILE -O3"
+CAKE_ZPROFILE_CC = $CAKE_CC
+CAKE_ZPROFILE_CXXFLAGS=$CAKE_PROFILE_CXXFLAGS -Dzprofile
+CAKE_ZPROFILE_LINKFLAGS=$CAKE_RELEASE_LINKFLAGS -lzprofile
