@@ -76,6 +76,7 @@ def parse_etc():
             value = l[l.index("=") + 1:].strip()
             
             for k in os.environ:
+                value = value.replace('"', "")
                 value = value.replace("$" + k, os.environ[k])
                 value = value.replace("${" + k + "}", os.environ[k])            
             
