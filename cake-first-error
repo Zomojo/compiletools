@@ -1,0 +1,16 @@
+#!/usr/bin/python -u
+
+import sys
+
+try:
+    errors = 0
+    while True:
+        a = sys.stdin.readline()
+        if not a:
+            sys.exit(0)
+        if a.count("error:") > 0:
+            errors += 1
+        if errors <= 1:
+            print a,
+except Exception:
+    pass

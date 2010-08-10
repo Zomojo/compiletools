@@ -12,7 +12,7 @@ Prefix: /usr
 BuildArch: noarch
 
 %description
-cake build C++ fast and accurately, without
+cake builds C++ fast and accurately, without
 any configuration files.
 
 
@@ -28,6 +28,7 @@ mkdir -p %{buildroot}/etc/
 
 cp etc.cake %{buildroot}/etc/cake
 cp cake %{buildroot}/usr/bin
+cp cake-* %{buildroot}/usr/bin
 chmod -R 755 %{buildroot}/usr/bin
 
 %clean
@@ -36,6 +37,7 @@ test "%{buildroot}" != "/" && rm -rf %{buildroot}
 %files
 %defattr(-,root,root)
 %attr(0755,-,-)/usr/bin/cake
+%attr(0755,-,-)/usr/bin/cake-*
 /etc/cake
 
 
