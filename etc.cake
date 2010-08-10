@@ -1,4 +1,4 @@
-CAKE_CC="ccache cake-g++-quiet -I ."
+CAKE_CC="cake-g++-quiet -I ."
 
 CAKE_CXXFLAGS="-fPIC -g -Wall -Werror"
 CAKE_LINKFLAGS="-fPIC -B/usr/lib/binutils-2.18/ -Wall -Werror"
@@ -15,7 +15,7 @@ CAKE_PROFILE_CC="$CAKE_CC"
 CAKE_PROFILE_CXXFLAGS="$CAKE_RELEASE_CXXFLAGS -pg -g"
 CAKE_PROFILE_LINKFLAGS="-O3 -Wall -pg -g -Werror"
 
-CAKE_COVERAGE_CC="cake-g++-quiet -I ."
+CAKE_COVERAGE_CC="g++ -I ."
 CAKE_COVERAGE_CXXFLAGS="-fPIC -O0 -fno-inline -Wall -g -fprofile-arcs -ftest-coverage -Werror"
 CAKE_COVERAGE_LINKFLAGS="-fPIC -O0 -fno-inline -Wall -g -fprofile-arcs -ftest-coverag -Werrore"
 
