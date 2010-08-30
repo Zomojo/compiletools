@@ -104,6 +104,7 @@ Options:
                           
     --CC=<compiler>        Sets the compiler command.
     --CXXFLAGS=<flags>     Sets the compilation flags for all cpp files in the build.
+    --TESTPREFIX=<cmd>     Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"
     --append-CXXFLAGS=...  Appends the given text to the compiler commands. Use for adding search paths etc.
     --LINKFLAGS=<flags>    Sets the flags used while linking.
     
@@ -129,6 +130,7 @@ Environment Variables:
     CAKE_CCFLAGS           Sets the compiler command.
     CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
     CAKE_LINKFLAGS         Sets the flags used while linking.
+    CAKE_TESTPREFIX        Sets the execution prefix used while running unit tests.
 
 Environment variables can also be set in /etc/cake, which has the lowest priority when finding
 compilation settings.
@@ -323,10 +325,11 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause):
 
 
 def try_set_variant(variant):
-    global CC, CXXFLAGS, LINKFLAGS
+    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX
     CC = environ("CAKE_" + variant.upper() + "_CC", None)
     CXXFLAGS = environ("CAKE_" + variant.upper() + "_CXXFLAGS", None)
     LINKFLAGS = environ("CAKE_" + variant.upper() + "_LINKFLAGS", None)
+    TESTPREFIX = environ("CAKE_" + variant.upper() + "_TESTPREFIX", None)
 
 def lazily_write(filename, newtext):
     oldtext = ""
@@ -388,7 +391,11 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet):
         definition.append( test + " : " + output_name )
         if not quiet:
             definition.append("\t" + "@echo ... test " + output_name)
-        definition.append( "\t" + "rm -f " + test + " && " + output_name + " && touch " + test)
+        
+        t = ""
+        if TESTPREFIX != "":
+            t = TESTPREFIX + " "
+        definition.append( "\t" + "rm -f " + test + " && " + t + output_name + " && touch " + test)
         rules[test] = "\n".join(definition) 
         
     return rules
@@ -444,7 +451,7 @@ def do_generate(source_to_output, tests, post_steps, quiet):
         passed = "bin/" + md5.md5(s).hexdigest() + ".passed"
         rule = passed + " : " + " ".join(previous) + "\n"
         if not quiet:
-            rule += "\t" + "echo ... post " + s
+            rule += "\t" + "echo ... post " + s        
         rule += "\trm -f " + passed + " && " + s + " && touch " + passed        
         all_rules[passed] = rule
         previous = s
@@ -465,7 +472,7 @@ def do_run(output, args):
 
 
 def main():
-    global CC, CXXFLAGS, LINKFLAGS
+    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX
         
     if len(sys.argv) < 2:
         usage()
@@ -519,7 +526,11 @@ def main():
             if a.startswith("--LINKFLAGS="):
                 LINKFLAGS = a[a.index("=")+1:]
                 continue
-            
+                
+            if a.startswith("--TESTPREFIX="):
+                TESTPREFIX = a[a.index("=")+1:]
+                continue
+                            
             if a.startswith("--append-CXXFLAGS="):
                 append_cxxflags = a[a.index("=")+1:]
                 continue
@@ -601,10 +612,12 @@ try:
     CC = "g++"
     LINKFLAGS = ""
     CXXFLAGS = ""
+    TESTPREFIX="valgrind --quiet --error-exitcode=1"
     parse_etc()
     CC = environ("CAKE_CC", CC)
     LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
     CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
+    TESTPREFIX = environ("CAKE_TESTPREFIX", TESTPREFIX)
 
     try:
         os.mkdir("bin")
