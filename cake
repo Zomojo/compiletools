@@ -184,11 +184,11 @@ def extractOption(text, option):
 def munge(to_munge):
     if isinstance(to_munge, dict):
         if len(to_munge) == 1:
-            return "bin/" + "@@".join([x for x in to_munge]).replace("/", "@")
+            return "bin/obj/" + "@@".join([x for x in to_munge]).replace("/", "@")
         else:
-            return "bin/" + md5.md5(str([x for x in to_munge])).hexdigest()
+            return "bin/obj/" + md5.md5(str([x for x in to_munge])).hexdigest()
     else:    
-        return "bin/" + to_munge.replace("/", "@")
+        return "bin/obj/" + to_munge.replace("/", "@")
 
 
 def force_get_dependencies_for(deps_file, source_file):
@@ -387,7 +387,7 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet):
     
     if generate_test:
         definition = []
-        test = output_name + ".passed"
+        test = munge(output_name) + ".result"
         definition.append( test + " : " + output_name )
         if not quiet:
             definition.append("\t" + "@echo ... test " + output_name)
@@ -448,7 +448,7 @@ def do_generate(source_to_output, tests, post_steps, quiet):
 
     previous = [r for r in all_rules]
     for s in post_steps:
-        passed = "bin/" + md5.md5(s).hexdigest() + ".passed"
+        passed = "bin/obj/" + md5.md5(s).hexdigest() + ".passed"
         rule = passed + " : " + " ".join(previous) + "\n"
         if not quiet:
             rule += "\t" + "echo ... post " + s        
@@ -620,7 +620,7 @@ try:
     TESTPREFIX = environ("CAKE_TESTPREFIX", TESTPREFIX)
 
     try:
-        os.mkdir("bin")
+        os.makedirs("bin/obj")
     except:
         pass
 
