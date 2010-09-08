@@ -8,7 +8,10 @@ try:
         a = sys.stdin.readline()
         if not a:
             sys.exit(0)
-        if a.count("error:") > 0 and a.count("at this point in file") == 0:
+        if (a.count("error:") > 0 and 
+                a.count("at this point in file") == 0 and
+                a.count("conflicts with") == 0 and
+                ):
             errors += 1
         if errors <= 1:
             print a,
