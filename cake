@@ -7,6 +7,8 @@ import commands
 import os
 from sets import Set
 
+BINDIR="bin/"
+       
 
 class OrderedSet:
     """A set that preserves the order of insertion"""
@@ -107,6 +109,7 @@ Options:
     --TESTPREFIX=<cmd>     Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"
     --append-CXXFLAGS=...  Appends the given text to the compiler commands. Use for adding search paths etc.
     --LINKFLAGS=<flags>    Sets the flags used while linking.
+    --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.
     
     --begintests           Starts a test block. The cpp files following this declaration will
                            generate executables which are then run.
@@ -184,11 +187,11 @@ def extractOption(text, option):
 def munge(to_munge):
     if isinstance(to_munge, dict):
         if len(to_munge) == 1:
-            return "bin/obj/" + "@@".join([x for x in to_munge]).replace("/", "@")
+            return BINDIR + "obj/" + "@@".join([x for x in to_munge]).replace("/", "@")
         else:
-            return "bin/obj/" + md5.md5(str([x for x in to_munge])).hexdigest()
+            return BINDIR + "obj/" + md5.md5(str([x for x in to_munge])).hexdigest()
     else:    
-        return "bin/obj/" + to_munge.replace("/", "@")
+        return BINDIR + "obj/" + to_munge.replace("/", "@")
 
 
 def force_get_dependencies_for(deps_file, source_file):
@@ -227,7 +230,6 @@ def force_get_dependencies_for(deps_file, source_file):
             if result is None:
                 break
             else:
-                print result, path
                 result = result.replace("${path}", path)
                 ccflags[result] = True
         while True:
@@ -448,7 +450,7 @@ def do_generate(source_to_output, tests, post_steps, quiet):
 
     previous = [r for r in all_rules]
     for s in post_steps:
-        passed = "bin/obj/" + md5.md5(s).hexdigest() + ".passed"
+        passed = BINDIR + "obj/" + md5.md5(s).hexdigest() + ".passed"
         rule = passed + " : " + " ".join(previous) + "\n"
         if not quiet:
             rule += "\t" + "echo ... post " + s        
@@ -473,6 +475,7 @@ def do_run(output, args):
 
 def main():
     global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX
+    global BINDIR
         
     if len(sys.argv) < 2:
         usage()
@@ -483,6 +486,7 @@ def main():
     appargs = []
     nextOutput = None
     
+    BINDIR="bin/"
     generate = True
     build = True
     quiet = False
@@ -507,6 +511,12 @@ def main():
                 
             if a.startswith("--verbose"):
                 verbose = True
+                continue
+                
+            if a.startswith("--bindir="):
+                BINDIR = a[a.index("=")+1:]
+                if not BINDIR.endswith("/"):
+                    BINDIR = BINDIR + "/"
                 continue
                 
             if a.startswith("--quiet"):
@@ -572,7 +582,7 @@ def main():
                 usage("Invalid option " + a)
                                 
             if nextOutput is None:
-                nextOutput = os.path.splitext("bin/" + os.path.split(a)[1])[0]
+                nextOutput = os.path.splitext(BINDIR + os.path.split(a)[1])[0]
 
             if inPost:
                 post_steps.append(a)
@@ -588,6 +598,12 @@ def main():
         
     if len(to_build) == 0:
         usage("You must specify a filename.")
+  
+    try:
+        os.makedirs(BINDIR + "obj")
+    except:
+        pass
+
     
     for c in to_build.keys()[:]:
         if len(c.strip()) == 0:
@@ -596,7 +612,7 @@ def main():
         
         if not os.path.exists(c):
             print >> sys.stderr, c + " is not found."
-            sys.exit(1)
+            sys.exit(1) 
             
     if generate:
         makefilename = do_generate(to_build, tests, post_steps, quiet)
@@ -618,12 +634,6 @@ try:
     LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
     CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
     TESTPREFIX = environ("CAKE_TESTPREFIX", TESTPREFIX)
-
-    try:
-        os.makedirs("bin/obj")
-    except:
-        pass
-
     
     main()
 except SystemExit:
