@@ -449,6 +449,7 @@ def do_generate(source_to_output, tests, post_steps, quiet):
 
 
     previous = [r for r in all_rules]
+    
     for s in post_steps:
         passed = BINDIR + "obj/" + md5.md5(s).hexdigest() + ".passed"
         rule = passed + " : " + " ".join(previous) + "\n"
@@ -456,7 +457,7 @@ def do_generate(source_to_output, tests, post_steps, quiet):
             rule += "\t" + "echo ... post " + s        
         rule += "\trm -f " + passed + " && " + s + " && touch " + passed        
         all_rules[passed] = rule
-        previous = s
+        previous = [s]
     
     render_makefile(combined_filename, all_rules)
     return combined_filename
