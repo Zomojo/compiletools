@@ -452,7 +452,7 @@ def do_generate(source_to_output, tests, post_steps, quiet):
     
     for s in post_steps:
         passed = BINDIR + "obj/" + md5.md5(s).hexdigest() + ".passed"
-        rule = passed + " : " + " ".join(previous) + "\n"
+        rule = passed + " : " + " ".join(previous + [s]) + "\n"
         if not quiet:
             rule += "\t" + "echo ... post " + s        
         rule += "\trm -f " + passed + " && " + s + " && touch " + passed        
