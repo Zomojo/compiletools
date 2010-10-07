@@ -448,7 +448,8 @@ def do_generate(source_to_output, tests, post_steps, quiet):
     combined_filename = munge(source_to_output) + ".combined.Makefile"
 
 
-    previous = [r for r in all_rules]
+    all_previous = [r for r in all_rules]
+    previous = all_previous
     
     for s in post_steps:
         passed = BINDIR + "obj/" + md5.md5(s).hexdigest() + ".passed"
@@ -457,7 +458,7 @@ def do_generate(source_to_output, tests, post_steps, quiet):
             rule += "\t" + "echo ... post " + s        
         rule += "\trm -f " + passed + " && " + s + " && touch " + passed        
         all_rules[passed] = rule
-        previous = [s]
+        previous =  all_previous + [s]
     
     render_makefile(combined_filename, all_rules)
     return combined_filename
