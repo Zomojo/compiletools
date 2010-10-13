@@ -427,11 +427,9 @@ def render_makefile(makefilename, rules):
 
 def cpus():
     f = open("/proc/cpuinfo")
-    t = [x for x in f.readlines() if x.startswith("cpu cores")][0].split(":")[1]
+    t = [x for x in f.readlines() if x.startswith("processor")]
     f.close()
-    #status, output = commands.getstatusoutput("cat /proc/cpuinfo | grep cpu.cores | head -1 | cut -f2 -d\":\"")
-    #return output.strip()
-    return t.strip()
+    return str(len(t))
 
 
 def do_generate(source_to_output, tests, post_steps, quiet):
