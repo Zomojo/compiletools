@@ -376,7 +376,7 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet):
         definition.append(obj + " : " + " ".join(headers + [s])) 
         if not quiet:
             definition.append("\t" + "@echo ... " + s)
-        definition.append("\t" + CC + " -c " + " " + s + " " " -o " + obj + " " + " ".join(ccflags) + " " + CXXFLAGS)
+        definition.append("\t" + CC + " " + CXXFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
         rules[obj] = "\n".join(definition)
 
     # link rule
