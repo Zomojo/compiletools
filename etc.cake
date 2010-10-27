@@ -2,7 +2,7 @@ CAKE_CC="cake-g++-quiet -I ."
 
 CAKE_CXXFLAGS="-fPIC -g -Wall"
 CAKE_LINKFLAGS="-fPIC -B/usr/lib/binutils-2.18/ -Wall -Werror"
-CAKE_TESTPREFIX="valgrind --quiet --error-exitcode=1"
+CAKE_TESTPREFIX="timeout 300 valgrind --quiet --error-exitcode=1"
 
 CAKE_DEBUG_CC="$CAKE_CC"
 CAKE_DEBUG_CXXFLAGS="$CAKE_CXXFLAGS"
