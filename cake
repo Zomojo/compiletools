@@ -107,6 +107,7 @@ Options:
     --CC=<compiler>        Sets the compiler command.
     --CXXFLAGS=<flags>     Sets the compilation flags for all cpp files in the build.
     --TESTPREFIX=<cmd>     Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"
+    --POSTPREFIX=<cmd>     Runs post execution commands with the given prefix, eg. "timeout 60"
     --append-CXXFLAGS=...  Appends the given text to the compiler commands. Use for adding search paths etc.
     --LINKFLAGS=<flags>    Sets the flags used while linking.
     --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.
@@ -134,6 +135,7 @@ Environment Variables:
     CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
     CAKE_LINKFLAGS         Sets the flags used while linking.
     CAKE_TESTPREFIX        Sets the execution prefix used while running unit tests.
+    CAKE_POSTPREFIX        Sets the execution prefix used while running post-build commands.
 
 Environment variables can also be set in /etc/cake, which has the lowest priority when finding
 compilation settings.
@@ -327,11 +329,12 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause):
 
 
 def try_set_variant(variant):
-    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX
+    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
     CC = environ("CAKE_" + variant.upper() + "_CC", None)
     CXXFLAGS = environ("CAKE_" + variant.upper() + "_CXXFLAGS", None)
     LINKFLAGS = environ("CAKE_" + variant.upper() + "_LINKFLAGS", None)
     TESTPREFIX = environ("CAKE_" + variant.upper() + "_TESTPREFIX", None)
+    POSTPREFIX = environ("CAKE_" + variant.upper() + "_POSTPREFIX", None)
 
 def lazily_write(filename, newtext):
     oldtext = ""
@@ -449,12 +452,16 @@ def do_generate(source_to_output, tests, post_steps, quiet):
     all_previous = [r for r in all_rules]
     previous = all_previous
     
+    post_with_space = POSTPREFIX.strip()
+    if len(post_with_space) > 0:
+        post_with_space = POSTPREFIX + " "
+    
     for s in post_steps:
         passed = BINDIR + "obj/" + md5.md5(s).hexdigest() + ".passed"
         rule = passed + " : " + " ".join(previous + [s]) + "\n"
         if not quiet:
-            rule += "\t" + "echo ... post " + s        
-        rule += "\trm -f " + passed + " && " + s + " && touch " + passed        
+            rule += "\t" + "echo ... post " + post_with_space + s        
+        rule += "\trm -f " + passed + " && " + post_with_space + s + " && touch " + passed        
         all_rules[passed] = rule
         previous =  all_previous + [s]
     
@@ -474,7 +481,7 @@ def do_run(output, args):
 
 
 def main():
-    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX
+    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
     global BINDIR
         
     if len(sys.argv) < 2:
@@ -539,6 +546,10 @@ def main():
                 
             if a.startswith("--TESTPREFIX="):
                 TESTPREFIX = a[a.index("=")+1:]
+                continue
+            
+            if a.startswith("--POSTPREFIX="):
+                POSTPREFIX = a[a.index("=")+1:]
                 continue
                             
             if a.startswith("--append-CXXFLAGS="):
@@ -628,12 +639,14 @@ try:
     CC = "g++"
     LINKFLAGS = ""
     CXXFLAGS = ""
-    TESTPREFIX="valgrind --quiet --error-exitcode=1"
+    TESTPREFIX=""
+    POSTPREFIX=""
     parse_etc()
     CC = environ("CAKE_CC", CC)
     LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
     CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
     TESTPREFIX = environ("CAKE_TESTPREFIX", TESTPREFIX)
+    POSTPREFIX = environ("CAKE_POSTPREFIX", POSTPREFIX)
     
     main()
 except SystemExit:
