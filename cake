@@ -199,10 +199,12 @@ def munge(to_munge):
 def force_get_dependencies_for(deps_file, source_file):
     """Recalculates the dependencies and caches them for a given source file"""
     
+    print "... " + source_file + " (dependencies)"
+    
     cmd = CC + " -MM -MF " + deps_file + ".tmp " + source_file
     status, output = commands.getstatusoutput(cmd)
     if status != 0:
-        raise UserException(output)
+        raise UserException(cmd + "\n" + output)
 
     f = open(deps_file + ".tmp")
     text = f.read()
@@ -442,8 +444,7 @@ def do_generate(source_to_output, tests, post_steps, quiet):
     for source in source_to_output:
         makefilename = munge(source) + ".Makefile"
         rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet)
-        all_rules.update(rules)
-        
+        all_rules.update(rules)        
         render_makefile(makefilename, rules)
         
     combined_filename = munge(source_to_output) + ".combined.Makefile"
@@ -625,7 +626,7 @@ def main():
             print >> sys.stderr, c + " is not found."
             sys.exit(1) 
             
-    if generate:
+    if generate:        
         makefilename = do_generate(to_build, tests, post_steps, quiet)
     
     if build:
