@@ -196,10 +196,11 @@ def munge(to_munge):
         return BINDIR + "obj/" + to_munge.replace("/", "@")
 
 
-def force_get_dependencies_for(deps_file, source_file):
+def force_get_dependencies_for(deps_file, source_file, quiet):
     """Recalculates the dependencies and caches them for a given source file"""
     
-    print "... " + source_file + " (dependencies)"
+    if not quiet:
+        print "... " + source_file + " (dependencies)"
     
     cmd = CC + " -MM -MF " + deps_file + ".tmp " + source_file
     status, output = commands.getstatusoutput(cmd)
@@ -256,7 +257,7 @@ def force_get_dependencies_for(deps_file, source_file):
 
 dependency_cache = {}
 
-def get_dependencies_for(source_file):
+def get_dependencies_for(source_file, quiet):
     """Converts a gcc make command into a set of headers and source dependencies"""    
     
     global dependency_cache
@@ -293,12 +294,12 @@ def get_dependencies_for(source_file):
             return result
         
     # failed, regenerate dependencies
-    result = force_get_dependencies_for(deps_file, source_file)
+    result = force_get_dependencies_for(deps_file, source_file, quiet)
     dependency_cache[source_file] = result
     return result
 
 
-def insert_dependencies(sources, ignored, new_file, linkflags, cause):
+def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet):
     """Given a set of sources already being compiled, inserts the new file."""
     
     if new_file in sources:
@@ -312,7 +313,7 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause):
         return
 
     # recursive step
-    new_headers, new_sources, newccflags, newlinkflags = get_dependencies_for(new_file)
+    new_headers, new_sources, newccflags, newlinkflags = get_dependencies_for(new_file, quiet)
     
     sources[os.path.normpath(new_file)] = (newccflags, cause, new_headers)
     
@@ -324,10 +325,10 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause):
     copy.append(new_file)
     
     for h in new_headers:
-        insert_dependencies(sources, ignored, os.path.splitext(h)[0] + ".cpp", linkflags, copy)
+        insert_dependencies(sources, ignored, os.path.splitext(h)[0] + ".cpp", linkflags, copy, quiet)
     
     for s in new_sources:
-        insert_dependencies(sources, ignored, s, linkflags, copy)
+        insert_dependencies(sources, ignored, s, linkflags, copy, quiet)
 
 
 def try_set_variant(variant):
@@ -370,7 +371,7 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet):
     linkflags = OrderedSet()
     cause = []
         
-    insert_dependencies(sources, ignored, source, linkflags, cause)
+    insert_dependencies(sources, ignored, source, linkflags, cause, quiet)
     
     # compile rule for each object
     for s in sources:
