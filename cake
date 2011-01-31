@@ -8,7 +8,7 @@ import os
 from sets import Set
 
 BINDIR="bin/"
-       
+OBJDIR=""
 
 class OrderedSet:
     """A set that preserves the order of insertion"""
@@ -189,11 +189,11 @@ def extractOption(text, option):
 def munge(to_munge):
     if isinstance(to_munge, dict):
         if len(to_munge) == 1:
-            return BINDIR + "obj/" + "@@".join([x for x in to_munge]).replace("/", "@")
+            return OBJDIR + "@@".join([os.path.realpath(x) for x in to_munge]).replace("/", "@")
         else:
-            return BINDIR + "obj/" + md5.md5(str([x for x in to_munge])).hexdigest()
+            return OBJDIR + md5.md5(str([os.path.realpath(x) for x in to_munge])).hexdigest()
     else:    
-        return BINDIR + "obj/" + to_munge.replace("/", "@")
+        return OBJDIR + os.path.realpath(to_munge).replace("/", "@")
 
 
 def force_get_dependencies_for(deps_file, source_file, quiet):
@@ -459,7 +459,7 @@ def do_generate(source_to_output, tests, post_steps, quiet):
         post_with_space = POSTPREFIX + " "
     
     for s in post_steps:
-        passed = BINDIR + "obj/" + md5.md5(s).hexdigest() + ".passed"
+        passed = OBJDIR + md5.md5(s).hexdigest() + ".passed"
         rule = passed + " : " + " ".join(previous + [s]) + "\n"
         if not quiet:
             rule += "\t" + "echo ... post " + post_with_space + s        
@@ -484,7 +484,7 @@ def do_run(output, args):
 
 def main():
     global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
-    global BINDIR
+    global BINDIR, OBJDIR
         
     if len(sys.argv) < 2:
         usage()
@@ -495,7 +495,6 @@ def main():
     appargs = []
     nextOutput = None
     
-    BINDIR="bin/"
     generate = True
     build = True
     quiet = False
@@ -526,6 +525,12 @@ def main():
                 BINDIR = a[a.index("=")+1:]
                 if not BINDIR.endswith("/"):
                     BINDIR = BINDIR + "/"
+                continue
+                
+            if a.startswith("--objdir="):
+                OBJDIR = a[a.index("=")+1:]
+                if not OBJDIR.endswith("/"):
+                    OBJDIR = OBJDIR + "/"
                 continue
                 
             if a.startswith("--quiet"):
@@ -605,6 +610,10 @@ def main():
                     tests.append(nextOutput)
             nextOutput = None
     
+    # default objdir
+    if OBJDIR == "":
+        OBJDIR = BINDIR + "obj/"
+    
     # compiler takes extra options
     if len(append_cxxflags) > 0:
         CC = CC + " " + append_cxxflags
@@ -613,7 +622,12 @@ def main():
         usage("You must specify a filename.")
   
     try:
-        os.makedirs(BINDIR + "obj")
+        os.makedirs(OBJDIR)
+    except:
+        pass
+        
+    try:
+        os.makedirs(BINDIR)
     except:
         pass
 
@@ -643,7 +657,11 @@ try:
     CXXFLAGS = ""
     TESTPREFIX=""
     POSTPREFIX=""
+    BINDIR="bin/"
+    OBJDIR=""
     parse_etc()
+    BINDIR = environ("CAKE_BINDIR", BINDIR)
+    OBJDIR = environ("CAKE_OBJDIR", OBJDIR)
     CC = environ("CAKE_CC", CC)
     LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
     CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
