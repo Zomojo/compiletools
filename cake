@@ -215,11 +215,11 @@ def force_get_dependencies_for(deps_file, source_file, quiet):
     files = text.split(":")[1]
     files = files.replace("\\", " ").replace("\t"," ").replace("\n", " ")
     files = [x for x in files.split(" ") if len(x) > 0]
-    files = list(Set([os.path.normpath(x) for x in files]))
+    files = list(Set([os.path.realpath(x) for x in files]))
     files.sort()
     
-    headers = [os.path.normpath(h) for h in files if h.endswith(".hpp") or h.endswith(".h")]
-    sources = [os.path.normpath(h) for h in files if h.endswith(".cpp")]
+    headers = [os.path.realpath(h) for h in files if h.endswith(".hpp") or h.endswith(".h")]
+    sources = [os.path.realpath(h) for h in files if h.endswith(".cpp")]
     
     # determine ccflags and linkflags
     ccflags = {}
@@ -302,6 +302,9 @@ def get_dependencies_for(source_file, quiet):
 def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet):
     """Given a set of sources already being compiled, inserts the new file."""
     
+    if not new_file.startswith("/"):
+        raise Exception("bad")    
+    
     if new_file in sources:
         return
         
@@ -370,7 +373,8 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet):
     ignored = []
     linkflags = OrderedSet()
     cause = []
-        
+    
+    source = os.path.realpath(source)
     insert_dependencies(sources, ignored, source, linkflags, cause, quiet)
     
     # compile rule for each object
