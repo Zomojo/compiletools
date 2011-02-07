@@ -98,6 +98,8 @@ Options:
     --quiet                Doesn't output progress messages.
     --verbose              Outputs the result of build commands (doesn't run make with -s)
 
+    --bindir               Specifies the directory to contain binary executable outputs. Defaults to 'bin'.
+    --objdir               Specifies the directory to contain object intermediate files. Defaults to 'bin/obj'.
     --generate             Only runs the makefile generation step, does not build.
     --build                Builds the given targets (default).
     --output=<filename>    Overrides the output filename.
@@ -136,6 +138,8 @@ Environment Variables:
     CAKE_LINKFLAGS         Sets the flags used while linking.
     CAKE_TESTPREFIX        Sets the execution prefix used while running unit tests.
     CAKE_POSTPREFIX        Sets the execution prefix used while running post-build commands.
+    CAKE_BINDIR            Sets the directory where all binary files will be created.
+    CAKE_OBJDIR            Sets the directory where all object files will be created.
 
 Environment variables can also be set in /etc/cake, which has the lowest priority when finding
 compilation settings.
@@ -196,13 +200,17 @@ def munge(to_munge):
         return OBJDIR + os.path.realpath(to_munge).replace("/", "@")
 
 
-def force_get_dependencies_for(deps_file, source_file, quiet):
+def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     """Recalculates the dependencies and caches them for a given source file"""
     
     if not quiet:
         print "... " + source_file + " (dependencies)"
     
     cmd = CC + " -MM -MF " + deps_file + ".tmp " + source_file
+    
+    if verbose:
+        print cmd
+    
     status, output = commands.getstatusoutput(cmd)
     if status != 0:
         raise UserException(cmd + "\n" + output)
@@ -257,7 +265,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet):
 
 dependency_cache = {}
 
-def get_dependencies_for(source_file, quiet):
+def get_dependencies_for(source_file, quiet, verbose):
     """Converts a gcc make command into a set of headers and source dependencies"""    
     
     global dependency_cache
@@ -294,12 +302,12 @@ def get_dependencies_for(source_file, quiet):
             return result
         
     # failed, regenerate dependencies
-    result = force_get_dependencies_for(deps_file, source_file, quiet)
+    result = force_get_dependencies_for(deps_file, source_file, quiet, verbose)
     dependency_cache[source_file] = result
     return result
 
 
-def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet):
+def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, verbose):
     """Given a set of sources already being compiled, inserts the new file."""
     
     if not new_file.startswith("/"):
@@ -316,7 +324,7 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet):
         return
 
     # recursive step
-    new_headers, new_sources, newccflags, newlinkflags = get_dependencies_for(new_file, quiet)
+    new_headers, new_sources, newccflags, newlinkflags = get_dependencies_for(new_file, quiet, verbose)
     
     sources[os.path.normpath(new_file)] = (newccflags, cause, new_headers)
     
@@ -328,10 +336,10 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet):
     copy.append(new_file)
     
     for h in new_headers:
-        insert_dependencies(sources, ignored, os.path.splitext(h)[0] + ".cpp", linkflags, copy, quiet)
+        insert_dependencies(sources, ignored, os.path.splitext(h)[0] + ".cpp", linkflags, copy, quiet, verbose)
     
     for s in new_sources:
-        insert_dependencies(sources, ignored, s, linkflags, copy, quiet)
+        insert_dependencies(sources, ignored, s, linkflags, copy, quiet, verbose)
 
 
 def try_set_variant(variant):
@@ -362,7 +370,7 @@ def objectname(source, entry):
 
 
 
-def generate_rules(source, output_name, generate_test, makefilename, quiet):
+def generate_rules(source, output_name, generate_test, makefilename, quiet, verbose):
     """
     Generates a set of make rules for the given source.
     If generate_test is true, also generates a test run rule.
@@ -375,7 +383,7 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet):
     cause = []
     
     source = os.path.realpath(source)
-    insert_dependencies(sources, ignored, source, linkflags, cause, quiet)
+    insert_dependencies(sources, ignored, source, linkflags, cause, quiet, verbose)
     
     # compile rule for each object
     for s in sources:
@@ -442,13 +450,13 @@ def cpus():
     return str(len(t))
 
 
-def do_generate(source_to_output, tests, post_steps, quiet):
+def do_generate(source_to_output, tests, post_steps, quiet, verbose):
     """Generates all needed makefiles"""
 
     all_rules = {}
     for source in source_to_output:
         makefilename = munge(source) + ".Makefile"
-        rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet)
+        rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet, verbose)
         all_rules.update(rules)        
         render_makefile(makefilename, rules)
         
@@ -646,7 +654,7 @@ def main():
             sys.exit(1) 
             
     if generate:        
-        makefilename = do_generate(to_build, tests, post_steps, quiet)
+        makefilename = do_generate(to_build, tests, post_steps, quiet, verbose)
     
     if build:
         do_build(makefilename, verbose)
