@@ -62,7 +62,7 @@ def parse_etc():
     """parses /etc/cake as if it was part of the environment.
     os.environ has higher precedence
     """
-    if os.path.exists("/etc/cake"):
+    if stat("/etc/cake"):
         f = open("/etc/cake")
         lines = f.readlines()
         f.close()
@@ -190,14 +190,22 @@ def extractOption(text, option):
         return None, text
 
 
+realpath_cache = {}
+def realpath(x):
+    global realpath_cache
+    #print "BEGIN ",x
+    if not x in realpath_cache:
+        realpath_cache[x] = os.path.realpath(x)
+    return realpath_cache[x]
+
 def munge(to_munge):
     if isinstance(to_munge, dict):
         if len(to_munge) == 1:
-            return OBJDIR + "@@".join([os.path.realpath(x) for x in to_munge]).replace("/", "@")
+            return OBJDIR + "@@".join([realpath(x) for x in to_munge]).replace("/", "@")
         else:
-            return OBJDIR + md5.md5(str([os.path.realpath(x) for x in to_munge])).hexdigest()
+            return OBJDIR + md5.md5(str([realpath(x) for x in to_munge])).hexdigest()
     else:    
-        return OBJDIR + os.path.realpath(to_munge).replace("/", "@")
+        return OBJDIR + realpath(to_munge).replace("/", "@")
 
 
 def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
@@ -223,11 +231,11 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     files = text.split(":")[1]
     files = files.replace("\\", " ").replace("\t"," ").replace("\n", " ")
     files = [x for x in files.split(" ") if len(x) > 0]
-    files = list(Set([os.path.realpath(x) for x in files]))
+    files = list(Set([realpath(x) for x in files]))
     files.sort()
     
-    headers = [os.path.realpath(h) for h in files if h.endswith(".hpp") or h.endswith(".h")]
-    sources = [os.path.realpath(h) for h in files if h.endswith(".cpp")]
+    headers = [realpath(h) for h in files if h.endswith(".hpp") or h.endswith(".h")]
+    sources = [realpath(h) for h in files if h.endswith(".cpp")]
     
     # determine ccflags and linkflags
     ccflags = {}
@@ -260,8 +268,21 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     f = open(deps_file, "w")
     cPickle.dump((headers, sources, ccflags, linkflags), f)
     f.close()
+    if deps_file in stat_cache:
+        del stat_cache[deps_file]
+    if deps_file in realpath_cache:
+        del realpath_cache[deps_file]
     
     return headers, sources, ccflags, linkflags
+
+stat_cache = {}
+def stat(f):
+    if not f in stat_cache:
+        try:
+            stat_cache[f] = os.stat(f)
+        except OSError:
+            stat_cache[f] = None
+    return stat_cache[f]
 
 dependency_cache = {}
 
@@ -276,8 +297,9 @@ def get_dependencies_for(source_file, quiet, verbose):
     deps_file = munge(source_file) + ".deps"
     
     # try and reuse the existing if possible    
-    if os.path.exists(deps_file):
-        deps_mtime = os.stat(deps_file).st_mtime
+    deps_stat = stat(deps_file)
+    if deps_stat:
+        deps_mtime = deps_stat.st_mtime
         all_good = True
         
         try:
@@ -290,7 +312,7 @@ def get_dependencies_for(source_file, quiet, verbose):
         if all_good:
             for s in headers + [source_file]:
                 try:
-                    if os.stat(s).st_mtime > deps_mtime:
+                    if stat(s).st_mtime > deps_mtime:
                         all_good = False
                         break
                 except: # missing file counts as a miss
@@ -319,14 +341,14 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
     if new_file in ignored:
         return
         
-    if not os.path.exists(new_file):
+    if stat(new_file) is None:
         ignored.append(new_file)
         return
 
     # recursive step
     new_headers, new_sources, newccflags, newlinkflags = get_dependencies_for(new_file, quiet, verbose)
     
-    sources[os.path.normpath(new_file)] = (newccflags, cause, new_headers)
+    sources[realpath(new_file)] = (newccflags, cause, new_headers)
     
     # merge in link options
     for l in newlinkflags:
@@ -360,6 +382,10 @@ def lazily_write(filename, newtext):
         pass        
     if newtext != oldtext:
         f = open(filename, "w")
+        if filename in stat_cache:
+            del stat_cache[filename]
+        if filename in realpath_cache:
+            del realpath_cache[filename]
         f.write(newtext)
         f.close()
 
@@ -382,7 +408,7 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
     linkflags = OrderedSet()
     cause = []
     
-    source = os.path.realpath(source)
+    source = realpath(source)
     insert_dependencies(sources, ignored, source, linkflags, cause, quiet, verbose)
     
     # compile rule for each object
@@ -649,7 +675,7 @@ def main():
             del to_build[c]
             continue
         
-        if not os.path.exists(c):
+        if not stat(c):
             print >> sys.stderr, c + " is not found."
             sys.exit(1) 
             
