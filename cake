@@ -147,11 +147,11 @@ compilation settings.
 
 Example usage:
 
-This command-line generates bin/position-checker and bin/position-tally in release mode.
+This command-line generates bin/prime-factoriser and bin/frobnicator in release mode.
 It also generates several tests into the bin directory and runs them. If they are
 all successful, integration_test.sh is run.
 
-   cake apps/position-checker.cpp apps/position-tally.cpp \\
+   cake apps/prime-factoriser.cpp apps/frobnicator.cpp \\
         --begintests tests/*.cpp --endtests \\
         --beginpost ./integration_test.sh \\
         --variant=release
