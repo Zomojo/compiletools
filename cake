@@ -1,11 +1,10 @@
 #!/usr/bin/python -u
 
 import cPickle
-import md5
+import hashlib
 import sys
 import commands
 import os
-from sets import Set
 
 BINDIR="bin/"
 OBJDIR=""
@@ -203,7 +202,7 @@ def munge(to_munge):
         if len(to_munge) == 1:
             return OBJDIR + "@@".join([realpath(x) for x in to_munge]).replace("/", "@")
         else:
-            return OBJDIR + md5.md5(str([realpath(x) for x in to_munge])).hexdigest()
+            return OBJDIR + hashlib.md5(str([realpath(x) for x in to_munge])).hexdigest()
     else:    
         return OBJDIR + realpath(to_munge).replace("/", "@")
 
@@ -231,7 +230,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     files = text.split(":")[1]
     files = files.replace("\\", " ").replace("\t"," ").replace("\n", " ")
     files = [x for x in files.split(" ") if len(x) > 0]
-    files = list(Set([realpath(x) for x in files]))
+    files = list(set([realpath(x) for x in files]))
     files.sort()
     
     headers = [realpath(h) for h in files if h.endswith(".hpp") or h.endswith(".h")]
@@ -391,7 +390,7 @@ def lazily_write(filename, newtext):
 
 def objectname(source, entry):
     ccflags, cause, headers = entry
-    h = md5.md5(" ".join([c for c in ccflags]) + " " + CXXFLAGS + " " + CC).hexdigest()
+    h = hashlib.md5(" ".join([c for c in ccflags]) + " " + CXXFLAGS + " " + CC).hexdigest()
     return munge(source) + str(len(str(ccflags))) + "-" + h + ".o"
 
 
@@ -497,7 +496,7 @@ def do_generate(source_to_output, tests, post_steps, quiet, verbose):
         post_with_space = POSTPREFIX + " "
     
     for s in post_steps:
-        passed = OBJDIR + md5.md5(s).hexdigest() + ".passed"
+        passed = OBJDIR + hashlib.md5(s).hexdigest() + ".passed"
         rule = passed + " : " + " ".join(previous + [s]) + "\n"
         if not quiet:
             rule += "\t" + "echo ... post " + post_with_space + s        
