@@ -92,7 +92,7 @@ Now, copy this source code into a file called example.cpp:
 #include &lt;pthread.h&gt;
 #include &lt;iostream&gt;
 
-static void pclock(char *msg, clockid_t cid)
+static void pclock(const char *msg, clockid_t cid)
 {
    struct timespec ts;
    printf("%s", msg);
@@ -118,13 +118,23 @@ int main()
 Compile it and run it using this command:
 
 <pre>
-    $ cake example.cpp --verbose && ./bin/example
-    the clock is 0.003
+$ cake example.cpp --verbose && ./bin/example
+... /home/matthew/Cake/a.cpp (dependencies)
+g++ -MM -MF bin/obj/@home@matthew@Cake@a.cpp.deps.tmp /home/matthew/Cake/a.cpp
+... /home/matthew/Cake/a.cpp
+g++   -c  /home/matthew/Cake/a.cpp  -o bin/obj/@home@matthew@Cake@a.cpp2-ada8c8d259075148d77687cbef5c475d.o
+... bin/a
+g++ -o bin/a bin/obj/@home@matthew@Cake@a.cpp2-ada8c8d259075148d77687cbef5c475d.o  -pthread -lrt    
+
+the clock is 0.003
 </pre>
 
+<p>
 Cake automatically included the link flags that you annotated in the source code, so it 
 wasn't necessary to supply them at the command-line. The source code and the build settings
-are kept together, so that the build process becomes trivial.
+are kept together, so that the build process becomes trivial. Object files are named with
+a combination of the original filename, and the md5sum of the compiler arguments used to
+generate them.</p>
 
 
 <h2>Overview</h2>
