@@ -85,35 +85,34 @@ Cake requires practically no dependencies -- only a recent version of python. To
 Now, copy this source code into a file called example.cpp:
 
 <pre>
-    //#LINKFLAGS=-pthread
-    //#LINKFLAGS-lrt    
+//#LINKFLAGS=-pthread
+//#LINKFLAGS=-lrt
 
-    #include &lt;stdio.h&gt;
-    #include &lt;pthread.h&gt;
-    #include &lt;iostream&gt;
+#include &lt;stdio.h&gt;
+#include &lt;pthread.h&gt;
+#include &lt;iostream&gt;
 
-    static void pclock(char *msg, clockid_t cid)
-    {
-       struct timespec ts;
-
-       printf("%s", msg);
-       if (clock_gettime(cid, &ts) == -1)
-           perror("clock_gettime");
-       printf("%4ld.%03ld\n", ts.tv_sec, ts.tv_nsec / 1000000);
-    }
+static void pclock(char *msg, clockid_t cid)
+{
+   struct timespec ts;
+   printf("%s", msg);
+   if (clock_gettime(cid, &ts) == -1)
+       perror("clock_gettime");
+   printf("%4ld.%03ld\n", ts.tv_sec, ts.tv_nsec / 1000000);
+}
     
     
-    int main()
-    {
-        clockid_t cid;
-        pthread_t p = pthread_self();
+int main()
+{
+    clockid_t cid;
+    pthread_t p = pthread_self();
         
-        if (pthread_getcpuclockid(pthread_self(), &cid))
-            perror("getcpuclockid failed");
+    if (pthread_getcpuclockid(pthread_self(), &cid))
+        perror("getcpuclockid failed");
         
-        pclock("the clock is", cid);
-        return 0;
-    }
+    pclock("the clock is", cid);
+    return 0;
+}
 </pre>
 
 Compile it and run it using this command:
