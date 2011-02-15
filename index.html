@@ -46,8 +46,12 @@
     <h1><a href="http://github.com/matthewinrandwick/Cake">cake</a></h1>
 
     <div class="description">
-      Build C++ fast, with practically no configuration.
+      Build C++ fast, with practically no configuration. Cake spiders the source code
+      to determine what implementation files to build, what libraries to
+      link against and what compiler flags to set. Only build what you need, and
+      throw out your Makefiles.
     </div>
+        
     
     <h2>Authors</h2>
 <p>Zomojo Pty, Ltd. - Matthew Herrmann (matthewinrandwick@gmail.com)
@@ -69,17 +73,248 @@
 <h2>Getting Started</h2>
 
 <p>
-To use cake, download the source code:
+Cake requires practically no dependencies -- only a recent version of python. To use it, download the source code, then copy the 'cake' binary into your path. The file etc.cake should be edited with your default preferences for building, then copied into /etc/cake.
 </p>
 
 <pre>
     $ cd &lt;unzipped-location&gt;
-    $ sudo cp cake /usr/bin/cake
-    $ sudo cp cake /etc/cake
+    $ sudo cp cake ~/bin/cake
+    $ sudo cp etc.cake /etc/cake
 </pre>
 
-  </div>
+Now, copy this source code into a file called example.cpp:
 
+<pre>
+    //#LINKFLAGS=-pthread
+    //#LINKFLAGS-lrt    
+
+    #include &lt;stdio.h&gt;
+    #include &lt;pthread.h&gt;
+    #include &lt;iostream&gt;
+
+    static void pclock(char *msg, clockid_t cid)
+    {
+       struct timespec ts;
+
+       printf("%s", msg);
+       if (clock_gettime(cid, &ts) == -1)
+           perror("clock_gettime");
+       printf("%4ld.%03ld\n", ts.tv_sec, ts.tv_nsec / 1000000);
+    }
+    
+    
+    int main()
+    {
+        clockid_t cid;
+        pthread_t p = pthread_self();
+        
+        if (pthread_getcpuclockid(pthread_self(), &cid))
+            perror("getcpuclockid failed");
+        
+        pclock("the clock is", cid);
+        return 0;
+    }
+</pre>
+
+Compile it and run it using this command:
+
+<pre>
+    $ cake example.cpp --verbose && ./bin/example
+    the clock is 0.003
+</pre>
+
+Cake automatically included the link flags that you annotated in the source code, so it 
+wasn't necessary to supply them at the command-line. The source code and the build settings
+are kept together, so that the build process becomes trivial.
+
+
+<h2>Overview</h2>
+
+<p>
+Cake is a C++ build tool that requires almost no configuration. To build
+a C++ program, type "cake filename.cpp". Cake uses the header includes to
+determine what implementation (cpp) files are required.
+</p>
+
+<p>
+
+Cake works off the same principles as Ruby on Rails. It will make your life
+easy if you don't arbitrarily name things. The main rules are:
+
+</p>
+<p>
+
+<ol>
+
+   <li>Cake only builds C and C++. Everything can be done just fine with
+   other tools, so there's no point reinventing them. Anyway, it's easy to
+   embed cake into other toolchains, see the last section.</li>
+
+   <li>All binaries end up in the bin directory, with the same base name as
+   their source filename. You can override this at the command-line, but it's
+   against the spirit of the tool.</li>
+
+   <li>The implementation file for point.hpp should be called point.cpp. This
+   is so cake can compile it and recursively hunt down its dependencies.</li>
+
+   <li>If a header or implementation file will not work without being linked
+   with a certain flag, add a //#LINKFLAGS=myflag directly to the source code.</li>
+
+   <li>Likewise, if a special compiler option is needed, use //#CCFLAGS=myflag.</li>
+
+   <li>Minimise the use of "-I" include flags. They make it hard not only
+   for cake to generate dependencies, but also autocomplete tools like Eclipse and
+   ctags. You can avoid -I flags by structuring your code in the same way you
+   refer to paths in your source code. Cake allows -I options, but it's not
+   as pretty.
+   </li>
+
+   <li>Only gcc, and linux, is supported. Other tools could be added now,
+   but it's not what I use.</li>
+
+</ol>
+
+</p>
+<p>
+Cake works off a "pull" philosophy of building, unlike the "push" model
+of most build processes. Often, there is the monolithic build script that
+rebuilds everything. Users iterate over changing a file, relinking everything
+and then rerunning their binary. A hierarchy of libraries is built up and
+then linked in to the final executables. All of this takes a lot of time,
+particularly for C++.
+
+</p>
+<p>
+
+In cake, you only pull in what is strictly necessary to what you need to run
+right now. Say, you are testing a particular tool in a large project, with
+a large base of 2000 library files for string handling, sockets, etc. There
+is simply no make file. You might want to create a build.sh for regression
+testing, but it's not essential.
+
+</p>
+<p>
+
+The basic workflow is to simply type:
+
+<pre>
+   cake app.cpp && ./bin/app
+</pre>
+
+</p>
+<p>
+
+Only the library cpp files that are needed, directly, or indictly to create
+./bin/app are actually compiled. If you don't #include anything that refers
+to a library file, you don't pay for it. Also, only the link options that
+are strictly needed to generate the app are included. Its possible to do in
+make files, but such fine-level granularity is rarely set up in practice,
+because its too error-prone to do manually, or with recursive make goodness.
+
+</p>
+
+<h2>How it Works</h2>
+
+<p>
+Cake uses "gcc -MM -MF" to generate the header dependencies for the main.cpp
+file you specify at the command line. For each header file, it looks for
+an underlying implementation (cpp) file with the same name, and adds it to
+the build. Cake also reads the first 4k of each file for special comments
+that indicate needed link and compile flags.  Cake recurses through the
+dependencies of the cpp file, and uses this spidering to generate complete
+dependency information for the application. It then lazily generates a
+makefile, and finally calls make.
+
+</p>
+
+<h2>Magic Comments</h2>
+
+<p>
+
+Cake works very differently to other build systems, which specify a hierarchy
+of link flags and compile options, because cake ties the compiler flags
+directly to the source code. If you have compress.hpp that requires "-lzip"
+on the link line, add the following comment in the first 4K of the header file:
+
+<pre>
+    //#LINKFLAGS=-lzip
+</pre>
+
+</p>
+<p>
+
+Whenever the header is included (either directly or indirectly), the -lzip
+will be automatically added to the link step. If you stop using the header,
+for a particular executable, cake will figure that out and not link against it.
+
+</p>
+<p>
+
+If you want to compile a cpp file with a particular optimization enabled,
+add, say:
+
+<pre>
+    //#CCFLAGS=-fstrict-aliasing
+</pre>
+
+Because the code and build flags are defined so close to each other, its
+much easier to tweak the compilation locally.
+
+</p>
+
+<h2>Performance</h2>
+
+<p>
+Because cake internally generates a makefile to build the C++ file, cake is
+about as fast as a handrolled Makefile that uses the same lazily generated
+dependencies. A typical project takes 0.04 seconds to build if nothing is
+out of date, versus 2 seconds for, say, Boost.Build.
+
+</p>
+<p>
+
+Cake also eliminates the redundant generation of static archive files that
+a more hierarchical build process would generate as intermediaries, saving
+the cost of running 'ar'.
+
+</p>
+<p>
+Cake doesn't build all cpp files that you have checked out, only those
+strictly needed to build your particular binary, so you only pay for what
+you use. This difference alone should see a large improvement on most
+projects, especially for incremental rebuilds.
+
+</p>
+
+
+<h2>Integrating Cake with a Makefile</h2>
+
+To wrap cake in a Makefile, use dummy input targets that force a rebuild
+every time. Cake is so fast at incremental rebuilds that this is fine,
+it's just like doing a recursive make. This example handles 'make all'
+'make test' 'make clean' etc.
+
+<pre>
+all: FORCE
+        cake test/*.cpp
+
+release: FORCE
+        cake test/*.cpp --variant=release
+
+debug: FORCE
+        cake test/*.cpp --variant=debug
+
+test: FORCE
+        cake --begintests test/*.cpp --endtests
+
+clean: FORCE
+        rm -rf bin
+
+FORCE:
+</pre>
+
+
+</div>
   
 </body>
 </html>
