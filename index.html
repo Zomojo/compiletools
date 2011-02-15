@@ -296,7 +296,7 @@ projects, especially for incremental rebuilds.
 </p>
 
 
-<h2>Integrating Cake with a Makefile</h2>
+<h2>Using Cake with Makefiles</h2>
 
 To wrap cake in a Makefile, use dummy input targets that force a rebuild
 every time. Cake is so fast at incremental rebuilds that this is fine,
@@ -320,6 +320,190 @@ clean: FORCE
         rm -rf bin
 
 FORCE:
+</pre>
+
+
+<h2>Cake configuration</h2>
+
+<p>
+Cake requires <i>almost</i> no configuration. However, it is still
+useful to have some shortcut build templates such as 'release',
+'profile' etc.
+</p>
+
+<p>
+To configure these, cake looks for the following, in order of increasing precedence:
+
+<ul>
+    <li>/etc/cake</li>
+    <li>CAKE_* variables</li>
+    <li>command line options to cake</li>
+</ul>
+
+An example /etc/cake file looks as follows:
+
+<pre>
+CAKE_CC="g++ -I ."
+CAKE_CXXFLAGS="-fPIC -g -Wall"
+CAKE_LINKFLAGS="-fPIC -Wall -Werror"
+CAKE_TESTPREFIX="valgrind --quiet --error-exitcode=1"
+CAKE_POSTPREFIX=""
+</pre>
+
+<p>
+CAKE_CC must be set to a value that can be used to run <tt>gcc -MM -MF</tt> over the
+input source files to generate dependencies. If you have more complex dependencies, you
+will need to configure these per-project, and run cake through a script, which is
+against the spirit of things.
+</p>
+
+<p>
+CAKE_CXXFLAGS lists the flags appended to each compilation job. The value in /etc/cake
+is completely overridden by the environment variable, which is completely overridden by
+the command-line argument --CXXFLAGS=. Likewise, CAKE_LINKFLAGS sets the default options used
+for linking.
+</p>
+
+<p>
+CAKE_TESTPREFIX specifies a command prefix to place in front of unit test runs. This should
+ideally be a tool like valgrind, gdb or purify that can be configured to execute the app and
+return a non-zero exit code on any failure.
+</p>
+
+<p>
+CAKE_POSTPREFIX specifies a command prefix to place in front of post-build scripts. This could
+be a command that fails after a certain timeout has elapsed, to prevent any locked-up regressions
+from blocking the entire build.
+</p>
+
+<h2>Build variants</h2>
+
+Cake build variants are used by specifying the variant name at the command-line as follows:
+
+<pre>
+    $ cake --variant=release a.cpp && ./bin/a
+</pre>
+
+<p>
+To configure a variant, create environment variables called CAKE_MYVARIANT_CC,
+CAKE_MYVARIANT_CXXFLAGS and CAKE_MYVARIANT_LINKFLAGS. You can also specify them in /etc/cake.
+</p>
+
+<p>
+The new build variant can then be used by using the name in all lowercase:
+
+<pre>
+    $ cake --variant=myvariant a.cpp && ./bin/a
+</pre>
+</p>
+
+This technique is the recommended way to change the meaning of variants such as release, debug
+and profile.
+
+<h2>Unit Tests</h2>
+
+<p>
+Cake integrates with unit tests in a fairly simple (and perhaps simplistic) way.
+</p>
+
+Cake allows you to specify multiple build targets on each line,
+so the following is valid and useful:
+
+<pre>
+     $ cake utilities/*.cpp    # builds all apps and places them under bin/
+</pre>
+
+Unit tests are executables that are generated, that create an additional
+build step. They must run and return an exit code of 0 as part of the build
+process. To specify that executables are unit tests, put them in a --begintests/
+--endtests block:
+
+<pre>
+     $ cake utilities/*.cpp --begintests tests/*.cpp --endtests
+</pre>
+
+If any of the tests fail, the build fails. You can also omit the --endtests for
+faster typing:
+
+<pre>
+     $ cake --begintests tests/*.cpp
+</pre>
+
+If the <tt>CAKE_TESTPREFIX</tt> variable is set, you can automatically check
+all unit tests with a code purifying tool. For example:
+
+<pre>
+export CAKE_TESTPREFIX="valgrind --quiet --error-exitcode=1"
+</pre>
+
+will cause all unit tests to only pass if they run through valgrind with no
+memory errors.
+
+
+<h2>Post-Build Steps</h2>
+
+<p>
+You may have a number of steps that should be performed after every
+successful build. The post-build tests will only run after every binary has been
+produced, and every unit test has passed. They only run whenever a dependency
+of one of the targets has been touched.
+</p>
+<p>
+Post-build steps are typically shell scripts that test out command-line utilities, 
+or tarball up code so it can be uploaded somewhere, etc. Cake does not try to
+compile them, which is why a different keyword is needed to distinguish them
+from unit tests.
+</p>
+
+Post steps are specified like this:
+
+<pre>
+     $ cake apps/*.cpp --beginpost ./regression-suite.sh ./generate-tarball.sh --endpost
+</pre>
+
+As you might infer from the example, post steps run strictly in the order specified
+on the command-line, so that a tarball is only generated if the regression suite passes.
+
+
+<h2>Putting it all together - a typical build setup</h2>
+
+<p>
+For most simple projects, a build.sh script that looks like the
+following is quite useful. You can simply add more cpp to 
+the apps directory to generate more tools from the project,
+or add test scripts to the regression directory to improve
+test coverage.
+</p>
+
+<p>
+Code generation steps can be added at the beginning of
+the build.sh, before cake runs.
+</p>
+
+<pre>
+#!/bin/bash
+
+set -e
+
+cake apps/*.cpp \
+    --begintests tests/*.cpp --endtests \
+    --beginpost regression/test*.sh --endpost \
+    "$@"
+
+</pre>
+
+<p>The special <tt>"$@"</tt> marker is the recommended way
+of forwarding arguments to an application. You can then
+run the build script like this:</p>
+
+<pre>
+    $ ./build.sh --variant=release
+</pre>
+
+or:
+
+<pre>
+    $ ./build.sh --variant=release --append-CXXFLAGS=-DSPECIALMODE
 </pre>
 
 
