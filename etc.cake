@@ -1,4 +1,4 @@
-CAKE_CC="cake-g++-quiet -I ."
+CAKE_CC="g++ -I ."
 
 CAKE_CXXFLAGS="-fPIC -g -Wall"
 CAKE_LINKFLAGS="-fPIC -Wall -Werror"
