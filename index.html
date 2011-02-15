@@ -3,30 +3,31 @@
 <head>
   <meta charset='utf-8'>
 
-  <title>matthewinrandwick/Cake @ GitHub</title>
+  <title>cake -- Alternative C++ build system to CMake, SCons and Boost.Build</title>
 
   <style type="text/css">
-    body {
+    body p {
       margin-top: 1.0em;
-      background-color: #1557b9;
+      background-color: #ffffff;
       font-family: "Helvetica,Arial,FreeSans";
-      color: #ffffff;
+      color: #000;
     }
     #container {
       margin: 0 auto;
       width: 700px;
     }
-    h1 { font-size: 3.8em; color: #eaa846; margin-bottom: 3px; }
-    h1 .small { font-size: 0.4em; }
-    h1 a { text-decoration: none }
-    h2 { font-size: 1.5em; color: #eaa846; }
-    h3 { text-align: center; color: #eaa846; }
-    a { color: #eaa846; }
-    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;}
+    h1 { font-size: 3.8em; color: #111111; margin-bottom: 3px; font-family:"Helvetica,Arial,FreeSans"; }
+    h1 .small { font-size: 0.4em; color: #111111; font-family:"Helvetica,Arial,FreeSans"; }
+    h1 a { text-decoration: none; font-family:"Helvetica,Arial,FreeSans"; }
+    h2 { font-size: 1.5em; color: #111111; font-family:"Helvetica,Arial,FreeSans"; }
+    h3 { text-align: center; color: #111111; font-family:"Helvetica,Arial,FreeSans"; }
+    a { color: #111111; }
+    .description { font-size: 1.2em; margin-bottom: 30px; margin-top: 30px; font-style: italic;
+            color:#000; font-family:"Helvetica,Arial,FreeSans" }
     .download { float: right; }
-    pre { background: #000; color: #fff; padding: 15px;}
+    pre { background: #ddd; color: #000; padding: 15px;}
     hr { border: 0; width: 80%; border-bottom: 1px solid #aaa}
-    .footer { text-align:center; padding-top:30px; font-style: italic; }
+    .footer { text-align:center; padding-top:30px; font-style: italic; color:#000; }
   </style>
 </head>
 
@@ -42,17 +43,16 @@
         <img border="0" width="90" src="http://github.com/images/modules/download/tar.png"></a>
     </div>
 
-    <h1><a href="http://github.com/matthewinrandwick/Cake">Cake</a>
-      <span class="small">by <a href="http://github.com/matthewinrandwick">matthewinrandwick</a></span></h1>
+    <h1><a href="http://github.com/matthewinrandwick/Cake">cake</a></h1>
 
     <div class="description">
-      Build C++ fast, with practically no configuration
+      Build C++ fast, with practically no configuration.
     </div>
-
+    
     <h2>Authors</h2>
-<p>Matthew Herrmann (matthewinrandwick@gmail.com)<br/><br/>      </p>
-<h2>Contact</h2>
-<p> (matthewinrandwick@gmail.com)<br/>      </p>
+<p>Zomojo Pty, Ltd. - Matthew Herrmann (matthewinrandwick@gmail.com)
+<br/>
+<br/>      </p>
 
 
     <h2>Download</h2>
@@ -65,10 +65,18 @@
       by running:
       <pre>$ git clone git://github.com/matthewinrandwick/Cake</pre>
     </p>
+    
+<h2>Getting Started</h2>
 
-    <div class="footer">
-      get the source code on GitHub : <a href="http://github.com/matthewinrandwick/Cake">matthewinrandwick/Cake</a>
-    </div>
+<p>
+To use cake, download the source code:
+</p>
+
+<pre>
+    $ cd &lt;unzipped-location&gt;
+    $ sudo cp cake /usr/bin/cake
+    $ sudo cp cake /etc/cake
+</pre>
 
   </div>
 
