@@ -114,7 +114,7 @@ incremental rebuilds.
 Installation
 
 Cake is small and has minimal dependencies. To install, simply copy 'cake'
-into your bin directory, and rename etc.cake to /etc/cake, configuring it
+into your bin directory, and copy cake.conf to /etc/cake.conf, configuring it
 with your preferences
 
 

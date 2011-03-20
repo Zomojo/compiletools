@@ -58,11 +58,11 @@ def environ(variable, default):
             return os.environ[variable]
 
 def parse_etc():
-    """parses /etc/cake as if it was part of the environment.
+    """parses /etc/cake.conf as if it was part of the environment.
     os.environ has higher precedence
     """
-    if stat("/etc/cake"):
-        f = open("/etc/cake")
+    if stat("/etc/cake.conf"):
+        f = open("/etc/cake.conf")
         lines = f.readlines()
         f.close()
         
@@ -140,7 +140,7 @@ Environment Variables:
     CAKE_BINDIR            Sets the directory where all binary files will be created.
     CAKE_OBJDIR            Sets the directory where all object files will be created.
 
-Environment variables can also be set in /etc/cake, which has the lowest priority when finding
+Environment variables can also be set in /etc/cake.conf, which has the lowest priority when finding
 compilation settings.
 
 
