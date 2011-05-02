@@ -23,7 +23,7 @@ easy if you don't arbitrarily name things. The main rules are:
    3. If a header or implementation file will not work without being linked
    with a certain flag, add a //#LINKFLAGS=myflag directly to the source code.
 
-   4. Likewise, if a special compiler option is needed, use //#CCFLAGS=myflag.
+   4. Likewise, if a special compiler option is needed, use //#CXXFLAGS=myflag.
 
    5. Minimise the use of "-I" include flags. They make it hard not only
    for cake to generate dependencies, but also autocomplete tools like Eclipse.
@@ -88,7 +88,7 @@ for a particular executable, cake will figure that out and not link against it.
 If you want to compile a cpp file with a particular optimization enabled,
 add, say:
 
-    //#CCFLAGS=-fstrict-aliasing
+    //#CXXFLAGS=-fstrict-aliasing
 
 Because the code and build flags are defined so close to each other, its
 much easier to tweak the compilation locally.

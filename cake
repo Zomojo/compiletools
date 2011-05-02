@@ -132,7 +132,7 @@ Source annotations (embed in your hpp and cpp files as magic comments):
              
 Environment Variables:
 
-    CAKE_CCFLAGS           Sets the compiler command.
+    CAKE_CC                Sets the compiler command.
     CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
     CAKE_LINKFLAGS         Sets the flags used while linking.
     CAKE_TESTPREFIX        Sets the execution prefix used while running unit tests.
