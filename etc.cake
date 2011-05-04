@@ -59,7 +59,7 @@ CAKE_GCC44_COVERAGE_LINKFLAGS="$CAKE_COVERAGE_LINKFLAGS"
 CAKE_GCC44_COVERAGE_TESTPREFIX="$CAKE_COVERAGE_TESTPREFIX"
 CAKE_GCC44_COVERAGE_POSTPREFIX="timeout 60"
 
-CAKE_GCC46_CC="ccache /opt/gcc46/bin/g++46 -std=gnu++0x -fpermissive -I . -isystem /usr/include/boost-1.42.0/ -L/usr/lib64/boost-1.42.0/ -lboost_system -L/opt/gcc4.6/lib -L/opt/gcc4.6/lib64 -Wl,-R/opt/gcc4.6/lib64 -Wl,-R/opt/gcc4.6/lib -Wl,-R/usr/lib64/boost-1.42.0/"
+CAKE_GCC46_CC="ccache /opt/scripts/g++46 -I . -isystem /usr/include/boost-1.42.0/ -L/usr/lib64/boost-1.42.0/ -lboost_system -Wl,-R/usr/lib64/boost-1.42.0"
 CAKE_GCC46_CXXFLAGS="$CAKE_CXXFLAGS"
 CAKE_GCC46_LINKFLAGS="$CAKE_LINKFLAGS "
 CAKE_GCC46_TESTPREFIX="$CAKE_DEBUG_TESTPREFIX"
