@@ -198,6 +198,7 @@ def realpath(x):
         realpath_cache[x] = os.path.realpath(x)
     return realpath_cache[x]
 
+
 def munge(to_munge):
     if isinstance(to_munge, dict):
         if len(to_munge) == 1:
@@ -275,6 +276,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     
     return headers, sources, ccflags, linkflags
 
+
 stat_cache = {}
 def stat(f):
     if not f in stat_cache:
@@ -285,6 +287,7 @@ def stat(f):
     return stat_cache[f]
 
 dependency_cache = {}
+
 
 def get_dependencies_for(source_file, quiet, verbose):
     """Converts a gcc make command into a set of headers and source dependencies"""    
@@ -327,6 +330,11 @@ def get_dependencies_for(source_file, quiet, verbose):
     result = force_get_dependencies_for(deps_file, source_file, quiet, verbose)
     dependency_cache[source_file] = result
     return result
+
+
+def get_preprocessed_start(source_file):
+	"""Preprocess start of file before looking for compiler options"""
+	return ""
 
 
 def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, verbose):
@@ -372,6 +380,7 @@ def try_set_variant(variant):
     TESTPREFIX = environ("CAKE_" + variant.upper() + "_TESTPREFIX", None)
     POSTPREFIX = environ("CAKE_" + variant.upper() + "_POSTPREFIX", None)
 
+
 def lazily_write(filename, newtext):
     oldtext = ""
     try:
@@ -389,10 +398,24 @@ def lazily_write(filename, newtext):
         f.write(newtext)
         f.close()
 
+
+ignore_option_mash = [ '-fprofile-generate', '-fprofile-use' ]
 def objectname(source, entry):
     ccflags, cause, headers = entry
-    h = md5.md5(" ".join([c for c in ccflags]) + " " + CXXFLAGS + " " + CC).hexdigest()
-    return munge(source) + str(len(str(ccflags))) + "-" + h + ".o"
+    mash_name = "".join(ccflags) + " " + CXXFLAGS + " " + CC
+    o = mash_name.split();
+    o.sort()
+    mash_inc = ""
+        
+    for s in o:
+		if not s in ignore_option_mash:
+			mash_inc += s
+		else:
+			mash_inc += 'ignore'
+    
+    print mash_inc
+    h = md5.md5( mash_inc ).hexdigest()
+    return munge(source) + str(len(str(mash_inc))) + "-" + h + ".o"
 
 
 
@@ -488,7 +511,6 @@ def do_generate(source_to_output, tests, post_steps, quiet, verbose):
         
     combined_filename = munge(source_to_output) + ".combined.Makefile"
 
-
     all_previous = [r for r in all_rules]
     previous = all_previous
     
@@ -514,10 +536,9 @@ def do_build(makefilename, verbose):
     if result != 0:
         sys.exit(1)
 
+
 def do_run(output, args):
     os.execvp(output, [output] + args)
-
-
 
 
 def main():
@@ -529,7 +550,6 @@ def main():
         
     # parse arguments
     args = sys.argv[1:]
-    cppfile = None
     appargs = []
     nextOutput = None
     
@@ -542,117 +562,119 @@ def main():
     inPost = False
     tests = []
     post_steps = []
-    append_cxxflags = []
+    append_cxxflags = ''
     
     for a in args:        
-        if cppfile is None:            
-            if a.startswith("--CC="):
-                CC = a[a.index("=")+1:]
-                continue
-                            
-            if a.startswith("--variant="):
-                variant = a[a.index("=")+1:]      
-                try_set_variant(variant)
-                continue
-                
-            if a.startswith("--verbose"):
-                verbose = True
-                continue
-                
-            if a.startswith("--bindir="):
-                BINDIR = a[a.index("=")+1:]
-                if not BINDIR.endswith("/"):
-                    BINDIR = BINDIR + "/"
-                continue
-                
-            if a.startswith("--objdir="):
-                OBJDIR = a[a.index("=")+1:]
-                if not OBJDIR.endswith("/"):
-                    OBJDIR = OBJDIR + "/"
-                continue
-                
-            if a.startswith("--quiet"):
-                quiet = True
-                continue
-                
-            if a == "--generate":
-                generate = True
-                build = False
-                continue
-            
-            if a == "--build":
-                generate = True
-                build = True
-                continue                
-            
-            if a.startswith("--LINKFLAGS="):
-                LINKFLAGS = a[a.index("=")+1:]
-                continue
-                
-            if a.startswith("--TESTPREFIX="):
-                TESTPREFIX = a[a.index("=")+1:]
-                continue
-            
-            if a.startswith("--POSTPREFIX="):
-                POSTPREFIX = a[a.index("=")+1:]
-                continue
-                            
-            if a.startswith("--append-CXXFLAGS="):
-                append_cxxflags = a[a.index("=")+1:]
-                continue
-            
-            if a.startswith("--CXXFLAGS="):
-                CXXFLAGS = a[a.index("=")+1:]
-                continue
-            
-            if a == "--beginpost": 
-                if inTests:
-                    usage("--beginpost cannot occur inside a --begintests block")
-                inPost = True
-                continue
-            
-            if a == "--endpost":
-                inPost = False
-                continue
-                
-            if a == "--begintests": 
-                if inPost:
-                    usage("--begintests cannot occur inside a --beginpost block")
-                inTests = True
-                continue
-                
-            if a == "--endtests":
-                if not inTests:
-                    usage("--endtests can only follow --begintests")
-                inTests = False
-                continue
+		if a.startswith("--CC="):
+			CC = a[a.index("=")+1:]
+			continue
+						
+		if a.startswith("--variant="):
+			variant = a[a.index("=")+1:]      
+			try_set_variant(variant)
+			continue
+			
+		if a.startswith("--verbose"):
+			verbose = True
+			continue
+			
+		if a.startswith("--bindir="):
+			BINDIR = a[a.index("=")+1:]
+			if not BINDIR.endswith("/"):
+				BINDIR = BINDIR + "/"
+			continue
+			
+		if a.startswith("--objdir="):
+			OBJDIR = a[a.index("=")+1:]
+			if not OBJDIR.endswith("/"):
+				OBJDIR = OBJDIR + "/"
+			continue
+			
+		if a.startswith("--quiet"):
+			quiet = True
+			continue
+			
+		if a == "--generate":
+			generate = True
+			build = False
+			continue
+		
+		if a == "--build":
+			generate = True
+			build = True
+			continue                
+		
+		if a.startswith("--LINKFLAGS="):
+			LINKFLAGS = a[a.index("=")+1:]
+			continue
+			
+		if a.startswith("--TESTPREFIX="):
+			TESTPREFIX = a[a.index("=")+1:]
+			continue
+		
+		if a.startswith("--POSTPREFIX="):
+			POSTPREFIX = a[a.index("=")+1:]
+			continue
+						
+		if a.startswith("--append-CXXFLAGS="):
+			append_cxxflags += " "
+			append_cxxflags += a[a.index("=")+1:]
+			continue
+		
+		if a.startswith("--CXXFLAGS="):
+			CXXFLAGS += " " + a[a.index("=")+1:]
+			continue
+		
+		if a == "--beginpost": 
+			if inTests:
+				usage("--beginpost cannot occur inside a --begintests block")
+			inPost = True
+			continue
+		
+		if a == "--endpost":
+			inPost = False
+			continue
+			
+		if a == "--begintests": 
+			if inPost:
+				usage("--begintests cannot occur inside a --beginpost block")
+			inTests = True
+			continue
+			
+		if a == "--endtests":
+			if not inTests:
+				usage("--endtests can only follow --begintests")
+			inTests = False
+			continue
 
-            if a.startswith("--output="):
-                nextOutput = a[a.index("=")+1:]
-                continue
-            
-            if a == "--help":
-                usage()
-            
-            if a.startswith("--"):
-                usage("Invalid option " + a)
-                                
-            if nextOutput is None:
-                nextOutput = os.path.splitext(BINDIR + os.path.split(a)[1])[0]
+		if a.startswith("--output="):
+			nextOutput = a[a.index("=")+1:]
+			continue
+		
+		if a == "--help":
+			usage()
+		
+		if a.startswith("--"):
+			usage("Invalid option " + a)
+							
+		if nextOutput is None:
+			nextOutput = os.path.splitext(BINDIR + os.path.split(a)[1])[0]
 
-            if inPost:
-                post_steps.append(a)
-            else:
-                to_build[a] = nextOutput
-                if inTests:
-                    tests.append(nextOutput)
-            nextOutput = None
+		if inPost:
+			post_steps.append(a)
+		else:
+			to_build[a] = nextOutput
+			if inTests:
+				tests.append(nextOutput)
+		nextOutput = None
     
     # default objdir
     if OBJDIR == "":
         OBJDIR = BINDIR + "obj/"
     
-    # compiler takes extra options
+    # compiler takes extra options, seems counter-intuitive to put into CC
+    # rather than CXXFLAGS, but this allows options like -fprofile-generate to 
+    # work
     if len(append_cxxflags) > 0:
         CC = CC + " " + append_cxxflags
         
