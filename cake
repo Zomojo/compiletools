@@ -258,8 +258,6 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     explicit_glob_cxx = "//#CXXFLAGS="
     explicit_glob_link = "//#LINKFLAGS="
     
-    print "checking '" + explicit_link + "'"
-    
     for h in headers + [source_file]:
         path = os.path.split(h)[0]   
         f = open(h)
