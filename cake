@@ -269,25 +269,26 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
         found = False
         
         # first check for variant specific flags
-        while True:
-            result, text = extractOption(text, explicit_cxx)
-            if result is None:
-                break
-            else:
-                if debug:
-                    print "explicit " + explicit_cxx + " = '" + result + "' for " + h
-                result = result.replace("${path}", path)
-                ccflags[result] = True
-                found = True
-        while True:
-            result, text = extractOption(text, explicit_link)
-            if result is None:
-                break
-            else:
-                if debug:
-                    print "explicit " + explicit_link + " = '" + result + "' for " + h
-                linkflags.insert(result.replace("${path}", path))
-                found = True
+        if len(CAKE_ID) > 0:
+            while True:
+                result, text = extractOption(text, explicit_cxx)
+                if result is None:
+                    break
+                else:
+                    if debug:
+                        print "explicit " + explicit_cxx + " = '" + result + "' for " + h
+                    result = result.replace("${path}", path)
+                    ccflags[result] = True
+                    found = True
+            while True:
+                result, text = extractOption(text, explicit_link)
+                if result is None:
+                    break
+                else:
+                    if debug:
+                        print "explicit " + explicit_link + " = '" + result + "' for " + h
+                    linkflags.insert(result.replace("${path}", path))
+                    found = True
                 
         # if none, then check globals
         if not found:
