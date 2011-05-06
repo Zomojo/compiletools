@@ -9,6 +9,8 @@ from sets import Set
 
 BINDIR="bin/"
 OBJDIR=""
+verbose = False
+debug = False
 
 class OrderedSet:
     """A set that preserves the order of insertion"""
@@ -97,6 +99,7 @@ Options:
     --help                 Shows this message.
     --quiet                Doesn't output progress messages.
     --verbose              Outputs the result of build commands (doesn't run make with -s)
+    --cake-debug           Output extra cake specific info.
 
     --bindir               Specifies the directory to contain binary executable outputs. Defaults to 'bin'.
     --objdir               Specifies the directory to contain object intermediate files. Defaults to 'bin/obj'.
@@ -110,7 +113,9 @@ Options:
     --CXXFLAGS=<flags>     Sets the compilation flags for all cpp files in the build.
     --TESTPREFIX=<cmd>     Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"
     --POSTPREFIX=<cmd>     Runs post execution commands with the given prefix, eg. "timeout 60"
-    --append-CXXFLAGS=...  Appends the given text to the compiler commands. Use for adding search paths etc.
+    --FLAGPREFIX=<id>      Sets the prefix to the embedded source annotations
+    --append-CCFLAGS=...   Appends the given text to the compiler commands. Use for adding search paths etc.
+    --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. Use for adding search paths etc.
     --LINKFLAGS=<flags>    Sets the flags used while linking.
     --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.
     
@@ -127,15 +132,19 @@ Options:
 
 Source annotations (embed in your hpp and cpp files as magic comments):
 
-     //#CXXFLAGS=<flags>   Appends the given options to the compile step.
-     //#LINKFLAGS=<flags>  Appends the given options to the link step
-
+     //#{flag prefix}CXXFLAGS=<flags>   Appends the given options to the compile step.
+     //#{flag prefix}LINKFLAGS=<flags>  Appends the given options to the link step
+     
+     If no variant specific annotations are found, then the global variants are also
+     searched. This allows default behaviour to be specified, while allowing
+     for a particular variant as well.
              
 Environment Variables:
 
     CAKE_CCFLAGS           Sets the compiler command.
     CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
     CAKE_LINKFLAGS         Sets the flags used while linking.
+    CAKE_FLAGPREFIX        Sets the prefix to the embedded source annotations.
     CAKE_TESTPREFIX        Sets the execution prefix used while running unit tests.
     CAKE_POSTPREFIX        Sets the execution prefix used while running post-build commands.
     CAKE_BINDIR            Sets the directory where all binary files will be created.
@@ -212,6 +221,8 @@ def munge(to_munge):
 def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     """Recalculates the dependencies and caches them for a given source file"""
     
+    global PREFLAG
+    
     if not quiet:
         print "... " + source_file + " (dependencies)"
     
@@ -242,26 +253,62 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     ccflags = {}
     linkflags = OrderedSet()
     
+    explicit_cxx = "//#" + PREFLAG + "CXXFLAGS="
+    explicit_link = "//#" + PREFLAG + "LINKFLAGS="
+    explicit_glob_cxx = "//#CXXFLAGS="
+    explicit_glob_link = "//#LINKFLAGS="
+    
     for h in headers + [source_file]:
-        path = os.path.split(h)[0]    
+        path = os.path.split(h)[0]   
         f = open(h)
-        text = f.read(1024)        
-                
+        
+        # reading and handling as one string is slightly faster then
+        # handling a list of strings
+        text = f.read(2048)
+        
+        found = False
+        
+        # first check for variant specific flags
         while True:
-            result, text = extractOption(text, "//#CXXFLAGS=")
+            result, text = extractOption(text, explicit_cxx)
             if result is None:
                 break
             else:
+                if debug:
+                    print "explicit " + explicit_cxx + " = '" + result + "' for " + h
                 result = result.replace("${path}", path)
                 ccflags[result] = True
+                found = True
         while True:
-            result, text = extractOption(text, "//#LINKFLAGS=")
+            result, text = extractOption(text, explicit_link)
             if result is None:
                 break
             else:
+                if debug:
+                    print "explicit " + explicit_link + " = '" + result + "' for " + h
                 linkflags.insert(result.replace("${path}", path))
+                found = True
                 
-            
+        # if none, then check globals
+        if not found:
+            while True:
+                result, text = extractOption(text, explicit_glob_cxx)
+                if result is None:
+                    break
+                else:
+                    if debug:
+                        print "explicit " + explicit_glob_cxx + " = '" + result + "' for " + h
+                    result = result.replace("${path}", path)
+                    ccflags[result] = True
+            while True:
+                result, text = extractOption(text, explicit_glob_link)
+                if result is None:
+                    break
+                else:
+                    if debug:
+                        print "explicit " + explicit_glob_link + " = '" + result + "' for " + h
+                    linkflags.insert(result.replace("${path}", path))
+                
         f.close()
         pass
 
@@ -332,11 +379,6 @@ def get_dependencies_for(source_file, quiet, verbose):
     return result
 
 
-def get_preprocessed_start(source_file):
-	"""Preprocess start of file before looking for compiler options"""
-	return ""
-
-
 def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, verbose):
     """Given a set of sources already being compiled, inserts the new file."""
     
@@ -373,12 +415,17 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
 
 
 def try_set_variant(variant):
-    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
-    CC = environ("CAKE_" + variant.upper() + "_CC", None)
-    CXXFLAGS = environ("CAKE_" + variant.upper() + "_CXXFLAGS", None)
-    LINKFLAGS = environ("CAKE_" + variant.upper() + "_LINKFLAGS", None)
-    TESTPREFIX = environ("CAKE_" + variant.upper() + "_TESTPREFIX", None)
-    POSTPREFIX = environ("CAKE_" + variant.upper() + "_POSTPREFIX", None)
+    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX, PREFLAG
+    Variant = "CAKE_" + variant.upper()
+    CC = environ(Variant + "_CC", None)
+    PREFLAG = environ(Variant + "_FLAGPREFIX", "")
+    CXXFLAGS = environ(Variant + "_CXXFLAGS", None)
+    LINKFLAGS = environ(Variant + "_LINKFLAGS", None)
+    TESTPREFIX = environ(Variant + "_TESTPREFIX", None)
+    POSTPREFIX = environ(Variant + "_POSTPREFIX", None)
+    if debug:
+        print "\n"
+        print "  variant   : " + Variant
 
 
 def lazily_write(filename, newtext):
@@ -408,12 +455,11 @@ def objectname(source, entry):
     mash_inc = ""
         
     for s in o:
-		if not s in ignore_option_mash:
-			mash_inc += s
-		else:
-			mash_inc += 'ignore'
+        if not s in ignore_option_mash:
+            mash_inc += s
+        else:
+            mash_inc += 'ignore'
     
-    print mash_inc
     h = md5.md5( mash_inc ).hexdigest()
     return munge(source) + str(len(str(mash_inc))) + "-" + h + ".o"
 
@@ -542,8 +588,9 @@ def do_run(output, args):
 
 
 def main():
-    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
+    global CC, PREFLAG, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
     global BINDIR, OBJDIR
+    global verbose, debug
         
     if len(sys.argv) < 2:
         usage()
@@ -556,127 +603,154 @@ def main():
     generate = True
     build = True
     quiet = False
-    verbose = False
     to_build = {}    
     inTests = False
     inPost = False
     tests = []
     post_steps = []
-    append_cxxflags = ''
+    append_cc_flags = ''
+    
+    # set verbose and check for help
+    # copy list so we can remove from the original and still iterate
+    for a in list(args):
+        if a == "--verbose":
+            verbose = True
+            args.remove(a)
+        elif a == "--cake-debug":
+            debug = True
+            args.remove(a)
+        elif a == "--help":
+            usage()
+            return
+        
+    # deal with variant first
+    # to set the base set of flags for the other options to apply to
+    # copy list so we can remove from the original and still iterate
+    for a in list(args):
+        if a.startswith("--variant="):
+            variant = a[a.index("=")+1:]      
+            try_set_variant(variant)
+            args.remove(a)
+            continue
     
     for a in args:        
-		if a.startswith("--CC="):
-			CC = a[a.index("=")+1:]
-			continue
-						
-		if a.startswith("--variant="):
-			variant = a[a.index("=")+1:]      
-			try_set_variant(variant)
-			continue
-			
-		if a.startswith("--verbose"):
-			verbose = True
-			continue
-			
-		if a.startswith("--bindir="):
-			BINDIR = a[a.index("=")+1:]
-			if not BINDIR.endswith("/"):
-				BINDIR = BINDIR + "/"
-			continue
-			
-		if a.startswith("--objdir="):
-			OBJDIR = a[a.index("=")+1:]
-			if not OBJDIR.endswith("/"):
-				OBJDIR = OBJDIR + "/"
-			continue
-			
-		if a.startswith("--quiet"):
-			quiet = True
-			continue
-			
-		if a == "--generate":
-			generate = True
-			build = False
-			continue
-		
-		if a == "--build":
-			generate = True
-			build = True
-			continue                
-		
-		if a.startswith("--LINKFLAGS="):
-			LINKFLAGS = a[a.index("=")+1:]
-			continue
-			
-		if a.startswith("--TESTPREFIX="):
-			TESTPREFIX = a[a.index("=")+1:]
-			continue
-		
-		if a.startswith("--POSTPREFIX="):
-			POSTPREFIX = a[a.index("=")+1:]
-			continue
-						
-		if a.startswith("--append-CXXFLAGS="):
-			append_cxxflags += " "
-			append_cxxflags += a[a.index("=")+1:]
-			continue
-		
-		if a.startswith("--CXXFLAGS="):
-			CXXFLAGS += " " + a[a.index("=")+1:]
-			continue
-		
-		if a == "--beginpost": 
-			if inTests:
-				usage("--beginpost cannot occur inside a --begintests block")
-			inPost = True
-			continue
-		
-		if a == "--endpost":
-			inPost = False
-			continue
-			
-		if a == "--begintests": 
-			if inPost:
-				usage("--begintests cannot occur inside a --beginpost block")
-			inTests = True
-			continue
-			
-		if a == "--endtests":
-			if not inTests:
-				usage("--endtests can only follow --begintests")
-			inTests = False
-			continue
+        if a.startswith("--CC="):
+            CC = a[a.index("=")+1:]
+            continue
+                        
+        if a.startswith("--FLAGPREFIX="):
+            PREFLAG = a[a.index("=")+1:]
+            continue
+                        
+        if a.startswith("--bindir="):
+            BINDIR = a[a.index("=")+1:]
+            if not BINDIR.endswith("/"):
+                BINDIR = BINDIR + "/"
+            continue
+            
+        if a.startswith("--objdir="):
+            OBJDIR = a[a.index("=")+1:]
+            if not OBJDIR.endswith("/"):
+                OBJDIR = OBJDIR + "/"
+            continue
+            
+        if a.startswith("--quiet"):
+            quiet = True
+            continue
+            
+        if a == "--generate":
+            generate = True
+            build = False
+            continue
+        
+        if a == "--build":
+            generate = True
+            build = True
+            continue                
+        
+        if a.startswith("--LINKFLAGS="):
+            LINKFLAGS = a[a.index("=")+1:]
+            continue
+            
+        if a.startswith("--TESTPREFIX="):
+            TESTPREFIX = a[a.index("=")+1:]
+            continue
+        
+        if a.startswith("--POSTPREFIX="):
+            POSTPREFIX = a[a.index("=")+1:]
+            continue
+                        
+        if a.startswith("--append-CCFLAGS="):
+            append_cc_flags += " "
+            append_cc_flags += a[a.index("=")+1:]
+            continue
+        
+        if a.startswith("--CXXFLAGS="):
+            CXXFLAGS = " " + a[a.index("=")+1:]
+            continue
+        
+        if a.startswith("--append-CXXFLAGS="):
+            CXXFLAGS += " " + a[a.index("=")+1:]
+            continue
+        
+        if a == "--beginpost": 
+            if inTests:
+                usage("--beginpost cannot occur inside a --begintests block")
+            inPost = True
+            continue
+        
+        if a == "--endpost":
+            inPost = False
+            continue
+            
+        if a == "--begintests": 
+            if inPost:
+                usage("--begintests cannot occur inside a --beginpost block")
+            inTests = True
+            continue
+            
+        if a == "--endtests":
+            if not inTests:
+                usage("--endtests can only follow --begintests")
+            inTests = False
+            continue
 
-		if a.startswith("--output="):
-			nextOutput = a[a.index("=")+1:]
-			continue
-		
-		if a == "--help":
-			usage()
-		
-		if a.startswith("--"):
-			usage("Invalid option " + a)
-							
-		if nextOutput is None:
-			nextOutput = os.path.splitext(BINDIR + os.path.split(a)[1])[0]
+        if a.startswith("--output="):
+            nextOutput = a[a.index("=")+1:]
+            continue
+        
+        if a.startswith("--"):
+            usage("Invalid option " + a)
+                            
+        if nextOutput is None:
+            nextOutput = os.path.splitext(BINDIR + os.path.split(a)[1])[0]
 
-		if inPost:
-			post_steps.append(a)
-		else:
-			to_build[a] = nextOutput
-			if inTests:
-				tests.append(nextOutput)
-		nextOutput = None
+        if inPost:
+            post_steps.append(a)
+        else:
+            to_build[a] = nextOutput
+            if inTests:
+                tests.append(nextOutput)
+        nextOutput = None
     
     # default objdir
     if OBJDIR == "":
         OBJDIR = BINDIR + "obj/"
     
     # compiler takes extra options, seems counter-intuitive to put into CC
-    # rather than CXXFLAGS, but this allows options like -fprofile-generate to 
-    # work
-    if len(append_cxxflags) > 0:
-        CC = CC + " " + append_cxxflags
+    # rather than CXXFLAGS, but this allows options like -fprofile-generate 
+    # to work
+    if len(append_cc_flags) > 0:
+        CC = CC + " " + append_cc_flags
+        
+    if debug:
+        print "  CC        : " + CC
+        print "  CXXFLAGS  : " + CXXFLAGS
+        print "  LINKFLAGS : " + LINKFLAGS
+        print "  FLAGPREFIX: " + PREFLAG
+        print "  TESTPREFIX: " + TESTPREFIX
+        print "  POSTPREFIX: " + POSTPREFIX
+        print "\n"
         
     if len(to_build) == 0:
         usage("You must specify a filename.")
@@ -713,6 +787,7 @@ try:
     
     # data
     CC = "g++"
+    PREFLAG = ""
     LINKFLAGS = ""
     CXXFLAGS = ""
     TESTPREFIX=""
@@ -723,6 +798,7 @@ try:
     BINDIR = environ("CAKE_BINDIR", BINDIR)
     OBJDIR = environ("CAKE_OBJDIR", OBJDIR)
     CC = environ("CAKE_CC", CC)
+    PREFLAG = environ("CAKE_FLAGPREFIX", PREFLAG)
     LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
     CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
     TESTPREFIX = environ("CAKE_TESTPREFIX", TESTPREFIX)
