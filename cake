@@ -110,10 +110,10 @@ Options:
                            environment variables to determine the build flags.
                           
     --CC=<compiler>        Sets the compiler command.
+    --ID=<id>              Sets the prefix to the embedded source annotations, and a predefined macro CAKE_${ID}
     --CXXFLAGS=<flags>     Sets the compilation flags for all cpp files in the build.
     --TESTPREFIX=<cmd>     Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"
     --POSTPREFIX=<cmd>     Runs post execution commands with the given prefix, eg. "timeout 60"
-    --FLAGPREFIX=<id>      Sets the prefix to the embedded source annotations
     --append-CCFLAGS=...   Appends the given text to the compiler commands. Use for adding search paths etc.
     --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. Use for adding search paths etc.
     --LINKFLAGS=<flags>    Sets the flags used while linking.
@@ -144,7 +144,7 @@ Environment Variables:
     CAKE_CCFLAGS           Sets the compiler command.
     CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
     CAKE_LINKFLAGS         Sets the flags used while linking.
-    CAKE_FLAGPREFIX        Sets the prefix to the embedded source annotations.
+    CAKE_ID                Sets the prefix to the embedded source annotations and predefined build macro.
     CAKE_TESTPREFIX        Sets the execution prefix used while running unit tests.
     CAKE_POSTPREFIX        Sets the execution prefix used while running post-build commands.
     CAKE_BINDIR            Sets the directory where all binary files will be created.
@@ -221,7 +221,7 @@ def munge(to_munge):
 def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     """Recalculates the dependencies and caches them for a given source file"""
     
-    global PREFLAG
+    global CAKE_ID
     
     if not quiet:
         print "... " + source_file + " (dependencies)"
@@ -253,10 +253,12 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     ccflags = {}
     linkflags = OrderedSet()
     
-    explicit_cxx = "//#" + PREFLAG + "CXXFLAGS="
-    explicit_link = "//#" + PREFLAG + "LINKFLAGS="
+    explicit_cxx = "//#" + CAKE_ID + "_CXXFLAGS="
+    explicit_link = "//#" + CAKE_ID + "_LINKFLAGS="
     explicit_glob_cxx = "//#CXXFLAGS="
     explicit_glob_link = "//#LINKFLAGS="
+    
+    print "checking '" + explicit_link + "'"
     
     for h in headers + [source_file]:
         path = os.path.split(h)[0]   
@@ -415,10 +417,10 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
 
 
 def try_set_variant(variant):
-    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX, PREFLAG
+    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX, CAKE_ID
     Variant = "CAKE_" + variant.upper()
     CC = environ(Variant + "_CC", None)
-    PREFLAG = environ(Variant + "_FLAGPREFIX", "")
+    CAKE_ID = environ(Variant + "_ID", "")
     CXXFLAGS = environ(Variant + "_CXXFLAGS", None)
     LINKFLAGS = environ(Variant + "_LINKFLAGS", None)
     TESTPREFIX = environ(Variant + "_TESTPREFIX", None)
@@ -588,7 +590,7 @@ def do_run(output, args):
 
 
 def main():
-    global CC, PREFLAG, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
+    global CC, CAKE_ID, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
     global BINDIR, OBJDIR
     global verbose, debug
         
@@ -638,8 +640,8 @@ def main():
             CC = a[a.index("=")+1:]
             continue
                         
-        if a.startswith("--FLAGPREFIX="):
-            PREFLAG = a[a.index("=")+1:]
+        if a.startswith("--ID="):
+            CAKE_ID = a[a.index("=")+1:]
             continue
                         
         if a.startswith("--bindir="):
@@ -736,6 +738,9 @@ def main():
     # default objdir
     if OBJDIR == "":
         OBJDIR = BINDIR + "obj/"
+        
+    if len(CAKE_ID) > 0:
+        CXXFLAGS += " -DCAKE_" + CAKE_ID
     
     # compiler takes extra options, seems counter-intuitive to put into CC
     # rather than CXXFLAGS, but this allows options like -fprofile-generate 
@@ -745,9 +750,9 @@ def main():
         
     if debug:
         print "  CC        : " + CC
+        print "  ID        : " + CAKE_ID
         print "  CXXFLAGS  : " + CXXFLAGS
         print "  LINKFLAGS : " + LINKFLAGS
-        print "  FLAGPREFIX: " + PREFLAG
         print "  TESTPREFIX: " + TESTPREFIX
         print "  POSTPREFIX: " + POSTPREFIX
         print "\n"
@@ -787,7 +792,7 @@ try:
     
     # data
     CC = "g++"
-    PREFLAG = ""
+    CAKE_ID = ""
     LINKFLAGS = ""
     CXXFLAGS = ""
     TESTPREFIX=""
@@ -798,7 +803,7 @@ try:
     BINDIR = environ("CAKE_BINDIR", BINDIR)
     OBJDIR = environ("CAKE_OBJDIR", OBJDIR)
     CC = environ("CAKE_CC", CC)
-    PREFLAG = environ("CAKE_FLAGPREFIX", PREFLAG)
+    CAKE_ID = environ("CAKE_ID", CAKE_ID)
     LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
     CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
     TESTPREFIX = environ("CAKE_TESTPREFIX", TESTPREFIX)
