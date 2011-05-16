@@ -5,12 +5,12 @@ import sys
 import commands
 import os
 
-if sys.version_info < (2.6):
+if sys.version_info < (2,6):
     from sets import Set
     set = Set
 
 
-if sys.version_info < (2.6):
+if sys.version_info < (2,6):
     import md5 as cake_hasher
 else:
     import hashlib as cake_hasher
