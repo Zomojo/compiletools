@@ -2,7 +2,7 @@
 Summary: cake - Builds C++ without a makefile
 Name: cake
 Version: %{version_base}
-Release: %{version_release}%{org_tag}
+Release: %{version_release}%{org_tag}%{dist}
 Source: %{name}-%{version}.tgz
 License: Copyright Zomojo Pty. Ltd.
 Group: System/Libraries
