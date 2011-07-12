@@ -6,7 +6,6 @@ Release: %{version_release}%{org_tag}%{dist}
 Source: %{name}-%{version}.tgz
 License: Copyright Zomojo Pty. Ltd.
 Group: System/Libraries
-Source: %{name}-%{version}.tgz
 Buildroot: %_tmppath/%{name}-%{version}
 Prefix: /usr
 BuildArch: noarch
