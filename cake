@@ -235,7 +235,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     if not quiet:
         print "... " + source_file + " (dependencies)"
     
-    cmd = CC + " -MM -MF " + deps_file + ".tmp " + source_file
+    cmd = CC + " -DCAKE_DEPS -MM -MF " + deps_file + ".tmp " + source_file
     
     if verbose:
         print cmd
