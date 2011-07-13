@@ -235,7 +235,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     if not quiet:
         print "... " + source_file + " (dependencies)"
     
-    cmd = CC + " -MM -MF " + deps_file + ".tmp " + source_file
+    cmd = CC + " -DCAKE_DEPS -MM -MF " + deps_file + ".tmp " + source_file
     
     if verbose:
         print cmd
@@ -256,7 +256,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     files.sort()
     
     headers = [realpath(h) for h in files if h.endswith(".hpp") or h.endswith(".h")]
-    sources = [realpath(h) for h in files if h.endswith(".cpp")]
+    sources = [realpath(h) for h in files if h.endswith(".cpp") or h.endswith(".c")]
     
     # determine ccflags and linkflags
     ccflags = {}
@@ -419,6 +419,7 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
     
     for h in new_headers:
         insert_dependencies(sources, ignored, os.path.splitext(h)[0] + ".cpp", linkflags, copy, quiet, verbose)
+        insert_dependencies(sources, ignored, os.path.splitext(h)[0] + ".c", linkflags, copy, quiet, verbose)
     
     for s in new_sources:
         insert_dependencies(sources, ignored, s, linkflags, copy, quiet, verbose)
@@ -499,7 +500,11 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
         definition.append(obj + " : " + " ".join(headers + [s])) 
         if not quiet:
             definition.append("\t" + "@echo ... " + s)
-        definition.append("\t" + CC + " " + CXXFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
+        if s.endswith(".c"):
+            lang = "-x c"
+        else:
+            lang = ""
+        definition.append("\t" + CC + " " + lang + " " + CXXFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
         rules[obj] = "\n".join(definition)
 
     # link rule
