@@ -1,5 +1,5 @@
 CAKE_CC="ccache g++46  -I ."
-
+CAKE_ID="GCC46"
 CAKE_CXXFLAGS="-fPIC -g -Wall"
 CAKE_LINKFLAGS="-fPIC -B/usr/lib/binutils-2.18/ -Wall -Werror"
 CAKE_TESTPREFIX="timeout 300 valgrind --quiet --error-exitcode=1"
