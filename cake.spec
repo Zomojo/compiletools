@@ -25,7 +25,11 @@ test %{buildroot} != "/" && rm -rf %{buildroot}
 mkdir -p %{buildroot}/usr/bin
 mkdir -p %{buildroot}/etc/
 
-cp etc.cake %{buildroot}/etc/cake
+%if %{rhel} > 5
+cp etc.cake.centos6 %{buildroot}/etc/cake
+%else
+cp etc.cake.centos5 %{buildroot}/etc/cake
+%endif
 cp cake %{buildroot}/usr/bin
 cp cake-* %{buildroot}/usr/bin
 chmod -R 755 %{buildroot}/usr/bin
