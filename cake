@@ -189,6 +189,16 @@ def usage(msg = ""):
     sys.exit(1)
 
 
+def printCakeVariables():
+	print "  CC        : " + CC
+	print "  ID        : " + CAKE_ID
+	print "  CXXFLAGS  : " + CXXFLAGS
+	print "  LINKFLAGS : " + LINKFLAGS
+	print "  TESTPREFIX: " + TESTPREFIX
+	print "  POSTPREFIX: " + POSTPREFIX
+	print "\n"
+
+
 def extractOption(text, option):
     """Extracts the given option from the text, returning the value
     on success and the trimmed text as a tuple, or (None, originaltext)
@@ -762,13 +772,7 @@ def main():
         CC = CC + " " + append_cc_flags
         
     if debug:
-        print "  CC        : " + CC
-        print "  ID        : " + CAKE_ID
-        print "  CXXFLAGS  : " + CXXFLAGS
-        print "  LINKFLAGS : " + LINKFLAGS
-        print "  TESTPREFIX: " + TESTPREFIX
-        print "  POSTPREFIX: " + POSTPREFIX
-        print "\n"
+		printCakeVariables()
         
     if len(to_build) == 0:
         usage("You must specify a filename.")
@@ -823,6 +827,7 @@ try:
     POSTPREFIX = environ("CAKE_POSTPREFIX", POSTPREFIX)
     
     main()
+    
 except SystemExit:
     raise
 except IOError,e :
