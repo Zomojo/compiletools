@@ -69,12 +69,15 @@ def environ(variable, default):
         else:
             return os.environ[variable]
 
-def parse_etc():
+def parse_etc(config_file):
     """parses /etc/cake as if it was part of the environment.
     os.environ has higher precedence
     """
-    if stat("/etc/cake"):
-        f = open("/etc/cake")
+    
+    global debug
+    
+    if stat(config_file):
+        f = open(config_file)
         lines = f.readlines()
         f.close()
         
@@ -109,6 +112,7 @@ Options:
     --quiet                Doesn't output progress messages.
     --verbose              Outputs the result of build commands (doesn't run make with -s)
     --cake-debug           Output extra cake specific info.
+    --config               Specify the config file to use.
 
     --bindir               Specifies the directory to contain binary executable outputs. Defaults to 'bin'.
     --objdir               Specifies the directory to contain object intermediate files. Defaults to 'bin/obj'.
@@ -118,14 +122,18 @@ Options:
     --variant=<vvv>        Reads the CAKE_<vvv>_CC, CAKE_<vvv>_CXXFLAGS and CAKE_<vvv>_LINKFLAGS
                            environment variables to determine the build flags.
                           
-    --CC=<compiler>        Sets the compiler command.
+    --CC=<compiler>        Sets the C compiler command.
+    --CPP=<compiler>       Sets the C++ compiler command.
     --ID=<id>              Sets the prefix to the embedded source annotations, and a predefined macro CAKE_${ID}
-    --CXXFLAGS=<flags>     Sets the compilation flags for all cpp files in the build.
+    --CXXFLAGS=<flags>     Sets the compilation flags for all c and cpp files in the build.
     --TESTPREFIX=<cmd>     Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"
     --POSTPREFIX=<cmd>     Runs post execution commands with the given prefix, eg. "timeout 60"
-    --append-CCFLAGS=...   Appends the given text to the compiler commands. Use for adding search paths etc.
-    --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. Use for adding search paths etc.
     --LINKFLAGS=<flags>    Sets the flags used while linking.
+    
+    --append-CC=...        Appends the given text to the C compiler commands. Use for adding search paths etc.
+    --append-CPP=...       Appends the given text to the C compiler commands. Use for adding search paths etc.
+    --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. Use for adding search paths etc.
+    
     --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.
     
     --begintests           Starts a test block. The cpp files following this declaration will
@@ -150,7 +158,8 @@ Source annotations (embed in your hpp and cpp files as magic comments):
              
 Environment Variables:
 
-    CAKE_CCFLAGS           Sets the compiler command.
+    CAKE_CC                Sets the C compiler command.
+    CAKE_CPP               Sets the C++ compiler command.
     CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
     CAKE_LINKFLAGS         Sets the flags used while linking.
     CAKE_ID                Sets the prefix to the embedded source annotations and predefined build macro.
@@ -190,13 +199,14 @@ def usage(msg = ""):
 
 
 def printCakeVariables():
-	print "  CC        : " + CC
-	print "  ID        : " + CAKE_ID
-	print "  CXXFLAGS  : " + CXXFLAGS
-	print "  LINKFLAGS : " + LINKFLAGS
-	print "  TESTPREFIX: " + TESTPREFIX
-	print "  POSTPREFIX: " + POSTPREFIX
-	print "\n"
+    print "  CC        : " + CC
+    print "  CPP       : " + CPP
+    print "  ID        : " + CAKE_ID
+    print "  CXXFLAGS  : " + CXXFLAGS
+    print "  LINKFLAGS : " + LINKFLAGS
+    print "  TESTPREFIX: " + TESTPREFIX
+    print "  POSTPREFIX: " + POSTPREFIX
+    print "\n"
 
 
 def extractOption(text, option):
@@ -245,7 +255,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     if not quiet:
         print "... " + source_file + " (dependencies)"
     
-    cmd = CC + " -DCAKE_DEPS -MM -MF " + deps_file + ".tmp " + source_file
+    cmd = CPP + " -DCAKE_DEPS -MM -MF " + deps_file + ".tmp " + source_file
     
     if verbose:
         print cmd
@@ -436,9 +446,10 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
 
 
 def try_set_variant(variant):
-    global CC, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX, CAKE_ID
+    global Variant, CC, CPP, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX, CAKE_ID
     Variant = "CAKE_" + variant.upper()
     CC = environ(Variant + "_CC", None)
+    CPP = environ(Variant + "_CPP", None)
     CAKE_ID = environ(Variant + "_ID", "")
     CXXFLAGS = environ(Variant + "_CXXFLAGS", None)
     LINKFLAGS = environ(Variant + "_LINKFLAGS", None)
@@ -511,10 +522,10 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
         if not quiet:
             definition.append("\t" + "@echo ... " + s)
         if s.endswith(".c"):
-            lang = "-x c"
+            definition.append("\t" + CC + " " + CXXFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
         else:
-            lang = ""
-        definition.append("\t" + CC + " " + lang + " " + CXXFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
+            definition.append("\t" + CPP + " " + CXXFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
+            
         rules[obj] = "\n".join(definition)
 
     # link rule
@@ -522,7 +533,7 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
     definition.append( output_name + " : " + " ".join([objectname(s, sources[s]) for s in  sources]) + " " + makefilename)
     if not quiet:
         definition.append("\t" + "@echo ... " + output_name)
-    definition.append("\t" + CC + " -o " + output_name + " " + " " .join([objectname(s, sources[s]) for s in  sources])  + " " + LINKFLAGS + " " + " ".join(linkflags) )
+    definition.append("\t" + CPP + " -o " + output_name + " " + " " .join([objectname(s, sources[s]) for s in  sources])  + " " + LINKFLAGS + " " + " ".join(linkflags) )
     rules[output_name] = "\n".join(definition)
     
     if generate_test:
@@ -572,15 +583,16 @@ def cpus():
 
 def do_generate(source_to_output, tests, post_steps, quiet, verbose):
     """Generates all needed makefiles"""
+    global Variant
 
     all_rules = {}
     for source in source_to_output:
-        makefilename = munge(source) + ".Makefile"
+        makefilename = munge(source) + Variant + ".Makefile"
         rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet, verbose)
         all_rules.update(rules)        
         render_makefile(makefilename, rules)
         
-    combined_filename = munge(source_to_output) + ".combined.Makefile"
+    combined_filename = munge(source_to_output) + Variant + ".combined.Makefile"
 
     all_previous = [r for r in all_rules]
     previous = all_previous
@@ -612,10 +624,11 @@ def do_run(output, args):
     os.execvp(output, [output] + args)
 
 
-def main():
-    global CC, CAKE_ID, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
+def main(config_file):
+    global CC, CPP, CAKE_ID, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
     global BINDIR, OBJDIR
     global verbose, debug
+    global Variant
         
     if len(sys.argv) < 2:
         usage()
@@ -634,6 +647,7 @@ def main():
     tests = []
     post_steps = []
     append_cc_flags = ''
+    append_cpp_flags = ''
     
     # set verbose and check for help
     # copy list so we can remove from the original and still iterate
@@ -648,7 +662,7 @@ def main():
             usage()
             return
         
-    # deal with variant first
+    # deal with variant next
     # to set the base set of flags for the other options to apply to
     # copy list so we can remove from the original and still iterate
     for a in list(args):
@@ -659,8 +673,18 @@ def main():
             continue
     
     for a in args:        
+        if a.startswith("--config="):
+            config_file = a[a.index("=")+1:]
+            continue;
+            
         if a.startswith("--CC="):
             CC = a[a.index("=")+1:]
+            continue
+                        
+            continue
+                        
+        if a.startswith("--CPP="):
+            CPP = a[a.index("=")+1:]
             continue
                         
         if a.startswith("--ID="):
@@ -705,9 +729,14 @@ def main():
             POSTPREFIX = a[a.index("=")+1:]
             continue
                         
-        if a.startswith("--append-CCFLAGS="):
+        if a.startswith("--append-CC="):
             append_cc_flags += " "
             append_cc_flags += a[a.index("=")+1:]
+            continue
+        
+        if a.startswith("--append-CPP="):
+            append_cpp_flags += " "
+            append_cpp_flags += a[a.index("=")+1:]
             continue
         
         if a.startswith("--CXXFLAGS="):
@@ -771,8 +800,11 @@ def main():
     if len(append_cc_flags) > 0:
         CC = CC + " " + append_cc_flags
         
+    if len(append_cpp_flags) > 0:
+        CPP = CPP + " " + append_cpp_flags
+        
     if debug:
-		printCakeVariables()
+        printCakeVariables()
         
     if len(to_build) == 0:
         usage("You must specify a filename.")
@@ -808,7 +840,11 @@ def main():
 try:
     
     # data
+    config_file = "/etc/cake"
+    Variant = ""
+    
     CC = "g++"
+    CPP = "g++"
     CAKE_ID = ""
     LINKFLAGS = ""
     CXXFLAGS = ""
@@ -816,17 +852,26 @@ try:
     POSTPREFIX=""
     BINDIR="bin/"
     OBJDIR=""
-    parse_etc()
+
+    # deal with config file first
+    for a in list(sys.argv[1:]):
+        if a.startswith("--config="):
+            config_file = a[a.index("=")+1:]
+            break
+    
+    parse_etc( config_file )
+    
     BINDIR = environ("CAKE_BINDIR", BINDIR)
     OBJDIR = environ("CAKE_OBJDIR", OBJDIR)
     CC = environ("CAKE_CC", CC)
+    CPP = environ("CAKE_CPP", CPP)
     CAKE_ID = environ("CAKE_ID", CAKE_ID)
     LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
     CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
     TESTPREFIX = environ("CAKE_TESTPREFIX", TESTPREFIX)
     POSTPREFIX = environ("CAKE_POSTPREFIX", POSTPREFIX)
     
-    main()
+    main(config_file)
     
 except SystemExit:
     raise
