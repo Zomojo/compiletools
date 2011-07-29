@@ -1,4 +1,4 @@
-CAKE_GCC41_CC="cake-g++-quiet -I ."
+CAKE_GCC41_CC="cake-g++-quiet -I . -x c"
 CAKE_GCC41_CPP="cake-g++-quiet -I ."
 CAKE_GCC41_ID="GCC41"
 CAKE_GCC41_CXXFLAGS="-fPIC -g -Wall"
