@@ -100,7 +100,7 @@ CAKE_GCC46_CC="ccache gcc46 -I . -isystem /usr/include/boost-1.42.0/ -L/usr/lib6
 CAKE_GCC46_CPP="ccache g++46 -I . -isystem /usr/include/boost-1.42.0/ -L/usr/lib64/boost-1.42.0/ -Wl,-R/usr/lib64/boost-1.42.0 -isystem /usr/include/ -std=gnu++0x "
 CAKE_GCC46_ID="GCC46"
 CAKE_GCC46_CXXFLAGS="-fPIC -g -Wall"
-CAKE_GCC46_LINKFLAGS="-fPIC -Wall -Werror"
+CAKE_GCC46_LINKFLAGS="-fPIC -Wall -Werror -Xlinker --build-id"
 CAKE_GCC46_TESTPREFIX="timeout 300 valgrind --quiet --error-exitcode=1"
 CAKE_GCC46_POSTPREFIX="timeout 60"
 
@@ -116,7 +116,7 @@ CAKE_GCC46_RELEASE_CC="$CAKE_GCC46_CC"
 CAKE_GCC46_RELEASE_CPP="$CAKE_GCC46_CPP"
 CAKE_GCC46_RELEASE_ID="$CAKE_GCC46_ID"
 CAKE_GCC46_RELEASE_CXXFLAGS="-fPIC -O3 -DNDEBUG -Wall -finline-functions -Wno-inline"
-CAKE_GCC46_RELEASE_LINKFLAGS="-O3 -Wall"
+CAKE_GCC46_RELEASE_LINKFLAGS="-O3 -Wall -Xlinker --build-id"
 CAKE_GCC46_RELEASE_TESTPREFIX=""
 CAKE_GCC46_RELEASE_POSTPREFIX="timeout 60"
 
