@@ -587,12 +587,12 @@ def do_generate(source_to_output, tests, post_steps, quiet, verbose):
 
     all_rules = {}
     for source in source_to_output:
-        makefilename = munge(source) + Variant + ".Makefile"
+        makefilename = munge(source) + "." + Variant + ".Makefile"
         rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet, verbose)
         all_rules.update(rules)        
         render_makefile(makefilename, rules)
         
-    combined_filename = munge(source_to_output) + Variant + ".combined.Makefile"
+    combined_filename = munge(source_to_output) + "." + Variant + ".combined.Makefile"
 
     all_previous = [r for r in all_rules]
     previous = all_previous
@@ -792,8 +792,11 @@ def main(config_file):
         OBJDIR = BINDIR + "obj/"
         
     if len(CAKE_ID) > 0:
-        CXXFLAGS += " -DCAKE_" + CAKE_ID
-    
+        OBJDIR += CAKE_ID + "/"
+        CXXFLAGS += " -D" + CAKE_ID
+    else:
+        OBJDIR += "CAKE/"
+            
     # compiler takes extra options, seems counter-intuitive to put into CC
     # rather than CXXFLAGS, but this allows options like -fprofile-generate 
     # to work
