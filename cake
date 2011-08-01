@@ -829,7 +829,7 @@ def main(config_file):
         usage("You must specify a filename.")
   
     try:
-        os.makedirs(OBJDIR + "/bin")
+        os.makedirs(OBJDIR)
     except:
         pass
         
