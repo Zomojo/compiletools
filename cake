@@ -481,7 +481,13 @@ def lazily_write(filename, newtext):
 ignore_option_mash = [ '-fprofile-generate', '-fprofile-use' ]
 def objectname(source, entry):
     ccflags, cause, headers = entry
-    mash_name = "".join(ccflags) + " " + CXXFLAGS + " " + CC
+    mash_name = "".join(ccflags) + " " + CXXFLAGS + " "
+    
+    if source.endswith(".c"):
+        mash_name += CC
+    else:
+        mash_name += CPP
+        
     o = mash_name.split();
     o.sort()
     mash_inc = ""
@@ -530,10 +536,16 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
 
     # link rule
     definition = []
-    definition.append( output_name + " : " + " ".join([objectname(s, sources[s]) for s in  sources]) + " " + makefilename)
+    tmp_output_name = OBJDIR + os.path.split(output_name)[-1]
+    definition.append( tmp_output_name + " : " + " ".join([objectname(s, sources[s]) for s in  sources]) + " " + makefilename)
+    definition.append( "\t" + CPP + " -o " + tmp_output_name + " " + " " .join([objectname(s, sources[s]) for s in  sources])  + " " + LINKFLAGS + " " + " ".join(linkflags) )
+    definition.append( "\n.PHONY : " + output_name )
+    definition.append( "\n" + output_name + " : " + tmp_output_name )
     if not quiet:
         definition.append("\t" + "@echo ... " + output_name)
-    definition.append("\t" + CPP + " -o " + output_name + " " + " " .join([objectname(s, sources[s]) for s in  sources])  + " " + LINKFLAGS + " " + " ".join(linkflags) )
+    definition.append( "\tcp " + tmp_output_name + " " + output_name )
+    
+    
     rules[output_name] = "\n".join(definition)
     
     if generate_test:
@@ -584,15 +596,19 @@ def cpus():
 def do_generate(source_to_output, tests, post_steps, quiet, verbose):
     """Generates all needed makefiles"""
     global Variant
+    
+    variant_name = Variant
+    if len(Variant) == 0:
+        variant_name = "CAKE"
 
     all_rules = {}
     for source in source_to_output:
-        makefilename = munge(source) + "." + Variant + ".Makefile"
+        makefilename = munge(source) + "." + variant_name + ".Makefile"
         rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet, verbose)
         all_rules.update(rules)        
         render_makefile(makefilename, rules)
         
-    combined_filename = munge(source_to_output) + "." + Variant + ".combined.Makefile"
+    combined_filename = munge(source_to_output) + "." + variant_name + ".combined.Makefile"
 
     all_previous = [r for r in all_rules]
     previous = all_previous
@@ -789,7 +805,7 @@ def main(config_file):
     
     # default objdir
     if OBJDIR == "":
-        OBJDIR = BINDIR + "obj/"
+        OBJDIR = BINDIR
         
     if len(CAKE_ID) > 0:
         OBJDIR += CAKE_ID + "/"
@@ -813,7 +829,7 @@ def main(config_file):
         usage("You must specify a filename.")
   
     try:
-        os.makedirs(OBJDIR)
+        os.makedirs(OBJDIR + "/bin")
     except:
         pass
         
