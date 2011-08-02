@@ -810,7 +810,7 @@ def main(config_file):
 
     if len(CAKE_ID) > 0:
         OBJDIR += CAKE_ID + "/"
-        CXXFLAGS += " -D" + CAKE_ID
+        CXXFLAGS += " -DCAKE_" + CAKE_ID
     else:
         OBJDIR += "CAKE/"
 
