@@ -553,14 +553,14 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
     if generate_test:
         definition = []
         test = munge(output_name) + ".result"
-        definition.append( test + " : " + output_name )
+        definition.append( test + " : " + tmp_output_name )
         if not quiet:
             definition.append("\t" + "@echo ... test " + output_name)
 
         t = ""
         if TESTPREFIX != "":
             t = TESTPREFIX + " "
-        definition.append( "\t" + "rm -f " + test + " && " + t + output_name + " && touch " + test)
+        definition.append( "\t" + "rm -f " + test + " && " + t + tmp_output_name + " && touch " + test)
         rules[test] = "\n".join(definition)
 
     return rules
