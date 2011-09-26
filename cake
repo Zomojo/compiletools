@@ -131,8 +131,9 @@ Options:
     --LINKFLAGS=<flags>    Sets the flags used while linking.
 
     --append-CC=...        Appends the given text to the C compiler commands. Use for adding search paths etc.
-    --append-CPP=...       Appends the given text to the C compiler commands. Use for adding search paths etc.
+    --append-CPP=...       Appends the given text to the C++ compiler commands. Use for adding search paths etc.
     --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. Use for adding search paths etc.
+    --append-LINKFLAHS=..  Appends the given text to the LINKFLAGS already set. Use for example with `wx-config --libs`
 
     --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.
 
@@ -662,6 +663,7 @@ def main(config_file):
     post_steps = []
     append_cc_flags = ''
     append_cpp_flags = ''
+    append_link_flags = ''
 
     # set verbose and check for help
     # copy list so we can remove from the original and still iterate
@@ -733,6 +735,10 @@ def main(config_file):
 
         if a.startswith("--LINKFLAGS="):
             LINKFLAGS = a[a.index("=")+1:]
+            continue
+
+        if a.startswith("--append-LINKFLAGS="):
+            LINKFLAGS += " " + a[a.index("=")+1:]
             continue
 
         if a.startswith("--TESTPREFIX="):
