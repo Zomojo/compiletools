@@ -507,7 +507,7 @@ def objectname(source, entry):
 
 
 
-def generate_rules(source, output_name, generate_test, makefilename, quiet, verbose):
+def generate_rules(source, output_name, generate_test, makefilename, quiet, verbose, static_library):
     """
     Generates a set of make rules for the given source.
     If generate_test is true, also generates a test run rule.
@@ -544,7 +544,14 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
     definition = []
     tmp_output_name = OBJDIR + Variant + "/" + os.path.split(output_name)[-1]
     definition.append( tmp_output_name + " : " + " ".join([objectname(s, sources[s]) for s in  sources]) + " " + makefilename)
-    definition.append( "\t" + LINKER + " -o " + tmp_output_name + " " + " " .join([objectname(s, sources[s]) for s in  sources])  + " " + LINKFLAGS + " " + " ".join(linkflags) )
+    linker_line = "\t" + LINKER + " "  
+    if not static_library:
+        linker_line += "-o "
+    linker_line +=  tmp_output_name + " " + " " .join([objectname(s, sources[s]) for s in  sources])  + " " 
+    if not static_library:
+        linker_line += LINKFLAGS + " " + " ".join(linkflags)
+    definition.append( linker_line )    
+        
     definition.append( "\n.PHONY : " + output_name )
     definition.append( "\n" + output_name + " : " + tmp_output_name )
     if not quiet:
@@ -599,14 +606,14 @@ def cpus():
     return str(len(t))
 
 
-def do_generate(source_to_output, tests, post_steps, quiet, verbose):
+def do_generate(source_to_output, tests, post_steps, quiet, verbose, static_library):
     """Generates all needed makefiles"""
     global Variant
 
     all_rules = {}
     for source in source_to_output:
         makefilename = munge(source) + "." + Variant + ".Makefile"
-        rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet, verbose)
+        rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet, verbose, static_library)
         all_rules.update(rules)
         render_makefile(makefilename, rules)
 
@@ -659,6 +666,7 @@ def main(config_file):
     generate = True
     build = True
     quiet = False
+    static_library = False
     to_build = {}
     inTests = False
     inPost = False
@@ -677,6 +685,10 @@ def main(config_file):
         elif a == "--cake-debug":
             debug = True
             args.remove(a)
+        elif a == "--static-library":
+            static_library = True
+            LINKER = "ar -src"
+            args.remove(a)            
         elif a == "--help":
             usage()
             return
@@ -804,6 +816,8 @@ def main(config_file):
 
         if nextOutput is None:
             nextOutput = os.path.splitext(BINDIR + os.path.split(a)[1])[0]
+            if static_library:
+                nextOutput = os.path.splitext(BINDIR + "lib" + os.path.split(a)[1])[0] + ".a"
 
         if inPost:
             post_steps.append(a)
@@ -865,7 +879,7 @@ def main(config_file):
             sys.exit(1)
 
     if generate:
-        makefilename = do_generate(to_build, tests, post_steps, quiet, verbose)
+        makefilename = do_generate(to_build, tests, post_steps, quiet, verbose, static_library)
 
     if build:
         do_build(makefilename, verbose)
