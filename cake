@@ -124,6 +124,7 @@ Options:
 
     --CC=<compiler>        Sets the C compiler command.
     --CPP=<compiler>       Sets the C++ compiler command.
+    --LINKER=<linker>      Sets the linker command.
     --ID=<id>              Sets the prefix to the embedded source annotations, and a predefined macro CAKE_${ID}
     --CXXFLAGS=<flags>     Sets the compilation flags for all c and cpp files in the build.
     --TESTPREFIX=<cmd>     Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"
@@ -133,7 +134,7 @@ Options:
     --append-CC=...        Appends the given text to the C compiler commands. Use for adding search paths etc.
     --append-CPP=...       Appends the given text to the C++ compiler commands. Use for adding search paths etc.
     --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. Use for adding search paths etc.
-    --append-LINKFLAHS=..  Appends the given text to the LINKFLAGS already set. Use for example with `wx-config --libs`
+    --append-LINKFLAGS=..  Appends the given text to the LINKFLAGS already set. Use for example with `wx-config --libs`
 
     --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.
 
@@ -161,6 +162,7 @@ Environment Variables:
 
     CAKE_CC                Sets the C compiler command.
     CAKE_CPP               Sets the C++ compiler command.
+    CAKE_LINKER            Sets the linker command.
     CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
     CAKE_LINKFLAGS         Sets the flags used while linking.
     CAKE_ID                Sets the prefix to the embedded source annotations and predefined build macro.
@@ -202,6 +204,7 @@ def usage(msg = ""):
 def printCakeVariables():
     print "  CC        : " + CC
     print "  CPP       : " + CPP
+    print "  LINKER    : " + LINKER
     print "  ID        : " + CAKE_ID
     print "  CXXFLAGS  : " + CXXFLAGS
     print "  LINKFLAGS : " + LINKFLAGS
@@ -541,7 +544,7 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
     definition = []
     tmp_output_name = OBJDIR + Variant + "/" + os.path.split(output_name)[-1]
     definition.append( tmp_output_name + " : " + " ".join([objectname(s, sources[s]) for s in  sources]) + " " + makefilename)
-    definition.append( "\t" + CPP + " -o " + tmp_output_name + " " + " " .join([objectname(s, sources[s]) for s in  sources])  + " " + LINKFLAGS + " " + " ".join(linkflags) )
+    definition.append( "\t" + LINKER + " -o " + tmp_output_name + " " + " " .join([objectname(s, sources[s]) for s in  sources])  + " " + LINKFLAGS + " " + " ".join(linkflags) )
     definition.append( "\n.PHONY : " + output_name )
     definition.append( "\n" + output_name + " : " + tmp_output_name )
     if not quiet:
@@ -640,7 +643,7 @@ def do_run(output, args):
 
 
 def main(config_file):
-    global CC, CPP, CAKE_ID, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
+    global CC, CPP, LINKER, CAKE_ID, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
     global BINDIR, OBJDIR
     global verbose, debug
     global Variant
@@ -697,6 +700,8 @@ def main(config_file):
             CC = a[a.index("=")+1:]
             continue
 
+        if a.startswith("--LINKER="):
+            LINKER = a[a.index("=")+1:]
             continue
 
         if a.startswith("--CPP="):
@@ -738,7 +743,8 @@ def main(config_file):
             continue
 
         if a.startswith("--append-LINKFLAGS="):
-            LINKFLAGS += " " + a[a.index("=")+1:]
+            append_link_flags += " "
+            append_link_flags += a[a.index("=")+1:]
             continue
 
         if a.startswith("--TESTPREFIX="):
@@ -829,6 +835,9 @@ def main(config_file):
     if len(append_cpp_flags) > 0:
         CPP = CPP + " " + append_cpp_flags
 
+    if len(append_link_flags) > 0:
+        LINKER = LINKER + " " + append_link_flags
+
     if debug:
         printCakeVariables()
 
@@ -871,6 +880,7 @@ try:
 
     CC = "g++"
     CPP = "g++"
+    LINKER = "g++"
     CAKE_ID = ""
     LINKFLAGS = ""
     CXXFLAGS = ""
@@ -891,6 +901,7 @@ try:
     OBJDIR = environ("CAKE_OBJDIR", OBJDIR)
     CC = environ("CAKE_CC", CC)
     CPP = environ("CAKE_CPP", CPP)
+    LINKER = environ("CAKE_LINKER", LINKER)
     CAKE_ID = environ("CAKE_ID", CAKE_ID)
     LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
     CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
