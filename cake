@@ -755,8 +755,7 @@ def main(config_file):
             continue
 
         if a.startswith("--append-LINKFLAGS="):
-            append_link_flags += " "
-            append_link_flags += a[a.index("=")+1:]
+            LINKFLAGS += " " + a[a.index("=")+1:]
             continue
 
         if a.startswith("--TESTPREFIX="):
@@ -848,9 +847,6 @@ def main(config_file):
 
     if len(append_cpp_flags) > 0:
         CPP = CPP + " " + append_cpp_flags
-
-    if len(append_link_flags) > 0:
-        LINKER = LINKER + " " + append_link_flags
 
     if debug:
         printCakeVariables()
