@@ -26,9 +26,9 @@ mkdir -p %{buildroot}/usr/bin
 mkdir -p %{buildroot}/etc/
 
 %if %{rhel} > 5
-cp etc.cake.centos6 %{buildroot}/etc/cake
+cp etc.cake.centos6 %{buildroot}/etc/cake.conf
 %else
-cp etc.cake.centos5 %{buildroot}/etc/cake
+cp etc.cake.centos5 %{buildroot}/etc/cake.conf
 %endif
 cp cake %{buildroot}/usr/bin
 cp cake-* %{buildroot}/usr/bin
