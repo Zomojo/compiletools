@@ -41,6 +41,6 @@ test "%{buildroot}" != "/" && rm -rf %{buildroot}
 %defattr(-,root,root)
 %attr(0755,-,-)/usr/bin/cake
 %attr(0755,-,-)/usr/bin/cake-*
-/etc/cake
+/etc/cake.conf
 
 
