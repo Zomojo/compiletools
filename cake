@@ -104,7 +104,33 @@ usage_text = """
 
 Usage: cake [compilation args] filename.cpp [app args]
 
-cake generates and runs C++ executables with almost no configuration.
+cake generates and runs C++ executables with almost no configuration. To build a C++ program, type "cake filename.cpp". 
+Cake uses the header includes to determine what other implementation (cpp) files are also required to be built and linked against.
+
+Source annotations: 
+    Embed these magic comments in your hpp and cpp files to give cake instructions on compilation and link flags.
+
+     //#{flag prefix}CXXFLAGS=<flags>   Appends the given options to the compile step.
+     //#{flag prefix}LINKFLAGS=<flags>  Appends the given options to the link step
+
+     If no variant specific annotations are found, then the global variants are also
+     searched. This allows default behaviour to be specified, while allowing
+     for a particular variant as well.
+
+Environment:
+    Environment variables can also be set in /etc/cake.conf, which has the lowest priority when finding compilation settings.
+
+    CAKE_CC                Sets the C compiler command.
+    CAKE_CPP               Sets the C++ compiler command.
+    CAKE_LINKER            Sets the linker command.
+    CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
+    CAKE_LINKFLAGS         Sets the flags used while linking.
+    CAKE_ID                Sets the prefix to the embedded source annotations and predefined build macro.
+    CAKE_TESTPREFIX        Sets the execution prefix used while running unit tests.
+    CAKE_POSTPREFIX        Sets the execution prefix used while running post-build commands.
+    CAKE_BINDIR            Sets the directory where all binary files will be created.
+    CAKE_OBJDIR            Sets the directory where all object files will be created.
+    
 
 Options:
 
@@ -148,45 +174,13 @@ Options:
                            or generating tarballs, uploading to a website etc.
     --endpost              Ends a post execution block.
 
-
-Source annotations (embed in your hpp and cpp files as magic comments):
-
-     //#{flag prefix}CXXFLAGS=<flags>   Appends the given options to the compile step.
-     //#{flag prefix}LINKFLAGS=<flags>  Appends the given options to the link step
-
-     If no variant specific annotations are found, then the global variants are also
-     searched. This allows default behaviour to be specified, while allowing
-     for a particular variant as well.
-
-Environment Variables:
-
-    CAKE_CC                Sets the C compiler command.
-    CAKE_CPP               Sets the C++ compiler command.
-    CAKE_LINKER            Sets the linker command.
-    CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
-    CAKE_LINKFLAGS         Sets the flags used while linking.
-    CAKE_ID                Sets the prefix to the embedded source annotations and predefined build macro.
-    CAKE_TESTPREFIX        Sets the execution prefix used while running unit tests.
-    CAKE_POSTPREFIX        Sets the execution prefix used while running post-build commands.
-    CAKE_BINDIR            Sets the directory where all binary files will be created.
-    CAKE_OBJDIR            Sets the directory where all object files will be created.
-
-Environment variables can also be set in /etc/cake.conf, which has the lowest priority when finding
-compilation settings.
-
-
-Example usage:
+Examples:
 
 This command-line generates bin/prime-factoriser and bin/frobnicator in release mode.
 It also generates several tests into the bin directory and runs them. If they are
 all successful, integration_test.sh is run.
 
-   cake apps/prime-factoriser.cpp apps/frobnicator.cpp \\
-        --begintests tests/*.cpp --endtests \\
-        --beginpost ./integration_test.sh \\
-        --variant=release
-
-
+   cake apps/prime-factoriser.cpp apps/frobnicator.cpp --begintests tests/*.cpp --endtests --beginpost ./integration_test.sh --variant=release
 
 """
 
@@ -196,7 +190,7 @@ def usage(msg = ""):
         print >> sys.stderr, msg
         print >> sys.stderr, ""
 
-    print >> sys.stderr, usage_text.strip() + "\n"
+    print usage_text.strip() + "\n"
 
     sys.exit(1)
 
@@ -691,6 +685,10 @@ def main(config_file):
             args.remove(a)            
         elif a == "--help":
             usage()
+            return
+        elif a == "--version":
+            # TODO: somehow extract this from git
+            print """cake 3.0"""
             return
 
     # deal with variant next

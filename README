@@ -1,164 +1,320 @@
-CAKE
-
-Original Author: Zomojo Pty Ltd, Matthew Herrmann
-
-License: GPL
-
-
-Overview
-
-Cake is a C++ build tool that requires almost no configuration. To build
-a C++ program, type "cake filename.cpp". Cake uses the header includes to
-determine what implementation (cpp) files are required.
-
-Cake works off the same principles as Ruby on Rails. It will make your life
-easy if you don't arbitrarily name things. The main rules are:
-
-   1. All binaries end up in the bin directory, with the same base name as
-   their source filename.
-
-   2. The implementation file for point.hpp should be called point.cpp. This
-   is so cake can compile it and recursively hunt down its dependencies.
-
-   3. If a header or implementation file will not work without being linked
-   with a certain flag, add a //#LINKFLAGS=myflag directly to the source code.
-
-   4. Likewise, if a special compiler option is needed, use //#CXXFLAGS=myflag.
-
-   5. Minimise the use of "-I" include flags. They make it hard not only
-   for cake to generate dependencies, but also autocomplete tools like Eclipse.
-
-   6. Only gcc, and linux, is supported. Other tools could be added now,
-   but it's not what I use.
-
-
-Cake also works off a "pull" philosophy of building, unlike the "push" model
-of most build processes. Often, there is the monolithic build script that
-rebuilds everything. Users iterate over changing a file, relinking everything
-and then rerunning their binary. A hierarchy of libraries is built up and
-then linked in to the final executables. All of this takes a lot of time,
-particularly for C++.
-
-In cake, you only pull in what is strictly necessary to what you need to run
-right now. Say, you are testing a particular tool in a large project, with
-a large base of 2000 library files for string handling, sockets, etc. There
-is simply no make file. You might want to create a build.sh for regression
-testing, but it's not essential.
-
-
-The basic workflow is to simply type:
-
-   cake app.cpp && ./bin/app
-
-Only the library cpp files that are needed, directly, or indictly to create
-./bin/app are actually compiled. If you don't #include anything that refers
-to a library file, you don't pay for it. Also, only the link options that
-are strictly needed to generate the app are included. Its possible to do in
-make files, but such fine-level granularity is rarely set up in practice,
-because its too error-prone to do manually, or with recursive make goodness.
+CAKE(1)                          User Commands                         CAKE(1)
 
 
 
-How it Works
+NNAAMMEE
+       cake - a C++ build tool that requires almost no configuration.
 
-Cake uses "gcc -MM -MF" to generate the header dependencies for the main.cpp
-file you specify at the command line. For each header file, it looks for
-an underlying implementation (cpp) file with the same name, and adds it to
-the build. Cake also reads the first 4k of each file for special comments
-that indicate needed link and compile flags.  Cake recurses through the
-dependencies of the cpp file, and uses this spidering to generate complete
-dependency information for the application. It then lazily generates a
-makefile, and finally calls make.
+SSYYNNOOPPSSIISS
+       ccaakkee [_c_o_m_p_i_l_a_t_i_o_n _a_r_g_s] _f_i_l_e_n_a_m_e_._c_p_p [_a_p_p _a_r_g_s]
+
+DDEESSCCRRIIPPTTIIOONN
+       cake  generates  and runs C++ executables with almost no configuration.
+       To build a C++ program, type "cake filename.cpp".  Cake uses the header
+       includes  to  determine  what other implementation (cpp) files are also
+       required to be built and linked against.
+
+   SSoouurrccee aannnnoottaattiioonnss::
+              Embed these magic comments in your hpp and  cpp  files  to  give
+              cake instructions on compilation and link flags.
+
+       //#{flag prefix}CXXFLAGS=<flags>
+              Appends the given options to the compile step.
+
+       //#{flag prefix}LINKFLAGS=<flags>
+              Appends the given options to the link step
+
+              If  no  variant  specific annotations are found, then the global
+              variants are also searched. This allows default behaviour to  be
+              specified, while allowing for a particular variant as well.
+
+   EEnnvviirroonnmmeenntt::
+              Environment  variables  can also be set in /etc/cake.conf, which
+              has the lowest priority when finding compilation settings.
+
+       CAKE_CC
+              Sets the C compiler command.
+
+       CAKE_CPP
+              Sets the C++ compiler command.
+
+       CAKE_LINKER
+              Sets the linker command.
+
+       CAKE_CXXFLAGS
+              Sets the compilation flags for all cpp files in the build.
+
+       CAKE_LINKFLAGS
+              Sets the flags used while linking.
+
+       CAKE_ID
+              Sets the prefix to the embedded source  annotations  and  prede-
+              fined build macro.
+
+       CAKE_TESTPREFIX
+              Sets the execution prefix used while running unit tests.
+
+       CAKE_POSTPREFIX
+              Sets  the  execution  prefix  used while running post-build com-
+              mands.
+
+       CAKE_BINDIR
+              Sets the directory where all binary files will be created.
+
+       CAKE_OBJDIR
+              Sets the directory where all object files will be created.
+
+OOPPTTIIOONNSS
+       ----hheellpp Shows this message.
+
+       ----qquuiieett
+              Doesn’t output progress messages.
+
+       ----vveerrbboossee
+              Outputs the result of build commands (doesn’t run make with --ss)
+
+       ----ccaakkee--ddeebbuugg
+              Output extra cake specific info.
+
+       ----ccoonnffiigg
+              Specify the config file to use.
+
+       ----bbiinnddiirr
+              Specifies the directory to contain  binary  executable  outputs.
+              Defaults to ’bin’.
+
+       ----oobbjjddiirr
+              Specifies  the  directory  to contain object intermediate files.
+              Defaults to ’bin/obj’.
+
+       ----ggeenneerraattee
+              Only runs the makefile generation step, does not build.
+
+       ----bbuuiilldd
+              Builds the given targets (default).
+
+       ----oouuttppuutt==<filename>
+              Overrides the output filename.
+
+       ----vvaarriiaanntt==<vvv>
+              Reads     the     CAKE_<vvv>_CC,     CAKE_<vvv>_CXXFLAGS     and
+              CAKE_<vvv>_LINKFLAGS  environment  variables  to  determine  the
+              build flags.
+
+       ----CCCC==<compiler>
+              Sets the C compiler command.
+
+       ----CCPPPP==<compiler>
+              Sets the C++ compiler command.
+
+       ----LLIINNKKEERR==<linker>
+              Sets the linker command.
+
+       ----IIDD==<id>
+              Sets the prefix to the embedded source annotations, and a prede-
+              fined macro CAKE_${ID}
+
+       ----CCXXXXFFLLAAGGSS==<flags>
+              Sets the compilation flags for all c and cpp files in the build.
+
+       ----TTEESSTTPPRREEFFIIXX==<cmd>
+              Runs  tests  with  the  given  prefix,  eg.  "valgrind   ----qquuiieett
+              ----eerrrroorr--eexxiittccooddee=_1"
+
+       ----PPOOSSTTPPRREEFFIIXX==<cmd>
+              Runs post execution commands with the given prefix, eg. "timeout
+              60"
+
+       ----LLIINNKKFFLLAAGGSS==<flags>
+              Sets the flags used while linking.
+
+       ----aappppeenndd--CCCC==...
+              Appends the given text to  the  C  compiler  commands.  Use  for
+              adding search paths etc.
+
+       ----aappppeenndd--CCPPPP==...
+              Appends  the  given  text  to the C++ compiler commands. Use for
+              adding search paths etc.
+
+       ----aappppeenndd--CCXXXXFFLLAAGGSS==...
+              Appends the given text to the  CXXFLAGS  already  set.  Use  for
+              adding search paths etc.
+
+       ----aappppeenndd--LLIINNKKFFLLAAGGSS==..
+              Appends  the  given  text  to the LINKFLAGS already set. Use for
+              example with ‘wx-config ----lliibbss‘
+
+       ----bbiinnddiirr==...
+              Overrides the directory where binaries are produced.  ’bin/’  by
+              default.
+
+       ----bbeeggiinntteessttss
+              Starts  a  test  block. The cpp files following this declaration
+              will generate executables which are then run.
+
+       ----eennddtteessttss
+              Ends a test block.
+
+       ----bbeeggiinnppoosstt
+              Starts a post execution block. The  commands  given  after  this
+              will  be run verbatim after each build. Useful for running inte-
+              gration tests, or generating tarballs, uploading  to  a  website
+              etc.
+
+       ----eennddppoosstt
+              Ends a post execution block.
+
+EEXXAAMMPPLLEESS
+       This command-line generates bin/prime-factoriser and bin/frobnicator in
+       release mode.  It also generates several tests into the  bin  directory
+       and  runs them. If they are all successful, integration_test.sh is run.
+
+              cake apps/prime-factoriser.cpp apps/frobnicator.cpp ----bbeeggiinntteessttss
+              tests/*.cpp ----eennddtteessttss ----bbeeggiinnppoosstt ./integration_test.sh ----vvaarrii--
+              aanntt=_r_e_l_e_a_s_e
+
+OOVVEERRVVIIEEWW
+       Cake is a C++ build tool that  requires  almost  no  configuration.  To
+       build  a  C++  program,  type "cake filename.cpp". Cake uses the header
+       includes to determine what implementation (cpp) files are required.
+
+       Cake works off the same principles as Ruby on Rails. It will make  your
+       life easy if you don’t arbitrarily name things. The main rules are:
+
+              1. All binaries end up in the bin directory, with the same  base
+              name as their source filename.
+
+              2.  The  implementation  file  for  point.hpp  should  be called
+              point.cpp. This is so cake can compile it and  recursively  hunt
+              down its dependencies.
+
+              3.  If  a  header  or  implementation file will not work without
+              being linked with a  certain  flag,  add  a  //#LINKFLAGS=myflag
+              directly to the source code.
+
+              4.  Likewise,  if  a  special  compiler  option  is  needed, use
+              //#CXXFLAGS=myflag.
+
+              5. Minimise the use of "-I" include flags. They make it hard not
+              only  for  cake  to generate dependencies, but also autocomplete
+              tools like Eclipse.
+
+              6. Only gcc, and linux, is supported. Other tools could be added
+              now, but it’s not what I use.
+
+       Cake  also works off a "pull" philosophy of building, unlike the "push"
+       model of most build processes. Often, there  is  the  monolithic  build
+       script  that  rebuilds  everything. Users iterate over changing a file,
+       relinking everything and then rerunning their binary.  A  hierarchy  of
+       libraries  is built up and then linked in to the final executables. All
+       of this takes a lot of time, particularly for C++.
+
+       In cake, you only pull in what is strictly necessary to what  you  need
+       to  run  right  now.  Say, you are testing a particular tool in a large
+       project, with a large base of 2000 library files for  string  handling,
+       sockets,  etc. There is simply no make file. You might want to create a
+       build.sh for regression testing, but it’s not essential.
+
+       The basic workflow is to simply type:
+
+              cake app.cpp && ./bin/app
+
+       Only the library cpp files that are needed, directly,  or  indictly  to
+       create  ./bin/app are actually compiled. If you don’t #include anything
+       that refers to a library file, you don’t pay for  it.  Also,  only  the
+       link options that are strictly needed to generate the app are included.
+       Its possible to do in make files, but such  fine-level  granularity  is
+       rarely  set up in practice, because its too error-prone to do manually,
+       or with recursive make goodness.
+
+HHOOWW IITT WWOORRKKSS
+       Cake uses "gcc -MM -MF" to generate the  header  dependencies  for  the
+       main.cpp file you specify at the command line. For each header file, it
+       looks for an underlying implementation (cpp) file with the  same  name,
+       and adds it to the build. Cake also reads the first 4k of each file for
+       special comments that indicate needed link  and  compile  flags.   Cake
+       recurses  through  the dependencies of the cpp file, and uses this spi-
+       dering to generate complete dependency information for the application.
+       It then lazily generates a makefile, and finally calls make.
+
+MMAAGGIICC CCOOMMMMEENNTTSS
+       Cake  works  very  differently  to other build systems, which specify a
+       hierarchy of link flags and compile options, because cake ties the com-
+       piler  flags directly to the source code. If you have compress.hpp that
+       requires "-lzip" on the link line, add the  following  comment  in  the
+       first 4K of the header file: //#LINKFLAGS=-lzip
+
+       Whenever  the  header  is included (either directly or indirectly), the
+       -lzip will be automatically added to the link step. If you  stop  using
+       the  header, for a particular executable, cake will figure that out and
+       not link against it.
+
+       If you want to compile  a  cpp  file  with  a  particular  optimization
+       enabled, add, say: //#CXXFLAGS=-fstrict-aliasing
+
+       Because the code and build flags are defined so close  to  each  other,
+       its much easier to tweak the compilation locally.
+
+PPEERRFFOORRMMAANNCCEE
+       Because  cake generates a makefile to build the C++ file, cake is about
+       as fast as a handrolled Makefile that uses the  same  lazily  generated
+       dependencies.  A typical project takes 0.04 seconds to build if nothing
+       is out of date, versus 2 seconds for, say, Boost.Build.
+
+       Cake also eliminates the redundant generation of static  archive  files
+       that  a  more  hierarchical  build process would generate as intermedi-
+       aries, saving the cost of running ’ar’.
+
+       Cake doesn’t build all cpp files that you have checked out, only  those
+       strictly  needed  to  build your particular binary, so you only pay for
+       what you use. You should see an improvement  on  most  projects,  espe-
+       cially for incremental rebuilds.
+
+IINNTTEEGGRRAATTIINNGG CCAAKKEE WWIITTHH AA MMAAKKEEFFIILLEE
+       To  wrap  cake  in  a  Makefile,  use  dummy input targets that force a
+       rebuild every time. Cake is fast so this is fine, it’s just like  doing
+       a  recursive  make.  This  example handles ’make all’ ’make test’ ’make
+       clean’ etc.
+
+       all: release debug test
+               cake src/program_to_build.cpp
+
+       release: FORCE
+               cake src/program_to_build.cpp --variant=release
+
+       debug: FORCE
+               cake src/program_to_build.cpp --variant=debug
+
+       test: FORCE
+               cake --begintests test/*.cpp --endtests
+
+       clean: FORCE
+               rm -rf bin
+
+       FORCE:
+
+CCOOMMMMOONN EERRRROORRSS
+       Syntax error: Unterminated quoted string
+
+       This error can be caused by one of the "magic comments" (i.e.,  compile
+       or link flags) having an unmatched quote.
+
+FFIILLEESS
+       _/_e_t_c_/_c_a_k_e_._c_o_n_f
+              cake  configuration  file containing the default CAKE_* environ-
+              ment variables.
+
+       _/_u_s_r_/_b_i_n_/_c_a_k_e
+              cake executable
+
+AAUUTTHHOORR
+       cake was written by Zomojo Pty Ltd.  This  manual  page  was  generated
+       using help2man.
+
+SSEEEE AALLSSOO
+       This information is repeated in the  cake.1  manual  page,  README  and
+       partly in cake --help.
 
 
 
-Magic Comments
-
-Cake works very differently to other build systems, which specify a hierarchy
-of link flags and compile options, because cake ties the compiler flags
-directly to the source code. If you have compress.hpp that requires "-lzip"
-on the link line, add the following comment in the first 4K of the header file:
-
-    //#LINKFLAGS=-lzip
-
-Whenever the header is included (either directly or indirectly), the -lzip
-will be automatically added to the link step. If you stop using the header,
-for a particular executable, cake will figure that out and not link against it.
-
-If you want to compile a cpp file with a particular optimization enabled,
-add, say:
-
-    //#CXXFLAGS=-fstrict-aliasing
-
-Because the code and build flags are defined so close to each other, its
-much easier to tweak the compilation locally.
-
-
-Performance
-
-Because cake generates a makefile to build the C++ file, cake is about as fast
-as a handrolled Makefile that uses the same lazily generated dependencies. A
-typical project takes 0.04 seconds to build if nothing is out of date,
-versus 2 seconds for, say, Boost.Build.
-
-Cake also eliminates the redundant generation of static archive files that
-a more hierarchical build process would generate as intermediaries, saving
-the cost of running 'ar'.
-
-Cake doesn't build all cpp files that you have checked out, only those
-strictly needed to build your particular binary, so you only pay for what
-you use. You should see an improvement on most projects, especially for
-incremental rebuilds.
-
-
-Installation
-
-Cake is small and has minimal dependencies. To install, simply copy 'cake'
-into your bin directory, and copy cake.conf to /etc/cake.conf, configuring it
-with your preferences
-
-
-Example
-
-You can test and run an app like this:
-
-    cake prime_number_finder.cpp && ./bin/prime_number_finder --start=100
-    --end=20000000001
-
-To build a variant (debug/release/profile), add --variant:
-
-    cake --variant=profile prime_number_finder.cpp
-
-
-Integrating Cake with a Makefile
-
-To wrap cake in a Makefile, use dummy input targets that force a rebuild
-every time. Cake is fast so this is fine, it's just like doing a recursive
-make. This example handles 'make all' 'make test' 'make clean' etc.
-
-all: FORCE
-        cake test/*.cpp
-
-release: FORCE
-        cake test/*.cpp --variant=release
-
-debug: FORCE
-        cake test/*.cpp --variant=debug
-
-test: FORCE
-        cake --begintests test/*.cpp --endtests
-
-clean: FORCE
-        rm -rf bin
-
-FORCE:
-
-
-Common Errors:
-
-/bin/sh: Syntax error: Unterminated quoted string
-
-This error can be caused by one of the "magic comments" 
-(i.e., compile or link flags) having an unmatched quote.
-
-
+cake 3.0                         December 2011                         CAKE(1)
