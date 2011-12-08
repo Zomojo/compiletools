@@ -1,4 +1,3 @@
-
 Summary: cake - Builds C++ without a makefile
 Name: cake
 Version: %{version_base}
@@ -24,6 +23,7 @@ test %{buildroot} != "/" && rm -rf %{buildroot}
 %install
 mkdir -p %{buildroot}/usr/bin
 mkdir -p %{buildroot}/etc/
+mkdir -p %{buildroot}/usr/share/man/man1/
 
 %if %{rhel} > 5
 cp etc.cake.centos6 %{buildroot}/etc/cake.conf
@@ -32,6 +32,7 @@ cp etc.cake.centos5 %{buildroot}/etc/cake.conf
 %endif
 cp cake %{buildroot}/usr/bin
 chmod -R 755 %{buildroot}/usr/bin
+gzip -c cake.1 > %{buildroot}/usr/share/man/man1/cake.1.gz
 
 %clean
 test "%{buildroot}" != "/" && rm -rf %{buildroot}
@@ -39,6 +40,8 @@ test "%{buildroot}" != "/" && rm -rf %{buildroot}
 %files
 %defattr(-,root,root)
 %attr(0755,-,-)/usr/bin/cake
-/etc/cake.conf
+%attr(0644,-,-)/etc/cake.conf
+%attr(0644,-,-)/usr/share/man/man1/cake.1.gz
+
 
 
