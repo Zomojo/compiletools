@@ -31,7 +31,6 @@ cp etc.cake.centos6 %{buildroot}/etc/cake.conf
 cp etc.cake.centos5 %{buildroot}/etc/cake.conf
 %endif
 cp cake %{buildroot}/usr/bin
-cp cake-* %{buildroot}/usr/bin
 chmod -R 755 %{buildroot}/usr/bin
 
 %clean
