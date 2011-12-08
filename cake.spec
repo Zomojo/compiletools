@@ -1,17 +1,15 @@
 Summary: cake - Builds C++ without a makefile
 Name: cake
 Version: %{version_base}
-Release: %{version_release}%{org_tag}%{dist}
+Release: %{version_release}%{?org_tag}%{?dist}
 Source: %{name}-%{version}.tgz
-License: Copyright Zomojo Pty. Ltd.
+License: GPL3
 Group: System/Libraries
 Buildroot: %_tmppath/%{name}-%{version}
-Prefix: /usr
 BuildArch: noarch
 
 %description
-cake builds C++ fast and accurately, without
-any configuration files.
+cake - a C++ build tool that requires almost no configuration.
 
 
 %prep
@@ -21,27 +19,26 @@ any configuration files.
 test %{buildroot} != "/" && rm -rf %{buildroot}
 
 %install
-mkdir -p %{buildroot}/usr/bin
-mkdir -p %{buildroot}/etc/
-mkdir -p %{buildroot}/usr/share/man/man1/
+mkdir -p %{buildroot}%{_bindir}
+mkdir -p %{buildroot}%{_sysconfdir}/
+mkdir -p %{buildroot}%{_mandir}/man1/
 
 %if %{rhel} > 5
-cp etc.cake.centos6 %{buildroot}/etc/cake.conf
+install -m 0644 etc.cake.centos6 %{buildroot}%{_sysconfdir}/cake.conf
 %else
-cp etc.cake.centos5 %{buildroot}/etc/cake.conf
+install -m 0644 etc.cake.centos5 %{buildroot}%{_sysconfdir}/cake.conf
 %endif
-cp cake %{buildroot}/usr/bin
-chmod -R 755 %{buildroot}/usr/bin
-gzip -c cake.1 > %{buildroot}/usr/share/man/man1/cake.1.gz
+install cake %{buildroot}%{_bindir}
+install -m 0644 cake.1 %{buildroot}%{_mandir}/man1/
 
 %clean
 test "%{buildroot}" != "/" && rm -rf %{buildroot}
 
 %files
 %defattr(-,root,root)
-%attr(0755,-,-)/usr/bin/cake
-%attr(0644,-,-)/etc/cake.conf
-%attr(0644,-,-)/usr/share/man/man1/cake.1.gz
+%attr(0755,-,-)%{_bindir}/cake
+%config(noreplace)%attr(0644,-,-)%{_sysconfdir}/cake.conf
+%attr(0644,-,-)%{_mandir}/man1/cake.1.gz
 
 
 
