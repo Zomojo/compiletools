@@ -109,8 +109,8 @@ CAKE_GCC44_ZPROFILE_POSTPREFIX="timeout 120"
 
 
 CAKE_GCC46_ID="GCC46"
-CAKE_GCC46_CC="ccache gcc46 -I . -isystem /usr/include/boost/ -L/usr/lib64/boost/ -Wl,-R/usr/lib64/boost -isystem /opt/gcc46/include/c++/4.6.2/ "
-CAKE_GCC46_CPP="ccache g++46 -I . -isystem /usr/include/boost/ -L/usr/lib64/boost/ -Wl,-R/usr/lib64/boost -isystem /opt/gcc46/include/c++/4.6.2/ -std=gnu++0x"
+CAKE_GCC46_CC="ccache gcc46 -I . -isystem /opt/gcc46/include/c++/4.6.2/ "
+CAKE_GCC46_CPP="ccache g++46 -I . -isystem /opt/gcc46/include/c++/4.6.2/ -std=gnu++0x"
 CAKE_GCC46_LINKER="g++46"
 CAKE_GCC46_CXXFLAGS="-fPIC -g -Wall"
 CAKE_GCC46_LINKFLAGS="-fPIC -Wall -Werror -Xlinker --build-id"
