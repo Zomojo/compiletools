@@ -444,10 +444,11 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
 
 
 def try_set_variant(variant):
-    global Variant, CC, CPP, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX, CAKE_ID
+    global Variant, CC, CPP, LINKER, CAKE_ID, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
     Variant = "CAKE_" + variant.upper()
     CC = environ(Variant + "_CC", None)
     CPP = environ(Variant + "_CPP", None)
+    LINKER = environ(Variant + "_LINKER", None)
     CAKE_ID = environ(Variant + "_ID", "")
     CXXFLAGS = environ(Variant + "_CXXFLAGS", None)
     LINKFLAGS = environ(Variant + "_LINKFLAGS", None)
