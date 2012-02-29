@@ -443,12 +443,16 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
         insert_dependencies(sources, ignored, s, linkflags, copy, quiet, verbose)
 
 
-def try_set_variant(variant):
+def try_set_variant(variant,static_library):
     global Variant, CC, CPP, LINKER, CAKE_ID, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
     Variant = "CAKE_" + variant.upper()
     CC = environ(Variant + "_CC", None)
     CPP = environ(Variant + "_CPP", None)
-    LINKER = environ(Variant + "_LINKER", None)
+    if static_library:
+        LINKER = "ar -src"
+    else:
+        LINKER = environ(Variant + "_LINKER", None)
+        
     CAKE_ID = environ(Variant + "_ID", "")
     CXXFLAGS = environ(Variant + "_CXXFLAGS", None)
     LINKFLAGS = environ(Variant + "_LINKFLAGS", None)
@@ -698,7 +702,7 @@ def main(config_file):
     for a in list(args):
         if a.startswith("--variant="):
             variant = a[a.index("=")+1:]
-            try_set_variant(variant)
+            try_set_variant(variant,static_library)
             args.remove(a)
             continue
 
