@@ -688,9 +688,9 @@ def main(config_file):
     inPost = False
     tests = []
     post_steps = []
-    
+  
     # Initialise the variables to the debug default
-    try_set_variant(Variant,static_library)
+    try_set_variant(Variant,static_library)    
     
     # set verbose and check for help
     # copy list so we can remove from the original and still iterate
@@ -720,7 +720,7 @@ def main(config_file):
         if a.startswith("--variant="):
             variant = a[a.index("=")+1:]
             if variant.upper() in ["DEBUG","RELEASE"]:
-				variant = CAKE_ID + "_" + variant				
+                variant = CAKE_ID + "_" + variant
             try_set_variant(variant,static_library)
             args.remove(a)
             continue
@@ -735,8 +735,8 @@ def main(config_file):
             continue
             
         if a.startswith("--CPP="):
-			CPP = a[a.index("=")+1:]
-			continue
+            CPP = a[a.index("=")+1:]
+            continue
             
         if a.startswith("--CC="):
             CC = a[a.index("=")+1:]
@@ -771,8 +771,8 @@ def main(config_file):
             continue
 
         if a.startswith("--append-CXXFLAGS="):
-			CXXFLAGS += " " + a[a.index("=")+1:]
-			continue
+            CXXFLAGS += " " + a[a.index("=")+1:]
+            continue
 
         if a.startswith("--LINKFLAGS="):
             LINKFLAGS = a[a.index("=")+1:]
