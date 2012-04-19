@@ -120,12 +120,15 @@ Source annotations:
 Environment:
     Environment variables can also be set in /etc/cake.conf, which has the lowest priority when finding compilation settings.
 
+    CAKE_ID                Sets the prefix to the embedded source annotations and predefined build macro.
+    CAKE_CPP               Sets the C preprocessor command.
     CAKE_CC                Sets the C compiler command.
-    CAKE_CPP               Sets the C++ compiler command.
+    CAKE_CXX               Sets the C++ compiler command
     CAKE_LINKER            Sets the linker command.
+    CAKE_CPPFLAGS          Sets the preprocessor flags for all c and cpp files in the build.
+    CAKE_CFLAGS            Sets the compilation flags for all c files in the build.
     CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
     CAKE_LINKFLAGS         Sets the flags used while linking.
-    CAKE_ID                Sets the prefix to the embedded source annotations and predefined build macro.
     CAKE_TESTPREFIX        Sets the execution prefix used while running unit tests.
     CAKE_POSTPREFIX        Sets the execution prefix used while running post-build commands.
     CAKE_BINDIR            Sets the directory where all binary files will be created.
@@ -148,18 +151,25 @@ Options:
     --variant=<vvv>        Reads the CAKE_<vvv>_CC, CAKE_<vvv>_CXXFLAGS and CAKE_<vvv>_LINKFLAGS
                            environment variables to determine the build flags.
 
-    --CC=<compiler>        Sets the C compiler command.
-    --CPP=<compiler>       Sets the C++ compiler command.
-    --LINKER=<linker>      Sets the linker command.
     --ID=<id>              Sets the prefix to the embedded source annotations, and a predefined macro CAKE_${ID}
-    --CXXFLAGS=<flags>     Sets the compilation flags for all c and cpp files in the build.
+    --CPP=<preprocessor>   Sets the C preprocessor command.
+    --CC=<compiler>        Sets the C compiler command.
+    --CXX=<compiler>       Sets the C++ compiler command.
+    --LINKER=<linker>      Sets the linker command.
+    
+    --CPPFLAGS=<flags>     Sets the preprocessor flags for all c and cpp files in the build.
+    --CFLAGS=<flags>       Sets the compilation flags for all c files in the build.
+    --CXXFLAGS=<flags>     Sets the compilation flags for all cpp files in the build.
+    --LINKFLAGS=<flags>    Sets the flags used while linking.
     --TESTPREFIX=<cmd>     Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"
     --POSTPREFIX=<cmd>     Runs post execution commands with the given prefix, eg. "timeout 60"
-    --LINKFLAGS=<flags>    Sets the flags used while linking.
 
+    --append-CPP=...       Appends the given text to the C preprocessor commands. Use for adding search paths etc.
     --append-CC=...        Appends the given text to the C compiler commands. Use for adding search paths etc.
-    --append-CPP=...       Appends the given text to the C++ compiler commands. Use for adding search paths etc.
-    --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. Use for adding search paths etc.
+    --append-CXX=...       Appends the given text to the C++ compiler commands. Use for adding search paths etc.
+    --append-CPPFLAGS=...  Appends the given text to the CPPFLAGS already set. 
+    --append-CFLAGS=...    Appends the given text to the CFLAGS already set. 
+    --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. 
     --append-LINKFLAGS=..  Appends the given text to the LINKFLAGS already set. Use for example with `wx-config --libs`
 
     --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.
@@ -196,15 +206,21 @@ def usage(msg = ""):
 
 
 def printCakeVariables():
-    print "  CC        : " + CC
-    print "  CPP       : " + CPP
-    print "  LINKER    : " + LINKER
-    print "  ID        : " + CAKE_ID
-    print "  CXXFLAGS  : " + CXXFLAGS
-    print "  LINKFLAGS : " + LINKFLAGS
-    print "  TESTPREFIX: " + TESTPREFIX
-    print "  POSTPREFIX: " + POSTPREFIX
-    print "\n"
+	print "  ID        : " + CAKE_ID
+	print "  VARIANT   : " + Variant
+	print "  CPP       : " + CPP
+	print "  CC        : " + CC
+	print "  CXX       : " + CXX
+	print "  LINKER    : " + LINKER
+	print "  CPPFLAGS  : " + CPPFLAGS
+	print "  CFLAGS    : " + CFLAGS
+	print "  CXXFLAGS  : " + CXXFLAGS
+	print "  LINKFLAGS : " + LINKFLAGS
+	print "  TESTPREFIX: " + TESTPREFIX
+	print "  POSTPREFIX: " + POSTPREFIX
+	print "  BINDIR    : " + BINDIR
+	print "  OBJDIR    : " + OBJDIR
+	print "\n"
 
 
 def extractOption(text, option):
@@ -444,24 +460,24 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
 
 
 def try_set_variant(variant,static_library):
-    global Variant, CC, CPP, LINKER, CAKE_ID, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
+    global Variant, CAKE_ID, CPP, CC, CXX, LINKER, CPPFLAGS, CFLAGS, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
     Variant = "CAKE_" + variant.upper()
-    CC = environ(Variant + "_CC", None)
+    
+    CAKE_ID = environ(Variant + "_ID", "")
     CPP = environ(Variant + "_CPP", None)
+    CC = environ(Variant + "_CC", None)
+    CXX = environ(Variant + "_CXX", None)
     if static_library:
         LINKER = "ar -src"
     else:
         LINKER = environ(Variant + "_LINKER", None)
         
-    CAKE_ID = environ(Variant + "_ID", "")
+    CPPFLAGS = environ(Variant + "_CPPFLAGS", None)    
+    CFLAGS = environ(Variant + "_CFLAGS", None)
     CXXFLAGS = environ(Variant + "_CXXFLAGS", None)
     LINKFLAGS = environ(Variant + "_LINKFLAGS", None)
     TESTPREFIX = environ(Variant + "_TESTPREFIX", None)
     POSTPREFIX = environ(Variant + "_POSTPREFIX", None)
-    if debug:
-        print "\n"
-        print "  variant   : " + Variant
-
 
 def lazily_write(filename, newtext):
     oldtext = ""
@@ -489,7 +505,7 @@ def objectname(source, entry):
     if source.endswith(".c"):
         mash_name += CC
     else:
-        mash_name += CPP
+        mash_name += CXX
 
     o = mash_name.split();
     o.sort()
@@ -533,9 +549,9 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
         if not quiet:
             definition.append("\t" + "@echo ... " + s)
         if s.endswith(".c"):
-            definition.append("\t" + CC + " " + CXXFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
+            definition.append("\t" + CC + " " + CFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
         else:
-            definition.append("\t" + CPP + " " + CXXFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
+            definition.append("\t" + CXX + " " + CXXFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
 
         rules[obj] = "\n".join(definition)
 
@@ -649,8 +665,9 @@ def do_run(output, args):
 
 
 def main(config_file):
-    global CC, CPP, LINKER, CAKE_ID, CXXFLAGS, LINKFLAGS, TESTPREFIX, POSTPREFIX
-    global BINDIR, OBJDIR
+    global CAKE_ID, CPP, CC, CXX, LINKER
+    global CPPFLAGS, CFLAGS, CXXFLAGS, LINKFLAGS
+    global TESTPREFIX, POSTPREFIX, BINDIR, OBJDIR
     global verbose, debug
     global Variant
 
@@ -671,10 +688,10 @@ def main(config_file):
     inPost = False
     tests = []
     post_steps = []
-    append_cc_flags = ''
-    append_cpp_flags = ''
-    append_link_flags = ''
-
+    
+    # Initialise the variables to the debug default
+    try_set_variant(Variant,static_library)
+    
     # set verbose and check for help
     # copy list so we can remove from the original and still iterate
     for a in list(args):
@@ -702,6 +719,8 @@ def main(config_file):
     for a in list(args):
         if a.startswith("--variant="):
             variant = a[a.index("=")+1:]
+            if variant.upper() in ["DEBUG","RELEASE"]:
+				variant = CAKE_ID + "_" + variant				
             try_set_variant(variant,static_library)
             args.remove(a)
             continue
@@ -711,47 +730,49 @@ def main(config_file):
             config_file = a[a.index("=")+1:]
             continue;
 
+        if a.startswith("--ID="):
+            CAKE_ID = a[a.index("=")+1:]
+            continue
+            
+        if a.startswith("--CPP="):
+			CPP = a[a.index("=")+1:]
+			continue
+            
         if a.startswith("--CC="):
             CC = a[a.index("=")+1:]
             continue
-
+            
+        if a.startswith("--CXX="):
+            CPP = a[a.index("=")+1:]
+            continue
+            
         if a.startswith("--LINKER="):
             LINKER = a[a.index("=")+1:]
             continue
 
-        if a.startswith("--CPP="):
-            CPP = a[a.index("=")+1:]
+        if a.startswith("--CPPFLAGS="):
+            CPPFLAGS = " " + a[a.index("=")+1:]
             continue
 
-        if a.startswith("--ID="):
-            CAKE_ID = a[a.index("=")+1:]
+        if a.startswith("--append-CPPFLAGS="):
+            CPPFLAGS += " " + a[a.index("=")+1:]
             continue
 
-        if a.startswith("--bindir="):
-            BINDIR = a[a.index("=")+1:]
-            if not BINDIR.endswith("/"):
-                BINDIR = BINDIR + "/"
+        if a.startswith("--CFLAGS="):
+            CFLAGS = " " + a[a.index("=")+1:]
             continue
 
-        if a.startswith("--objdir="):
-            OBJDIR = a[a.index("=")+1:]
-            if not OBJDIR.endswith("/"):
-                OBJDIR = OBJDIR + "/"
+        if a.startswith("--append-CFLAGS="):
+            CFLAGS += " " + a[a.index("=")+1:]
             continue
 
-        if a.startswith("--quiet"):
-            quiet = True
+        if a.startswith("--CXXFLAGS="):
+            CXXFLAGS = " " + a[a.index("=")+1:]
             continue
 
-        if a == "--generate":
-            generate = True
-            build = False
-            continue
-
-        if a == "--build":
-            generate = True
-            build = True
-            continue
+        if a.startswith("--append-CXXFLAGS="):
+			CXXFLAGS += " " + a[a.index("=")+1:]
+			continue
 
         if a.startswith("--LINKFLAGS="):
             LINKFLAGS = a[a.index("=")+1:]
@@ -768,23 +789,17 @@ def main(config_file):
         if a.startswith("--POSTPREFIX="):
             POSTPREFIX = a[a.index("=")+1:]
             continue
-
-        if a.startswith("--append-CC="):
-            append_cc_flags += " "
-            append_cc_flags += a[a.index("=")+1:]
+            
+        if a.startswith("--bindir="):
+            BINDIR = a[a.index("=")+1:]
+            if not BINDIR.endswith("/"):
+                BINDIR = BINDIR + "/"
             continue
 
-        if a.startswith("--append-CPP="):
-            append_cpp_flags += " "
-            append_cpp_flags += a[a.index("=")+1:]
-            continue
-
-        if a.startswith("--CXXFLAGS="):
-            CXXFLAGS = " " + a[a.index("=")+1:]
-            continue
-
-        if a.startswith("--append-CXXFLAGS="):
-            CXXFLAGS += " " + a[a.index("=")+1:]
+        if a.startswith("--objdir="):
+            OBJDIR = a[a.index("=")+1:]
+            if not OBJDIR.endswith("/"):
+                OBJDIR = OBJDIR + "/"
             continue
 
         if a == "--beginpost":
@@ -809,6 +824,20 @@ def main(config_file):
             inTests = False
             continue
 
+        if a.startswith("--quiet"):
+            quiet = True
+            continue
+
+        if a == "--generate":
+            generate = True
+            build = False
+            continue
+
+        if a == "--build":
+            generate = True
+            build = True
+            continue
+
         if a.startswith("--output="):
             nextOutput = a[a.index("=")+1:]
             continue
@@ -830,7 +859,7 @@ def main(config_file):
         nextOutput = None
 
     if len(Variant) == 0:
-        Variant = "CAKE"
+        raise "Variant has to be defined before here"
 
     # default objdir
     if OBJDIR == "":
@@ -841,15 +870,6 @@ def main(config_file):
         CXXFLAGS += " -DCAKE_" + CAKE_ID
     else:
         OBJDIR += "CAKE/"
-
-    # compiler takes extra options, seems counter-intuitive to put into CC
-    # rather than CXXFLAGS, but this allows options like -fprofile-generate
-    # to work
-    if len(append_cc_flags) > 0:
-        CC = CC + " " + append_cc_flags
-
-    if len(append_cpp_flags) > 0:
-        CPP = CPP + " " + append_cpp_flags
 
     if debug:
         printCakeVariables()
@@ -889,18 +909,23 @@ try:
 
     # data
     config_file = "/etc/cake.conf"
-    Variant = ""
+    Variant = "gcc46_debug"
 
-    CC = "g++"
-    CPP = "g++"
-    LINKER = "g++"
-    CAKE_ID = ""
-    LINKFLAGS = ""
-    CXXFLAGS = ""
-    TESTPREFIX=""
-    POSTPREFIX=""
-    BINDIR="bin/"
-    OBJDIR=""
+    CAKE_ID = "GCC46"     # TODO:  Explain what is the difference between an ID and a variant.  Also a better default probably the users $CC 
+    CPP = "g++"      # C and C++ preprocessor
+    CC = "g++"       # C compiler
+    CXX = "g++"      # C++ compiler
+    LINKER = "g++"   # Who would have guessed.  The linker.
+ 
+    CPPFLAGS = ""    # Flags for the C and C++ preprocessor
+    CFLAGS = ""      # Flags for C compiler
+    CXXFLAGS = ""    # Flags for C++ compiler
+    LINKFLAGS = ""   # Flags for the linker
+ 
+    TESTPREFIX=""    # commands to stick on the front of any tests being run.  e.g., time or set_affinity, etc.
+    POSTPREFIX=""    # commands to stick on the front of any post build commands being run
+    BINDIR="bin/"    # directory to write the generated executables
+    OBJDIR=""        # directory to write any intermediate object files
 
     # deal with config file first
     for a in list(sys.argv[1:]):
@@ -909,18 +934,23 @@ try:
             break
 
     parse_etc( config_file )
-
-    BINDIR = environ("CAKE_BINDIR", BINDIR)
-    OBJDIR = environ("CAKE_OBJDIR", OBJDIR)
-    CC = environ("CAKE_CC", CC)
-    CPP = environ("CAKE_CPP", CPP)
-    LINKER = environ("CAKE_LINKER", LINKER)
+    
     CAKE_ID = environ("CAKE_ID", CAKE_ID)
-    LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
+    CPP = environ("CAKE_CPP", CPP)
+    CC = environ("CAKE_CC", CC)
+    CXX = environ("CAKE_CXX", CXX)
+    LINKER = environ("CAKE_LINKER", LINKER)
+    
+    CPPFLAGS = environ("CAKE_CPPFLAGS", CPPFLAGS)
+    CFLAGS = environ("CAKE_CFLAGS", CFLAGS)
     CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
+    LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
+    
     TESTPREFIX = environ("CAKE_TESTPREFIX", TESTPREFIX)
     POSTPREFIX = environ("CAKE_POSTPREFIX", POSTPREFIX)
-
+    BINDIR = environ("CAKE_BINDIR", BINDIR)
+    OBJDIR = environ("CAKE_OBJDIR", OBJDIR)
+    
     main(config_file)
 
 except SystemExit:
