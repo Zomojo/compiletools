@@ -110,9 +110,11 @@ Cake uses the header includes to determine what other implementation (cpp) files
 Source annotations: 
     Embed these magic comments in your hpp and cpp files to give cake instructions on compilation and link flags.
 
-     //#{flag prefix}CXXFLAGS=<flags>   Appends the given options to the compile step.
-     //#{flag prefix}LINKFLAGS=<flags>  Appends the given options to the link step
-
+     //#CXXFLAGS=<flags>   Appends the given options to the compile step.
+     //#LINKFLAGS=<flags>  Appends the given options to the link step
+     //#GCC44_CXXFLAGS=<flags>   Appends the given options to the compile step when building with gcc 4.4.
+     //#GCC44_LINKFLAGS=<flags>  Appends the given options to the link step when building with gcc 4.4
+     
      If no variant specific annotations are found, then the global variants are also
      searched. This allows default behaviour to be specified, while allowing
      for a particular variant as well.
@@ -149,7 +151,9 @@ Options:
     --build                Builds the given targets (default).
     --output=<filename>    Overrides the output filename.
     --variant=<vvv>        Reads the CAKE_<vvv>_CC, CAKE_<vvv>_CXXFLAGS and CAKE_<vvv>_LINKFLAGS
-                           environment variables to determine the build flags.
+                           environment variables to determine the build flags. 
+                           Examples of variants are debug, release, gcc44_debug, gcc46_release.
+    --static-library       Build a static library rather than executable.  This is an alias for --LINKER="ar -src"
 
     --ID=<id>              Sets the prefix to the embedded source annotations, and a predefined macro CAKE_${ID}
     --CPP=<preprocessor>   Sets the C preprocessor command.
@@ -164,12 +168,9 @@ Options:
     --TESTPREFIX=<cmd>     Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"
     --POSTPREFIX=<cmd>     Runs post execution commands with the given prefix, eg. "timeout 60"
 
-    --append-CPP=...       Appends the given text to the C preprocessor commands. Use for adding search paths etc.
-    --append-CC=...        Appends the given text to the C compiler commands. Use for adding search paths etc.
-    --append-CXX=...       Appends the given text to the C++ compiler commands. Use for adding search paths etc.
-    --append-CPPFLAGS=...  Appends the given text to the CPPFLAGS already set. 
-    --append-CFLAGS=...    Appends the given text to the CFLAGS already set. 
-    --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. 
+    --append-CPPFLAGS=...  Appends the given text to the CPPFLAGS already set.   Useful for adding search paths etc.
+    --append-CFLAGS=...    Appends the given text to the CFLAGS already set. Useful for adding search paths etc.
+    --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. Useful for adding search paths etc.
     --append-LINKFLAGS=..  Appends the given text to the LINKFLAGS already set. Use for example with `wx-config --libs`
 
     --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.

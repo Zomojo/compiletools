@@ -1,9 +1,9 @@
 [name]
-cake - a C++ build tool that requires almost no configuration.
+cake - a C and C++ build tool that requires almost no configuration.
 
 
 [overview]
-Cake is a C++ build tool that requires almost no configuration. To build a C++ program, type "cake filename.cpp". Cake uses the header includes to determine what implementation (cpp) files are required.
+Cake is a C and C++ build tool that requires almost no configuration. To build a C++ program, type "cake filename.cpp". Cake uses the header includes to determine what implementation (c,cpp) files are required.
 .TP
 Cake works off the same principles as Ruby on Rails. It will make your life easy if you don't arbitrarily name things. The main rules are:
 
@@ -31,7 +31,7 @@ Only the library cpp files that are needed, directly, or indictly to create ./bi
 
 
 [how it works]
-Cake uses "gcc -MM -MF" to generate the header dependencies for the main.cpp file you specify at the command line. For each header file, it looks for an underlying implementation (cpp) file with the same name, and adds it to the build. Cake also reads the first 4k of each file for special comments that indicate needed link and compile flags.  Cake recurses through the dependencies of the cpp file, and uses this spidering to generate complete dependency information for the application. It then lazily generates a makefile, and finally calls make.
+Cake uses "gcc -MM -MF" to generate the header dependencies for the main.cpp file you specify at the command line. For each header file, it looks for an underlying implementation (c,cpp) file with the same name, and adds it to the build. Cake also reads the first 4k of each file for special comments that indicate needed link and compile flags.  Cake recurses through the dependencies of the cpp file, and uses this spidering to generate complete dependency information for the application. It then lazily generates a makefile, and finally calls make.
 
 [magic comments]
 .TP
