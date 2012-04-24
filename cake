@@ -861,16 +861,22 @@ def main(config_file):
 
     if len(Variant) == 0:
         raise "Variant has to be defined before here"
+    else:      
+        CPPFLAGS += " -DCAKE_VARIANT=\\\"" + Variant + "\\\"" 
+        CFLAGS += " -DCAKE_VARIANT=\\\"" + Variant + "\\\"" 
+        CXXFLAGS += " -DCAKE_VARIANT=\\\"" + Variant + "\\\"" 
 
     # default objdir
     if OBJDIR == "":
         OBJDIR = BINDIR
 
-    if len(CAKE_ID) > 0:
-        OBJDIR += CAKE_ID + "/"
+    if len(CAKE_ID) == 0:
+        raise "CAKE_ID must be defined before we get to here"
+    else:    
+        OBJDIR   += CAKE_ID + "/"
+        CPPFLAGS += " -DCAKE_" + CAKE_ID
+        CFLAGS   += " -DCAKE_" + CAKE_ID
         CXXFLAGS += " -DCAKE_" + CAKE_ID
-    else:
-        OBJDIR += "CAKE/"
 
     if debug:
         printCakeVariables()
