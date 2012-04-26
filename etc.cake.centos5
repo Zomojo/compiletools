@@ -1,3 +1,5 @@
+CAKE_DEFAULT_VARIANT="gcc41_debug"
+
 CAKE_GCC41_ID="GCC41"
 CAKE_GCC41_CPP="ccache g++ "
 CAKE_GCC41_CC="ccache g++  -I . -x c "

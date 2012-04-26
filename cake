@@ -942,6 +942,7 @@ try:
 
     parse_etc( config_file )
     
+    Variant = environ("CAKE_DEFAULT_VARIANT", Variant)
     CAKE_ID = environ("CAKE_ID", CAKE_ID)
     CPP = environ("CAKE_CPP", CPP)
     CC = environ("CAKE_CC", CC)
