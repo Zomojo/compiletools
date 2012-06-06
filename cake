@@ -149,6 +149,7 @@ Options:
     --objdir               Specifies the directory to contain object intermediate files. Defaults to 'bin/obj'.
     --generate             Only runs the makefile generation step, does not build.
     --build                Builds the given targets (default).
+    --file-list            Print list of referenced files.
     --output=<filename>    Overrides the output filename.
     --variant=<vvv>        Reads the CAKE_<vvv>_CC, CAKE_<vvv>_CXXFLAGS and CAKE_<vvv>_LINKFLAGS
                            environment variables to determine the build flags. 
@@ -174,6 +175,11 @@ Options:
     --append-LINKFLAGS=..  Appends the given text to the LINKFLAGS already set. Use for example with `wx-config --libs`
 
     --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.
+
+    --include-git-root     Walk up directory path to find .git directory. If found, add path as a system include. 
+                           This is currently disabled by default, but that may change. 
+                           
+    --no-git-root          Disable the git root include. 
 
     --begintests           Starts a test block. The cpp files following this declaration will
                            generate executables which are then run.
@@ -523,7 +529,7 @@ def objectname(source, entry):
 
 
 
-def generate_rules(source, output_name, generate_test, makefilename, quiet, verbose, static_library):
+def generate_rules(source, output_name, generate_test, makefilename, quiet, verbose, static_library, file_list):
     """
     Generates a set of make rules for the given source.
     If generate_test is true, also generates a test run rule.
@@ -538,12 +544,16 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
     cause = []
     
     source = realpath(source)
+    file_list.insert( source )
     insert_dependencies(sources, ignored, source, linkflags, cause, quiet, verbose)
     
     # compile rule for each object
     for s in sources:
         obj = objectname(s, sources[s])
         ccflags, cause, headers = sources[s]
+        
+        for h in headers:
+            file_list.insert( h )
 
         definition = []
         definition.append(obj + " : " + " ".join(headers + [s]))
@@ -622,14 +632,14 @@ def cpus():
     return str(len(t))
 
 
-def do_generate(source_to_output, tests, post_steps, quiet, verbose, static_library):
+def do_generate(source_to_output, tests, post_steps, quiet, verbose, static_library, file_list):
     """Generates all needed makefiles"""
     global Variant
 
     all_rules = {}
     for source in source_to_output:
         makefilename = munge(source) + "." + Variant + ".Makefile"
-        rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet, verbose, static_library)
+        rules = generate_rules(source, source_to_output[source], source_to_output[source] in tests, makefilename, quiet, verbose, static_library, file_list)
         all_rules.update(rules)
         render_makefile(makefilename, rules)
 
@@ -664,6 +674,16 @@ def do_build(makefilename, verbose):
 def do_run(output, args):
     os.execvp(output, [output] + args)
 
+def find_git_root():
+    p = os.path.abspath(".")
+
+    while (p != "/"):
+        if (os.path.exists( p + "/.git" )):
+            return p
+        p = os.path.dirname(p)
+
+    return;
+
 
 def main(config_file):
     global CAKE_ID, CPP, CC, CXX, LINKER
@@ -682,6 +702,7 @@ def main(config_file):
 
     generate = True
     build = True
+    file_list = False
     quiet = False
     static_library = False
     to_build = {}
@@ -689,6 +710,8 @@ def main(config_file):
     inPost = False
     tests = []
     post_steps = []
+    include_git_root = False
+    git_root = None
   
     # Initialise the variables to the debug default
     try_set_variant(Variant,static_library)    
@@ -834,6 +857,19 @@ def main(config_file):
             build = False
             continue
 
+        if a == "--no-git-root":
+            include_git_root = False
+            continue
+            
+        if a == "--include-git-root":
+            include_git_root = True
+            continue
+            
+        if a == "--file-list":
+            file_list = True
+            build = False
+            continue
+
         if a == "--build":
             generate = True
             build = True
@@ -858,6 +894,18 @@ def main(config_file):
             if inTests:
                 tests.append(nextOutput)
         nextOutput = None
+
+    if include_git_root:
+        git_root = find_git_root()
+        if (git_root):
+            if (verbose):
+                print "adding git root " + git_root            
+            CPPFLAGS += " -isystem " + git_root
+            CFLAGS += " -isystem " + git_root
+            CXXFLAGS += " -isystem " + git_root
+        else:
+            if (verbose):
+                print "no git root found"
 
     if len(Variant) == 0:
         raise "Variant has to be defined before here"
@@ -904,8 +952,17 @@ def main(config_file):
             print >> sys.stderr, c + " is not found."
             sys.exit(1)
 
+    files_referenced = OrderedSet()
     if generate:
-        makefilename = do_generate(to_build, tests, post_steps, quiet, verbose, static_library)
+        makefilename = do_generate(to_build, tests, post_steps, quiet, verbose, static_library, files_referenced)
+        
+    if file_list:
+        for src in files_referenced:
+            if (git_root):
+                print os.path.relpath( src, git_root )
+            else:
+                print src
+                #print os.path.relpath( src )
 
     if build:
         do_build(makefilename, verbose)
