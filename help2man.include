@@ -3,7 +3,11 @@ cake - a C and C++ build tool that requires almost no configuration.
 
 
 [overview]
-Cake is a C and C++ build tool that requires almost no configuration. To build a C++ program, type "cake filename.cpp". Cake uses the header includes to determine what implementation (c,cpp) files are required.
+cake generates and runs C and C++ executables with almost no configuration. To build a C or C++ program, type "cake filename.c" or "cake filename.cpp". 
+Cake uses the header includes to determine what other implementation (c,cpp) files are also required to be built and linked against.
+Cake also recognises that developers need to build different variants of the same executable.  A variant is defined to be a compiler and optimisation combination.
+Examples of variants are gcc46_release and clang_debug.
+
 .TP
 Cake works off the same principles as Ruby on Rails. It will make your life easy if you don't arbitrarily name things. The main rules are:
 

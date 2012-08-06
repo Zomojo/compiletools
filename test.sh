@@ -59,11 +59,26 @@ fi
 #
 # Test static library compilation
 #
+rm -rf bin/*
 ./cake --static-library tests/get_numbers.cpp
-./cake tests/test_static_library.cpp
-result=$(bin/test_static_library)
+./cake tests/test_library.cpp
+result=$(bin/test_library)
 if [[ $result != "1 2" ]]; then
     echo test 5: Incorrect result from static library test: $result
     exit 1
 fi
 
+#
+# Test dynamic library compilation
+#
+rm -rf bin/*
+./cake --dynamic-library tests/get_numbers.cpp
+LD_LIBRARY_PATH=bin
+export LD_LIBRARY_PATH
+./cake tests/test_library.cpp
+result=$(bin/test_library)
+unset LD_LIBRARY_PATH
+if [[ $result != "1 2" ]]; then
+    echo test 5: Incorrect result from dynamic library test: $result
+    exit 1
+fi

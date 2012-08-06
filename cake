@@ -104,14 +104,16 @@ usage_text = """
 
 Usage: cake [compilation args] filename.cpp [app args]
 
-cake generates and runs C++ executables with almost no configuration. To build a C++ program, type "cake filename.cpp". 
-Cake uses the header includes to determine what other implementation (cpp) files are also required to be built and linked against.
+cake generates and runs C and C++ executables with almost no configuration. To build a C or C++ program, type "cake filename.c" or "cake filename.cpp". 
+Cake uses the header includes to determine what other implementation (c,cpp) files are also required to be built and linked against.
+Cake also recognises that developers need to build different variants of the same executable.  A variant is defined to be a compiler and optimisation combination.
+Examples of variants are gcc46_release and clang_debug.
 
 Source annotations: 
     Embed these magic comments in your hpp and cpp files to give cake instructions on compilation and link flags.
 
-     //#CXXFLAGS=<flags>   Appends the given options to the compile step.
-     //#LINKFLAGS=<flags>  Appends the given options to the link step
+     //#CXXFLAGS=<flags>         Appends the given options to the compile step.
+     //#LINKFLAGS=<flags>        Appends the given options to the link step
      //#GCC44_CXXFLAGS=<flags>   Appends the given options to the compile step when building with gcc 4.4.
      //#GCC44_LINKFLAGS=<flags>  Appends the given options to the link step when building with gcc 4.4
      
@@ -122,19 +124,20 @@ Source annotations:
 Environment:
     Environment variables can also be set in /etc/cake.conf, which has the lowest priority when finding compilation settings.
 
-    CAKE_ID                Sets the prefix to the embedded source annotations and predefined build macro.
-    CAKE_CPP               Sets the C preprocessor command.
-    CAKE_CC                Sets the C compiler command.
-    CAKE_CXX               Sets the C++ compiler command
-    CAKE_LINKER            Sets the linker command.
-    CAKE_CPPFLAGS          Sets the preprocessor flags for all c and cpp files in the build.
-    CAKE_CFLAGS            Sets the compilation flags for all c files in the build.
-    CAKE_CXXFLAGS          Sets the compilation flags for all cpp files in the build.
-    CAKE_LINKFLAGS         Sets the flags used while linking.
-    CAKE_TESTPREFIX        Sets the execution prefix used while running unit tests.
-    CAKE_POSTPREFIX        Sets the execution prefix used while running post-build commands.
-    CAKE_BINDIR            Sets the directory where all binary files will be created.
-    CAKE_OBJDIR            Sets the directory where all object files will be created.
+    CAKE_DEFAULT_VARIANT       Sets the default variant to use if --variant=<some variant> is not specified on the command line
+    CAKE_<variant>_ID          Sets the prefix to the embedded source annotations and predefined build macro.
+    CAKE_<variant>_CPP         Sets the C preprocessor command.
+    CAKE_<variant>_CC          Sets the C compiler command.
+    CAKE_<variant>_CXX         Sets the C++ compiler command
+    CAKE_<variant>_LINKER      Sets the linker command.
+    CAKE_<variant>_CPPFLAGS    Sets the preprocessor flags for all c and cpp files in the build.
+    CAKE_<variant>_CFLAGS      Sets the compilation flags for all c files in the build.
+    CAKE_<variant>_CXXFLAGS    Sets the compilation flags for all cpp files in the build.
+    CAKE_<variant>_LINKFLAGS   Sets the flags used while linking.
+    CAKE_<variant>_TESTPREFIX  Sets the execution prefix used while running unit tests.
+    CAKE_<variant>_POSTPREFIX  Sets the execution prefix used while running post-build commands.
+    CAKE_BINDIR                Sets the directory where all binary files will be created.
+    CAKE_OBJDIR                Sets the directory where all object files will be created.
     
 
 Options:
@@ -155,7 +158,8 @@ Options:
                            environment variables to determine the build flags. 
                            Examples of variants are debug, release, gcc44_debug, gcc46_release.
     --static-library       Build a static library rather than executable.  This is an alias for --LINKER="ar -src"
-
+    --dynamic-library      Build a dynamic library rather than executable.  This is an alias for --append-LINKFLAGS="-shared"
+    
     --ID=<id>              Sets the prefix to the embedded source annotations, and a predefined macro CAKE_${ID}
     --CPP=<preprocessor>   Sets the C preprocessor command.
     --CC=<compiler>        Sets the C compiler command.
@@ -198,6 +202,14 @@ It also generates several tests into the bin directory and runs them. If they ar
 all successful, integration_test.sh is run.
 
    cake apps/prime-factoriser.cpp apps/frobnicator.cpp --begintests tests/*.cpp --endtests --beginpost ./integration_test.sh --variant=release
+   
+To build a static  library of the get_numbers.cpp file in the example tests   
+
+   cake --static-library tests/get_numbers.cpp
+   
+To build a dynamic library of the get_numbers.cpp file in the example tests
+
+    cake --dynamic-library tests/get_numbers.cpp
 
 """
 
@@ -705,6 +717,7 @@ def main(config_file):
     file_list = False
     quiet = False
     static_library = False
+    dynamic_library=False
     to_build = {}
     inTests = False
     inPost = False
@@ -729,6 +742,10 @@ def main(config_file):
             static_library = True
             LINKER = "ar -src"
             args.remove(a)            
+        elif a == "--dynamic-library":
+            dynamic_library = True   
+            LINKFLAGS += " -shared"         
+            args.remove(a)                        
         elif a == "--help":
             usage()
             return
@@ -880,12 +897,14 @@ def main(config_file):
             continue
 
         if a.startswith("--"):
-            usage("Invalid option " + a)
+            usage("Invalid option " + a)            
 
         if nextOutput is None:
             nextOutput = os.path.splitext(BINDIR + os.path.split(a)[1])[0]
             if static_library:
                 nextOutput = os.path.splitext(BINDIR + "lib" + os.path.split(a)[1])[0] + ".a"
+            if dynamic_library:
+                nextOutput = os.path.splitext(BINDIR + "lib" + os.path.split(a)[1])[0] + ".so"
 
         if inPost:
             post_steps.append(a)
