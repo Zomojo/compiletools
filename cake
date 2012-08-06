@@ -743,7 +743,7 @@ def main(config_file):
     for a in list(args):
         if a.startswith("--variant="):
             variant = a[a.index("=")+1:]
-            if variant.upper() in ["DEBUG","RELEASE"]:
+            if variant.upper() in ["DEBUG","RELEASE","COVERAGE"]:
                 variant = CAKE_ID + "_" + variant
             try_set_variant(variant,static_library)
             args.remove(a)
