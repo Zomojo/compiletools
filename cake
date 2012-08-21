@@ -594,8 +594,8 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
     definition.append( "\n" + output_name + " : " + tmp_output_name )
     if not quiet:
         definition.append("\t" + "@echo ... " + output_name)
+    definition.append( "\trm -f " + output_name )
     definition.append( "\tcp " + tmp_output_name + " " + output_name )
-
 
     rules[output_name] = "\n".join(definition)
 
