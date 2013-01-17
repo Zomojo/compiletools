@@ -678,9 +678,18 @@ def do_generate(source_to_output, tests, post_steps, quiet, verbose, static_libr
 
 
 def do_build(makefilename, verbose):
-    result = os.system("make -r " + {False:"-s ",True:""}[verbose] + "-f " + makefilename + " -j" + cpus())
+    cmd="make -r " + {False:"-s ",True:""}[verbose] + "-f " + makefilename + " -j" + cpus()
+    if verbose:
+        print cmd
+    result = os.system(cmd)
     if result != 0:
+        print
+        print "ERROR: Build failed."
         sys.exit(1)
+    elif verbose:
+        print
+        print "Build successful."
+        
 
 
 def do_run(output, args):
