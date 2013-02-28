@@ -311,12 +311,15 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     headers = [realpath(h) for h in files if h.endswith(".hpp") or h.endswith(".h")]
     sources = [realpath(h) for h in files if h.endswith(".cpp") or h.endswith(".c")]
 
-    # determine ccflags and linkflags
-    ccflags = {}
+    # determine cflags, cxxflags and linkflags
+    cflags = {}
+    cxxflags = {}
     linkflags = OrderedSet()
 
+    explicit_c = "//#" + CAKE_ID + "_CFLAGS="
     explicit_cxx = "//#" + CAKE_ID + "_CXXFLAGS="
     explicit_link = "//#" + CAKE_ID + "_LINKFLAGS="
+    explicit_glob_c = "//#CFLAGS="
     explicit_glob_cxx = "//#CXXFLAGS="
     explicit_glob_link = "//#LINKFLAGS="
 
@@ -333,6 +336,16 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
         # first check for variant specific flags
         if len(CAKE_ID) > 0:
             while True:
+                result, text = extractOption(text, explicit_c)
+                if result is None:
+                    break
+                else:
+                    if debug:
+                        print "explicit " + explicit_c + " = '" + result + "' for " + h
+                    result = result.replace("${path}", path)
+                    cflags[result] = True
+                    found = True
+            while True:
                 result, text = extractOption(text, explicit_cxx)
                 if result is None:
                     break
@@ -340,7 +353,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
                     if debug:
                         print "explicit " + explicit_cxx + " = '" + result + "' for " + h
                     result = result.replace("${path}", path)
-                    ccflags[result] = True
+                    cxxflags[result] = True
                     found = True
             while True:
                 result, text = extractOption(text, explicit_link)
@@ -355,6 +368,15 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
         # if none, then check globals
         if not found:
             while True:
+                result, text = extractOption(text, explicit_glob_c)
+                if result is None:
+                    break
+                else:
+                    if debug:
+                        print "explicit " + explicit_glob_c + " = '" + result + "' for " + h
+                    result = result.replace("${path}", path)
+                    cflags[result] = True
+            while True:
                 result, text = extractOption(text, explicit_glob_cxx)
                 if result is None:
                     break
@@ -362,7 +384,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
                     if debug:
                         print "explicit " + explicit_glob_cxx + " = '" + result + "' for " + h
                     result = result.replace("${path}", path)
-                    ccflags[result] = True
+                    cxxflags[result] = True                    
             while True:
                 result, text = extractOption(text, explicit_glob_link)
                 if result is None:
@@ -377,14 +399,14 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
 
     # cache
     f = open(deps_file, "w")
-    cPickle.dump((headers, sources, ccflags, linkflags), f)
+    cPickle.dump((headers, sources, cflags, cxxflags, linkflags), f)
     f.close()
     if deps_file in stat_cache:
         del stat_cache[deps_file]
     if deps_file in realpath_cache:
         del realpath_cache[deps_file]
     
-    return headers, sources, ccflags, linkflags
+    return headers, sources, cflags, cxxflags, linkflags
 
 
 stat_cache = {}
@@ -417,7 +439,7 @@ def get_dependencies_for(source_file, quiet, verbose):
         
         try:
             f = open(deps_file)            
-            headers, sources, ccflags, linkflags  = cPickle.load(f)
+            headers, sources, cflags, cxxflags, linkflags  = cPickle.load(f)
             f.close()
         except:
             all_good = False
@@ -432,7 +454,7 @@ def get_dependencies_for(source_file, quiet, verbose):
                     all_good = False
                     break
         if all_good:
-            result = headers, sources, ccflags, linkflags
+            result = headers, sources, cflags, cxxflags, linkflags
             dependency_cache[source_file] = result
             return result
 
@@ -459,9 +481,9 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
         return
 
     # recursive step
-    new_headers, new_sources, newccflags, newlinkflags = get_dependencies_for(new_file, quiet, verbose)
+    new_headers, new_sources, newcflags, newcxxflags, newlinkflags = get_dependencies_for(new_file, quiet, verbose)
     
-    sources[realpath(new_file)] = (newccflags, cause, new_headers)
+    sources[realpath(new_file)] = (newcflags, newcxxflags, cause, new_headers)
     
     # merge in link options
     for l in newlinkflags:
@@ -518,8 +540,8 @@ def lazily_write(filename, newtext):
 
 ignore_option_mash = [ '-fprofile-generate', '-fprofile-use' ]
 def objectname(source, entry):
-    ccflags, cause, headers = entry
-    mash_name = "".join(ccflags) + " " + CXXFLAGS + " "
+    cflags, cxxflags, cause, headers = entry
+    mash_name = "".join(cflags) + " " + CFLAGS + " " + "".join(cxxflags) + " " + CXXFLAGS + " "
 
     if source.endswith(".c"):
         mash_name += CC
@@ -562,7 +584,7 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
     # compile rule for each object
     for s in sources:
         obj = objectname(s, sources[s])
-        ccflags, cause, headers = sources[s]
+        cflags, cxxflags, cause, headers = sources[s]
         
         for h in headers:
             file_list.insert( h )
@@ -572,9 +594,9 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
         if not quiet:
             definition.append("\t" + "@echo ... " + s)
         if s.endswith(".c"):
-            definition.append("\t" + CC + " " + CFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
+            definition.append("\t" + CC + " " + CFLAGS + " " + " ".join(cflags) + " -c " + " " + s + " " " -o " + obj)
         else:
-            definition.append("\t" + CXX + " " + CXXFLAGS + " " + " ".join(ccflags) + " -c " + " " + s + " " " -o " + obj)
+            definition.append("\t" + CXX + " " + CXXFLAGS + " " + " ".join(cxxflags) + " -c " + " " + s + " " " -o " + obj)
 
         rules[obj] = "\n".join(definition)
 

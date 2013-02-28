@@ -55,6 +55,14 @@ if [[ $result != "release 3" ]]; then
     exit 1
 fi
 
+#
+# Test that c compilation picks up //#CFLAGS
+#
+./cake --quiet tests/test_cflags.c
+if [[ $? != 0 ]]; then
+    echo test 7: cake does not detect the //#CFLAGS in a c file
+    exit 1
+fi
 
 #
 # Test static library compilation
