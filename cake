@@ -70,34 +70,34 @@ def environ(variable, default):
             return os.environ[variable]
 
 def parse_etc(config_file):
-    """parses /etc/cake as if it was part of the environment.
-    os.environ has higher precedence
-    """
+	"""parses /etc/cake as if it was part of the environment.
+	os.environ has higher precedence
+	"""
 
-    global debug
+	if not os.path.exists(config_file):
+		raise UserException("Trying to parse config file. Could not find " + config_file)
 
-    if stat(config_file):
-        f = open(config_file)
-        lines = f.readlines()
-        f.close()
+	f = open(config_file)
+	lines = f.readlines()
+	f.close()
 
-        for l in lines:
-            if l.startswith("#"):
-                continue
-            l = l.strip()
+	for l in lines:
+		if l.startswith("#"):
+			continue
+		l = l.strip()
 
-            if len(l) == 0:
-                continue
-            key = l[0:l.index("=")].strip()
-            value = l[l.index("=") + 1:].strip()
+		if len(l) == 0:
+			continue
+		key = l[0:l.index("=")].strip()
+		value = l[l.index("=") + 1:].strip()
 
-            for k in os.environ:
-                value = value.replace('"', "")
-                value = value.replace("$" + k, os.environ[k])
-                value = value.replace("${" + k + "}", os.environ[k])
+		for k in os.environ:
+			value = value.replace('"', "")
+			value = value.replace("$" + k, os.environ[k])
+			value = value.replace("${" + k + "}", os.environ[k])
 
-            if not key in os.environ:
-                os.environ[key] = str(value)
+		if not key in os.environ:
+			os.environ[key] = str(value)
 
 
 usage_text = """
@@ -1042,6 +1042,10 @@ try:
     OBJDIR=""        # directory to write any intermediate object files
 
     # deal with config file first
+    user_config=os.path.expanduser("~/.cake.conf")
+    if os.path.exists(user_config):
+        config_file = user_config
+    
     for a in list(sys.argv[1:]):
         if a.startswith("--config="):
             config_file = a[a.index("=")+1:]
