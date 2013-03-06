@@ -122,7 +122,7 @@ Source annotations:
      for a particular variant as well.
 
 Environment:
-    Environment variables can also be set in /etc/cake.conf, which has the lowest priority when finding compilation settings.
+    Environment variables can also be set, from lowest to highest priority, in /etc/cake.conf, ~/.cake.conf or directly in the shell.
 
     CAKE_DEFAULT_VARIANT       Sets the default variant to use if --variant=<some variant> is not specified on the command line
     CAKE_<variant>_ID          Sets the prefix to the embedded source annotations and predefined build macro.
