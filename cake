@@ -1022,7 +1022,7 @@ def main(config_file):
 try:
 
     # data
-    config_file = "/etc/cake.conf"
+    config_file = os.path.dirname(sys.argv[0]) + "/cake.conf"  # cake.conf file found in the same directory as the cake python script.
     Variant = "gcc46_debug"
 
     CAKE_ID = "GCC46"     # TODO:  Explain what is the difference between an ID and a variant.  Also a better default probably the users $CC 
@@ -1041,7 +1041,17 @@ try:
     BINDIR="bin/"    # directory to write the generated executables
     OBJDIR=""        # directory to write any intermediate object files
 
-    # deal with config file first
+    # deal with configuration
+    # Use configuration in the order (lowest to highest priority)
+    # 1) same path as exe, 
+    # 2) system config 
+    # 3) user config
+    # 4) given on the command line
+    # 5) environment variables
+    system_config = "/etc/cake.conf"
+    if os.path.exists(system_config):
+        config_file = system_config
+    
     user_config=os.path.expanduser("~/.cake.conf")
     if os.path.exists(user_config):
         config_file = user_config
