@@ -663,7 +663,13 @@ def cpus():
     f = open("/proc/cpuinfo")
     t = [x for x in f.readlines() if x.startswith("processor")]
     f.close()
-    return str(len(t))
+    if 0 == len(t):
+        num_procs = 1 
+    else:
+        num_procs = len(t)
+
+    return str(num_procs)
+
 
 
 def do_generate(source_to_output, tests, post_steps, quiet, verbose, static_library, file_list):
