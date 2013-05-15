@@ -464,7 +464,7 @@ def get_dependencies_for(source_file, quiet, verbose):
     return result
 
 
-def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, verbose):
+def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, verbose, file_list):
     """Given a set of sources already being compiled, inserts the new file."""
     
     if not new_file.startswith("/"):
@@ -484,6 +484,7 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
     new_headers, new_sources, newcflags, newcxxflags, newlinkflags = get_dependencies_for(new_file, quiet, verbose)
     
     sources[realpath(new_file)] = (newcflags, newcxxflags, cause, new_headers)
+    file_list.insert(new_file)
     
     # merge in link options
     for l in newlinkflags:
@@ -493,11 +494,11 @@ def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, ver
     copy.append(new_file)
     
     for h in new_headers:
-        insert_dependencies(sources, ignored, os.path.splitext(h)[0] + ".cpp", linkflags, copy, quiet, verbose)
-        insert_dependencies(sources, ignored, os.path.splitext(h)[0] + ".c", linkflags, copy, quiet, verbose)
+        insert_dependencies(sources, ignored, os.path.splitext(h)[0] + ".cpp", linkflags, copy, quiet, verbose, file_list)
+        insert_dependencies(sources, ignored, os.path.splitext(h)[0] + ".c", linkflags, copy, quiet, verbose, file_list)
 
     for s in new_sources:
-        insert_dependencies(sources, ignored, s, linkflags, copy, quiet, verbose)
+        insert_dependencies(sources, ignored, s, linkflags, copy, quiet, verbose, file_list)
 
 
 def try_set_variant(variant,static_library):
@@ -579,7 +580,7 @@ def generate_rules(source, output_name, generate_test, makefilename, quiet, verb
     
     source = realpath(source)
     file_list.insert( source )
-    insert_dependencies(sources, ignored, source, linkflags, cause, quiet, verbose)
+    insert_dependencies(sources, ignored, source, linkflags, cause, quiet, verbose, file_list)
     
     # compile rule for each object
     for s in sources:
@@ -760,7 +761,7 @@ def main(config_file):
     inPost = False
     tests = []
     post_steps = []
-    include_git_root = False
+    include_git_root = True 
     git_root = None
   
     # Initialise the variables to the debug default
@@ -956,9 +957,9 @@ def main(config_file):
         if (git_root):
             if (verbose):
                 print "adding git root " + git_root            
-            CPPFLAGS += " -isystem " + git_root
-            CFLAGS += " -isystem " + git_root
-            CXXFLAGS += " -isystem " + git_root
+            CPPFLAGS += " -I " + git_root
+            CFLAGS += " -I " + git_root
+            CXXFLAGS += " -I " + git_root
         else:
             if (verbose):
                 print "no git root found"
