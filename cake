@@ -180,8 +180,8 @@ Options:
 
     --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.
 
-    --include-git-root     Walk up directory path to find .git directory. If found, add path as a system include. 
-                           This is currently disabled by default, but that may change. 
+    --include-git-root     Walk up directory path to find .git directory. If found, add path as an include path. 
+                           This is enabled by default. 
                            
     --no-git-root          Disable the git root include. 
 
