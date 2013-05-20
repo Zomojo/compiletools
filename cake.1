@@ -74,6 +74,9 @@ Sets the directory where all binary files will be created.
 .TP
 CAKE_OBJDIR
 Sets the directory where all object files will be created.
+.TP
+CAKE_PROJECT_VERSION_CMD
+Sets the command to execute that will return the version number of the project being built. cake then sets a macro equal to this version.
 .SH OPTIONS
 
 .TP
@@ -168,6 +171,9 @@ Appends the given text to the LINKFLAGS already set. Use for example with `wx\-c
 .TP
 \fB\-\-bindir=\fR...
 Overrides the directory where binaries are produced. 'bin/' by default.
+.TP
+\fB\-\-project\-version\-cmd=\fR...
+Sets the command to execute that will return the version number of the project being built.
 .TP
 \fB\-\-include\-git\-root\fR
 Walk up directory path to find .git directory. If found, add path as an include path.

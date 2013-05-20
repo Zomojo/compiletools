@@ -138,6 +138,7 @@ Environment:
     CAKE_<variant>_POSTPREFIX  Sets the execution prefix used while running post-build commands.
     CAKE_BINDIR                Sets the directory where all binary files will be created.
     CAKE_OBJDIR                Sets the directory where all object files will be created.
+    CAKE_PROJECT_VERSION_CMD   Sets the command to execute that will return the version number of the project being built. cake then sets a macro equal to this version.
     
 
 Options:
@@ -172,13 +173,14 @@ Options:
     --LINKFLAGS=<flags>    Sets the flags used while linking.
     --TESTPREFIX=<cmd>     Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"
     --POSTPREFIX=<cmd>     Runs post execution commands with the given prefix, eg. "timeout 60"
-
+    
     --append-CPPFLAGS=...  Appends the given text to the CPPFLAGS already set.   Useful for adding search paths etc.
     --append-CFLAGS=...    Appends the given text to the CFLAGS already set. Useful for adding search paths etc.
     --append-CXXFLAGS=...  Appends the given text to the CXXFLAGS already set. Useful for adding search paths etc.
     --append-LINKFLAGS=..  Appends the given text to the LINKFLAGS already set. Use for example with `wx-config --libs`
 
     --bindir=...           Overrides the directory where binaries are produced. 'bin/' by default.
+    --project-version-cmd=...  Sets the command to execute that will return the version number of the project being built.
 
     --include-git-root     Walk up directory path to find .git directory. If found, add path as an include path. 
                            This is enabled by default. 
@@ -225,21 +227,22 @@ def usage(msg = ""):
 
 
 def printCakeVariables():
-	print "  ID        : " + CAKE_ID
-	print "  VARIANT   : " + Variant
-	print "  CPP       : " + CPP
-	print "  CC        : " + CC
-	print "  CXX       : " + CXX
-	print "  LINKER    : " + LINKER
-	print "  CPPFLAGS  : " + CPPFLAGS
-	print "  CFLAGS    : " + CFLAGS
-	print "  CXXFLAGS  : " + CXXFLAGS
-	print "  LINKFLAGS : " + LINKFLAGS
-	print "  TESTPREFIX: " + TESTPREFIX
-	print "  POSTPREFIX: " + POSTPREFIX
-	print "  BINDIR    : " + BINDIR
-	print "  OBJDIR    : " + OBJDIR
-	print "\n"
+    print "  ID        : " + CAKE_ID
+    print "  VARIANT   : " + Variant
+    print "  CPP       : " + CPP
+    print "  CC        : " + CC
+    print "  CXX       : " + CXX
+    print "  LINKER    : " + LINKER
+    print "  CPPFLAGS  : " + CPPFLAGS
+    print "  CFLAGS    : " + CFLAGS
+    print "  CXXFLAGS  : " + CXXFLAGS
+    print "  LINKFLAGS : " + LINKFLAGS    
+    print "  TESTPREFIX: " + TESTPREFIX
+    print "  POSTPREFIX: " + POSTPREFIX
+    print "  BINDIR    : " + BINDIR
+    print "  OBJDIR    : " + OBJDIR
+    print "  PROJECT_VERSION_CMD : " + PROJECT_VERSION_CMD
+    print "\n"
 
 
 def extractOption(text, option):
@@ -738,7 +741,7 @@ def find_git_root():
 def main(config_file):
     global CAKE_ID, CPP, CC, CXX, LINKER
     global CPPFLAGS, CFLAGS, CXXFLAGS, LINKFLAGS
-    global TESTPREFIX, POSTPREFIX, BINDIR, OBJDIR
+    global TESTPREFIX, POSTPREFIX, BINDIR, OBJDIR, PROJECT_VERSION_CMD
     global verbose, debug
     global Variant
 
@@ -880,6 +883,10 @@ def main(config_file):
             if not OBJDIR.endswith("/"):
                 OBJDIR = OBJDIR + "/"
             continue
+        
+        if a.startswith("--project-version-cmd="):
+            PROJECT_VERSION_CMD = a[a.index("=")+1:]
+            continue
 
         if a == "--beginpost":
             if inTests:
@@ -982,6 +989,14 @@ def main(config_file):
         CPPFLAGS += " -DCAKE_" + CAKE_ID
         CFLAGS   += " -DCAKE_" + CAKE_ID
         CXXFLAGS += " -DCAKE_" + CAKE_ID
+        
+    if len(PROJECT_VERSION_CMD) == 0:
+        raise "CAKE_PROJECT_VERSION_CMD must be defined before we get to here"
+    else:    
+        status, project_version = commands.getstatusoutput(PROJECT_VERSION_CMD)         
+        CPPFLAGS += " -DCAKE_PROJECT_VERSION=\\\"" + project_version + "\\\"" 
+        CFLAGS   += " -DCAKE_PROJECT_VERSION=\\\"" + project_version + "\\\""
+        CXXFLAGS += " -DCAKE_PROJECT_VERSION=\\\"" + project_version + "\\\""                   
 
     if debug:
         printCakeVariables()
@@ -1042,6 +1057,7 @@ try:
     CFLAGS = ""      # Flags for C compiler
     CXXFLAGS = ""    # Flags for C++ compiler
     LINKFLAGS = ""   # Flags for the linker
+    PROJECT_VERSION_CMD = "echo 888.888.888-1"  # Command to run that will return the version of the project being built 
  
     TESTPREFIX=""    # commands to stick on the front of any tests being run.  e.g., time or set_affinity, etc.
     POSTPREFIX=""    # commands to stick on the front of any post build commands being run
@@ -1081,6 +1097,7 @@ try:
     CFLAGS = environ("CAKE_CFLAGS", CFLAGS)
     CXXFLAGS = environ("CAKE_CXXFLAGS", CXXFLAGS)
     LINKFLAGS = environ("CAKE_LINKFLAGS", LINKFLAGS)
+    PROJECT_VERSION_CMD = environ("CAKE_PROJECT_VERSION_CMD", LINKFLAGS)
     
     TESTPREFIX = environ("CAKE_TESTPREFIX", TESTPREFIX)
     POSTPREFIX = environ("CAKE_POSTPREFIX", POSTPREFIX)
