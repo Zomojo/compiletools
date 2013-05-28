@@ -1,5 +1,5 @@
 CAKE_DEFAULT_VARIANT="gcc46_debug"
-CAKE_PROJECT_VERSION_CMD="version=$(pkgit-greatest-version 2>/dev/null);sha1=$(git rev-parse --short HEAD 2>/dev/null) || sha1=0;pkg=$(ls *spec 2>/dev/null) || pkg=$(basename $(pwd));echo ${pkg%.spec}-$version-$sha1"
+CAKE_PROJECT_VERSION_CMD="pkgit-project-version"
 
 CAKE_GCC44_ID="GCC44"
 CAKE_GCC44_CPP="ccache g++ "
