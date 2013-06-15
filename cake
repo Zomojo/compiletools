@@ -801,8 +801,10 @@ def main(config_file):
             usage()
             return
         elif a == "--version":
-            # TODO: somehow extract this from git
-            print """cake 3.0"""
+            # This reports on the current version of cake, not the version of the project being built by cake.
+            # This relies on replacing the CAKE_PROJECT_VERSION_MACRO with an actual version number at packaging time
+            # Don't confuse this with PROJECT_VERSION which is the version of the project that cake is building.
+            print CAKE_PROJECT_VERSION_MACRO
             return
 
     # deal with variant next

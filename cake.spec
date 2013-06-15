@@ -17,6 +17,9 @@ cake - a C++ build tool that requires almost no configuration.
 
 %build
 test %{buildroot} != "/" && rm -rf %{buildroot}
+# Search and replace any CAKE_PROJECT_VERSION_MACRO with an actual version
+find . -type f -print0 |xargs -0 sed -i "s/CAKE_PROJECT_VERSION_MACRO/%{version_base}-%{version_release}/g"
+./create-documentation.sh
 
 %install
 mkdir -p %{buildroot}%{_bindir}
