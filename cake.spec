@@ -7,6 +7,7 @@ License: GPL3
 Group: System/Libraries
 Buildroot: %_tmppath/%{name}-%{version}
 BuildArch: noarch
+BuildRequires: help2man
 
 %description
 cake - a C++ build tool that requires almost no configuration.
