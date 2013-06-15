@@ -70,34 +70,34 @@ def environ(variable, default):
             return os.environ[variable]
 
 def parse_etc(config_file):
-	"""parses /etc/cake as if it was part of the environment.
-	os.environ has higher precedence
-	"""
+    """parses /etc/cake as if it was part of the environment.
+    os.environ has higher precedence
+    """
 
-	if not os.path.exists(config_file):
-		raise UserException("Trying to parse config file. Could not find " + config_file)
+    if not os.path.exists(config_file):
+        raise UserException("Trying to parse config file. Could not find " + config_file)
 
-	f = open(config_file)
-	lines = f.readlines()
-	f.close()
+    f = open(config_file)
+    lines = f.readlines()
+    f.close()
 
-	for l in lines:
-		if l.startswith("#"):
-			continue
-		l = l.strip()
+    for l in lines:
+        if l.startswith("#"):
+            continue
+        l = l.strip()
 
-		if len(l) == 0:
-			continue
-		key = l[0:l.index("=")].strip()
-		value = l[l.index("=") + 1:].strip()
+        if len(l) == 0:
+            continue
+        key = l[0:l.index("=")].strip()
+        value = l[l.index("=") + 1:].strip()
 
-		for k in os.environ:
-			value = value.replace('"', "")
-			value = value.replace("$" + k, os.environ[k])
-			value = value.replace("${" + k + "}", os.environ[k])
+        for k in os.environ:
+            value = value.replace('"', "")
+            value = value.replace("$" + k, os.environ[k])
+            value = value.replace("${" + k + "}", os.environ[k])
 
-		if not key in os.environ:
-			os.environ[key] = str(value)
+        if not key in os.environ:
+            os.environ[key] = str(value)
 
 
 usage_text = """
@@ -139,6 +139,7 @@ Environment:
     CAKE_BINDIR                Sets the directory where all binary files will be created.
     CAKE_OBJDIR                Sets the directory where all object files will be created.
     CAKE_PROJECT_VERSION_CMD   Sets the command to execute that will return the version number of the project being built. cake then sets a macro equal to this version.
+    CAKE_PARALLEL              Sets the number of CPUs to use in parallel for a build.  Defaults to all cpus.
     
 
 Options:
@@ -161,6 +162,8 @@ Options:
     --static-library       Build a static library rather than executable.  This is an alias for --LINKER="ar -src"
     --dynamic-library      Build a dynamic library rather than executable.  This is an alias for --append-LINKFLAGS="-shared"
     
+    -j|--jobs=<number>     Number of CPUs to use in parallel in the build, defaults to all
+
     --ID=<id>              Sets the prefix to the embedded source annotations, and a predefined macro CAKE_${ID}
     --CPP=<preprocessor>   Sets the C preprocessor command.
     --CC=<compiler>        Sets the C compiler command.
@@ -241,6 +244,7 @@ def printCakeVariables():
     print "  POSTPREFIX: " + POSTPREFIX
     print "  BINDIR    : " + BINDIR
     print "  OBJDIR    : " + OBJDIR
+    print "  PARALLEL  : " + PARALLEL
     print "  PROJECT_VERSION_CMD : " + PROJECT_VERSION_CMD
     print "\n"
 
@@ -664,13 +668,18 @@ def render_makefile(makefilename, rules):
 
 
 def cpus():
-    f = open("/proc/cpuinfo")
-    t = [x for x in f.readlines() if x.startswith("processor")]
-    f.close()
-    if 0 == len(t):
-        num_procs = 1 
+    global PARALLEL
+    
+    if len(PARALLEL):
+        num_procs = PARALLEL
     else:
-        num_procs = len(t)
+        f = open("/proc/cpuinfo")
+        t = [x for x in f.readlines() if x.startswith("processor")]
+        f.close()
+        if 0 == len(t):
+            num_procs = 1 
+        else:
+            num_procs = len(t)
 
     return str(num_procs)
 
@@ -742,6 +751,7 @@ def main(config_file):
     global CAKE_ID, CPP, CC, CXX, LINKER
     global CPPFLAGS, CFLAGS, CXXFLAGS, LINKFLAGS
     global TESTPREFIX, POSTPREFIX, BINDIR, OBJDIR, PROJECT_VERSION_CMD
+    global PARALLEL
     global verbose, debug
     global Variant
 
@@ -807,7 +817,8 @@ def main(config_file):
             args.remove(a)
             continue
 
-    for a in args:
+    iter_args = iter(args)
+    for a in iter_args:
         if a.startswith("--config="):
             config_file = a[a.index("=")+1:]
             continue;
@@ -876,6 +887,14 @@ def main(config_file):
             BINDIR = a[a.index("=")+1:]
             if not BINDIR.endswith("/"):
                 BINDIR = BINDIR + "/"
+            continue
+
+        if a.startswith("--jobs="):
+            PARALLEL = a[a.index("=")+1:]
+            continue
+
+        if a.startswith("-j"):
+            PARALLEL = next(iter_args)
             continue
 
         if a.startswith("--objdir="):
@@ -1063,6 +1082,7 @@ try:
     POSTPREFIX=""    # commands to stick on the front of any post build commands being run
     BINDIR="bin/"    # directory to write the generated executables
     OBJDIR=""        # directory to write any intermediate object files
+    PARALLEL=""      # number of cpus to use concurrently
 
     # deal with configuration
     # Use configuration in the order (lowest to highest priority)
@@ -1103,6 +1123,7 @@ try:
     POSTPREFIX = environ("CAKE_POSTPREFIX", POSTPREFIX)
     BINDIR = environ("CAKE_BINDIR", BINDIR)
     OBJDIR = environ("CAKE_OBJDIR", OBJDIR)
+    PARALLEL = environ("CAKE_PARALLEL", PARALLEL)
     
     main(config_file)
 
