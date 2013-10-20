@@ -4,7 +4,14 @@
 
 DISTRIBUTOR_ID=""
 
-# Linux: Use /etc/os-release once it is more prevalent, but for now lsb_release will suffice on linux systems.
+# Linux: 
+# Use /etc/os-release but fall back to lsb_release
+if [ -f /etc/os-release ]; then
+    . /etc/os-release
+    echo etc.cake.$ID.$VERSION_ID	
+    exit 0
+fi
+
 which lsb_release >/dev/null 2>/dev/null 
 if [ "0" = "$?" ] && [ -x $(lsb_release) ]; then
     DISTRIBUTOR_ID=$(lsb_release -i | cut -f2 |tr -d '\n')
