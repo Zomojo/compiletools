@@ -1065,7 +1065,11 @@ def main(config_file):
 try:
 
     # data
-    config_file = os.path.dirname(sys.argv[0]) + "/cake.conf"  # cake.conf file found in the same directory as the cake python script.
+    process = os.popen('./cake-config-chooser')
+    best_guess_config=process.read()
+    process.close() 
+    config_file = os.path.dirname(os.path.abspath(sys.argv[0])) + "/" + best_guess_config.rstrip()  # cake.conf file found in the same directory as the cake python script.
+
     Variant = "gcc46_debug"
 
     CAKE_ID = "GCC46"     # TODO:  Explain what is the difference between an ID and a variant.  Also a better default probably the users $CC 
