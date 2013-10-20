@@ -13,7 +13,7 @@ if [ -f /etc/os-release ]; then
 fi
 
 which lsb_release >/dev/null 2>/dev/null 
-if [ "0" = "$?" ] && [ -x $(lsb_release) ]; then
+if [ "0" = "$?" ]; then
     DISTRIBUTOR_ID=$(lsb_release -i | cut -f2 |tr -d '\n')
     
     if [ "CentOS" = "$DISTRIBUTOR_ID" ]; then
