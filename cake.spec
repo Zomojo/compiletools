@@ -27,11 +27,8 @@ mkdir -p %{buildroot}%{_bindir}
 mkdir -p %{buildroot}%{_sysconfdir}/
 mkdir -p %{buildroot}%{_mandir}/man1/
 
-%if %{rhel} > 5
-install -m 0644 etc.cake.centos6 %{buildroot}%{_sysconfdir}/cake.conf
-%else
-install -m 0644 etc.cake.centos5 %{buildroot}%{_sysconfdir}/cake.conf
-%endif
+cake_config=$(./cake-config-chooser)
+install -m 0644 $cake_config %{buildroot}%{_sysconfdir}/cake.conf
 install cake %{buildroot}%{_bindir}
 install -m 0644 cake.1 %{buildroot}%{_mandir}/man1/
 
