@@ -1065,7 +1065,7 @@ def main(config_file):
 try:
 
     # data
-    process = os.popen('./cake-config-chooser')
+    process = os.popen(os.path.dirname(os.path.abspath(sys.argv[0])) + '/cake-config-chooser')
     best_guess_config=process.read()
     process.close() 
     config_file = os.path.dirname(os.path.abspath(sys.argv[0])) + "/" + best_guess_config.rstrip()  # cake.conf file found in the same directory as the cake python script.
