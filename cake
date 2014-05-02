@@ -748,7 +748,7 @@ def find_git_root():
 
 
 def main(config_file):
-    global CAKE_ID, CPP, CC, CXX, LINKER
+    global CAKE_DEFAULT_COMPILER_PREFIX, CAKE_ID, CPP, CC, CXX, LINKER
     global CPPFLAGS, CFLAGS, CXXFLAGS, LINKFLAGS
     global TESTPREFIX, POSTPREFIX, BINDIR, OBJDIR, PROJECT_VERSION_CMD
     global PARALLEL
@@ -814,7 +814,7 @@ def main(config_file):
         if a.startswith("--variant="):
             variant = a[a.index("=")+1:]
             if variant.upper() in ["DEBUG","RELEASE","COVERAGE"]:
-                variant = CAKE_ID + "_" + variant
+                variant = CAKE_DEFAULT_COMPILER_PREFIX + "_" + variant
             try_set_variant(variant,static_library)
             args.remove(a)
             continue
@@ -1073,6 +1073,7 @@ try:
     Variant = "gcc46_debug"
 
     CAKE_ID = "GCC46"     # TODO:  Explain what is the difference between an ID and a variant.  Also a better default probably the users $CC 
+    CAKE_DEFAULT_COMPILER_PREFIX = "GCC464"
     CPP = "g++"      # C and C++ preprocessor
     CC = "g++"       # C compiler
     CXX = "g++"      # C++ compiler
@@ -1113,6 +1114,7 @@ try:
     parse_etc( config_file )
     
     Variant = environ("CAKE_DEFAULT_VARIANT", Variant)
+    CAKE_DEFAULT_COMPILER_PREFIX = environ("CAKE_DEFAULT_COMPILER_PREFIX", CAKE_DEFAULT_COMPILER_PREFIX)
     CAKE_ID = environ("CAKE_ID", CAKE_ID)
     CPP = environ("CAKE_CPP", CPP)
     CC = environ("CAKE_CC", CC)
