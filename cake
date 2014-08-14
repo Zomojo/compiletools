@@ -4,6 +4,7 @@ import cPickle
 import sys
 import commands
 import os
+import re
 
 if sys.version_info < (2,6):
     from sets import Set
