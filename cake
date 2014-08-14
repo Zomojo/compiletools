@@ -556,6 +556,8 @@ def objectname(source, entry):
     else:
         mash_name += CXX
 
+    mash_name = re.sub(r'CAKE_PROJECT_VERSION=\\".*?\\"', "", mash_name)
+
     o = mash_name.split();
     o.sort()
     mash_inc = ""
