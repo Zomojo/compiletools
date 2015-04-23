@@ -6,7 +6,7 @@ DISTRIBUTOR_ID=""
 
 # Linux: 
 # Use /etc/os-release but fall back to lsb_release
-if [ -f /etc/os-release ]; then
+if [ -s /etc/os-release ]; then
     . /etc/os-release
     echo etc.cake.$ID.$VERSION_ID	
     exit 0
