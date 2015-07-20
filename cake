@@ -798,14 +798,6 @@ def main(config_file):
         elif a == "--cake-debug":
             debug = True
             args.remove(a)
-        elif a == "--static-library":
-            static_library = True
-            LINKER = "ar -src"
-            args.remove(a)            
-        elif a == "--dynamic-library":
-            dynamic_library = True   
-            LINKFLAGS += " -shared"         
-            args.remove(a)                        
         elif a == "--help":
             usage()
             return
@@ -818,7 +810,6 @@ def main(config_file):
 
     # deal with variant next
     # to set the base set of flags for the other options to apply to
-    # copy list so we can remove from the original and still iterate
     for a in list(args):
         if a.startswith("--variant="):
             variant = a[a.index("=")+1:]
@@ -827,6 +818,17 @@ def main(config_file):
             try_set_variant(variant,static_library)
             args.remove(a)
             continue
+
+    # now check for linkflag sensitive options
+    for a in list(args):
+        if a == "--static-library":
+            static_library = True
+            LINKER = "ar -src"
+            args.remove(a)            
+        elif a == "--dynamic-library":
+            dynamic_library = True   
+            LINKFLAGS += " -shared"         
+            args.remove(a)                        
 
     iter_args = iter(args)
     for a in iter_args:
