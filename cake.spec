@@ -7,7 +7,7 @@ License: GPL3
 Group: System/Libraries
 Buildroot: %_tmppath/%{name}-%{version}
 BuildArch: noarch
-BuildRequires: help2man redhat-lsb-core
+BuildRequires: help2man redhat-lsb-core groff-base perl-Exporter
 
 %description
 cake - a C++ build tool that requires almost no configuration.
