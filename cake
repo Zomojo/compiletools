@@ -849,7 +849,7 @@ def main(config_file):
             continue
             
         if a.startswith("--CXX="):
-            CPP = a[a.index("=")+1:]
+            CXX = a[a.index("=")+1:]
             continue
             
         if a.startswith("--LINKER="):
