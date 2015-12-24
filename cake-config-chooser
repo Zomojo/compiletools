@@ -15,16 +15,20 @@ fi
 which lsb_release >/dev/null 2>/dev/null 
 if [ "0" = "$?" ]; then
     DISTRIBUTOR_ID=$(lsb_release -i | cut -f2 |tr -d '\n')
-    
+    MAJOR_RELEASE=$(lsb_release -r | cut -f2 | cut -d. -f1)
+
     if [ "CentOS" = "$DISTRIBUTOR_ID" ]; then
-        MAJOR_RELEASE=$(lsb_release -r | cut -f2 | cut -d. -f1)
         echo etc.cake.centos.$MAJOR_RELEASE
         exit 0
     fi
     
     if [ "Fedora" = "$DISTRIBUTOR_ID" ]; then
-        MAJOR_RELEASE=$(lsb_release -r | cut -f2 | cut -d. -f1)
         echo etc.cake.fedora.$MAJOR_RELEASE
+        exit 0
+    fi
+
+    if [ "Scientific" = "$DISTRIBUTOR_ID" ]; then
+        echo etc.cake.scientific.$MAJOR_RELEASE
         exit 0
     fi
 fi
