@@ -1,0 +1,16 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	mkdir -p debian/cake/usr/bin
+	cp cake debian/cake/usr/bin
+	mkdir -p debian/cake/etc
+	cp $(shell ./cake-config-chooser) debian/cake/etc/cake.conf
+	./create-documentation.sh
+	mkdir -p debian/cake/usr/share/man/man1
+	cp cake.1 debian/cake/usr/share/man/man1/cake.1
+	gzip debian/cake/usr/share/man/man1/cake.1
+	rm README cake.1
+
