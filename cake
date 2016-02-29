@@ -5,6 +5,7 @@ import sys
 import commands
 import os
 import re
+import pdb
 
 if sys.version_info < (2,6):
     from sets import Set
@@ -251,6 +252,7 @@ def printCakeVariables():
     print "  BINDIR    : " + BINDIR
     print "  OBJDIR    : " + OBJDIR
     print "  PARALLEL  : " + PARALLEL
+    print "  PREPROCESS: " + str(PREPROCESS)
     print "  PROJECT_VERSION_CMD : " + PROJECT_VERSION_CMD
     print "\n"
 
@@ -297,6 +299,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     """Recalculates the dependencies and caches them for a given source file"""
 
     global CAKE_ID
+    global PREPROCESS
     
     if not quiet:
         print "... " + source_file + " (dependencies)"
@@ -332,18 +335,33 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     explicit_c = "//#" + CAKE_ID + "_CFLAGS="
     explicit_cxx = "//#" + CAKE_ID + "_CXXFLAGS="
     explicit_link = "//#" + CAKE_ID + "_LINKFLAGS="
+    explicit_source = "//#" + CAKE_ID + "_SOURCE="
     explicit_glob_c = "//#CFLAGS="
     explicit_glob_cxx = "//#CXXFLAGS="
     explicit_glob_link = "//#LINKFLAGS="
+    explicit_glob_source = "//#SOURCE="
 
     for h in headers + [source_file]:
         path = os.path.split(h)[0]
-        f = open(h)
-
-        # reading and handling as one string is slightly faster then
-        # handling a list of strings
-        text = f.read(2048)
-
+        text = ""
+        if PREPROCESS:       
+            # Preprocess but leave comments
+            i_file = deps_file.replace(".deps", ".i")
+            cmd = CPP + CPPFLAGS + " -C -E -o " + i_file + " " + h
+            if verbose:
+                print cmd
+            status,  output = status, output = commands.getstatusoutput(cmd)
+            if status != 0:
+                raise UserException(cmd + "\n" + output)
+            with open(i_file) as f:
+                text=f.read()
+        else:
+            # reading and handling as one string is slightly faster then
+            # handling a list of strings.
+            # Only read first 2k for speed
+            with open(h) as f:
+                text=f.read(2048)
+                
         found = False
 
         # first check for variant specific flags
@@ -377,6 +395,14 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
                         print "explicit " + explicit_link + " = '" + result + "' for " + h
                     linkflags.insert(result.replace("${path}", path))
                     found = True
+            while True:
+                result, text = extractOption(text, explicit_source)
+                if result is None:
+                    break
+                else:
+                    if debug:
+                        print "explicit " + explicit_source + " = '" + result + "' for " + h
+                    found = True
 
         # if none, then check globals
         if not found:
@@ -406,8 +432,16 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
                     if debug:
                         print "explicit " + explicit_glob_link + " = '" + result + "' for " + h
                     linkflags.insert(result.replace("${path}", path))
+            while True:
+                result, text = extractOption(text, explicit_glob_source)
+                if result is None:
+                    break
+                else:
+                    #pdb.set_trace()
+                    if debug:
+                        print "global explicit " + explicit_glob_source + " = '" + result + "' for " + h
+                    sources.append(path+"/"+result)
 
-        f.close()
         pass
 
     # cache
@@ -436,7 +470,7 @@ dependency_cache = {}
 
 def get_dependencies_for(source_file, quiet, verbose):
     """Converts a gcc make command into a set of headers and source dependencies"""    
-    
+    #pdb.set_trace() 
     global dependency_cache
 
     if source_file in dependency_cache:
@@ -480,8 +514,9 @@ def get_dependencies_for(source_file, quiet, verbose):
 def insert_dependencies(sources, ignored, new_file, linkflags, cause, quiet, verbose, file_list):
     """Given a set of sources already being compiled, inserts the new file."""
     
+    #pdb.set_trace()
     if not new_file.startswith("/"):
-        raise Exception("bad")    
+        raise Exception("The new_file being examined needs to have a full path")    
     
     if new_file in sources:
         return
@@ -768,7 +803,6 @@ def main(config_file):
 
     # parse arguments
     args = sys.argv[1:]
-    appargs = []
     nextOutput = None
 
     generate = True
@@ -1126,6 +1160,7 @@ try:
     BINDIR="bin/"    # directory to write the generated executables
     OBJDIR=""        # directory to write any intermediate object files
     PARALLEL=""      # number of cpus to use concurrently
+    PREPROCESS=False # Should the source files be preprocessed _before_ the magic //# comments are read.
 
     # deal with configuration
     # Use configuration in the order (lowest to highest priority)
@@ -1168,6 +1203,7 @@ try:
     BINDIR = environ("CAKE_BINDIR", BINDIR)
     OBJDIR = environ("CAKE_OBJDIR", OBJDIR)
     PARALLEL = environ("CAKE_PARALLEL", PARALLEL)
+    PREPROCESS = environ("CAKE_PREPROCESS", PREPROCESS)
     
     main(config_file)
 
