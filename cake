@@ -589,6 +589,13 @@ def lazily_write(filename, newtext):
 
 ignore_option_mash = [ '-fprofile-generate', '-fprofile-use' ]
 def objectname(source, entry):
+    """
+    Calculate a hash that identifies when a source file and compile options are constant.
+    Then use the source filename and the hash as the name for the object file.
+    The reasoning is that we want to avoid recompiling an object file if the source file and the compile options are the same 
+    but we must recompile if _either_ the source file or the compile options change.
+    The ignore_option_mash list contains the options that we can safely ignore from the hash.
+    """
     cflags, cxxflags, cause, headers = entry
     mash_name = "".join(cflags) + " " + CFLAGS + " " + "".join(cxxflags) + " " + CXXFLAGS + " "
 
@@ -598,6 +605,7 @@ def objectname(source, entry):
         mash_name += CXX
 
     mash_name = re.sub(r'CAKE_PROJECT_VERSION=\\".*?\\"', "", mash_name)
+    mash_name += str(PREPROCESS)
 
     o = mash_name.split();
     o.sort()
