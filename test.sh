@@ -97,12 +97,32 @@ if [ "$result" != "1 2" ]; then
 fi
 
 #
-# Test the explict adding of extra source files via the //#REQUIRES flag
+# Test the explict adding of extra source files via the //#SOURCE flag
 #
 rm -rf bin/* 
 CAKE_PREPROCESS=True ./cake tests/test_source.cpp  --config=$CONFIG "$@"
 result=$(bin/test_source)
 if [ "$result" != "hello world from lin" ]; then
     echo test 10: Incorrect result from the SOURCE test: $result
+    exit 1
+fi
+
+
+#
+# Test the interaction of PREPROCESS and //#SOURCE flag
+# Expected result is that if PREPROCESS is true then the preprocessor 
+# runs before the //# magic flags are looked for.
+#
+rm -rf bin/* 
+result=$(CAKE_PREPROCESS=True ./cake --file-list --quiet tests/test_source.cpp  --config=$CONFIG "$@" | tr '\n' ' ')
+if [ "$result" != "tests/test_source.cpp tests/cross_platform.cpp tests/cross_platform_lin.cpp tests/cross_platform.hpp " ]; then
+    echo test 11: Incorrect result from the SOURCE + PREPROCESS=True test: $result
+    exit 1
+fi
+
+rm -rf bin/* 
+result=$(CAKE_PREPROCESS=False ./cake --file-list --quiet tests/test_source.cpp  --config=$CONFIG "$@" | tr '\n' ' ')
+if [ "$result" != "tests/test_source.cpp tests/cross_platform.cpp tests/cross_platform_lin.cpp tests/cross_platform_win.cpp tests/cross_platform.hpp " ]; then
+    echo test 12: Incorrect result from the SOURCE + PREPROCESS=False test: $result
     exit 1
 fi

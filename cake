@@ -58,7 +58,17 @@ class UserException (Exception):
     def __init__(self, text):
         Exception.__init__(self, text)
 
+def to_bool(value):
+    """
+    Tries to convert a wide variety of values to a boolean
+    Raises an exception for unrecognised values
+    """
+    if str(value).lower() in ("yes","y","true","t","1"):
+        return True
+    if str(value).lower() in ("no", "n", "false", "f", "0"):
+        return False
 
+    raise Exception("Don't know how to convert " + str(value) + " to boolean.")
 
 def environ(variable, default):
     if default is None:
@@ -298,9 +308,6 @@ def munge(to_munge):
 def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     """Recalculates the dependencies and caches them for a given source file"""
 
-    global CAKE_ID
-    global PREPROCESS
-    
     if not quiet:
         print "... " + source_file + " (dependencies)"
     
@@ -355,6 +362,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
                 raise UserException(cmd + "\n" + output)
             with open(i_file) as f:
                 text=f.read()
+            os.remove(i_file) # TODO.  Cache the i_file to avoid recreating
         else:
             # reading and handling as one string is slightly faster then
             # handling a list of strings.
@@ -439,7 +447,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
                 else:
                     #pdb.set_trace()
                     if debug:
-                        print "global explicit " + explicit_glob_source + " = '" + result + "' for " + h
+                        print "explicit " + explicit_glob_source + " = '" + result + "' for " + h
                     sources.append(path+"/"+result)
 
         pass
@@ -618,7 +626,7 @@ def objectname(source, entry):
             mash_inc += 'ignore'
 
     h = cake_hasher.md5( mash_inc ).hexdigest()
-    return munge(source) + str(len(str(mash_inc))) + "-" + h + ".o"
+    return munge(source) + "-" + str(len(str(mash_inc))) + "-" + h + ".o"
 
 
 
@@ -1211,7 +1219,7 @@ try:
     BINDIR = environ("CAKE_BINDIR", BINDIR)
     OBJDIR = environ("CAKE_OBJDIR", OBJDIR)
     PARALLEL = environ("CAKE_PARALLEL", PARALLEL)
-    PREPROCESS = environ("CAKE_PREPROCESS", PREPROCESS)
+    PREPROCESS = to_bool(environ("CAKE_PREPROCESS", PREPROCESS))
     
     main(config_file)
 
