@@ -63,9 +63,9 @@ def to_bool(value):
     Tries to convert a wide variety of values to a boolean
     Raises an exception for unrecognised values
     """
-    if str(value).lower() in ("yes","y","true","t","1"):
+    if str(value).lower() in ("yes","y","true","t","1","on"):
         return True
-    if str(value).lower() in ("no", "n", "false", "f", "0"):
+    if str(value).lower() in ("no","n","false","f","0","off"):
         return False
 
     raise Exception("Don't know how to convert " + str(value) + " to boolean.")
