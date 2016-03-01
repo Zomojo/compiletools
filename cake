@@ -410,9 +410,15 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
             if result is None:
                 break
             else:
+                if result[0] != '/' :
+                    result_path = os.path.split(source_file)[0] + '/' + result
+                else :
+                    result_path = result
+
                 if debug:
-                    print("explicit " + explicit_source + " = '" + result + "' for " + source_file)
-                found = True
+                    print("explicit " + explicit_glob_source + " = '" + result_path + "' for " + source_file)
+                sources.append(result_path) 
+                found = True              
 
     # if none, then check globals
     if not found:
@@ -448,9 +454,14 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
                 break
             else:
                 #pdb.set_trace()
+                if result[0] != '/' :
+                    result_path = os.path.split(source_file)[0] + '/' + result
+                else :
+                    result_path = result
+
                 if debug:
-                    print("explicit " + explicit_glob_source + " = '" + result + "' for " + source_file)
-                sources.append(path+"/"+result)
+                    print("explicit " + explicit_glob_source + " = '" + result_path + "' for " + source_file)
+                sources.append(result_path)
 
     # cache
     f = open(deps_file, "w")
