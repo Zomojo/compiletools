@@ -1,3 +1,9 @@
+cake (3.0.854-1) UNRELEASED; urgency=medium
+
+  * Add support for //#SOURCE directive
+
+ -- Jens B. Jorgensen <jorgensen@kcg.com>  Tue, 01 Mar 2016 15:25:10 +0800
+
 cake (0.0-2) UNRELEASED; urgency=medium
 
   * Check for existence of cake-config-chooser
