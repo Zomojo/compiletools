@@ -350,109 +350,107 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
     explicit_glob_link = "//#LINKFLAGS="
     explicit_glob_source = "//#SOURCE="
 
-    for h in headers + [source_file]:
-        path = os.path.split(h)[0]
-        text = ""
-        if PREPROCESS:       
-            # Preprocess but leave comments
-            i_file = deps_file.replace(".deps", ".i")
-            cmd = CPP + CPPFLAGS + " -C -E -o " + i_file + " " + h
-            if verbose:
-                print(cmd)
-            status,  output = status, output = commands.getstatusoutput(cmd)
-            if status != 0:
-                raise UserException(cmd + "\n" + output)
-            with open(i_file) as f:
-                text=f.read()
-            os.remove(i_file) # TODO.  Cache the i_file to avoid recreating
-        else:
-            # reading and handling as one string is slightly faster then
-            # handling a list of strings.
-            # Only read first 2k for speed
+    path = os.path.split(h)[0]
+    text = ""
+    if PREPROCESS:       
+        # Preprocess but leave comments
+        i_file = deps_file.replace(".deps", ".i")
+        cmd = CPP + CPPFLAGS + " -C -E -o " + i_file + " " + source_file
+        if verbose:
+            print(cmd)
+        status,  output = status, output = commands.getstatusoutput(cmd)
+        if status != 0:
+            raise UserException(cmd + "\n" + output)
+        with open(i_file) as f:
+            text=f.read()
+        os.remove(i_file) # TODO.  Cache the i_file to avoid recreating
+    else:
+        # reading and handling as one string is slightly faster then
+        # handling a list of strings.
+        # Only read first 2k for speed
+        for h in headers + [source_file]:
             with open(h) as f:
-                text=f.read(2048)
+                text+=f.read(2048)
                 
-        found = False
+    found = False
 
-        # first check for variant specific flags
-        if len(CAKE_ID) > 0:
-            while True:
-                result, text = extractOption(text, explicit_c)
-                if result is None:
-                    break
-                else:
-                    if debug:
-                        print("explicit " + explicit_c + " = '" + result + "' for " + h)
-                    result = result.replace("${path}", path)
-                    cflags[result] = True
-                    found = True
-            while True:
-                result, text = extractOption(text, explicit_cxx)
-                if result is None:
-                    break
-                else:
-                    if debug:
-                        print("explicit " + explicit_cxx + " = '" + result + "' for " + h)
-                    result = result.replace("${path}", path)
-                    cxxflags[result] = True
-                    found = True
-            while True:
-                result, text = extractOption(text, explicit_link)
-                if result is None:
-                    break
-                else:
-                    if debug:
-                        print("explicit " + explicit_link + " = '" + result + "' for " + h)
-                    linkflags.insert(result.replace("${path}", path))
-                    found = True
-            while True:
-                result, text = extractOption(text, explicit_source)
-                if result is None:
-                    break
-                else:
-                    if debug:
-                        print("explicit " + explicit_source + " = '" + result + "' for " + h)
-                    found = True
+    # first check for variant specific flags
+    if len(CAKE_ID) > 0:
+        while True:
+            result, text = extractOption(text, explicit_c)
+            if result is None:
+                break
+            else:
+                if debug:
+                    print("explicit " + explicit_c + " = '" + result + "' for " + source_file)
+                result = result.replace("${path}", path)
+                cflags[result] = True
+                found = True
+        while True:
+            result, text = extractOption(text, explicit_cxx)
+            if result is None:
+                break
+            else:
+                if debug:
+                    print("explicit " + explicit_cxx + " = '" + result + "' for " + source_file)
+                result = result.replace("${path}", path)
+                cxxflags[result] = True
+                found = True
+        while True:
+            result, text = extractOption(text, explicit_link)
+            if result is None:
+                break
+            else:
+                if debug:
+                    print("explicit " + explicit_link + " = '" + result + "' for " + source_file)
+                linkflags.insert(result.replace("${path}", path))
+                found = True
+        while True:
+            result, text = extractOption(text, explicit_source)
+            if result is None:
+                break
+            else:
+                if debug:
+                    print("explicit " + explicit_source + " = '" + result + "' for " + source_file)
+                found = True
 
-        # if none, then check globals
-        if not found:
-            while True:
-                result, text = extractOption(text, explicit_glob_c)
-                if result is None:
-                    break
-                else:
-                    if debug:
-                        print("explicit " + explicit_glob_c + " = '" + result + "' for " + h)
-                    result = result.replace("${path}", path)
-                    cflags[result] = True
-            while True:
-                result, text = extractOption(text, explicit_glob_cxx)
-                if result is None:
-                    break
-                else:
-                    if debug:
-                        print("explicit " + explicit_glob_cxx + " = '" + result + "' for " + h)
-                    result = result.replace("${path}", path)
-                    cxxflags[result] = True                    
-            while True:
-                result, text = extractOption(text, explicit_glob_link)
-                if result is None:
-                    break
-                else:
-                    if debug:
-                        print("explicit " + explicit_glob_link + " = '" + result + "' for " + h)
-                    linkflags.insert(result.replace("${path}", path))
-            while True:
-                result, text = extractOption(text, explicit_glob_source)
-                if result is None:
-                    break
-                else:
-                    #pdb.set_trace()
-                    if debug:
-                        print("explicit " + explicit_glob_source + " = '" + result + "' for " + h)
-                    sources.append(path+"/"+result)
-
-        pass
+    # if none, then check globals
+    if not found:
+        while True:
+            result, text = extractOption(text, explicit_glob_c)
+            if result is None:
+                break
+            else:
+                if debug:
+                    print("explicit " + explicit_glob_c + " = '" + result + "' for " + source_file)
+                result = result.replace("${path}", path)
+                cflags[result] = True
+        while True:
+            result, text = extractOption(text, explicit_glob_cxx)
+            if result is None:
+                break
+            else:
+                if debug:
+                    print("explicit " + explicit_glob_cxx + " = '" + result + "' for " + source_file)
+                result = result.replace("${path}", path)
+                cxxflags[result] = True                    
+        while True:
+            result, text = extractOption(text, explicit_glob_link)
+            if result is None:
+                break
+            else:
+                if debug:
+                    print("explicit " + explicit_glob_link + " = '" + result + "' for " + source_file)
+                linkflags.insert(result.replace("${path}", path))
+        while True:
+            result, text = extractOption(text, explicit_glob_source)
+            if result is None:
+                break
+            else:
+                #pdb.set_trace()
+                if debug:
+                    print("explicit " + explicit_glob_source + " = '" + result + "' for " + source_file)
+                sources.append(path+"/"+result)
 
     # cache
     f = open(deps_file, "w")
