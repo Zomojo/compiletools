@@ -126,10 +126,12 @@ Examples of variants are gcc46_release and clang_debug.
 Source annotations: 
     Embed these magic comments in your hpp and cpp files to give cake instructions on compilation and link flags.
 
-     //#CXXFLAGS=<flags>         Appends the given options to the compile step.
-     //#LINKFLAGS=<flags>        Appends the given options to the link step
-     //#GCC44_CXXFLAGS=<flags>   Appends the given options to the compile step when building with gcc 4.4.
-     //#GCC44_LINKFLAGS=<flags>  Appends the given options to the link step when building with gcc 4.4
+     //#CXXFLAGS=<flags>           Appends the given options to the compile step.
+     //#LINKFLAGS=<flags>          Appends the given options to the link step
+     //#SOURCE=<extra source file> Appends the given source file to the list to compile.  Useful for cross platform work when one header can have multiple source files.
+     //#GCC44_CXXFLAGS=<flags>     Appends the given options to the compile step when building with gcc 4.4.
+     //#GCC44_LINKFLAGS=<flags>    Appends the given options to the link step when building with gcc 4.4
+     //#GCC44_SOURCE=<file>        Appends extra source file to the compile list when building with gcc 4.4
      
      If no variant specific annotations are found, then the global variants are also
      searched. This allows default behaviour to be specified, while allowing
@@ -154,7 +156,7 @@ Environment:
     CAKE_OBJDIR                Sets the directory where all object files will be created.
     CAKE_PROJECT_VERSION_CMD   Sets the command to execute that will return the version number of the project being built. cake then sets a macro equal to this version.
     CAKE_PARALLEL              Sets the number of CPUs to use in parallel for a build.  Defaults to all cpus.
-    
+    CAKE_PREPROCESS            Do you want the preprocessor to run before cake tries to find the magic //# comments.  Defaults to False because it is slower.
 
 Options:
 
@@ -204,10 +206,10 @@ Options:
                            
     --no-git-root          Disable the git root include. 
 
-	--include-git-parent   If the git root exists then add the parent path as an include path.  
+    --include-git-parent   If the git root exists then add the parent path as an include path.  
 	                       Useful for combining code in multiple repositories.
 	                       
-	--no-git-parent        Disable the git root parent include (Default)
+    --no-git-parent        Disable the git root parent include (Default)
 	                       
     --begintests           Starts a test block. The cpp files following this declaration will
                            generate executables which are then run.
