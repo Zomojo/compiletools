@@ -360,7 +360,7 @@ def force_get_dependencies_for(deps_file, source_file, quiet, verbose):
         cmd = CPP + CPPFLAGS + " -C -E -o " + i_file + " " + source_file
         if verbose:
             print(cmd)
-        status,  output = status, output = commands.getstatusoutput(cmd)
+        status, output = commands.getstatusoutput(cmd)
         if status != 0:
             raise UserException(cmd + "\n" + output)
         with open(i_file) as f:
