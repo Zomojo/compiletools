@@ -70,6 +70,12 @@ if [ $? != 0 ]; then
 fi
 
 #
+# Test a slightly deeper chain of include files
+#
+rm -rf bin/*
+./cake tests/test_direct_include.cpp --config=$config "$@"
+
+#
 # Test static library compilation
 #
 rm -rf bin/*
