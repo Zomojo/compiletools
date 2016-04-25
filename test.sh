@@ -73,7 +73,7 @@ fi
 # Test a slightly deeper chain of include files
 #
 rm -rf bin/*
-./cake tests/test_direct_include.cpp --config=$config "$@"
+./cake tests/test_direct_include.cpp --config=$CONFIG "$@"
 
 #
 # Test static library compilation
