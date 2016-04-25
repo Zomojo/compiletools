@@ -207,10 +207,10 @@ Options:
     --no-git-root          Disable the git root include. 
 
     --include-git-parent   If the git root exists then add the parent path as an include path.  
-	                       Useful for combining code in multiple repositories.
-	                       
+                           Useful for combining code in multiple repositories.
+                           
     --no-git-parent        Disable the git root parent include (Default)
-	                       
+                           
     --begintests           Starts a test block. The cpp files following this declaration will
                            generate executables which are then run.
 
@@ -1074,20 +1074,20 @@ def main(config_file):
             if (verbose):
                 print("no git root found")
 
-	if include_git_parent:
-		git_root = find_git_root()
-		if (git_root):
-			git_parent = os.path.abspath(git_root+"/..")
-			if (verbose):
-				print("adding parent of git root " + git_parent)
-			             
-			CPPFLAGS += " -I " + git_parent
-			CFLAGS += " -I " + git_parent
-			CXXFLAGS += " -I " + git_parent
-		else:
-			if (verbose):
-				print("no git root found so can't include parent directory")
-			
+    if include_git_parent:
+        git_root = find_git_root()
+        if (git_root):
+            git_parent = os.path.abspath(git_root+"/..")
+            if (verbose):
+                print("adding parent of git root " + git_parent)
+                         
+            CPPFLAGS += " -I " + git_parent
+            CFLAGS += " -I " + git_parent
+            CXXFLAGS += " -I " + git_parent
+        else:
+            if (verbose):
+                print("no git root found so can't include parent directory")
+            
     if len(Variant) == 0:
         raise "Variant has to be defined before here"
     else:      
