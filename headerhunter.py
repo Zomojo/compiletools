@@ -50,7 +50,7 @@ class HeaderHunter:
         else:
             cmd.append(filename)
 
-        if self.verbose >= 1:
+        if self.verbose >= 3:
             print(" ".join(cmd))
 
         try:
@@ -81,5 +81,12 @@ if __name__ == '__main__':
     hh = HeaderHunter()
     cap = configargparse.getArgumentParser()
     cap.add("filename", help="File to use in \"$CPP $CPPFLAGS -MM filename\"")
+    cap.add("-c","--config", is_config_file=True, help="config file path");
     myargs = cap.parse_known_args()
+
+    if myargs[0].verbose >= 1:
+        print(myargs[0])
+    if myargs[0].verbose >= 2:
+        print(cap.format_values())
+    
     print(hh.process(myargs[0].filename))
