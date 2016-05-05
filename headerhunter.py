@@ -19,15 +19,30 @@ class HeaderHunter:
             help="Output verbosity. Add more v's to make it more verbose",
             action="count",
             default=0)
-        cap.add("--CPP", help="C preprocessor", default="g++")
+        cap.add(
+            "--CPP",
+            help="C preprocessor",
+            default="unsupplied_implies_use_CXX")
+        cap.add("--CXX", help="C++ compiler", default="g++")
         cap.add(
             "--CPPFLAGS",
             help="C preprocessor flags",
-            default="-I .")
+            default="unsupplied_implies_use_CXXFLAGS")
+        cap.add(
+            "--CXXFLAGS",
+            help="C++ compiler flags",
+            default="-I . -fPIC -g -Wall")
         myargs = cap.parse_known_args()
         self.cpp = myargs[0].CPP
         self.cppflags = myargs[0].CPPFLAGS
         self.verbose = myargs[0].verbose
+
+        # If C PreProcessor variables are not set but CXX ones are set then
+        # just use the CXX equivalents
+        if self.cpp is "unsupplied_implies_use_CXX":
+            self.cpp = myargs[0].CXX
+        if self.cppflags is "unsupplied_implies_use_CXXFLAGS":
+            self.cppflags = myargs[0].CXXFLAGS
 
     def _is_header(self, filename):
         """ Internal use.  Is filename a header file?"""
@@ -78,15 +93,15 @@ class HeaderHunter:
         return self.dependencies
 
 if __name__ == '__main__':
-    hh = HeaderHunter()
     cap = configargparse.getArgumentParser()
     cap.add("filename", help="File to use in \"$CPP $CPPFLAGS -MM filename\"")
-    cap.add("-c","--config", is_config_file=True, help="config file path");
+    cap.add("-c", "--config", is_config_file=True, help="config file path")
+    hh = HeaderHunter()
     myargs = cap.parse_known_args()
 
     if myargs[0].verbose >= 1:
         print(myargs[0])
     if myargs[0].verbose >= 2:
-        print(cap.format_values())
-    
+        cap.print_values()
+
     print(hh.process(myargs[0].filename))
