@@ -2,47 +2,83 @@
 from __future__ import print_function
 import subprocess
 import sys
+import utils
 import configargparse
+import os
 
+import re
+import tree
 
-class HeaderHunter:
+class HeaderTree:
 
-    """ Given a filename, create the header dependencies """
+    """ Create a tree structure that shows the header include tree """
 
     def __init__(self):
-        # Grab the global argparser and tell it we need a CPP (c preprocessor)
-        # and CPPFLAGS
-        cap = configargparse.getArgumentParser()
-        cap.add(
-            "-v",
-            "--verbose",
-            help="Output verbosity. Add more v's to make it more verbose",
-            action="count",
-            default=0)
-        cap.add(
-            "--CPP",
-            help="C preprocessor",
-            default="unsupplied_implies_use_CXX")
-        cap.add("--CXX", help="C++ compiler", default="g++")
-        cap.add(
-            "--CPPFLAGS",
-            help="C preprocessor flags",
-            default="unsupplied_implies_use_CXXFLAGS")
-        cap.add(
-            "--CXXFLAGS",
-            help="C++ compiler flags",
-            default="-I . -fPIC -g -Wall")
-        myargs = cap.parse_known_args()
-        self.cpp = myargs[0].CPP
-        self.cppflags = myargs[0].CPPFLAGS
-        self.verbose = myargs[0].verbose
+        # self.args will exist after this call
+        utils.setattr_args(self)
 
-        # If C PreProcessor variables are not set but CXX ones are set then
-        # just use the CXX equivalents
-        if self.cpp is "unsupplied_implies_use_CXX":
-            self.cpp = myargs[0].CXX
-        if self.cppflags is "unsupplied_implies_use_CXXFLAGS":
-            self.cppflags = myargs[0].CXXFLAGS
+        # Grab the include paths from the CPPFLAGS
+        pat=re.compile('-I ([\S]*)')
+        self.includes=pat.findall(self.args.CPPFLAGS)
+
+        if self.args.verbose >= 3:
+            print("Includes="+str(self.includes))
+
+    def process(self, filename, node = None):
+        """ Return a tree that describes the header includes
+            The node is passed recursively, however the original caller 
+            does not need to pass it in.
+        """
+        realpath=os.path.realpath(filename)
+        if self.args.verbose >= 4:
+            print("process: " + realpath)
+        if node is None:
+            node=tree.tree()
+
+        node[realpath]
+        if self.args.verbose >= 6:
+            print("Inserting node: ")
+            pprint(tree.dicts(node))
+
+        with open(filename) as ff:
+            text=ff.read(2048)  # Assume that all includes occur in the first 2048 bytes
+
+        # The pattern is intended to match all include statements
+        pat=re.compile('^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]',re.MULTILINE)
+ 
+        cwd=os.path.dirname(realpath)
+        for iter in pat.finditer(text):
+            include = iter.group(1)
+
+            # Check if the file is referable from the current working directory
+            # if that guess doesn't exist then try all the include paths
+            trialpath=os.path.join(cwd,include)
+            if not os.path.isfile( trialpath ):
+                for inc_dir in self.includes:
+                    trialpath=os.path.join(inc_dir,include)
+                    if os.path.isfile( trialpath ):
+                        break
+                else:
+                    # TODO: Try system include paths if the user sets (the currently nonexistent) "use-system" flag
+                    # Only get here if the include file cannot be found anywhere    
+                    # raise FileNotFoundError("HeaderTree could not determine the location of ",include)
+                    return node
+            
+            self.process(trialpath,node[realpath])
+            if self.args.verbose >= 5:
+                print("Building tree: ")
+                pprint(tree.dicts(node))
+        return node
+
+
+
+class HeaderDependencies:
+
+    """ Using the C Pre Processor, create the list of headers that the given file depends upon. """
+
+    def __init__(self):
+        # self.args will exist after this call
+        utils.setattr_args(self)
 
     def _is_header(self, filename):
         """ Internal use.  Is filename a header file?"""
@@ -56,8 +92,8 @@ class HeaderHunter:
             and the supplied header file will be included into the dummy source file.
         """
         file_is_header = self._is_header(filename)
-        cmd = [self.cpp]
-        cmd.extend(self.cppflags.split())
+        cmd = [self.args.CPP]
+        cmd.extend(self.args.CPPFLAGS.split())
         cmd.append("-MM")
         if file_is_header:
             # Use /dev/null as the dummy source file.
@@ -65,14 +101,14 @@ class HeaderHunter:
         else:
             cmd.append(filename)
 
-        if self.verbose >= 3:
+        if self.args.verbose >= 3:
             print(" ".join(cmd))
 
         try:
             output = subprocess.check_output(cmd, universal_newlines=True)
         except OSError as err:
             print(
-                "HeaderHunter failed to run compiler to generate dependencies. error = ",
+                "HeaderDependencies failed to run compiler to generate dependencies. error = ",
                 err,
                 file=sys.stderr)
             exit()
@@ -86,17 +122,26 @@ class HeaderHunter:
 
         # Strip non-space whitespace, remove any backslashes, and remove any empty strings
         # Also remove the initially given filename and /dev/null from the list
-        self.dependencies = [
+        # Use a set to inherently remove any redundancies
+        work_in_progress = {
             x for x in deplist.split() if x.strip('\\\t\n\r') and x not in [
                 filename,
-                "/dev/null"]]
+                "/dev/null"]}
+
+        # Use realpath to get rid of  // and ../../ etc in paths (similar to normpath) and
+        # to get the full path even to files in the current working directory
+        self.dependencies = map(os.path.realpath, work_in_progress)
         return self.dependencies
+
+# class ImpliedFileHunter:
+#    """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
+
 
 if __name__ == '__main__':
     cap = configargparse.getArgumentParser()
     cap.add("filename", help="File to use in \"$CPP $CPPFLAGS -MM filename\"")
     cap.add("-c", "--config", is_config_file=True, help="config file path")
-    hh = HeaderHunter()
+    hh = HeaderDependencies()
     myargs = cap.parse_known_args()
 
     if myargs[0].verbose >= 1:
@@ -104,4 +149,4 @@ if __name__ == '__main__':
     if myargs[0].verbose >= 2:
         cap.print_values()
 
-    print(hh.process(myargs[0].filename))
+    map(print, hh.process(myargs[0].filename))
