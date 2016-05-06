@@ -1,0 +1,7 @@
+This files contains notes to coders who want to contribute to the project
+
+Write code following the PEP 8 style guide.  
+While I dislike some of PEP 8, making it the convention avoids bike shed arguments.
+Before check-in you should format the code using
+
+autopep8 --in-place --aggressive --aggressive somefile.py

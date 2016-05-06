@@ -9,6 +9,7 @@ import os
 import re
 import tree
 
+
 class HeaderTree:
 
     """ Create a tree structure that shows the header include tree """
@@ -18,22 +19,22 @@ class HeaderTree:
         utils.setattr_args(self)
 
         # Grab the include paths from the CPPFLAGS
-        pat=re.compile('-I ([\S]*)')
-        self.includes=pat.findall(self.args.CPPFLAGS)
+        pat = re.compile('-I ([\S]*)')
+        self.includes = pat.findall(self.args.CPPFLAGS)
 
         if self.args.verbose >= 3:
-            print("Includes="+str(self.includes))
+            print("Includes=" + str(self.includes))
 
-    def process(self, filename, node = None):
+    def process(self, filename, node=None):
         """ Return a tree that describes the header includes
-            The node is passed recursively, however the original caller 
+            The node is passed recursively, however the original caller
             does not need to pass it in.
         """
-        realpath=os.path.realpath(filename)
+        realpath = os.path.realpath(filename)
         if self.args.verbose >= 4:
             print("process: " + realpath)
         if node is None:
-            node=tree.tree()
+            node = tree.tree()
 
         node[realpath]
         if self.args.verbose >= 6:
@@ -41,35 +42,37 @@ class HeaderTree:
             pprint(tree.dicts(node))
 
         with open(filename) as ff:
-            text=ff.read(2048)  # Assume that all includes occur in the first 2048 bytes
+            # Assume that all includes occur in the first 2048 bytes
+            text = ff.read(2048)
 
         # The pattern is intended to match all include statements
-        pat=re.compile('^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]',re.MULTILINE)
- 
-        cwd=os.path.dirname(realpath)
+        pat = re.compile(
+            '^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]',
+            re.MULTILINE)
+
+        cwd = os.path.dirname(realpath)
         for iter in pat.finditer(text):
             include = iter.group(1)
 
             # Check if the file is referable from the current working directory
             # if that guess doesn't exist then try all the include paths
-            trialpath=os.path.join(cwd,include)
-            if not os.path.isfile( trialpath ):
+            trialpath = os.path.join(cwd, include)
+            if not os.path.isfile(trialpath):
                 for inc_dir in self.includes:
-                    trialpath=os.path.join(inc_dir,include)
-                    if os.path.isfile( trialpath ):
+                    trialpath = os.path.join(inc_dir, include)
+                    if os.path.isfile(trialpath):
                         break
                 else:
                     # TODO: Try system include paths if the user sets (the currently nonexistent) "use-system" flag
-                    # Only get here if the include file cannot be found anywhere    
+                    # Only get here if the include file cannot be found anywhere
                     # raise FileNotFoundError("HeaderTree could not determine the location of ",include)
                     return node
-            
-            self.process(trialpath,node[realpath])
+
+            self.process(trialpath, node[realpath])
             if self.args.verbose >= 5:
                 print("Building tree: ")
                 pprint(tree.dicts(node))
         return node
-
 
 
 class HeaderDependencies:

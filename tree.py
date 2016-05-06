@@ -1,8 +1,10 @@
 from collections import defaultdict
 
+
 def tree():
     """ A tree is a dict whose default values are themselves trees """
     return defaultdict(tree)
+
 
 def dicts(tt):
     """ Convert the tree to a standard dict.

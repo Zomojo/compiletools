@@ -10,7 +10,7 @@ if __name__ == '__main__':
     cap = configargparse.getArgumentParser()
     cap.add("filename", help="File to use in \"$CPP $CPPFLAGS -MM filename\"")
     cap.add("-c", "--config", is_config_file=True, help="config file path")
-    ht=HeaderTree()
+    ht = HeaderTree()
 
     myargs = cap.parse_known_args()
 
@@ -18,6 +18,6 @@ if __name__ == '__main__':
         print(myargs[0])
     if myargs[0].verbose >= 2:
         cap.print_values()
-    
-    inctree=ht.process(myargs[0].filename)
-    pprint(tree.dicts(inctree))    
+
+    inctree = ht.process(myargs[0].filename)
+    pprint(tree.dicts(inctree))
