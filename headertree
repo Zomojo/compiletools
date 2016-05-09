@@ -1,14 +1,27 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from headerhunter import HeaderTree
+import utils
 import tree
 import configargparse
 
 from pprint import pprint
 
+def print_wrapper(key):
+    """ Wrap the builtin print so that it can be passed to the tree.traverse """
+    print(key)
+
+def depth_indicator_print(key,depth,indicator='--',strip_git_root=True):
+    """ Print the filenames with a leading indicator to denote the depth of the file from the root """
+    name = key
+    if strip_git_root:
+       size = len(utils.find_git_root())+1
+       name = key[size:]
+    print(indicator*depth+name)
+
 if __name__ == '__main__':
     cap = configargparse.getArgumentParser()
-    cap.add("filename", help="File to use in \"$CPP $CPPFLAGS -MM filename\"")
+    cap.add("filename", help="File to start tracing headers from")
     cap.add("-c", "--config", is_config_file=True, help="config file path")
     ht = HeaderTree()
 
@@ -20,4 +33,6 @@ if __name__ == '__main__':
         cap.print_values()
 
     inctree = ht.process(myargs[0].filename)
-    pprint(tree.dicts(inctree))
+    #tree.traverse(tree=inctree,function=print_wrapper)
+    tree.traverse(tree=inctree,function=depth_indicator_print,traverse_before_function_call=False)
+    #pprint(tree.dicts(inctree))
