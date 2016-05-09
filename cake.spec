@@ -7,7 +7,7 @@ License: GPL3
 Group: System/Libraries
 Buildroot: %_tmppath/%{name}-%{version}
 BuildArch: noarch
-%if 0%{el6}
+%if 0%{?el6}
 BuildRequires: help2man redhat-lsb
 %else
 BuildRequires: help2man redhat-lsb-core perl-Exporter
