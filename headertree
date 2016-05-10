@@ -2,22 +2,57 @@
 from __future__ import print_function
 from headerhunter import HeaderTree
 import utils
+import git_utils
 import tree
 import configargparse
 
 from pprint import pprint
 
-def print_wrapper(key):
+def print_wrapper(data):
     """ Wrap the builtin print so that it can be passed to the tree.traverse """
-    print(key)
+    print(data)
 
 def depth_indicator_print(key,depth,indicator='--',strip_git_root=True):
     """ Print the filenames with a leading indicator to denote the depth of the file from the root """
     name = key
     if strip_git_root:
-       size = len(utils.find_git_root())+1
+       size = len(git_utils.find_git_root())+1
        name = key[size:]
     print(indicator*depth+name)
+
+class DotFormat:
+    def __init__(self,tree_,strip_git_root=True):
+        self.tree = tree_
+        self.strip_git_root = strip_git_root
+        for key in tree_:
+            # TODO: Take care of the case where there are multiple top level nodes
+            if strip_git_root:
+                self.name = git_utils.strip_git_root(key)
+            else:
+                self.name = key
+        self._print_header()
+        tree.traverse(tree=tree_,function=self._print_node,traverse_before_function_call=False)
+        self._print_footer()
+
+    def _print_header(self):
+        print('digraph "' + self.name + '" {') 
+
+    def _print_footer(self):
+        print("}")
+
+    def _print_node(self,key,value):
+        name = key
+        if self.strip_git_root:
+            name = git_utils.strip_git_root(key)
+        print('"' + name + '"')
+
+        for child_key in value:
+            child_name = child_key
+            if self.strip_git_root:
+                child_name = git_utils.strip_git_root(child_key)
+            print('"'+name+'"->"'+child_name+'"')
+
+
 
 if __name__ == '__main__':
     cap = configargparse.getArgumentParser()
@@ -34,5 +69,8 @@ if __name__ == '__main__':
 
     inctree = ht.process(myargs[0].filename)
     #tree.traverse(tree=inctree,function=print_wrapper)
-    tree.traverse(tree=inctree,function=depth_indicator_print,traverse_before_function_call=False)
+    #tree.traverse(tree=inctree,function=depth_indicator_print,traverse_before_function_call=False)
     #pprint(tree.dicts(inctree))
+
+    df = DotFormat(inctree)
+    print()

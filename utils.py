@@ -1,12 +1,6 @@
 import subprocess
 import configargparse
-
-
-def find_git_root():
-    """ Return the absolute path of .git """
-    return subprocess.check_output(
-        ["git", "rev-parse", "--show-toplevel"], universal_newlines=True).strip('\n')
-
+import git_utils
 
 def to_bool(value):
     """
@@ -90,11 +84,13 @@ def common_substitutions(args):
     # Unless turned off, the git root will be added to the list of include
     # paths
     if args.git_root:
-        args.include.append(find_git_root())
+        args.include.append(git_utils.find_git_root())
 
     # Add all the include paths to all three compile flags
     if args.include:
         for path in args.include:
+            if path is None:
+                raise ValueError("Parsing the args.include and path is unexpectedly None")
             args.CPPFLAGS += " -I " + path
             args.CFLAGS += " -I " + path
             args.CXXFLAGS += " -I " + path
@@ -110,5 +106,6 @@ def setattr_args(obj):
     # parse_known_args returns a tuple.  The properly parsed arguments are in
     # the zeroth element.
     args = cap.parse_known_args()
-    common_substitutions(args[0])
-    setattr(obj, 'args', args[0])
+    if args[0]:
+        common_substitutions(args[0])
+        setattr(obj, 'args', args[0])
