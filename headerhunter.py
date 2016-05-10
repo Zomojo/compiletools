@@ -9,6 +9,9 @@ import os
 import re
 import tree
 
+# At deep verbose levels pprint is used
+from pprint import pprint
+
 
 class HeaderTree:
 
@@ -57,21 +60,25 @@ class HeaderTree:
             # Check if the file is referable from the current working directory
             # if that guess doesn't exist then try all the include paths
             trialpath = os.path.join(cwd, include)
+            found = True
             if not os.path.isfile(trialpath):
+                found = False
                 for inc_dir in self.includes:
                     trialpath = os.path.join(inc_dir, include)
                     if os.path.isfile(trialpath):
+                        found = True
                         break
-                else:
-                    # TODO: Try system include paths if the user sets (the currently nonexistent) "use-system" flag
-                    # Only get here if the include file cannot be found anywhere
-                    # raise FileNotFoundError("HeaderTree could not determine the location of ",include)
-                    return node
+                # else:
+                #    TODO: Try system include paths if the user sets (the currently nonexistent) "use-system" flag
+                #    Only get here if the include file cannot be found anywhere
+                #    raise FileNotFoundError("HeaderTree could not determine the location of ",include)
+                #    return node
+            if found:
+                self.process(trialpath, node[realpath])
+                if self.args.verbose >= 5:
+                    print("Building tree: ")
+                    pprint(tree.dicts(node))
 
-            self.process(trialpath, node[realpath])
-            if self.args.verbose >= 5:
-                print("Building tree: ")
-                pprint(tree.dicts(node))
         return node
 
 

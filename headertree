@@ -8,39 +8,46 @@ import configargparse
 
 from pprint import pprint
 
+
 def print_wrapper(data):
-    """ Wrap the builtin print so that it can be passed to the tree.traverse """
+    """ Wrap the builtin print so that it can be passed to the tree.depth_first_traverse """
     print(data)
 
-def depth_indicator_print(key,depth,indicator='--',strip_git_root=True):
+
+def depth_indicator_print(key, depth, indicator='--', strip_git_root=True):
     """ Print the filenames with a leading indicator to denote the depth of the file from the root """
     name = key
     if strip_git_root:
-       size = len(git_utils.find_git_root())+1
-       name = key[size:]
-    print(indicator*depth+name)
+        name = git_utils.strip_git_root(key)
+    print(indicator * depth + name)
+
 
 class DotFormat:
-    def __init__(self,tree_,strip_git_root=True):
-        self.tree = tree_
+
+    """ Print the include tree in graphviz dot format. """
+
+    def __init__(self, tree_, strip_git_root=True):
         self.strip_git_root = strip_git_root
         for key in tree_:
-            # TODO: Take care of the case where there are multiple top level nodes
+            # TODO: Take care of the case where there are multiple top level
+            # nodes
             if strip_git_root:
                 self.name = git_utils.strip_git_root(key)
             else:
                 self.name = key
         self._print_header()
-        tree.traverse(tree=tree_,function=self._print_node,traverse_before_function_call=False)
+        tree.depth_first_traverse(
+            tree=tree_,
+            pre_traverse_function=self._print_node)
         self._print_footer()
 
     def _print_header(self):
-        print('digraph "' + self.name + '" {') 
+        print('digraph "' + self.name + '" {')
 
     def _print_footer(self):
         print("}")
 
-    def _print_node(self,key,value):
+    def _print_node(self, key, value):
         name = key
         if self.strip_git_root:
             name = git_utils.strip_git_root(key)
@@ -50,8 +57,41 @@ class DotFormat:
             child_name = child_key
             if self.strip_git_root:
                 child_name = git_utils.strip_git_root(child_key)
-            print('"'+name+'"->"'+child_name+'"')
+            print('"' + name + '"->"' + child_name + '"')
 
+
+class CostCounter:
+
+    """ Show the cumulative cost and self cost of including the header files """
+
+    def __init__(self, tree_, indicator='--', strip_git_root=True):
+        self.indicator = indicator
+        self.strip_git_root = strip_git_root
+        self.counter = [0]
+        tree.depth_first_traverse(
+            tree=tree_,
+            pre_traverse_function=self._pre,
+            post_traverse_function=self._post)
+
+    def _pre(self, key, value, depth):
+        self.counter.append(0)
+
+    def _post(self, key, value, depth):
+        last = self.counter.pop()
+        self.counter[-1] += last + 1
+        name = key
+        if self.strip_git_root:
+            name = git_utils.strip_git_root(key)
+        # print cumulative includes and direct includes
+        print(
+            "{c:5d}".format(
+                c=last) +
+            "{d:3d}".format(
+                d=len(value)) +
+            " " +
+            self.indicator *
+            depth +
+            name)
 
 
 if __name__ == '__main__':
@@ -68,9 +108,12 @@ if __name__ == '__main__':
         cap.print_values()
 
     inctree = ht.process(myargs[0].filename)
-    #tree.traverse(tree=inctree,function=print_wrapper)
-    #tree.traverse(tree=inctree,function=depth_indicator_print,traverse_before_function_call=False)
-    #pprint(tree.dicts(inctree))
+#    tree.depth_first_traverse(tree=inctree,post_traverse_function=print_wrapper)
+#    tree.depth_first_traverse(tree=inctree,pre_traverse_function=depth_indicator_print)
+#    pprint(tree.dicts(inctree))
 
-    df = DotFormat(inctree)
+#    df = DotFormat(inctree)
+#    print()
+
+    cc = CostCounter(inctree)
     print()
