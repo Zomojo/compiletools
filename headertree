@@ -1,12 +1,9 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from headerhunter import HeaderTree
-import utils
 import git_utils
 import tree
 import configargparse
-
-from pprint import pprint
 
 def print_wrapper(data):
     """ Wrap the builtin print so that it can be passed to the tree.depth_first_traverse """
@@ -146,7 +143,6 @@ if __name__ == '__main__':
     inctree = ht.process(myargs[0].filename)
 #    tree.depth_first_traverse(tree=inctree,post_traverse_function=print_wrapper)
 #    tree.depth_first_traverse(tree=inctree,pre_traverse_function=depth_indicator_print)
-#    pprint(tree.dicts(inctree))
 
 #    df = DotFormat(inctree)
 #    print()

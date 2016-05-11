@@ -8,6 +8,7 @@ import os
 
 import re
 import tree
+from memoize import memoize
 
 # At deep verbose levels pprint is used
 from pprint import pprint
@@ -27,6 +28,33 @@ class HeaderTree:
 
         if self.args.verbose >= 3:
             print("Includes=" + str(self.includes))
+
+    @memoize
+    def _search_project_includes(self, include):
+        """ Internal use.  Find the given include file in the project include paths """
+        for inc_dir in self.includes:
+            trialpath = os.path.join(inc_dir, include)
+            if os.path.isfile(trialpath):
+                return trialpath
+
+        # else:
+        #    TODO: Try system include paths if the user sets (the currently nonexistent) "use-system" flag
+        #    Only get here if the include file cannot be found anywhere
+        #    raise FileNotFoundError("HeaderTree could not determine the location of ",include)
+        return None
+
+    @memoize
+    def _find_include(self, include, cwd):
+        """ Internal use.  Find the given include file.
+            Start at the current working directory then try the project includes
+        """
+        # Check if the file is referable from the current working directory
+        # if that guess doesn't exist then try all the include paths
+        trialpath = os.path.join(cwd, include)
+        if os.path.isfile(trialpath):
+            return trialpath
+        else:
+            return self._search_project_includes(include)
 
     def process(self, filename, node=None):
         """ Return a tree that describes the header includes
@@ -56,24 +84,8 @@ class HeaderTree:
         cwd = os.path.dirname(realpath)
         for iter in pat.finditer(text):
             include = iter.group(1)
-
-            # Check if the file is referable from the current working directory
-            # if that guess doesn't exist then try all the include paths
-            trialpath = os.path.join(cwd, include)
-            found = True
-            if not os.path.isfile(trialpath):
-                found = False
-                for inc_dir in self.includes:
-                    trialpath = os.path.join(inc_dir, include)
-                    if os.path.isfile(trialpath):
-                        found = True
-                        break
-                # else:
-                #    TODO: Try system include paths if the user sets (the currently nonexistent) "use-system" flag
-                #    Only get here if the include file cannot be found anywhere
-                #    raise FileNotFoundError("HeaderTree could not determine the location of ",include)
-                #    return node
-            if found:
+            trialpath = self._find_include(include, cwd)
+            if trialpath:
                 self.process(trialpath, node[realpath])
                 if self.args.verbose >= 5:
                     print("Building tree: ")
