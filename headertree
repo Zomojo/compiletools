@@ -8,7 +8,6 @@ import configargparse
 
 from pprint import pprint
 
-
 def print_wrapper(data):
     """ Wrap the builtin print so that it can be passed to the tree.depth_first_traverse """
     print(data)
@@ -64,14 +63,15 @@ class CostCounter:
 
     """ Show the cumulative cost and self cost of including the header files """
 
-    def __init__(self, tree_, indicator='--', strip_git_root=True):
-        self.indicator = indicator
+    def __init__(self, tree_, strip_git_root=True):
         self.strip_git_root = strip_git_root
         self.counter = [0]
+        self.reverse_result = []
         tree.depth_first_traverse(
             tree=tree_,
             pre_traverse_function=self._pre,
             post_traverse_function=self._post)
+        self.print()
 
     def _pre(self, key, value, depth):
         self.counter.append(0)
@@ -82,16 +82,52 @@ class CostCounter:
         name = key
         if self.strip_git_root:
             name = git_utils.strip_git_root(key)
-        # print cumulative includes and direct includes
-        print(
-            "{c:5d}".format(
-                c=last) +
-            "{d:3d}".format(
-                d=len(value)) +
-            " " +
-            self.indicator *
-            depth +
-            name)
+
+        # store cumulative includes and direct includes
+        self.reverse_result.append(
+            {'cumulative': last, 'self': len(value), 'depth': depth, 'name': name})
+
+    def print(self):
+        def righttreechars(child_index):
+            return {1: u"\u2514\u2500"}.get(child_index, u"\u251c\u2500")
+
+        def internaltreechars(child_index):
+            return {0: u"  "}.get(child_index, u"\u2502 ")
+
+        remaining_children = []
+        for item in reversed(self.reverse_result):
+            tree_structure = ""
+
+            # Trim any no longer needed information from the remaining children
+            if item['depth'] < len(remaining_children):
+                remaining_children = remaining_children[:(item['depth'])]
+
+            # Create the internal tree structure up to the grandparents
+            if item['depth'] > 1:
+                for child_index in remaining_children[:(item['depth'] - 1)]:
+                    tree_structure += internaltreechars(child_index)
+
+            # Add on the connector to the parent
+            if item['depth'] > 0:
+                tree_structure += righttreechars(
+                    remaining_children[
+                        item['depth'] -
+                        1])
+
+            print("{c:5d}".format(
+                c=item['cumulative']) +
+                "{d:3d}".format(
+                d=item['self']) + " " + tree_structure +
+                item['name'])
+
+            # Since the child has now been drawn, reduce the parents count of
+            # their remaining children (except for the topmost node which has
+            # no parent)
+            if remaining_children:
+                remaining_children[-1] -= 1
+
+            if item['self'] > 0:
+                remaining_children.append(item['self'])
 
 
 if __name__ == '__main__':
@@ -116,4 +152,3 @@ if __name__ == '__main__':
 #    print()
 
     cc = CostCounter(inctree)
-    print()
