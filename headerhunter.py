@@ -19,6 +19,9 @@ class HeaderTree:
     """ Create a tree structure that shows the header include tree """
 
     def __init__(self):
+        # Keep track of ancestor paths so that we can do header cycle detection
+        self.ancestor_paths = []
+
         # self.args will exist after this call
         utils.setattr_args(self)
 
@@ -30,11 +33,16 @@ class HeaderTree:
             print("Includes=" + str(self.includes))
 
     @memoize
+    def _isfile(self,trialpath):
+        """ Internal use.  Just a cache of os.path.isfile """
+        return os.path.isfile(trialpath)
+
+    @memoize
     def _search_project_includes(self, include):
         """ Internal use.  Find the given include file in the project include paths """
         for inc_dir in self.includes:
             trialpath = os.path.join(inc_dir, include)
-            if os.path.isfile(trialpath):
+            if self._isfile(trialpath):
                 return trialpath
 
         # else:
@@ -51,28 +59,15 @@ class HeaderTree:
         # Check if the file is referable from the current working directory
         # if that guess doesn't exist then try all the include paths
         trialpath = os.path.join(cwd, include)
-        if os.path.isfile(trialpath):
+        if self._isfile(trialpath):
             return trialpath
         else:
             return self._search_project_includes(include)
 
-    def process(self, filename, node=None):
-        """ Return a tree that describes the header includes
-            The node is passed recursively, however the original caller
-            does not need to pass it in.
-        """
-        realpath = os.path.realpath(filename)
-        if self.args.verbose >= 4:
-            print("process: " + realpath)
-        if node is None:
-            node = tree.tree()
-
-        node[realpath]
-        if self.args.verbose >= 6:
-            print("Inserting node: ")
-            pprint(tree.dicts(node))
-
-        with open(filename) as ff:
+    @memoize
+    def _create_include_list(self, realpath):
+        """ Internal use. Create the list of includes for the given file """
+        with open(realpath) as ff:
             # Assume that all includes occur in the first 2048 bytes
             text = ff.read(2048)
 
@@ -81,16 +76,45 @@ class HeaderTree:
             '^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]',
             re.MULTILINE)
 
+        return pat.findall(text)
+
+    def process(self, filename, node=None):
+        """ Return a tree that describes the header includes
+            The node is passed recursively, however the original caller
+            does not need to pass it in.
+        """
+        realpath = os.path.realpath(filename)
+
+        if self.args.verbose >= 4:
+            print("HeaderTree::process: " + realpath)
+
+        if node is None:
+            node = tree.tree()
+
+        # Stop cycles
+        if realpath in self.ancestor_paths:       
+            if self.args.verbose >= 4:
+                print("HeaderTree::process is breaking the cycle on " + realpath)
+            return node
+        self.ancestor_paths.append(realpath)
+
+        # This next line is how you create the node in the tree
+        node[realpath]
+
+        if self.args.verbose >= 6:
+            print("HeaderHunter inserted: " + realpath)
+            pprint(tree.dicts(node))
+
         cwd = os.path.dirname(realpath)
-        for iter in pat.finditer(text):
-            include = iter.group(1)
+        for include in self._create_include_list(realpath):
             trialpath = self._find_include(include, cwd)
             if trialpath:
                 self.process(trialpath, node[realpath])
                 if self.args.verbose >= 5:
-                    print("Building tree: ")
+                    print("HeaderHunter building tree: ")
                     pprint(tree.dicts(node))
 
+        self.ancestor_paths.pop()
         return node
 
 

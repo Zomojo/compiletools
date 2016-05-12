@@ -7,15 +7,15 @@ def tree():
     return defaultdict(tree)
 
 
-def dicts(tt):
+def dicts(tree_):
     """ Convert the tree to a standard dict.
-        For example, to pretty print, pprint(dicts(tree_obj))
+        For example, to pretree_y print, pprint(dicts(tree_obj))
     """
-    return {key: dicts(tt[key]) for key in tt}
+    return {key: dicts(tree_[key]) for key in tree_}
 
 
 def depth_first_traverse(
-        tree,
+        node,
         pre_traverse_function=None,
         post_traverse_function=None,
         depth=0):
@@ -52,7 +52,7 @@ def depth_first_traverse(
                 function(key)
 
     # traverse the tree recursively
-    for key, value in tree.items():
+    for key, value in node.items():
         _call_function(
             pre_traverse_function,
             pre_function_args,
@@ -60,7 +60,7 @@ def depth_first_traverse(
             value,
             pre_kwargs)
         depth_first_traverse(
-            tree=value,
+            node=value,
             pre_traverse_function=pre_traverse_function,
             post_traverse_function=post_traverse_function,
             depth=depth + 1)
@@ -70,3 +70,18 @@ def depth_first_traverse(
             key,
             value,
             post_kwargs)
+
+class InTree():
+    def __init__(self,tree):
+        self.tree=tree
+        self.result = False
+        
+    def __call__(self,key):  
+        self.key=key
+        depth_first_traverse(node=self.tree,pre_traverse_function=self.is_eq)
+        return self.result
+
+    def is_eq(self,key):
+        self.result = self.result or (key == self.key)
+        
+

@@ -33,7 +33,7 @@ class DotFormat:
                 self.name = key
         self._print_header()
         tree.depth_first_traverse(
-            tree=tree_,
+            node=tree_,
             pre_traverse_function=self._print_node)
         self._print_footer()
 
@@ -65,7 +65,7 @@ class CostCounter:
         self.counter = [0]
         self.reverse_result = []
         tree.depth_first_traverse(
-            tree=tree_,
+            node=tree_,
             pre_traverse_function=self._pre,
             post_traverse_function=self._post)
         self.print()
@@ -141,8 +141,8 @@ if __name__ == '__main__':
         cap.print_values()
 
     inctree = ht.process(myargs[0].filename)
-#    tree.depth_first_traverse(tree=inctree,post_traverse_function=print_wrapper)
-#    tree.depth_first_traverse(tree=inctree,pre_traverse_function=depth_indicator_print)
+#    tree.depth_first_traverse(node=inctree,post_traverse_function=print_wrapper)
+#    tree.depth_first_traverse(node=inctree,pre_traverse_function=depth_indicator_print)
 
 #    df = DotFormat(inctree)
 #    print()
