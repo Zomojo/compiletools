@@ -195,4 +195,5 @@ if __name__ == '__main__':
     if myargs[0].verbose >= 2:
         cap.print_values()
 
-    map(print, hh.process(myargs[0].filename))
+    for dep in hh.process(myargs[0].filename):
+        print(dep)
