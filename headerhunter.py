@@ -188,7 +188,7 @@ class HeaderDependencies:
 
         # Use realpath to get rid of  // and ../../ etc in paths (similar to normpath) and
         # to get the full path even to files in the current working directory
-        self.dependencies = map(os.path.realpath, work_in_progress)
+        self.dependencies = set(map(os.path.realpath, work_in_progress))
         return self.dependencies
 
 
