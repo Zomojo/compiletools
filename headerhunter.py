@@ -14,6 +14,22 @@ from memoize import memoize
 from pprint import pprint
 
 
+@memoize
+def isfile(self,trialpath):
+    """ Just a cached version of os.path.isfile """
+    return os.path.isfile(trialpath)
+
+def implied_source(filename):
+    """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
+    basename=os.path.splitext(filename)[0]
+    extensions=["cpp","cxx","cc","c"]
+    for ext in extensions:
+        trialpath=os.path.join(basename,ext)
+        if isfile(trialpath):
+            return trialpath
+    else:
+        return None
+
 class HeaderTree:
 
     """ Create a tree structure that shows the header include tree """
@@ -32,17 +48,13 @@ class HeaderTree:
         if self.args.verbose >= 3:
             print("Includes=" + str(self.includes))
 
-    @memoize
-    def _isfile(self,trialpath):
-        """ Internal use.  Just a cache of os.path.isfile """
-        return os.path.isfile(trialpath)
 
     @memoize
     def _search_project_includes(self, include):
         """ Internal use.  Find the given include file in the project include paths """
         for inc_dir in self.includes:
             trialpath = os.path.join(inc_dir, include)
-            if self._isfile(trialpath):
+            if isfile(trialpath):
                 return trialpath
 
         # else:
@@ -59,7 +71,7 @@ class HeaderTree:
         # Check if the file is referable from the current working directory
         # if that guess doesn't exist then try all the include paths
         trialpath = os.path.join(cwd, include)
-        if self._isfile(trialpath):
+        if isfile(trialpath):
             return trialpath
         else:
             return self._search_project_includes(include)
@@ -179,21 +191,4 @@ class HeaderDependencies:
         self.dependencies = map(os.path.realpath, work_in_progress)
         return self.dependencies
 
-# class ImpliedFileHunter:
-#    """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
 
-
-if __name__ == '__main__':
-    cap = configargparse.getArgumentParser()
-    cap.add("filename", help="File to use in \"$CPP $CPPFLAGS -MM filename\"")
-    cap.add("-c", "--config", is_config_file=True, help="config file path")
-    hh = HeaderDependencies()
-    myargs = cap.parse_known_args()
-
-    if myargs[0].verbose >= 1:
-        print(myargs[0])
-    if myargs[0].verbose >= 2:
-        cap.print_values()
-
-    for dep in hh.process(myargs[0].filename):
-        print(dep)
