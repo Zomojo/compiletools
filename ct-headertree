@@ -2,23 +2,47 @@
 from __future__ import print_function
 from headerhunter import HeaderTree
 import git_utils
+import utils
 import tree
 import configargparse
 
-def print_wrapper(data):
-    """ Wrap the builtin print so that it can be passed to the tree.depth_first_traverse """
-    print(data)
+
+class FlatStyle:
+
+    def __init__(self, tree_, strip_git_root=True):
+        self.strip_git_root = strip_git_root
+        tree.depth_first_traverse(
+            node=tree_,
+            pre_traverse_function=self.print_wrapper)
+
+    def print_wrapper(self, key):
+        """ Wrap the builtin print so that it can be passed to the tree.depth_first_traverse """
+        name = key
+        if self.strip_git_root:
+            name = git_utils.strip_git_root(key)
+        print(name)
 
 
-def depth_indicator_print(key, depth, indicator='--', strip_git_root=True):
-    """ Print the filenames with a leading indicator to denote the depth of the file from the root """
-    name = key
-    if strip_git_root:
-        name = git_utils.strip_git_root(key)
-    print(indicator * depth + name)
+class SimpleDepthStyle:
+
+    """ Print the include tree with some sort of indicator of depth """
+
+    def __init__(self, tree_, strip_git_root=True, indicator="--"):
+        self.strip_git_root = strip_git_root
+        self.indicator = indicator
+        tree.depth_first_traverse(
+            node=tree_,
+            pre_traverse_function=self.depth_indicator_print)
+
+    def depth_indicator_print(self, key, depth):
+        """ Print the filenames with a leading indicator to denote the depth of the file from the root """
+        name = key
+        if self.strip_git_root:
+            name = git_utils.strip_git_root(key)
+        print(self.indicator * depth + name)
 
 
-class DotFormat:
+class DotStyle:
 
     """ Print the include tree in graphviz dot format. """
 
@@ -56,7 +80,7 @@ class DotFormat:
             print('"' + name + '"->"' + child_name + '"')
 
 
-class CostCounter:
+class TreeStyle:
 
     """ Show the cumulative cost and self cost of including the header files """
 
@@ -128,23 +152,37 @@ class CostCounter:
 
 
 if __name__ == '__main__':
-    cap = configargparse.getArgumentParser()
+    cap = configargparse.getArgumentParser(
+        description='Create a tree of header dependencies starting at a given C/C++ file. ',
+        formatter_class=configargparse.DefaultsRawFormatter)
     cap.add("filename", help="File to start tracing headers from")
     cap.add("-c", "--config", is_config_file=True, help="config file path")
+
+    # Figure out what style classes are available and add them to the command
+    # line options
+    styles = [st for st in dict(globals()) if 'Style' in st]
+    cap.add('--style', choices=styles, help="Output formatting style")
+
+    utils.add_boolean_argument(
+        cap,
+        "shorten",
+        'strip_git_root',
+        default=True,
+        help="Strip the git root from the filenames")
+
+    # Side effect of creating the HeaderTree is that it adds options to the
+    # command line arguments
     ht = HeaderTree()
 
     myargs = cap.parse_known_args()
-
     if myargs[0].verbose >= 1:
         print(myargs[0])
     if myargs[0].verbose >= 2:
         cap.print_values()
 
+    # Create the headertree then print it in the appropriate style
     inctree = ht.process(myargs[0].filename)
-#    tree.depth_first_traverse(node=inctree,post_traverse_function=print_wrapper)
-#    tree.depth_first_traverse(node=inctree,pre_traverse_function=depth_indicator_print)
-
-#    df = DotFormat(inctree)
-#    print()
-
-    cc = CostCounter(inctree)
+    style_class = globals()[myargs[0].style]
+    style_object = style_class(
+        inctree,
+        strip_git_root=myargs[0].strip_git_root)
