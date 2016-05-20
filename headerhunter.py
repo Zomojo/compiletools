@@ -15,7 +15,7 @@ from pprint import pprint
 
 
 @memoize
-def isfile(self,trialpath):
+def isfile(trialpath):
     """ Just a cached version of os.path.isfile """
     return os.path.isfile(trialpath)
 
