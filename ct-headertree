@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import inspect
+import math
 from headerhunter import HeaderTree
 import git_utils
 import utils
@@ -10,6 +11,7 @@ import configargparse
 
 class FlatStyle:
     """ Print a newline delimited list of header files """
+
     def __init__(self, tree_, strip_git_root=True):
         self.strip_git_root = strip_git_root
         tree.depth_first_traverse(
@@ -88,6 +90,8 @@ class TreeStyle:
     def __init__(self, tree_, strip_git_root=True, verbose=0):
         self.strip_git_root = strip_git_root
         self.verbose = verbose
+        self.max_cumulative = 0
+        self.max_self = 0
         self.counter = [0]
         self.reverse_result = []
         tree.depth_first_traverse(
@@ -106,20 +110,33 @@ class TreeStyle:
         if self.strip_git_root:
             name = git_utils.strip_git_root(key)
 
+        if last > self.max_cumulative:
+            self.max_cumulative = last
+
+        if len(value) > self.max_self:
+            self.max_self = len(value)
+
         # store cumulative includes and direct includes
         self.reverse_result.append(
             {'cumulative': last, 'self': len(value), 'depth': depth, 'name': name})
 
     def print(self):
         if self.verbose >= 1:
-            print("First column is the cumulative count of headers (recursively) included by the filename.")
-            print("Second column is the self count.  That is, the headers directly included by the filename.")
+            print(
+                "First column is the cumulative count of headers (recursively) included by the filename.")
+            print(
+                "Second column is the self count.  That is, the headers directly included by the filename.")
 
         def righttreechars(child_index):
             return {1: u"\u2514\u2500"}.get(child_index, u"\u251c\u2500")
 
         def internaltreechars(child_index):
             return {0: u"  "}.get(child_index, u"\u2502 ")
+
+        cumulative_digits = 1 + math.floor(math.log10(self.max_cumulative))
+        cumulative_format_str = "{c:" + str(cumulative_digits) + "d}"
+        self_digits = 1 + math.floor(math.log10(self.max_self))
+        self_format_str = "{d:" + str(self_digits) + "d}"
 
         remaining_children = []
         for item in reversed(self.reverse_result):
@@ -140,10 +157,9 @@ class TreeStyle:
                     remaining_children[
                         item['depth'] -
                         1])
-
-            print("{c:5d}".format(
-                c=item['cumulative']) +
-                "{d:3d}".format(
+            print(cumulative_format_str.format(
+                c=item['cumulative']) + " " +
+                self_format_str.format(
                 d=item['self']) + " " + tree_structure +
                 item['name'])
 
@@ -195,12 +211,14 @@ if __name__ == '__main__':
     style_class = globals()[myargs[0].style + 'Style']
 
     # Build up the appropriate arguments to pass to the initialization of the style object
-    # For each argument given on the command line, check if it matches one for the __init__ 
+    # For each argument given on the command line, check if it matches one for
+    # the __init__
     kwargs = {}
     function_args = inspect.getargspec(style_class.__init__).args
-    for key,value in vars(myargs[0]).items():
+    for key, value in vars(myargs[0]).items():
         if key in function_args:
             kwargs[key] = value
 
-    # Construct an instance of the style class which will print the header tree as a side effect        
-    style_object = style_class(inctree,**kwargs)
+    # Construct an instance of the style class which will print the header
+    # tree as a side effect
+    style_object = style_class(inctree, **kwargs)
