@@ -2,6 +2,7 @@ import subprocess
 import configargparse
 import git_utils
 
+
 def to_bool(value):
     """
     Tries to convert a wide variety of values to a boolean
@@ -90,7 +91,8 @@ def common_substitutions(args):
     if args.include:
         for path in args.include:
             if path is None:
-                raise ValueError("Parsing the args.include and path is unexpectedly None")
+                raise ValueError(
+                    "Parsing the args.include and path is unexpectedly None")
             args.CPPFLAGS += " -I " + path
             args.CFLAGS += " -I " + path
             args.CXXFLAGS += " -I " + path

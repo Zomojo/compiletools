@@ -19,16 +19,18 @@ def isfile(trialpath):
     """ Just a cached version of os.path.isfile """
     return os.path.isfile(trialpath)
 
+
 def implied_source(filename):
     """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
-    basename=os.path.splitext(filename)[0]
-    extensions=["cpp","cxx","cc","c"]
+    basename = os.path.splitext(filename)[0]
+    extensions = ["cpp", "cxx", "cc", "c"]
     for ext in extensions:
-        trialpath=os.path.join(basename,ext)
+        trialpath = os.path.join(basename, ext)
         if isfile(trialpath):
             return trialpath
     else:
         return None
+
 
 class HeaderTree:
 
@@ -47,7 +49,6 @@ class HeaderTree:
 
         if self.args.verbose >= 3:
             print("Includes=" + str(self.includes))
-
 
     @memoize
     def _search_project_includes(self, include):
@@ -104,9 +105,11 @@ class HeaderTree:
             node = tree.tree()
 
         # Stop cycles
-        if realpath in self.ancestor_paths:       
+        if realpath in self.ancestor_paths:
             if self.args.verbose >= 4:
-                print("HeaderTree::process is breaking the cycle on " + realpath)
+                print(
+                    "HeaderTree::process is breaking the cycle on " +
+                    realpath)
             return node
         self.ancestor_paths.append(realpath)
 
@@ -190,5 +193,3 @@ class HeaderDependencies:
         # to get the full path even to files in the current working directory
         self.dependencies = set(map(os.path.realpath, work_in_progress))
         return self.dependencies
-
-
