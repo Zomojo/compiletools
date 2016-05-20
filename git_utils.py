@@ -6,7 +6,7 @@ from memoize import memoize
 def find_git_root(filename=None):
     """ Return the absolute path of .git for the given filename """
     if filename:
-        directory = os.path.dirname(filename)
+        directory = os.path.dirname(os.path.realpath(filename))
     else:
         directory = os.getcwd()
     return _find_git_root(directory)
