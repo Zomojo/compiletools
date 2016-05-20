@@ -85,7 +85,10 @@ def common_substitutions(args):
     # Unless turned off, the git root will be added to the list of include
     # paths
     if args.git_root:
-        args.include.append(git_utils.find_git_root())
+        filename = None
+        if args.filename:
+            filename = args.filename
+            args.include.append(git_utils.find_git_root(filename))
 
     # Add all the include paths to all three compile flags
     if args.include:
