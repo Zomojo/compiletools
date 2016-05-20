@@ -27,7 +27,7 @@ def add_boolean_argument(parser, name, dest, default=False, help=None):
         default=default,
         const=True,
         type=to_bool,
-        help=help + "--no-" + name + " to turn the feature off.")
+        help=help + " Use --no-" + name + " to turn the feature off.")
     group.add_argument('--no-' + name, dest=dest, action='store_false')
 
 
