@@ -160,8 +160,8 @@ if __name__ == '__main__':
 
     # Figure out what style classes are available and add them to the command
     # line options
-    styles = [st for st in dict(globals()) if 'Style' in st]
-    cap.add('--style', choices=styles, default='TreeStyle', help="Output formatting style")
+    styles = [st[:-5] for st in dict(globals()) if st.endswith('Style')]
+    cap.add('--style', choices=styles, default='Tree', help="Output formatting style")
 
     utils.add_boolean_argument(
         cap,
@@ -182,7 +182,7 @@ if __name__ == '__main__':
 
     # Create the headertree then print it in the appropriate style
     inctree = ht.process(myargs[0].filename)
-    style_class = globals()[myargs[0].style]
+    style_class = globals()[myargs[0].style+'Style']
     style_object = style_class(
         inctree,
         strip_git_root=myargs[0].strip_git_root)
