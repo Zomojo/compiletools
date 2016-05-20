@@ -23,7 +23,7 @@ class FlatStyle:
         print(name)
 
 
-class SimpleDepthStyle:
+class DepthStyle:
 
     """ Print the include tree with some sort of indicator of depth """
 
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     # Figure out what style classes are available and add them to the command
     # line options
     styles = [st for st in dict(globals()) if 'Style' in st]
-    cap.add('--style', choices=styles, help="Output formatting style")
+    cap.add('--style', choices=styles, default='TreeStyle', help="Output formatting style")
 
     utils.add_boolean_argument(
         cap,
