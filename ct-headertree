@@ -9,7 +9,7 @@ import configargparse
 
 
 class FlatStyle:
-
+    """ Print a newline delimited list of header files """
     def __init__(self, tree_, strip_git_root=True):
         self.strip_git_root = strip_git_root
         tree.depth_first_traverse(
@@ -193,9 +193,14 @@ if __name__ == '__main__':
     # Create the headertree then print it in the appropriate style
     inctree = ht.process(myargs[0].filename)
     style_class = globals()[myargs[0].style + 'Style']
+
+    # Build up the appropriate arguments to pass to the initialization of the style object
+    # For each argument given on the command line, check if it matches one for the __init__ 
     kwargs = {}
     function_args = inspect.getargspec(style_class.__init__).args
     for key,value in vars(myargs[0]).items():
         if key in function_args:
             kwargs[key] = value
+
+    # Construct an instance of the style class which will print the header tree as a side effect        
     style_object = style_class(inctree,**kwargs)
