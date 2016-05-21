@@ -144,11 +144,11 @@ class TreeStyle:
         def internaltreechars(child_index):
             return {0: u"  "}.get(child_index, u"\u2502 ")
 
-        cumulative_digits = 1 + math.floor(math.log10(self.max_cumulative))
+        cumulative_digits = 1 + int(math.floor(math.log10(self.max_cumulative)))
         cumulative_format_str = "{c:" + str(cumulative_digits) + "d}"
-        self_digits = 1 + math.floor(math.log10(self.max_self))
+        self_digits = 1 + int(math.floor(math.log10(self.max_self)))
         self_format_str = "{d:" + str(self_digits) + "d}"
-        duplicates_digits = 1 + math.floor(math.log10(self.max_duplicates))
+        duplicates_digits = 1 + int(math.floor(math.log10(self.max_duplicates)))
         duplicates_format_str = "{p:" + str(duplicates_digits) + "d}"
 
         remaining_children = []
