@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+from collections import defaultdict
 import inspect
 import math
 from headerhunter import HeaderTree
@@ -90,18 +91,23 @@ class TreeStyle:
     def __init__(self, tree_, strip_git_root=True, verbose=0):
         self.strip_git_root = strip_git_root
         self.verbose = verbose
-        self.max_cumulative = 0
-        self.max_self = 0
-        self.counter = [0]
-        self.reverse_result = []
+        self.max_cumulative = 0  # Used to figure out the number of digits to leave space for
+        self.max_self = 0        # Used to figure out the number of digits to leave space for
+        self.max_duplicates = 0  # Used to figure out the number of digits to leave space for
+        self.counter = [0]       # Counter will be used as a stack
+        self.reverse_result = []  # The output in reverse order
+        # Count the number of times a given header is included across all
+        # branches of the include tree
+        self.duplicates = defaultdict(int)
         tree.depth_first_traverse(
             node=tree_,
             pre_traverse_function=self._pre,
             post_traverse_function=self._post)
         self.print()
 
-    def _pre(self, key, value, depth):
+    def _pre(self, key):
         self.counter.append(0)
+        self.duplicates[key] += 1
 
     def _post(self, key, value, depth):
         last = self.counter.pop()
@@ -116,9 +122,12 @@ class TreeStyle:
         if len(value) > self.max_self:
             self.max_self = len(value)
 
+        if self.duplicates[key] > self.max_duplicates:
+            self.max_duplicates = self.duplicates[key]
+
         # store cumulative includes and direct includes
-        self.reverse_result.append(
-            {'cumulative': last, 'self': len(value), 'depth': depth, 'name': name})
+        self.reverse_result.append({'cumulative': last, 'self': len(
+            value), 'depth': depth, 'name': name, 'key': key})
 
     def print(self):
         if self.verbose >= 1:
@@ -126,6 +135,8 @@ class TreeStyle:
                 "First column is the cumulative count of headers (recursively) included by the filename.")
             print(
                 "Second column is the self count.  That is, the headers directly included by the filename.")
+            print(
+                "Third column is the number of times the file is duplicated in this tree.")
 
         def righttreechars(child_index):
             return {1: u"\u2514\u2500"}.get(child_index, u"\u251c\u2500")
@@ -137,6 +148,8 @@ class TreeStyle:
         cumulative_format_str = "{c:" + str(cumulative_digits) + "d}"
         self_digits = 1 + math.floor(math.log10(self.max_self))
         self_format_str = "{d:" + str(self_digits) + "d}"
+        duplicates_digits = 1 + math.floor(math.log10(self.max_duplicates))
+        duplicates_format_str = "{p:" + str(duplicates_digits) + "d}"
 
         remaining_children = []
         for item in reversed(self.reverse_result):
@@ -157,10 +170,18 @@ class TreeStyle:
                     remaining_children[
                         item['depth'] -
                         1])
-            print(cumulative_format_str.format(
-                c=item['cumulative']) + " " +
+            print(
+                cumulative_format_str.format(
+                    c=item['cumulative']) +
+                " " +
                 self_format_str.format(
-                d=item['self']) + " " + tree_structure +
+                    d=item['self']) +
+                " " +
+                duplicates_format_str.format(
+                    p=self.duplicates[
+                        item['key']]) +
+                " " +
+                tree_structure +
                 item['name'])
 
             # Since the child has now been drawn, reduce the parents count of
