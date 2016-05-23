@@ -1,0 +1,21 @@
+#!/usr/bin/env python
+from __future__ import print_function
+import configargparse
+from headerhunter import HeaderDependencies
+
+if __name__ == '__main__':
+    cap = configargparse.getArgumentParser(
+        description='Create a Makefile for the given list of targets',
+        formatter_class=configargparse.DefaultsRawFormatter)
+    cap.add("-c", "--config", is_config_file=True, help="config file path")
+    #cap.add("filename", nargs='*', help="File to compile to an executable")
+    cap.add("--dynamic", nargs='*', help="File to compile to an dynamic library")
+    cap.add("--static", nargs='*', help="File to compile to an dynamic library")
+
+    hh = HeaderDependencies()
+    myargs = cap.parse_known_args()
+
+    if myargs[0].verbose >= 1:
+        print(myargs[0])
+    if myargs[0].verbose >= 2:
+        cap.print_values()

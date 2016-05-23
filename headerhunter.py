@@ -19,7 +19,7 @@ def isfile(trialpath):
     """ Just a cached version of os.path.isfile """
     return os.path.isfile(trialpath)
 
-
+@memoize
 def implied_source(filename):
     """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
     basename = os.path.splitext(filename)[0]

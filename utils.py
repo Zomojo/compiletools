@@ -86,8 +86,10 @@ def common_substitutions(args):
     # paths
     if args.git_root:
         filename = None
-        if args.filename:
+        try:
             filename = args.filename
+        except:
+            pass
         args.include.append(git_utils.find_git_root(filename))
 
     # Add all the include paths to all three compile flags
