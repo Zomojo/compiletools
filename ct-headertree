@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 from collections import defaultdict
+from collections import Counter
 import inspect
 import math
 from headerhunter import HeaderTree
@@ -11,6 +12,7 @@ import configargparse
 
 
 class FlatStyle:
+
     """ Print a newline delimited list of header files """
 
     def __init__(self, tree_, strip_git_root=True):
@@ -88,17 +90,35 @@ class TreeStyle:
 
     """ Show the cumulative cost and self cost of including the header files """
 
+    # TODO: There are now four different statistics that TreeStyle calculates and
+    #       we can easily imagine more.  And by embedding the statistics in here
+    #       they are unavailable to DotStyle.  We need to separate the output
+    #       formatting style from the calculated statistics. Also the statistics
+    #       should be command line settable so that you only get what
+    #       you want
+
     def __init__(self, tree_, strip_git_root=True, verbose=0):
         self.strip_git_root = strip_git_root
         self.verbose = verbose
-        self.max_cumulative = 0  # Used to figure out the number of digits to leave space for
-        self.max_self = 0        # Used to figure out the number of digits to leave space for
-        self.max_duplicates = 0  # Used to figure out the number of digits to leave space for
-        self.counter = [0]       # Counter will be used as a stack
+
+        # The various max_* variables are used to figure out the number of
+        # digits to leave space for
+        self.max_cumulative = 1
+        self.max_self = 1
+        self.max_duplicates = 1
+        self.max_parents = 1
+
+        self.counter = [0]        # Counter will be used as a stack
+        # List of all parents leading to the current node.  Used as a stack.
+        self.parent_stack = []
+        # A dict mapping a file to the set of parents of that file
+        self.parents = defaultdict(set)
         self.reverse_result = []  # The output in reverse order
         # Count the number of times a given header is included across all
         # branches of the include tree
-        self.duplicates = defaultdict(int)
+        self.duplicates = Counter()
+
+        # Now traverse the tree and print out the result
         tree.depth_first_traverse(
             node=tree_,
             pre_traverse_function=self._pre,
@@ -108,22 +128,24 @@ class TreeStyle:
     def _pre(self, key):
         self.counter.append(0)
         self.duplicates[key] += 1
+        self.parent_stack.append(key)
 
     def _post(self, key, value, depth):
+        self.parent_stack.pop()  # pop the current file off the stack
+        try:
+            # push the immediate parent into the set of parents of the file
+            self.parents[key].add(self.parent_stack[-1])
+        except:
+            pass
         last = self.counter.pop()
         self.counter[-1] += last + 1
         name = key
         if self.strip_git_root:
             name = git_utils.strip_git_root(key)
-
-        if last > self.max_cumulative:
-            self.max_cumulative = last
-
-        if len(value) > self.max_self:
-            self.max_self = len(value)
-
-        if self.duplicates[key] > self.max_duplicates:
-            self.max_duplicates = self.duplicates[key]
+        self.max_cumulative = max(self.max_cumulative, self.counter[-1])
+        self.max_self = max(self.max_self, len(value))
+        self.max_duplicates = max(self.max_duplicates, self.duplicates[key])
+        self.max_parents = max(self.max_parents, len(self.parents[key]))
 
         # store cumulative includes and direct includes
         self.reverse_result.append({'cumulative': last, 'self': len(
@@ -137,19 +159,23 @@ class TreeStyle:
                 "Second column is the self count.  That is, the headers directly included by the filename.")
             print(
                 "Third column is the number of times the file is duplicated in this tree.")
+            print(
+                "Fourth column is the number of unique parents the file has.")
 
-        def righttreechars(child_index):
+        def _righttreechars(child_index):
             return {1: u"\u2514\u2500"}.get(child_index, u"\u251c\u2500")
 
-        def internaltreechars(child_index):
+        def _internaltreechars(child_index):
             return {0: u"  "}.get(child_index, u"\u2502 ")
 
-        cumulative_digits = 1 + int(math.floor(math.log10(self.max_cumulative)))
-        cumulative_format_str = "{c:" + str(cumulative_digits) + "d}"
-        self_digits = 1 + int(math.floor(math.log10(self.max_self)))
-        self_format_str = "{d:" + str(self_digits) + "d}"
-        duplicates_digits = 1 + int(math.floor(math.log10(self.max_duplicates)))
-        duplicates_format_str = "{p:" + str(duplicates_digits) + "d}"
+        def _digits_str(max_value):
+            """ How many digits are in the number when represented in base 10. Return as a string. """
+            return str(1 + int(math.floor(math.log10(max_value))))
+
+        cumulative_format_str = "{c:" + _digits_str(self.max_cumulative) + "d}"
+        self_format_str = "{s:" + _digits_str(self.max_self) + "d}"
+        duplicates_format_str = "{d:" + _digits_str(self.max_duplicates) + "d}"
+        parents_format_str = "{p:" + _digits_str(self.max_parents) + "d}"
 
         remaining_children = []
         for item in reversed(self.reverse_result):
@@ -162,11 +188,11 @@ class TreeStyle:
             # Create the internal tree structure up to the grandparents
             if item['depth'] > 1:
                 for child_index in remaining_children[:(item['depth'] - 1)]:
-                    tree_structure += internaltreechars(child_index)
+                    tree_structure += _internaltreechars(child_index)
 
             # Add on the connector to the parent
             if item['depth'] > 0:
-                tree_structure += righttreechars(
+                tree_structure += _righttreechars(
                     remaining_children[
                         item['depth'] -
                         1])
@@ -175,11 +201,15 @@ class TreeStyle:
                     c=item['cumulative']) +
                 " " +
                 self_format_str.format(
-                    d=item['self']) +
+                    s=item['self']) +
                 " " +
                 duplicates_format_str.format(
-                    p=self.duplicates[
+                    d=self.duplicates[
                         item['key']]) +
+                " " +
+                parents_format_str.format(
+                    p=len(self.parents[
+                        item['key']])) +
                 " " +
                 tree_structure +
                 item['name'])
