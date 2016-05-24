@@ -79,18 +79,26 @@ def common_substitutions(args):
     # just use the CXX equivalents
     if args.CPP is "unsupplied_implies_use_CXX":
         args.CPP = args.CXX
+        if args.verbose >= 3:
+            print("CPP has been set to use CXX.  CPP=" + args.CPP)
     if args.CPPFLAGS is "unsupplied_implies_use_CXXFLAGS":
         args.CPPFLAGS = args.CXXFLAGS
+        if args.verbose >= 3:
+            print("CPPFLAGS has been set to use CXXFLAGS.  CPPFLAGS=" + args.CPPFLAGS)
 
     # Unless turned off, the git root will be added to the list of include
     # paths
     if args.git_root:
         filename = None
+        # The filename/s in args could be either a string or a list
         try:
+            filename = args.filename[0]
+        except AttributeError:
             filename = args.filename
         except:
             pass
-        args.include.append(git_utils.find_git_root(filename))
+        finally:
+            args.include.append(git_utils.find_git_root(filename))
 
     # Add all the include paths to all three compile flags
     if args.include:
@@ -101,7 +109,11 @@ def common_substitutions(args):
             args.CPPFLAGS += " -I " + path
             args.CFLAGS += " -I " + path
             args.CXXFLAGS += " -I " + path
-
+        if args.verbose >= 3:
+            print("Extra include paths have been appended to FLAGS")
+            print("CPPFLAGS=" + args.CPPFLAGS)
+            print("CFLAGS=" + args.CFLAGS)
+            print("CXXFLAGS=" + args.CXXFLAGS)
 
 def setattr_args(obj):
     """ Add the common arguments to the configargparse,
