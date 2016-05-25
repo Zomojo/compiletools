@@ -84,7 +84,9 @@ def common_substitutions(args):
     if args.CPPFLAGS is "unsupplied_implies_use_CXXFLAGS":
         args.CPPFLAGS = args.CXXFLAGS
         if args.verbose >= 3:
-            print("CPPFLAGS has been set to use CXXFLAGS.  CPPFLAGS=" + args.CPPFLAGS)
+            print(
+                "CPPFLAGS has been set to use CXXFLAGS.  CPPFLAGS=" +
+                args.CPPFLAGS)
 
     # Unless turned off, the git root will be added to the list of include
     # paths
@@ -115,6 +117,7 @@ def common_substitutions(args):
             print("CFLAGS=" + args.CFLAGS)
             print("CXXFLAGS=" + args.CXXFLAGS)
 
+
 def setattr_args(obj):
     """ Add the common arguments to the configargparse,
         parse the args, then add the created args object
@@ -128,3 +131,39 @@ def setattr_args(obj):
     if args[0]:
         common_substitutions(args[0])
         setattr(obj, 'args', args[0])
+
+
+class OrderedSet:
+
+    """A set that preserves the order of insertion"""
+
+    def __init__(self, init=()):
+        self.ordered = []
+        self.unordered = {}
+
+        for s in init:
+            self.insert(s)
+
+    def add(self, e):
+        if e in self.unordered:
+            return
+        self.ordered.append(e)
+        self.unordered[e] = True
+
+    def __repr__(self):
+        return repr(self.ordered)
+
+    def __contains__(self, e):
+        return self.unordered.__contains__(e)
+
+    def __len__(self):
+        return self.ordered.__len__()
+
+    def __iter__(self):
+        return self.ordered.__iter__()
+
+    def __or__(self, other):
+        newset = self
+        for element in other:
+            newset.add(element)
+        return newset
