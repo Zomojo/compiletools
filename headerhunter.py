@@ -19,13 +19,14 @@ def isfile(trialpath):
     """ Just a cached version of os.path.isfile """
     return os.path.isfile(trialpath)
 
+
 @memoize
 def implied_source(filename):
     """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
     basename = os.path.splitext(filename)[0]
-    extensions = ["cpp", "cxx", "cc", "c"]
+    extensions = [".cpp", ".cxx", ".cc", ".c"]
     for ext in extensions:
-        trialpath = os.path.join(basename, ext)
+        trialpath = basename + ext
         if isfile(trialpath):
             return trialpath
     else:
@@ -193,3 +194,24 @@ class HeaderDependencies:
         # to get the full path even to files in the current working directory
         self.dependencies = set(map(os.path.realpath, work_in_progress))
         return self.dependencies
+
+
+class Hunter:
+
+    """ Create the list of source files that also need to be compiled to complete the linkage of the given source file """
+
+    def __init__(self):
+        self.header_dependencies = HeaderDependencies()
+
+    def process(self, source_filename):
+        # TODO: See if we can just make it a precondition that source_filename
+        # is a realpath.  The current check could be expensive.
+        realpath = os.path.realpath(source_filename)
+        sources = set()
+        sources.add(realpath)
+        deplist = self.header_dependencies.process(realpath)
+        for header in deplist:
+            implied = implied_source(header)
+            if implied and implied not in sources:
+                sources = sources | self.process(implied)
+        return sources
