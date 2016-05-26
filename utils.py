@@ -2,6 +2,18 @@ import subprocess
 import configargparse
 import git_utils
 import collections
+import os.path
+from memoize import memoize
+
+@memoize
+def isfile(trialpath):
+    """ Just a cached version of os.path.isfile """
+    return os.path.isfile(trialpath)
+
+@memoize
+def realpath(trialpath):
+    """ Just a cached version of os.path.realpath """
+    return os.path.realpath(trialpath)
 
 
 def to_bool(value):

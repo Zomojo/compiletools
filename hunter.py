@@ -15,19 +15,13 @@ from pprint import pprint
 
 
 @memoize
-def isfile(trialpath):
-    """ Just a cached version of os.path.isfile """
-    return os.path.isfile(trialpath)
-
-
-@memoize
 def implied_source(filename):
     """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
     basename = os.path.splitext(filename)[0]
     extensions = [".cpp", ".cxx", ".cc", ".c"]
     for ext in extensions:
         trialpath = basename + ext
-        if isfile(trialpath):
+        if utils.isfile(trialpath):
             return trialpath
     else:
         return None
@@ -56,7 +50,7 @@ class HeaderTree:
         """ Internal use.  Find the given include file in the project include paths """
         for inc_dir in self.includes:
             trialpath = os.path.join(inc_dir, include)
-            if isfile(trialpath):
+            if utils.isfile(trialpath):
                 return trialpath
 
         # else:
@@ -73,7 +67,7 @@ class HeaderTree:
         # Check if the file is referable from the current working directory
         # if that guess doesn't exist then try all the include paths
         trialpath = os.path.join(cwd, include)
-        if isfile(trialpath):
+        if utils.isfile(trialpath):
             return trialpath
         else:
             return self._search_project_includes(include)
@@ -97,7 +91,7 @@ class HeaderTree:
             The node is passed recursively, however the original caller
             does not need to pass it in.
         """
-        realpath = os.path.realpath(filename)
+        realpath = utils.realpath(filename)
 
         if self.args.verbose >= 4:
             print("HeaderTree::process: " + realpath)
@@ -142,6 +136,7 @@ class HeaderDependencies:
         # self.args will exist after this call
         utils.setattr_args(self)
 
+    @memoize
     def _is_header(self, filename):
         """ Internal use.  Is filename a header file?"""
         return filename.split(
@@ -168,6 +163,8 @@ class HeaderDependencies:
 
         try:
             output = subprocess.check_output(cmd, universal_newlines=True)
+            if self.args.verbose >= 5:
+                print(output)
         except OSError as err:
             print(
                 "HeaderDependencies failed to run compiler to generate dependencies. error = ",
@@ -192,26 +189,32 @@ class HeaderDependencies:
 
         # Use realpath to get rid of  // and ../../ etc in paths (similar to normpath) and
         # to get the full path even to files in the current working directory
-        self.dependencies = set(map(os.path.realpath, work_in_progress))
-        return self.dependencies
+        return set(map(utils.realpath, work_in_progress))
 
 
 class Hunter:
-
-    """ Create the list of source files that also need to be compiled to complete the linkage of the given source file """
+    
+    """ Deeply inspect files to understand what are the header dependencies, 
+        other required source files, other required compile/link flags.
+    """
 
     def __init__(self):
-        self.header_dependencies = HeaderDependencies()
-
-    def process(self, source_filename):
+        self.header_deps = HeaderDependencies()
+    
+    @memoize
+    def required_source_files(self, source_filename):
+        """ Create the list of source files that also need to be compiled to complete the linkage of the given source file """
         # TODO: See if we can just make it a precondition that source_filename
         # is a realpath.  The current check could be expensive.
-        realpath = os.path.realpath(source_filename)
+        realpath = utils.realpath(source_filename)
         sources = set()
         sources.add(realpath)
-        deplist = self.header_dependencies.process(realpath)
+        deplist = self.header_deps.process(realpath)
         for header in deplist:
             implied = implied_source(header)
             if implied and implied not in sources:
-                sources = sources | self.process(implied)
+                sources = sources | self.required_source_files(implied)
         return sources
+
+    def header_dependencies(self, source_filename):
+        return self.header_deps.process(source_filename)

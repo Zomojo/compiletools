@@ -4,9 +4,9 @@ from __future__ import print_function
 import os.path
 import configargparse
 import utils
+from memoize import memoize
 from hunter import HeaderDependencies
 from hunter import Hunter
-
 
 class Rule:
 
@@ -42,14 +42,14 @@ class Rule:
             pass
         makefile.write("\n")
 
-
+@memoize
 def executable_name(source_filename):
     # TODO: Stop assuming exe files go into "bin"
     name = os.path.split(source_filename)[1]
     basename = os.path.splitext(source_filename)[0]
     return os.path.join("bin/", basename)
 
-
+@memoize
 def object_name(source_filename):
     name = os.path.split(source_filename)[1]
     basename = os.path.splitext(name)[0]
@@ -71,12 +71,16 @@ class MakefileCreator:
             "--LDFLAGS",
             help="Linker flags",
             default="unsupplied_implies_use_CXXFLAGS")
-        self.header_dependencies = HeaderDependencies()
+
+        self.hunter = Hunter()
 
         # self.args will exist after this call
         utils.setattr_args(self)
 
     def create(self):
+        # This is a lookup to see if we've already created a compile rule for the given source
+        self.already_created_compile_rule = set()
+
         # By using a set, duplicate rules will be eliminated.
         self.rules = utils.OrderedSet()
         rule_all = Rule(
@@ -92,11 +96,13 @@ class MakefileCreator:
                 source)
 
         self.write()
-
+    
     def _create_compile_rule_for_source(self, source):
+
         """ For a given source file return the compile rule required for the Makefile """
 
-        deplist = self.header_dependencies.process(source)
+        self.already_created_compile_rule.add(source)       
+        deplist = self.hunter.header_dependencies(source)
         obj_name = object_name(source)
         return Rule(
             target=obj_name,
@@ -138,8 +144,7 @@ class MakefileCreator:
         # (or library as appropriate)
         rules_for_source = utils.OrderedSet()
 
-        hunter = Hunter()
-        complete_sources = hunter.process(source)
+        complete_sources = self.hunter.required_source_files(source)
         if self.args.verbose >= 6:
             print(
                 "Complete list of implied source files for " +
@@ -150,7 +155,8 @@ class MakefileCreator:
         rules_for_source.add(self._create_link_rule(source, complete_sources))
 
         for item in complete_sources:
-            rules_for_source.add(self._create_compile_rule_for_source(item))
+            if item not in self.already_created_compile_rule:
+               rules_for_source.add(self._create_compile_rule_for_source(item))
 
         return rules_for_source
 
