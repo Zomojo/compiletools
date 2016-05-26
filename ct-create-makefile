@@ -4,8 +4,8 @@ from __future__ import print_function
 import os.path
 import configargparse
 import utils
-from headerhunter import HeaderDependencies
-from headerhunter import Hunter
+from hunter import HeaderDependencies
+from hunter import Hunter
 
 
 class Rule:
