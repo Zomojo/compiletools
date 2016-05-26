@@ -27,6 +27,12 @@ class Rule:
     def __str__(self):
         return "%r" % (self.__dict__)
 
+    def __eq__(self, other):
+        return self.target == other.target
+
+    def __hash__(self):
+        return hash(self.target)
+
     def write(self, makefile):
         """ Write the given rule into the given Makefile."""
         makefile.write(self.target + ": " + self.prerequisites + "\n")
@@ -82,7 +88,8 @@ class MakefileCreator:
         self.rules.add(rule_all)
 
         for source in self.args.filename:
-            self.rules = self.rules | self._create_makefile_rules_for_source(source)
+            self.rules = self.rules | self._create_makefile_rules_for_source(
+                source)
 
         self.write()
 
