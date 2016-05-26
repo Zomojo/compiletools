@@ -1,6 +1,7 @@
 import subprocess
 import configargparse
 import git_utils
+import collections
 
 
 def to_bool(value):
@@ -131,39 +132,65 @@ def setattr_args(obj):
     if args[0]:
         common_substitutions(args[0])
         setattr(obj, 'args', args[0])
+import collections
 
 
-class OrderedSet:
+class OrderedSet(collections.MutableSet):
 
-    """A set that preserves the order of insertion"""
+    """ Set that remembers original insertion order.  https://code.activestate.com/recipes/576694/ """
 
-    def __init__(self, init=()):
-        self.ordered = []
-        self.unordered = {}
-
-        for s in init:
-            self.insert(s)
-
-    def add(self, e):
-        if e in self.unordered:
-            return
-        self.ordered.append(e)
-        self.unordered[e] = True
-
-    def __repr__(self):
-        return repr(self.ordered)
-
-    def __contains__(self, e):
-        return self.unordered.__contains__(e)
+    def __init__(self, iterable=None):
+        self.end = end = []
+        end += [None, end, end]         # sentinel node for doubly linked list
+        self.map = {}                   # key --> [key, prev, next]
+        if iterable is not None:
+            self |= iterable
 
     def __len__(self):
-        return self.ordered.__len__()
+        return len(self.map)
+
+    def __contains__(self, key):
+        return key in self.map
+
+    def add(self, key):
+        if key not in self.map:
+            end = self.end
+            curr = end[1]
+            curr[2] = end[1] = self.map[key] = [key, curr, end]
+
+    def discard(self, key):
+        if key in self.map:
+            key, prev, next = self.map.pop(key)
+            prev[2] = next
+            next[1] = prev
 
     def __iter__(self):
-        return self.ordered.__iter__()
+        end = self.end
+        curr = end[2]
+        while curr is not end:
+            yield curr[0]
+            curr = curr[2]
 
-    def __or__(self, other):
-        newset = self
-        for element in other:
-            newset.add(element)
-        return newset
+    def __reversed__(self):
+        end = self.end
+        curr = end[1]
+        while curr is not end:
+            yield curr[0]
+            curr = curr[1]
+
+    def pop(self, last=True):
+        if not self:
+            raise KeyError('set is empty')
+        key = self.end[1][0] if last else self.end[2][0]
+        self.discard(key)
+        return key
+
+    def __repr__(self):
+        if not self:
+            return '%s()' % (self.__class__.__name__,)
+        return '%s(%r)' % (self.__class__.__name__, list(self))
+
+    def __eq__(self, other):
+        if isinstance(other, OrderedSet):
+            return len(self) == len(other) and list(self) == list(other)
+        return set(self) == set(other)
