@@ -88,12 +88,12 @@ class MakefileCreator:
             " ".join(
                 str(exe) for exe in map(
                     executable_name,
-                    self.args.filename)))
+                    map(utils.realpath,self.args.filename))))
         self.rules.add(rule_all)
 
         for source in self.args.filename:
             self.rules = self.rules | self._create_makefile_rules_for_source(
-                source)
+                utils.realpath(source))
 
         self.write()
     
@@ -106,16 +106,8 @@ class MakefileCreator:
         obj_name = object_name(source)
         return Rule(
             target=obj_name,
-            prerequisites=source + " " +
-            " ".join(
-                str(dep) for dep in deplist),
-            recipe=self.args.CXX +
-            " " +
-            self.args.CXXFLAGS +
-            " -c -o " +
-            obj_name +
-            " " +
-            source)
+            prerequisites=" ".join([source]+[str(dep) for dep in deplist]),
+            recipe=" ".join([self.args.CXX,self.args.CXXFLAGS]+list(self.hunter.magic()[source].get('CXXFLAGS',[]))+["-c","-o",obj_name,source]))
 
     def _create_link_rule(self, source_filename, complete_sources):
         """ For a given source file (so usually the file with the main) and the set of complete sources (i.e., all the other source files + the original) return the link rule required for the Makefile """
@@ -125,17 +117,17 @@ class MakefileCreator:
             str(obj) for obj in map(
                 object_name,
                 complete_sources))
+        
+        all_magic_ldflags = set()
+        for sf in complete_sources:
+            magic_flags = self.hunter.magic()[sf]
+            all_magic_ldflags |= magic_flags.get('LDFLAGS',set())
+            all_magic_ldflags |= magic_flags.get('LINKFLAGS',set()) 
 
         return Rule(
             target=exe_name,
             prerequisites=object_names,
-            recipe=self.args.LD +
-            " " +
-            self.args.LDFLAGS +
-            " -o " +
-            exe_name +
-            " " +
-            object_names)
+            recipe=" ".join([self.args.LD,self.args.LDFLAGS]+list(all_magic_ldflags)+["-o",exe_name,object_names]))
 
     def _create_makefile_rules_for_source(self, source):
         """ For a given source file return the set of rules required for the Makefile """

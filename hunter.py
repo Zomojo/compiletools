@@ -149,7 +149,8 @@ class HeaderDependencies:
             and the supplied header file will be included into the dummy source file.
         """
         file_is_header = self._is_header(filename)
-        cmd = [self.args.CPP]
+        cmd = []
+        cmd.extend(self.args.CPP.split())
         cmd.extend(self.args.CPPFLAGS.split())
         cmd.append("-MM")
         if file_is_header:
@@ -218,12 +219,16 @@ class Hunter:
         #            'LDFLAGS':set('-lsomelib')}}
         self.magic_flags = {}
 
+    def magic(self):
+        return self.magic_flags
+ 
     def parse_magic_flags(self, source_filename, headers):
         """ Extract all the magics flags from the given source (and all its included headers).  A magic flag is anything that starts with a //# and ends with an = """
         text = ""
         if self.args.preprocess:
             # Preprocess but leave comments
-            cmd = [self.args.CPP]
+            cmd = []
+            cmd.extend(self.args.CPP.split())
             cmd.extend(self.args.CPPFLAGS.split())
             cmd.extend(["-C", "-E", source_filename])
             if self.args.verbose >= 3:
