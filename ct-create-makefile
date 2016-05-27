@@ -8,6 +8,7 @@ from memoize import memoize
 from hunter import HeaderDependencies
 from hunter import Hunter
 
+
 class Rule:
 
     """ A rule is a target, prerequisites and optionally a recipe
@@ -42,19 +43,21 @@ class Rule:
             pass
         makefile.write("\n")
 
+
 @memoize
 def executable_name(source_filename):
     # TODO: Stop assuming exe files go into "bin"
     name = os.path.split(source_filename)[1]
-    basename = os.path.splitext(source_filename)[0]
-    return os.path.join("bin/", basename)
+    basename = os.path.splitext(name)[0]
+    return "".join(["bin/", basename])
+
 
 @memoize
 def object_name(source_filename):
     name = os.path.split(source_filename)[1]
     basename = os.path.splitext(name)[0]
     # TODO: Stop assuming object files go into "bin"
-    return os.path.join("bin/", basename + ".o")
+    return "".join(["bin/", basename, ".o"])
 
 
 class MakefileCreator:
@@ -78,56 +81,74 @@ class MakefileCreator:
         utils.setattr_args(self)
 
     def create(self):
-        # This is a lookup to see if we've already created a compile rule for the given source
+        # This is a lookup to see if we've already created a compile rule for
+        # the given source
         self.already_created_compile_rule = set()
 
         # By using a set, duplicate rules will be eliminated.
         self.rules = utils.OrderedSet()
         rule_all = Rule(
-            "all",
-            " ".join(
+            target="all",
+            prerequisites=" ".join(
                 str(exe) for exe in map(
                     executable_name,
-                    map(utils.realpath,self.args.filename))))
+                    map(utils.realpath, self.args.filename))))
         self.rules.add(rule_all)
+
+        rule_clean = Rule(
+            target="clean",
+            prerequisites="",
+            recipe="rm -rf bin")
+        self.rules.add(rule_clean)
 
         for source in self.args.filename:
             self.rules = self.rules | self._create_makefile_rules_for_source(
                 utils.realpath(source))
 
         self.write()
-    
-    def _create_compile_rule_for_source(self, source):
 
+    def _create_compile_rule_for_source(self, source):
         """ For a given source file return the compile rule required for the Makefile """
 
-        self.already_created_compile_rule.add(source)       
+        self.already_created_compile_rule.add(source)
         deplist = self.hunter.header_dependencies(source)
         obj_name = object_name(source)
-        return Rule(
-            target=obj_name,
-            prerequisites=" ".join([source]+[str(dep) for dep in deplist]),
-            recipe=" ".join([self.args.CXX,self.args.CXXFLAGS]+list(self.hunter.magic()[source].get('CXXFLAGS',[]))+["-c","-o",obj_name,source]))
+        magic_cxx_flags = self.hunter.magic()[source].get('CXXFLAGS', [])
+        return Rule(target=obj_name,
+                    prerequisites=" ".join([source] + [str(dep) for dep in deplist]),
+                    recipe=" ".join(["mkdir -p",
+                                     os.path.dirname(obj_name),
+                                     ';',
+                                     self.args.CXX,
+                                     self.args.CXXFLAGS] + list(magic_cxx_flags) + ["-c",
+                                                                                    "-o",
+                                                                                    obj_name,
+                                                                                    source]))
 
     def _create_link_rule(self, source_filename, complete_sources):
         """ For a given source file (so usually the file with the main) and the set of complete sources (i.e., all the other source files + the original) return the link rule required for the Makefile """
 
-        exe_name = executable_name(source_filename)
+        exe_name = executable_name(utils.realpath(source_filename))
         object_names = " ".join(
             str(obj) for obj in map(
                 object_name,
                 complete_sources))
-        
+
         all_magic_ldflags = set()
         for sf in complete_sources:
             magic_flags = self.hunter.magic()[sf]
-            all_magic_ldflags |= magic_flags.get('LDFLAGS',set())
-            all_magic_ldflags |= magic_flags.get('LINKFLAGS',set()) 
+            all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
+            all_magic_ldflags |= magic_flags.get('LINKFLAGS', set())
 
-        return Rule(
-            target=exe_name,
-            prerequisites=object_names,
-            recipe=" ".join([self.args.LD,self.args.LDFLAGS]+list(all_magic_ldflags)+["-o",exe_name,object_names]))
+        return Rule(target=exe_name,
+                    prerequisites=object_names,
+                    recipe=" ".join(["mkdir -p",
+                                     os.path.dirname(exe_name),
+                                     ";",
+                                     self.args.LD,
+                                     self.args.LDFLAGS] + list(all_magic_ldflags) + ["-o",
+                                                                                     exe_name,
+                                                                                     object_names]))
 
     def _create_makefile_rules_for_source(self, source):
         """ For a given source file return the set of rules required for the Makefile """
@@ -148,7 +169,8 @@ class MakefileCreator:
 
         for item in complete_sources:
             if item not in self.already_created_compile_rule:
-               rules_for_source.add(self._create_compile_rule_for_source(item))
+                rules_for_source.add(
+                    self._create_compile_rule_for_source(item))
 
         return rules_for_source
 
