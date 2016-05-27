@@ -193,8 +193,8 @@ class HeaderDependencies:
 
 
 class Hunter:
-    
-    """ Deeply inspect files to understand what are the header dependencies, 
+
+    """ Deeply inspect files to understand what are the header dependencies,
         other required source files, other required compile/link flags.
     """
 
@@ -211,18 +211,21 @@ class Hunter:
         # self.args will exist after this call
         utils.setattr_args(self)
 
-        # The Hunter needs to maintain a map of filenames to the map of all magic flags and each flag is a set 
-        # E.g., { '/somepath/libs/base/somefile.hpp':{'CPPFLAGS':set('-D MYMACRO','-D MACRO2'),'CXXFLAGS':set('-fsomeoption'),'LDFLAGS':set('-lsomelib')}}
-        self.magic_flags = {} 
-    
-    def parse_magic_flags(self,source_filename,headers):
+        # The Hunter needs to maintain a map of filenames to the map of all magic flags and each flag is a set
+        # E.g., { '/somepath/libs/base/somefile.hpp':
+        #           {'CPPFLAGS':set('-D MYMACRO','-D MACRO2'),
+        #            'CXXFLAGS':set('-fsomeoption'),
+        #            'LDFLAGS':set('-lsomelib')}}
+        self.magic_flags = {}
+
+    def parse_magic_flags(self, source_filename, headers):
         """ Extract all the magics flags from the given source (and all its included headers).  A magic flag is anything that starts with a //# and ends with an = """
         text = ""
-        if self.args.preprocess:       
+        if self.args.preprocess:
             # Preprocess but leave comments
             cmd = [self.args.CPP]
             cmd.extend(self.args.CPPFLAGS.split())
-            cmd.extend( ["-C", "-E", source_filename] )
+            cmd.extend(["-C", "-E", source_filename])
             if self.args.verbose >= 3:
                 print(" ".join(cmd))
             try:
@@ -231,27 +234,29 @@ class Hunter:
                     print(text)
             except OSError as err:
                 print(
-                    "Hunter failed to parse/preprocess the magic flags in " + source_filename + ". error = ",
+                    "Hunter failed to parse/preprocess the magic flags in " +
+                    source_filename +
+                    ". error = ",
                     err,
                     file=sys.stderr)
-                exit()  
+                exit()
         else:
             # reading and handling as one string is slightly faster then
             # handling a list of strings.
             # Only read first 2k for speed
             for filename in headers | set([source_filename]):
                 with open(filename) as ff:
-                    text+=ff.read(2048)
-        
+                    text += ff.read(2048)
+
         pat = re.compile(
             '^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)',
             re.MULTILINE)
 
-        flags_for_filename = self.magic_flags.setdefault(source_filename,{})
- 
+        flags_for_filename = self.magic_flags.setdefault(source_filename, {})
+
         for match in pat.finditer(text):
-            magic,flag = match.groups()
-            flags_for_filename.setdefault(magic,set()).add(flag)
+            magic, flag = match.groups()
+            flags_for_filename.setdefault(magic, set()).add(flag)
 
     @memoize
     def required_source_files(self, source_filename):
@@ -266,19 +271,23 @@ class Hunter:
         sources.add(realpath)
         deplist = self.header_deps.process(realpath)
         if source_filename not in self.magic_flags:
-            self.parse_magic_flags(realpath,deplist)
+            self.parse_magic_flags(realpath, deplist)
 
-        # One of the magic flags is SOURCE.  If that was present, add to the file list.
+        # One of the magic flags is SOURCE.  If that was present, add to the
+        # file list.
         cwd = os.path.dirname(realpath)
         filelist = deplist
-        extra_sources = self.magic_flags[realpath].get('SOURCE',set())
+        extra_sources = self.magic_flags[realpath].get('SOURCE', set())
         for es in extra_sources:
-            es_realpath = utils.realpath(os.path.join(cwd,es))
-            # Use the existence of magic_flags for the extra source file to break any cycles
+            es_realpath = utils.realpath(os.path.join(cwd, es))
+            # Use the existence of magic_flags for the extra source file to
+            # break any cycles
             if es_realpath not in self.magic_flags:
                 filelist.add(es_realpath)
                 if self.args.verbose >= 2:
-                    print("Adding extra source files due to magic SOURCE flag: " + es_realpath)
+                    print(
+                        "Adding extra source files due to magic SOURCE flag: " +
+                        es_realpath)
 
         for header in filelist:
             implied = implied_source(header)
