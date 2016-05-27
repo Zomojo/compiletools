@@ -5,10 +5,12 @@ import collections
 import os.path
 from memoize import memoize
 
+
 @memoize
 def isfile(trialpath):
     """ Just a cached version of os.path.isfile """
     return os.path.isfile(trialpath)
+
 
 @memoize
 def realpath(trialpath):
@@ -29,8 +31,10 @@ def to_bool(value):
     raise Exception("Don't know how to convert " + str(value) + " to boolean.")
 
 
-def add_boolean_argument(parser, name, dest, default=False, help=None):
+def add_boolean_argument(parser, name, dest=None, default=False, help=None):
     """Add a boolean argument to an ArgumentParser instance."""
+    if not dest:
+        dest = name
     group = parser.add_mutually_exclusive_group()
     group.add_argument(
         '--' + name,
@@ -144,7 +148,6 @@ def setattr_args(obj):
     if args[0]:
         common_substitutions(args[0])
         setattr(obj, 'args', args[0])
-import collections
 
 
 class OrderedSet(collections.MutableSet):
