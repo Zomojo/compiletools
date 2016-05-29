@@ -17,10 +17,11 @@ class Rule:
         Note: it had to be a class rather than a dict so that we could hash it.
     """
 
-    def __init__(self, target, prerequisites, recipe=None):
+    def __init__(self, target, prerequisites, recipe=None, phony=False):
         self.target = target
         self.prerequisites = prerequisites
         self.recipe = recipe
+        self.phony = phony
 
     def __repr__(self):
         return "%s(%r)" % (self.__class__, self.__dict__)
@@ -36,13 +37,15 @@ class Rule:
 
     def write(self, makefile):
         """ Write the given rule into the given Makefile."""
+        if self.phony:
+            makefile.write(" ".join([".PHONY:", self.target, "\n"]))
+
         makefile.write(self.target + ": " + self.prerequisites + "\n")
         try:
             makefile.write("\t" + self.recipe + "\n")
         except:
             pass
         makefile.write("\n")
-
 
 
 @memoize
@@ -73,16 +76,25 @@ class MakefileCreator:
         self.rules = utils.OrderedSet()
         rule_all = Rule(
             target="all",
-            prerequisites=" ".join(
-                str(exe) for exe in map(
-                    utils.executable_name,
-                    map(utils.realpath, self.args.filename))))
+            prerequisites=" ".join(["mkdir_output"] +
+                                   [str(exe) for exe in map(
+                                       utils.executable_name,
+                                       map(utils.realpath, self.args.filename))]),
+            phony=True)
         self.rules.add(rule_all)
+
+        rule_mkdir_output = Rule(
+            target="mkdir_output",
+            prerequisites="",
+            recipe="mkdir -p bin",
+            phony=True)
+        self.rules.add(rule_mkdir_output)
 
         rule_clean = Rule(
             target="clean",
             prerequisites="",
-            recipe="rm -rf bin")
+            recipe="rm -rf bin",
+            phony=True)
         self.rules.add(rule_clean)
 
         for source in self.args.filename:
@@ -100,10 +112,7 @@ class MakefileCreator:
         magic_cxx_flags = self.hunter.magic()[source].get('CXXFLAGS', [])
         return Rule(target=obj_name,
                     prerequisites=" ".join([source] + [str(dep) for dep in deplist]),
-                    recipe=" ".join(["mkdir -p",
-                                     os.path.dirname(obj_name),
-                                     ';',
-                                     self.args.CXX,
+                    recipe=" ".join([self.args.CXX,
                                      self.args.CXXFLAGS] + list(magic_cxx_flags) + ["-c",
                                                                                     "-o",
                                                                                     obj_name,
@@ -126,10 +135,7 @@ class MakefileCreator:
 
         return Rule(target=exe_name,
                     prerequisites=object_names,
-                    recipe=" ".join(["mkdir -p",
-                                     os.path.dirname(exe_name),
-                                     ";",
-                                     self.args.LD,
+                    recipe=" ".join([self.args.LD,
                                      self.args.LDFLAGS] + list(all_magic_ldflags) + ["-o",
                                                                                      exe_name,
                                                                                      object_names]))
