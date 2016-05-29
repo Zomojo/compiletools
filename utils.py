@@ -81,7 +81,6 @@ def add_common_arguments():
         dest="git_root",
         default=True,
         help="Determine the git root then add it to the include paths.")
-
     cap.add(
         "--include",
         help="Extra path(s) to add to the list of include paths",
@@ -89,21 +88,35 @@ def add_common_arguments():
         default=[])
 
 
+def unsupplied_replacement(variable, default_variable, verbose, variable_str):
+    """ If a given variable has the letters "unsupplied" in it, return the given default variable """
+    replacement = variable
+    if "unsupplied" in variable:
+        replacement = default_variable
+        if verbose >= 3:
+            print(" ".join([variable_str,
+                            "was unsupplied. Changed to use ",
+                            default_variable]))
+    return replacement
+
+
 def common_substitutions(args):
     """ If certain arguments have not been specified but others have then there are some obvious substitutions to make """
 
-    # If C PreProcessor variables are not set but CXX ones are set then
+    # If C PreProcessor variables (and the same for the LD*) are not set but CXX ones are set then
     # just use the CXX equivalents
-    if args.CPP is "unsupplied_implies_use_CXX":
-        args.CPP = args.CXX
-        if args.verbose >= 3:
-            print("CPP has been set to use CXX.  CPP=" + args.CPP)
-    if args.CPPFLAGS is "unsupplied_implies_use_CXXFLAGS":
-        args.CPPFLAGS = args.CXXFLAGS
-        if args.verbose >= 3:
-            print(
-                "CPPFLAGS has been set to use CXXFLAGS.  CPPFLAGS=" +
-                args.CPPFLAGS)
+    args.CPP = unsupplied_replacement(args.CPP, args.CXX, args.verbose, "CPP")
+    args.CPPFLAGS = unsupplied_replacement(
+        args.CPPFLAGS, args.CXXFLAGS, args.verbose, "CPPFLAGS")
+    try:
+        args.LD = unsupplied_replacement(args.LD, args.CXX, args.verbose, "LD")
+    except:
+        pass
+    try:
+        args.LDFLAGS = unsupplied_replacement(
+            args.LDFLAGS, args.CXXFLAGS, args.verbose, "LDFLAGS")
+    except:
+        pass
 
     # Unless turned off, the git root will be added to the list of include
     # paths
@@ -129,10 +142,10 @@ def common_substitutions(args):
             args.CFLAGS += " -I " + path
             args.CXXFLAGS += " -I " + path
         if args.verbose >= 3:
-            print("Extra include paths have been appended to FLAGS")
-            print("CPPFLAGS=" + args.CPPFLAGS)
-            print("CFLAGS=" + args.CFLAGS)
-            print("CXXFLAGS=" + args.CXXFLAGS)
+            print("Extra include paths have been appended to the *FLAG variables:")
+            print("\tCPPFLAGS=" + args.CPPFLAGS)
+            print("\tCFLAGS=" + args.CFLAGS)
+            print("\tCXXFLAGS=" + args.CXXFLAGS)
 
 
 def setattr_args(obj):
