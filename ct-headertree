@@ -252,10 +252,7 @@ if __name__ == '__main__':
     ht = HeaderTree()
 
     myargs = cap.parse_known_args()
-    if myargs[0].verbose >= 2:
-        print(myargs[0])
-    if myargs[0].verbose >= 3:
-        cap.print_values()
+    utils.verbose_print_args(myargs[0])
 
     # Create the headertree then print it in the appropriate style
     inctree = ht.process(myargs[0].filename)

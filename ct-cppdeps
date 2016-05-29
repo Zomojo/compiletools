@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 from __future__ import print_function
 import configargparse
+import utils
 from hunter import HeaderDependencies
 
 if __name__ == '__main__':
@@ -11,11 +12,7 @@ if __name__ == '__main__':
     cap.add("-c", "--config", is_config_file=True, help="config file path")
     hh = HeaderDependencies()
     myargs = cap.parse_known_args()
-
-    if myargs[0].verbose >= 1:
-        print(myargs[0])
-    if myargs[0].verbose >= 2:
-        cap.print_values()
+    utils.verbose_print_args(myargs[0])
 
     for dep in hh.process(myargs[0].filename):
         print(dep)

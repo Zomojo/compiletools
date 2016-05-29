@@ -44,13 +44,6 @@ class Rule:
         makefile.write("\n")
 
 
-@memoize
-def executable_name(source_filename):
-    # TODO: Stop assuming exe files go into "bin"
-    name = os.path.split(source_filename)[1]
-    basename = os.path.splitext(name)[0]
-    return "".join(["bin/", basename])
-
 
 @memoize
 def object_name(source_filename):
@@ -65,16 +58,7 @@ class MakefileCreator:
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
     def __init__(self):
-        cap = configargparse.getArgumentParser()
-        cap.add(
-            "--LD",
-            help="Linker",
-            default="unsupplied_implies_use_CXX")
-        cap.add(
-            "--LDFLAGS",
-            help="Linker flags",
-            default="unsupplied_implies_use_CXXFLAGS")
-
+        utils.add_link_arguments()
         self.hunter = Hunter()
 
         # self.args will exist after this call
@@ -91,7 +75,7 @@ class MakefileCreator:
             target="all",
             prerequisites=" ".join(
                 str(exe) for exe in map(
-                    executable_name,
+                    utils.executable_name,
                     map(utils.realpath, self.args.filename))))
         self.rules.add(rule_all)
 
@@ -128,7 +112,7 @@ class MakefileCreator:
     def _create_link_rule(self, source_filename, complete_sources):
         """ For a given source file (so usually the file with the main) and the set of complete sources (i.e., all the other source files + the original) return the link rule required for the Makefile """
 
-        exe_name = executable_name(utils.realpath(source_filename))
+        exe_name = utils.executable_name(utils.realpath(source_filename))
         object_names = " ".join(
             str(obj) for obj in map(
                 object_name,
@@ -185,24 +169,9 @@ if __name__ == '__main__':
     cap = configargparse.getArgumentParser(
         description='Create a Makefile that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.',
         formatter_class=configargparse.DefaultsRawFormatter)
-    cap.add("-c", "--config", is_config_file=True, help="config file path")
-    cap.add("filename", nargs='*', help="File to compile to an executable")
-    cap.add(
-        "--dynamic",
-        nargs='*',
-        help="File to compile to an dynamic library")
-    cap.add(
-        "--static",
-        nargs='*',
-        help="File to compile to an dynamic library")
-
+    utils.add_target_arguments()
     makefile_creator = MakefileCreator()
-
     myargs = cap.parse_known_args()
-
-    if myargs[0].verbose >= 1:
-        print(myargs[0])
-    if myargs[0].verbose >= 2:
-        cap.print_values()
+    utils.verbose_print_args(myargs[0])
 
     makefile_creator.create()

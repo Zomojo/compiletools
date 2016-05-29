@@ -18,6 +18,13 @@ def realpath(trialpath):
     return os.path.realpath(trialpath)
 
 
+@memoize
+def executable_name(source_filename):
+    # TODO: Stop assuming exe files go into "bin"
+    name = os.path.split(source_filename)[1]
+    basename = os.path.splitext(name)[0]
+    return "".join(["bin/", basename])
+
 def to_bool(value):
     """
     Tries to convert a wide variety of values to a boolean
@@ -87,6 +94,31 @@ def add_common_arguments():
         nargs='*',
         default=[])
 
+def add_link_arguments():
+    """ Insert the link arguments into the configargparse singleton """
+    cap = configargparse.getArgumentParser()
+    cap.add(
+        "--LD",
+        help="Linker",
+        default="unsupplied_implies_use_CXX")
+    cap.add(
+        "--LDFLAGS",
+        help="Linker flags",
+        default="unsupplied_implies_use_CXXFLAGS")
+
+def add_target_arguments(): 
+    """ Insert the arguments that control what targets get created into the configargparse singleton """
+    cap = configargparse.getArgumentParser()
+    cap.add("-c", "--config", is_config_file=True, help="config file path")
+    cap.add("filename", nargs='*', help="File to compile to an executable")
+    cap.add(
+        "--dynamic",
+        nargs='*',
+        help="File to compile to an dynamic library")
+    cap.add(
+        "--static",
+        nargs='*',
+        help="File to compile to an dynamic library")
 
 def unsupplied_replacement(variable, default_variable, verbose, variable_str):
     """ If a given variable has the letters "unsupplied" in it, return the given default variable """
@@ -162,6 +194,12 @@ def setattr_args(obj):
         common_substitutions(args[0])
         setattr(obj, 'args', args[0])
 
+def verbose_print_args(args):
+    if args.verbose >= 2:
+        print(args)
+    if args.verbose >= 3:
+        cap = configargparse.getArgumentParser()
+        cap.print_values()
 
 class OrderedSet(collections.MutableSet):
 
