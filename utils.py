@@ -64,11 +64,15 @@ def extract_variant_from_argv():
     # Parse the command line, extract the variant the user wants, then use
     # that as the default config file.
     variant = "debug"
-    try:
-        variant_index = sys.argv.index("--variant")
-        variant = sys.argv[variant_index + 1]
-    except:
-        pass
+    for arg in sys.argv:
+        try:
+            if "--variant=" in arg:
+                variant = arg.split('=')[1]
+            elif "--variant" in arg:
+                variant_index = sys.argv.index("--variant")
+                variant = sys.argv[variant_index + 1]
+        except:
+            pass
 
     return variant
 
