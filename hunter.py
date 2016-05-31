@@ -300,7 +300,8 @@ class Hunter:
 
         for header in filelist:
             implied = implied_source(header)
-            if implied and implied not in sources:
+            # Use the existence of magic_flags to break cycles
+            if implied and implied not in self.magic_flags:
                 sources |= self.required_source_files(implied)
 
         return sources

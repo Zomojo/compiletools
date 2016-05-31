@@ -8,7 +8,6 @@ from memoize import memoize
 from hunter import HeaderDependencies
 from hunter import Hunter
 
-
 class Rule:
 
     """ A rule is a target, prerequisites and optionally a recipe
@@ -100,8 +99,9 @@ class MakefileCreator:
         self.rules.add(rule_clean)
 
         for source in self.args.filename:
-            self.rules = self.rules | self._create_makefile_rules_for_source(
-                utils.realpath(source))
+            realpath_source = utils.realpath(source)
+            if realpath_source not in self.already_created_compile_rule:
+                self.rules = self.rules | self._create_makefile_rules_for_source(realpath_source)
 
         self.write()
 
