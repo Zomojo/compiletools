@@ -97,9 +97,8 @@ def config_files_from_variant():
         ".conf" for defaultdir in default_config_directories()]
 
 
-def add_common_arguments():
-    """ Insert common arguments into the configargparse singleton """
-    cap = configargparse.getArgumentParser()
+def add_common_arguments(cap):
+    """ Insert common arguments into the configargparse object """
     # Even though the variant is actually sucked out of the command line by
     # parsing the sys.argv directly, we put it into the configargparse to get
     # the help.
@@ -107,11 +106,11 @@ def add_common_arguments():
         "--variant",
         help="Specifies which variant of the config should be used. Use the config name without the .conf",
         default="debug")
-    cap.add(
-        "-c",
-        "--config",
-        is_config_file=True,
-        help="Manually specify the config file path if you want to override the variant default")
+#    cap.add(
+#        "-c",
+#        "--config",
+#        is_config_file=True,
+#        help="Manually specify the config file path if you want to override the variant default")
     cap.add(
         "-v",
         "--verbose",
@@ -152,9 +151,8 @@ def add_common_arguments():
         nargs='*',
         default=[])
 
-def add_link_arguments():
+def add_link_arguments(cap):
     """ Insert the link arguments into the configargparse singleton """
-    cap = configargparse.getArgumentParser()
     cap.add(
         "--LD",
         help="Linker",
@@ -164,18 +162,17 @@ def add_link_arguments():
         help="Linker flags",
         default="unsupplied_implies_use_CXXFLAGS")
 
-def add_target_arguments():
+def add_target_arguments(cap):
     """ Insert the arguments that control what targets get created into the configargparse singleton """
-    cap = configargparse.getArgumentParser()
-    cap.add("filename", nargs='*', help="File to compile to an executable")
-#    cap.add(
-#        "--dynamic",
-#        nargs='*',
-#        help="File to compile to an dynamic library")
-#    cap.add(
-#        "--static",
-#        nargs='*',
-#        help="File to compile to an dynamic library")
+    cap.add("filename", nargs="*", help="File to compile to an executable")
+    cap.add(
+        "--dynamic",
+        nargs='*',
+        help="File to compile to an dynamic library")
+    cap.add(
+        "--static",
+        nargs='*',
+        help="File to compile to an dynamic library")
 
 
 def unsupplied_replacement(variable, default_variable, verbose, variable_str):
@@ -244,12 +241,10 @@ def setattr_args(obj):
         parse the args, then add the created args object
         as a member of the given object
     """
-    add_common_arguments()
     cap = configargparse.getArgumentParser()
+    add_common_arguments(cap)
     # parse_known_args returns a tuple.  The properly parsed arguments are in
     # the zeroth element.
-    pdb.set_trace()
-    print(id(cap))
     args = cap.parse_known_args()
     if args[0]:
         common_substitutions(args[0])

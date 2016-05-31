@@ -60,8 +60,9 @@ class MakefileCreator:
 
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
-    def __init__(self):
-        utils.add_link_arguments()
+    def __init__(self,cap):
+        utils.add_link_arguments(cap)
+        utils.add_target_arguments(cap)
         # self.args will exist after this call
         utils.setattr_args(self)
         
@@ -178,8 +179,14 @@ if __name__ == '__main__':
         description='Create a Makefile that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.',
         formatter_class=configargparse.DefaultsRawFormatter,
         default_config_files=config_files)
-    utils.add_target_arguments()
-    makefile_creator = MakefileCreator()
+
+    # The config file has to be added here.  For some reason doing it in the utils.add_common_arguments fails.
+    cap.add(
+        "-c",
+        "--config",
+        is_config_file=True,
+        help="Manually specify the config file path if you want to override the variant default")
+    makefile_creator = MakefileCreator(cap)
 
     myargs = cap.parse_known_args()
     utils.verbose_print_args(myargs[0])

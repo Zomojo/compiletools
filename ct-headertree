@@ -231,7 +231,12 @@ if __name__ == '__main__':
         description='Create a tree of header dependencies starting at a given C/C++ file. ',
         formatter_class=configargparse.DefaultsRawFormatter,
         default_config_files=config_files)
-    cap.add("filename", help="File to start tracing headers from")
+    cap.add(
+        "-c",
+        "--config",
+        is_config_file=True,
+        help="Manually specify the config file path if you want to override the variant default")
+    cap.add("filename", help="File to start tracing headers from",nargs='+')
 
     # Figure out what style classes are available and add them to the command
     # line options
@@ -256,13 +261,13 @@ if __name__ == '__main__':
     myargs = cap.parse_known_args()
     utils.verbose_print_args(myargs[0])
 
-    if not utils.isfile(myargs[0].filename):
+    if not utils.isfile(myargs[0].filename[0]):
         sys.stderr.write(
-            "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(myargs[0].filename))
+            "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(myargs[0].filename[0]))
         exit(1)
 
     # Create the headertree then print it in the appropriate style
-    inctree = ht.process(myargs[0].filename)
+    inctree = ht.process(myargs[0].filename[0])
     style_class = globals()[myargs[0].style + 'Style']
 
     # Build up the appropriate arguments to pass to the initialization of the style object

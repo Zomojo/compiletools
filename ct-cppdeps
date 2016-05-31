@@ -11,7 +11,11 @@ if __name__ == '__main__':
         description='Determine header dependencies of a C/C++ file by invoking $CPP -MM <filename>. ',
         formatter_class=configargparse.DefaultsRawFormatter,
         default_config_files=config_files)
-
+    cap.add(
+        "-c",
+        "--config",
+        is_config_file=True,
+        help="Manually specify the config file path if you want to override the variant default")
     cap.add(
         "filename",
         help='File to use in "$CPP $CPPFLAGS -MM filename"',
