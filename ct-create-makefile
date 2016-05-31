@@ -62,10 +62,11 @@ class MakefileCreator:
 
     def __init__(self):
         utils.add_link_arguments()
-        self.hunter = Hunter()
-
         # self.args will exist after this call
         utils.setattr_args(self)
+        
+        self.hunter = Hunter()
+
 
     def create(self):
         # This is a lookup to see if we've already created a compile rule for
@@ -172,11 +173,14 @@ class MakefileCreator:
                 rule.write(mf)
 
 if __name__ == '__main__':
+    config_files = utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a Makefile that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.',
-        formatter_class=configargparse.DefaultsRawFormatter)
+        formatter_class=configargparse.DefaultsRawFormatter,
+        default_config_files=config_files)
     utils.add_target_arguments()
     makefile_creator = MakefileCreator()
+
     myargs = cap.parse_known_args()
     utils.verbose_print_args(myargs[0])
 

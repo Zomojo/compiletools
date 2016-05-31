@@ -223,7 +223,9 @@ class Hunter:
         return self.magic_flags
  
     def parse_magic_flags(self, source_filename, headers):
-        """ Extract all the magics flags from the given source (and all its included headers).  A magic flag is anything that starts with a //# and ends with an = """
+        """ Extract all the magics flags from the given source (and all its included headers).  
+            A magic flag is anything that starts with a //# and ends with an = 
+        """
         text = ""
         if self.args.preprocess:
             # Preprocess but leave comments
@@ -246,7 +248,7 @@ class Hunter:
                     file=sys.stderr)
                 exit()
         else:
-            # reading and handling as one string is slightly faster then
+            # reading and handling as one string is slightly faster than
             # handling a list of strings.
             # Only read first 2k for speed
             for filename in headers | set([source_filename]):
@@ -262,6 +264,8 @@ class Hunter:
         for match in pat.finditer(text):
             magic, flag = match.groups()
             flags_for_filename.setdefault(magic, set()).add(flag)
+            if self.args.verbose >= 5:
+                print("Using magic flag {0}={1} for source = {2}".format(magic,flag,source_filename))
 
     @memoize
     def required_source_files(self, source_filename):

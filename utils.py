@@ -3,7 +3,10 @@ import configargparse
 import git_utils
 import collections
 import os.path
+import sys
 from memoize import memoize
+
+import pdb
 
 
 @memoize
@@ -55,15 +58,70 @@ def add_boolean_argument(parser, name, dest=None, default=False, help=None):
     group.add_argument('--no-' + name, dest=dest, action='store_false')
 
 
+def extract_variant_from_argv():
+    """ The variant argument is parsed directly so that it can specify what actual config to load up """
+
+    # Parse the command line, extract the variant the user wants, then use
+    # that as the default config file.
+    variant = "debug"
+    try:
+        variant_index = sys.argv.index("--variant")
+        variant = sys.argv[variant_index + 1]
+    except:
+        pass
+
+    return variant
+
+
+def default_config_directories():
+    # Use configuration in the order (lowest to highest priority)
+    # 1) same path as exe,
+    # 2) system config
+    # 3) user config
+    # 4) given on the command line
+    # 5) environment variables
+    user_config_dir = os.path.join(os.path.expanduser("~"), ".config/ct/")
+    system_config_dir = "/etc/ct.conf.d/"
+    executable_config_dir = os.path.join(
+        os.path.dirname(
+            os.path.realpath(__file__)),
+        "ct.conf.d/")
+    return [user_config_dir, system_config_dir, executable_config_dir]
+
+
+def config_files_from_variant():
+    variant = extract_variant_from_argv()
+    return [
+        defaultdir +
+        variant +
+        ".conf" for defaultdir in default_config_directories()]
+
+
 def add_common_arguments():
     """ Insert common arguments into the configargparse singleton """
     cap = configargparse.getArgumentParser()
+    # Even though the variant is actually sucked out of the command line by
+    # parsing the sys.argv directly, we put it into the configargparse to get
+    # the help.
+    cap.add(
+        "--variant",
+        help="Specifies which variant of the config should be used. Use the config name without the .conf",
+        default="debug")
+    cap.add(
+        "-c",
+        "--config",
+        is_config_file=True,
+        help="Manually specify the config file path if you want to override the variant default")
     cap.add(
         "-v",
         "--verbose",
         help="Output verbosity. Add more v's to make it more verbose",
         action="count",
         default=0)
+    cap.add(
+        "--ID",
+        help="Compiler identification string.  The same string as CMake uses.",
+        default=None)
     cap.add(
         "--CPP",
         help="C preprocessor",
@@ -106,19 +164,19 @@ def add_link_arguments():
         help="Linker flags",
         default="unsupplied_implies_use_CXXFLAGS")
 
-def add_target_arguments(): 
+def add_target_arguments():
     """ Insert the arguments that control what targets get created into the configargparse singleton """
     cap = configargparse.getArgumentParser()
-    cap.add("-c", "--config", is_config_file=True, help="config file path")
     cap.add("filename", nargs='*', help="File to compile to an executable")
-    cap.add(
-        "--dynamic",
-        nargs='*',
-        help="File to compile to an dynamic library")
-    cap.add(
-        "--static",
-        nargs='*',
-        help="File to compile to an dynamic library")
+#    cap.add(
+#        "--dynamic",
+#        nargs='*',
+#        help="File to compile to an dynamic library")
+#    cap.add(
+#        "--static",
+#        nargs='*',
+#        help="File to compile to an dynamic library")
+
 
 def unsupplied_replacement(variable, default_variable, verbose, variable_str):
     """ If a given variable has the letters "unsupplied" in it, return the given default variable """
@@ -174,7 +232,8 @@ def common_substitutions(args):
             args.CFLAGS += " -I " + path
             args.CXXFLAGS += " -I " + path
         if args.verbose >= 3:
-            print("Extra include paths have been appended to the *FLAG variables:")
+            print(
+                "Extra include paths have been appended to the *FLAG variables:")
             print("\tCPPFLAGS=" + args.CPPFLAGS)
             print("\tCFLAGS=" + args.CFLAGS)
             print("\tCXXFLAGS=" + args.CXXFLAGS)
@@ -189,6 +248,8 @@ def setattr_args(obj):
     cap = configargparse.getArgumentParser()
     # parse_known_args returns a tuple.  The properly parsed arguments are in
     # the zeroth element.
+    pdb.set_trace()
+    print(id(cap))
     args = cap.parse_known_args()
     if args[0]:
         common_substitutions(args[0])
@@ -200,6 +261,7 @@ def verbose_print_args(args):
     if args.verbose >= 3:
         cap = configargparse.getArgumentParser()
         cap.print_values()
+
 
 class OrderedSet(collections.MutableSet):
 

@@ -28,10 +28,13 @@ class CMakefileCreator:
                 cmf.write("".join(["add_executable(",exe_name," ", src_realpath,")\n"]))
 
 if __name__ == '__main__':
+    config_files = utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a CMakefile.txt that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.',
-        formatter_class=configargparse.DefaultsRawFormatter)
+        formatter_class=configargparse.DefaultsRawFormatter,
+        default_config_files=config_files)
     utils.add_target_arguments()
+    #cap.add("filename", nargs='+', help="File to compile to an executable")
     cmakefile_creator = CMakefileCreator()
     myargs = cap.parse_known_args()
     utils.verbose_print_args(myargs[0])

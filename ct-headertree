@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 from __future__ import print_function
+import sys
 from collections import defaultdict
 from collections import Counter
 import inspect
@@ -225,11 +226,12 @@ class TreeStyle:
 
 
 if __name__ == '__main__':
+    config_files = utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a tree of header dependencies starting at a given C/C++ file. ',
-        formatter_class=configargparse.DefaultsRawFormatter)
+        formatter_class=configargparse.DefaultsRawFormatter,
+        default_config_files=config_files)
     cap.add("filename", help="File to start tracing headers from")
-    cap.add("-c", "--config", is_config_file=True, help="config file path")
 
     # Figure out what style classes are available and add them to the command
     # line options
@@ -253,6 +255,11 @@ if __name__ == '__main__':
 
     myargs = cap.parse_known_args()
     utils.verbose_print_args(myargs[0])
+
+    if not utils.isfile(myargs[0].filename):
+        sys.stderr.write(
+            "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(myargs[0].filename))
+        exit(1)
 
     # Create the headertree then print it in the appropriate style
     inctree = ht.process(myargs[0].filename)
