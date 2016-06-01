@@ -8,6 +8,7 @@ from memoize import memoize
 from hunter import HeaderDependencies
 from hunter import Hunter
 
+
 class Rule:
 
     """ A rule is a target, prerequisites and optionally a recipe
@@ -59,14 +60,13 @@ class MakefileCreator:
 
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
-    def __init__(self,cap):
+    def __init__(self, cap):
         utils.add_link_arguments(cap)
         utils.add_target_arguments(cap)
         # self.args will exist after this call
         utils.setattr_args(self)
-        
-        self.hunter = Hunter()
 
+        self.hunter = Hunter()
 
     def create(self):
         # By using a set, duplicate rules will be eliminated.
@@ -96,7 +96,8 @@ class MakefileCreator:
 
         for source in self.args.filename:
             realpath_source = utils.realpath(source)
-            self.rules = self.rules | self._create_makefile_rules_for_source(realpath_source)
+            self.rules = self.rules | self._create_makefile_rules_for_source(
+                realpath_source)
 
         self.write()
 
@@ -126,7 +127,9 @@ class MakefileCreator:
         for sf in complete_sources:
             magic_flags = self.hunter.magic()[sf]
             all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
-            all_magic_ldflags |= magic_flags.get('LINKFLAGS', set())  # For backward compatibility with cake
+            all_magic_ldflags |= magic_flags.get(
+                'LINKFLAGS',
+                set())  # For backward compatibility with cake
 
         return Rule(target=exe_name,
                     prerequisites=object_names,
@@ -177,7 +180,8 @@ if __name__ == '__main__':
         formatter_class=configargparse.DefaultsRawFormatter,
         default_config_files=config_files)
 
-    # The config file has to be added here.  For some reason doing it in the utils.add_common_arguments fails.
+    # The config file has to be added here.  For some reason doing it in the
+    # utils.add_common_arguments fails.
     cap.add(
         "-c",
         "--config",

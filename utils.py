@@ -28,6 +28,7 @@ def executable_name(source_filename):
     basename = os.path.splitext(name)[0]
     return "".join(["bin/", basename])
 
+
 def to_bool(value):
     """
     Tries to convert a wide variety of values to a boolean
@@ -110,11 +111,6 @@ def add_common_arguments(cap):
         "--variant",
         help="Specifies which variant of the config should be used. Use the config name without the .conf",
         default="debug")
-#    cap.add(
-#        "-c",
-#        "--config",
-#        is_config_file=True,
-#        help="Manually specify the config file path if you want to override the variant default")
     cap.add(
         "-v",
         "--verbose",
@@ -142,7 +138,6 @@ def add_common_arguments(cap):
         "--CFLAGS",
         help="C compiler flags",
         default="-fPIC -g -Wall")
-
     add_boolean_argument(
         parser=cap,
         name="git-root",
@@ -155,6 +150,7 @@ def add_common_arguments(cap):
         nargs='*',
         default=[])
 
+
 def add_link_arguments(cap):
     """ Insert the link arguments into the configargparse singleton """
     cap.add(
@@ -165,6 +161,7 @@ def add_link_arguments(cap):
         "--LDFLAGS",
         help="Linker flags",
         default="unsupplied_implies_use_CXXFLAGS")
+
 
 def add_target_arguments(cap):
     """ Insert the arguments that control what targets get created into the configargparse singleton """
@@ -253,6 +250,7 @@ def setattr_args(obj):
     if args[0]:
         common_substitutions(args[0])
         setattr(obj, 'args', args[0])
+
 
 def verbose_print_args(args):
     if args.verbose >= 2:

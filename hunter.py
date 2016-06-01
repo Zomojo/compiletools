@@ -221,10 +221,10 @@ class Hunter:
 
     def magic(self):
         return self.magic_flags
- 
+
     def parse_magic_flags(self, source_filename, headers):
-        """ Extract all the magics flags from the given source (and all its included headers).  
-            A magic flag is anything that starts with a //# and ends with an = 
+        """ Extract all the magics flags from the given source (and all its included headers).
+            A magic flag is anything that starts with a //# and ends with an =
         """
         text = ""
         if self.args.preprocess:
@@ -265,7 +265,12 @@ class Hunter:
             magic, flag = match.groups()
             flags_for_filename.setdefault(magic, set()).add(flag)
             if self.args.verbose >= 5:
-                print("Using magic flag {0}={1} for source = {2}".format(magic,flag,source_filename))
+                print(
+                    "Using magic flag {0}={1} for source = {2}".format(
+                        magic,
+                        flag,
+                        source_filename))
+
     @memoize
     def _required_source_files_impl(self, source_filename):
         """ The recursive implementation that finds the source files.  Necessary because we don't want to wipe out the cycle detection. """
@@ -300,14 +305,14 @@ class Hunter:
                 sources |= self._required_source_files_impl(implied)
 
         return sources
-        
+
     @memoize
     def required_source_files(self, source_filename):
         """ Create the list of source files that also need to be compiled to complete the linkage of the given source file.
             The returned set will contain the original source_filename.
             As a side effect, examine the files to determine the magic //#... flags
         """
-        self.cycle_detection=set()
+        self.cycle_detection = set()
         return self._required_source_files_impl(source_filename)
 
     def header_dependencies(self, source_filename):
