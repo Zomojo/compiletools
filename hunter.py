@@ -142,6 +142,7 @@ class HeaderDependencies:
         return filename.split(
             '.')[-1].lower() in ["h", "hpp", "hxx", "hh", "inl"]
 
+    @memoize
     def process(self, filename):
         """ Use the -MM option to the compiler to generate the list of dependencies
             If you supply a header file rather than a source file then
