@@ -48,25 +48,28 @@ class Rule:
         makefile.write("\n")
 
 
-@memoize
-def object_name(source_filename):
-    name = os.path.split(source_filename)[1]
-    basename = os.path.splitext(name)[0]
-    # TODO: Stop assuming object files go into "bin"
-    return "".join(["bin/", basename, ".o"])
-
-
 class MakefileCreator:
 
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
-    def __init__(self, cap):
+    def __init__(self, cap, variant):
+        utils.add_target_arguments(cap, variant)
         utils.add_link_arguments(cap)
-        utils.add_target_arguments(cap)
         # self.args will exist after this call
         utils.setattr_args(self)
-
         self.hunter = Hunter()
+
+    @memoize
+    def object_name(self, source_filename):
+        name = os.path.split(source_filename)[1]
+        basename = os.path.splitext(name)[0]
+        return "".join([self.args.objdir, "/", basename, ".o"])
+
+    @memoize
+    def executable_name(self, source_filename):
+        name = os.path.split(source_filename)[1]
+        basename = os.path.splitext(name)[0]
+        return "".join([self.args.bindir, "/", basename])
 
     def create(self):
         # By using a set, duplicate rules will be eliminated.
@@ -75,7 +78,7 @@ class MakefileCreator:
             target="all",
             prerequisites=" ".join(["mkdir_output"] +
                                    [str(exe) for exe in map(
-                                       utils.executable_name,
+                                       self.executable_name,
                                        map(utils.realpath, self.args.filename))]),
             phony=True)
         self.rules.add(rule_all)
@@ -83,14 +86,14 @@ class MakefileCreator:
         rule_mkdir_output = Rule(
             target="mkdir_output",
             prerequisites="",
-            recipe="mkdir -p bin",
+            recipe=" ".join(["mkdir -p", self.args.bindir, "; mkdir -p", self.args.objdir]),
             phony=True)
         self.rules.add(rule_mkdir_output)
 
         rule_clean = Rule(
             target="clean",
             prerequisites="",
-            recipe="rm -rf bin",
+            recipe=" ".join(["rm -rf", self.args.bindir, "; rm -rf", self.args.objdir]),
             phony=True)
         self.rules.add(rule_clean)
 
@@ -104,7 +107,7 @@ class MakefileCreator:
     def _create_compile_rule_for_source(self, source):
         """ For a given source file return the compile rule required for the Makefile """
         deplist = self.hunter.header_dependencies(source)
-        obj_name = object_name(source)
+        obj_name = self.object_name(source)
         magic_cxx_flags = self.hunter.magic()[source].get('CXXFLAGS', [])
         return Rule(target=obj_name,
                     prerequisites=" ".join([source] + [str(dep) for dep in deplist]),
@@ -117,10 +120,10 @@ class MakefileCreator:
     def _create_link_rule(self, source_filename, complete_sources):
         """ For a given source file (so usually the file with the main) and the set of complete sources (i.e., all the other source files + the original) return the link rule required for the Makefile """
 
-        exe_name = utils.executable_name(utils.realpath(source_filename))
+        exe_name = self.executable_name(utils.realpath(source_filename))
         object_names = " ".join(
             str(obj) for obj in map(
-                object_name,
+                self.object_name,
                 complete_sources))
 
         all_magic_ldflags = set()
@@ -174,6 +177,7 @@ class MakefileCreator:
                 rule.write(mf)
 
 if __name__ == '__main__':
+    variant = utils.extract_variant_from_argv()
     config_files = utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a Makefile that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.',
@@ -187,7 +191,7 @@ if __name__ == '__main__':
         "--config",
         is_config_file=True,
         help="Manually specify the config file path if you want to override the variant default")
-    makefile_creator = MakefileCreator(cap)
+    makefile_creator = MakefileCreator(cap, variant)
 
     myargs = cap.parse_known_args()
     utils.verbose_print_args(myargs[0])

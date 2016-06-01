@@ -21,14 +21,6 @@ def realpath(trialpath):
     return os.path.realpath(trialpath)
 
 
-@memoize
-def executable_name(source_filename):
-    # TODO: Stop assuming exe files go into "bin"
-    name = os.path.split(source_filename)[1]
-    basename = os.path.splitext(name)[0]
-    return "".join(["bin/", basename])
-
-
 def to_bool(value):
     """
     Tries to convert a wide variety of values to a boolean
@@ -163,7 +155,7 @@ def add_link_arguments(cap):
         default="unsupplied_implies_use_CXXFLAGS")
 
 
-def add_target_arguments(cap):
+def add_target_arguments(cap, variant):
     """ Insert the arguments that control what targets get created into the configargparse singleton """
     cap.add("filename", nargs="*", help="File to compile to an executable")
     cap.add(
@@ -174,6 +166,14 @@ def add_target_arguments(cap):
         "--static",
         nargs='*',
         help="File to compile to an dynamic library")
+    cap.add(
+        "--bindir",
+        help="Output directory for executables",
+        default="".join(["bin/", variant]))
+    cap.add(
+        "--objdir",
+        help="Output directory for object files",
+        default="".join(["bin/", variant, "/obj"]))
 
 
 def unsupplied_replacement(variable, default_variable, verbose, variable_str):
