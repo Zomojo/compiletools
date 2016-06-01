@@ -69,10 +69,6 @@ class MakefileCreator:
 
 
     def create(self):
-        # This is a lookup to see if we've already created a compile rule for
-        # the given source
-        self.already_created_compile_rule = set()
-
         # By using a set, duplicate rules will be eliminated.
         self.rules = utils.OrderedSet()
         rule_all = Rule(
@@ -100,15 +96,12 @@ class MakefileCreator:
 
         for source in self.args.filename:
             realpath_source = utils.realpath(source)
-            if realpath_source not in self.already_created_compile_rule:
-                self.rules = self.rules | self._create_makefile_rules_for_source(realpath_source)
+            self.rules = self.rules | self._create_makefile_rules_for_source(realpath_source)
 
         self.write()
 
     def _create_compile_rule_for_source(self, source):
         """ For a given source file return the compile rule required for the Makefile """
-
-        self.already_created_compile_rule.add(source)
         deplist = self.hunter.header_dependencies(source)
         obj_name = object_name(source)
         magic_cxx_flags = self.hunter.magic()[source].get('CXXFLAGS', [])
@@ -133,7 +126,7 @@ class MakefileCreator:
         for sf in complete_sources:
             magic_flags = self.hunter.magic()[sf]
             all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
-            all_magic_ldflags |= magic_flags.get('LINKFLAGS', set())
+            all_magic_ldflags |= magic_flags.get('LINKFLAGS', set())  # For backward compatibility with cake
 
         return Rule(target=exe_name,
                     prerequisites=object_names,
@@ -144,6 +137,9 @@ class MakefileCreator:
 
     def _create_makefile_rules_for_source(self, source):
         """ For a given source file return the set of rules required for the Makefile """
+
+        # Reset the cycle detection because we are starting a new source file
+        cycle_detection = set()
 
         # The set of rules needed to turn the source file into an executable
         # (or library as appropriate)
@@ -160,7 +156,8 @@ class MakefileCreator:
         rules_for_source.add(self._create_link_rule(source, complete_sources))
 
         for item in complete_sources:
-            if item not in self.already_created_compile_rule:
+            if item not in cycle_detection:
+                cycle_detection.add(item)
                 rules_for_source.add(
                     self._create_compile_rule_for_source(item))
 

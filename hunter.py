@@ -266,16 +266,13 @@ class Hunter:
             flags_for_filename.setdefault(magic, set()).add(flag)
             if self.args.verbose >= 5:
                 print("Using magic flag {0}={1} for source = {2}".format(magic,flag,source_filename))
-
     @memoize
-    def required_source_files(self, source_filename):
-        """ Create the list of source files that also need to be compiled to complete the linkage of the given source file.
-            The returned set will contain the original source_filename.
-            As a side effect, examine the files to determine the magic //#... flags
-        """
+    def _required_source_files_impl(self, source_filename):
+        """ The recursive implementation that finds the source files.  Necessary because we don't want to wipe out the cycle detection. """
         # TODO: See if we can just make it a precondition that source_filename
         # is a realpath.  The current check could be expensive.
         realpath = utils.realpath(source_filename)
+        self.cycle_detection.add(realpath)
         sources = set()
         sources.add(realpath)
         deplist = self.header_deps.process(realpath)
@@ -289,22 +286,29 @@ class Hunter:
         extra_sources = self.magic_flags[realpath].get('SOURCE', set())
         for es in extra_sources:
             es_realpath = utils.realpath(os.path.join(cwd, es))
-            # Use the existence of magic_flags for the extra source file to
-            # break any cycles
-            if es_realpath not in self.magic_flags:
+            if es_realpath not in self.cycle_detection:
                 filelist.add(es_realpath)
                 if self.args.verbose >= 2:
                     print(
                         "Adding extra source files due to magic SOURCE flag: " +
                         es_realpath)
 
-        for header in filelist:
-            implied = implied_source(header)
+        for nextfile in filelist:
+            implied = implied_source(nextfile)
             # Use the existence of magic_flags to break cycles
-            if implied and implied not in self.magic_flags:
-                sources |= self.required_source_files(implied)
+            if implied and implied not in self.cycle_detection:
+                sources |= self._required_source_files_impl(implied)
 
         return sources
+        
+    @memoize
+    def required_source_files(self, source_filename):
+        """ Create the list of source files that also need to be compiled to complete the linkage of the given source file.
+            The returned set will contain the original source_filename.
+            As a side effect, examine the files to determine the magic //#... flags
+        """
+        self.cycle_detection=set()
+        return self._required_source_files_impl(source_filename)
 
     def header_dependencies(self, source_filename):
         return self.header_deps.process(source_filename)
