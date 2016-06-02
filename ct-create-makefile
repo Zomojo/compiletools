@@ -4,6 +4,7 @@ from __future__ import print_function
 import os.path
 import configargparse
 import utils
+import git_utils
 from memoize import memoize
 from hunter import HeaderDependencies
 from hunter import Hunter
@@ -60,54 +61,96 @@ class MakefileCreator:
         self.hunter = Hunter()
 
     @memoize
+    def object_dir(self, source_filename):
+        """ Put objects into a directory structure that starts with the command line objdir
+            but then replicates the project directory structure.  This way we can separate 
+            object files that have the same name but different paths
+        """
+        project_pathname = git_utils.strip_git_root(source_filename)
+        return "".join([self.args.objdir, "/", utils.dirname(project_pathname)])
+
+    @memoize
     def object_name(self, source_filename):
+        """ Return the name (not the path) of the object file for the given source """
         name = os.path.split(source_filename)[1]
         basename = os.path.splitext(name)[0]
-        return "".join([self.args.objdir, "/", basename, ".o"])
+        return "".join([basename, ".o"])
 
+    @memoize
+    def object_pathname(self, source_filename):
+        return "".join([self.object_dir(source_filename), "/", self.object_name(source_filename)])
+
+    @memoize
+    def executable_dir(self, source_filename):
+        """ Put the binaries into a directory structure that starts with the command line bindir
+            but then replicates the project directory structure.  This way we can separate 
+            executable files that have the same name but different paths
+        """
+        project_pathname = git_utils.strip_git_root(source_filename)
+        return "".join([self.args.bindir, "/", utils.dirname(project_pathname)])
+        
     @memoize
     def executable_name(self, source_filename):
         name = os.path.split(source_filename)[1]
-        basename = os.path.splitext(name)[0]
-        return "".join([self.args.bindir, "/", basename])
+        return os.path.splitext(name)[0]
+
+    @memoize
+    def executable_pathname(self, source_filename):
+        return "".join([self.executable_dir(source_filename), "/", self.executable_name(source_filename)])
 
     def create(self):
+        # Find the realpaths of the given filenames (to avoid this being duplicated many times)
+        realpath_sources = map(utils.realpath, self.args.filename)
+
+        # Keep track of what build artifacts are created for easier cleanup
+        self.objects = set()
+        self.object_directories = set()
+        all_exes_dirs = [str(exe_dir) for exe_dir in map(self.executable_dir,realpath_sources)]
+        all_exes = [str(exe) for exe in map(self.executable_pathname,realpath_sources)]
+
         # By using a set, duplicate rules will be eliminated.
         self.rules = utils.OrderedSet()
         rule_all = Rule(
             target="all",
-            prerequisites=" ".join(["mkdir_output"] +
-                                   [str(exe) for exe in map(
-                                       self.executable_name,
-                                       map(utils.realpath, self.args.filename))]),
+            prerequisites=" ".join(["mkdir_output"] + all_exes),
             phony=True)
         self.rules.add(rule_all)
+
+        for realpath_source in realpath_sources:
+            self.rules = self.rules | self._create_makefile_rules_for_source(realpath_source)
 
         rule_mkdir_output = Rule(
             target="mkdir_output",
             prerequisites="",
-            recipe=" ".join(["mkdir -p", self.args.bindir, "; mkdir -p", self.args.objdir]),
+            recipe=" ".join(["mkdir -p"] + all_exes_dirs + list(self.object_directories)),
             phony=True)
         self.rules.add(rule_mkdir_output)
-
+   
+        # Use a "./" in front of files/directories to be removed to avoid any nasy surprises by files beginning with "-"
+        safe_rm_objdir = ["find","./"+self.args.objdir,"-type d -empty -delete"]
+        safe_rm_bindir = ["find","./"+self.args.bindir,"-type d -empty -delete"]
         rule_clean = Rule(
             target="clean",
             prerequisites="",
-            recipe=" ".join(["rm -rf", self.args.bindir, "; rm -rf", self.args.objdir]),
+            recipe=" ".join(["rm -f"] + all_exes + list(self.objects) + [";"] + safe_rm_objdir +  [";"] + safe_rm_bindir ),
             phony=True)
         self.rules.add(rule_clean)
 
-        for source in self.args.filename:
-            realpath_source = utils.realpath(source)
-            self.rules = self.rules | self._create_makefile_rules_for_source(
-                realpath_source)
+        rule_realclean = Rule(
+            target="realclean",
+            prerequisites="",
+            recipe=" ".join(["rm -rf", self.args.bindir, "; rm -rf", self.args.objdir]),
+            phony=True)
+        self.rules.add(rule_realclean)
 
         self.write()
 
     def _create_compile_rule_for_source(self, source):
         """ For a given source file return the compile rule required for the Makefile """
         deplist = self.hunter.header_dependencies(source)
-        obj_name = self.object_name(source)
+        self.object_directories.add( self.object_dir(source) )
+        obj_name = self.object_pathname(source)
+        self.objects.add( obj_name )
         magic_cxx_flags = self.hunter.magic()[source].get('CXXFLAGS', [])
         return Rule(target=obj_name,
                     prerequisites=" ".join([source] + [str(dep) for dep in deplist]),
@@ -120,10 +163,10 @@ class MakefileCreator:
     def _create_link_rule(self, source_filename, complete_sources):
         """ For a given source file (so usually the file with the main) and the set of complete sources (i.e., all the other source files + the original) return the link rule required for the Makefile """
 
-        exe_name = self.executable_name(utils.realpath(source_filename))
+        exe_name = self.executable_pathname(utils.realpath(source_filename))
         object_names = " ".join(
             str(obj) for obj in map(
-                self.object_name,
+                self.object_pathname,
                 complete_sources))
 
         all_magic_ldflags = set()

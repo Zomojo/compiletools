@@ -20,6 +20,10 @@ def realpath(trialpath):
     """ Just a cached version of os.path.realpath """
     return os.path.realpath(trialpath)
 
+@memoize 
+def dirname(trialpath):
+    """ A cached verion of os.path.dirname """
+    return os.path.dirname(trialpath)
 
 def to_bool(value):
     """
