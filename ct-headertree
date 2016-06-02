@@ -5,10 +5,10 @@ from collections import defaultdict
 from collections import Counter
 import inspect
 import math
-from hunter import HeaderTree
-import git_utils
-import utils
-import tree
+from ct.hunter import HeaderTree
+import ct.git_utils as git_utils
+import ct.utils as utils
+import ct.tree as tree
 import configargparse
 
 

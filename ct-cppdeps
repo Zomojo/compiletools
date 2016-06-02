@@ -2,8 +2,8 @@
 from __future__ import print_function
 import sys
 import configargparse
-import utils
-from hunter import HeaderDependencies
+import ct.utils as utils
+from ct.hunter import HeaderDependencies
 
 if __name__ == '__main__':
     config_files = utils.config_files_from_variant()

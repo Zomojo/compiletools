@@ -3,11 +3,11 @@
 from __future__ import print_function
 import os.path
 import configargparse
-import utils
-import git_utils
-from memoize import memoize
-from hunter import HeaderDependencies
-from hunter import Hunter
+import ct.utils as utils
+import ct.git_utils as git_utils
+from ct.memoize import memoize
+from ct.hunter import HeaderDependencies
+from ct.hunter import Hunter
 
 
 class Rule:
