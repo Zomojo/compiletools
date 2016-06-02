@@ -85,7 +85,7 @@ def default_config_directories():
     system_config_dir = "/etc/ct.conf.d/"
     executable_config_dir = os.path.join(
         os.path.dirname(
-            os.path.realpath(__file__)),
+            os.path.realpath(sys.argv[0])),
         "ct.conf.d/")
     return [user_config_dir, system_config_dir, executable_config_dir]
 
