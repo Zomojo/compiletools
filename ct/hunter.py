@@ -5,7 +5,6 @@ import sys
 import utils
 import configargparse
 import os
-
 import re
 import tree
 from memoize import memoize
@@ -149,12 +148,8 @@ class HeaderDependencies:
             a dummy, blank, source file will be transparently provided
             and the supplied header file will be included into the dummy source file.
         """
-        file_is_header = self._is_header(filename)
-        cmd = []
-        cmd.extend(self.args.CPP.split())
-        cmd.extend(self.args.CPPFLAGS.split())
-        cmd.append("-MM")
-        if file_is_header:
+        cmd = self.args.CPP.split()+self.args.CPPFLAGS.split()+["-MM"]
+        if self._is_header(filename):
             # Use /dev/null as the dummy source file.
             cmd.extend(["-include", filename, "-x", "c++", "/dev/null"])
         else:
@@ -220,6 +215,11 @@ class Hunter:
         #            'LDFLAGS':set('-lsomelib')}}
         self.magic_flags = {}
 
+        # The magic pattern is //#key=value with whitespace ignored
+        self.magic_pattern = re.compile(
+            '^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)',
+            re.MULTILINE)
+
     def magic(self):
         return self.magic_flags
 
@@ -256,13 +256,9 @@ class Hunter:
                 with open(filename) as ff:
                     text += ff.read(2048)
 
-        pat = re.compile(
-            '^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)',
-            re.MULTILINE)
-
         flags_for_filename = self.magic_flags.setdefault(source_filename, {})
 
-        for match in pat.finditer(text):
+        for match in self.magic_pattern.finditer(text):
             magic, flag = match.groups()
             flags_for_filename.setdefault(magic, set()).add(flag)
             if self.args.verbose >= 5:
