@@ -1,6 +1,6 @@
 from __future__ import print_function
 import unittest
-import utils
+import ct.utils as utils
 
 
 class TestOrderedSet(unittest.TestCase):

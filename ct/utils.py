@@ -1,10 +1,10 @@
 import subprocess
 import configargparse
-import git_utils
+import ct.git_utils as utils
 import collections
 import os.path
 import sys
-from memoize import memoize
+from ct.memoize import memoize
 
 import pdb
 

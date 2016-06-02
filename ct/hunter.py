@@ -2,12 +2,12 @@
 from __future__ import print_function
 import subprocess
 import sys
-import utils
+import ct.utils as utils
 import configargparse
 import os
 import re
-import tree
-from memoize import memoize
+import ct.tree as tree
+from ct.memoize import memoize
 
 # At deep verbose levels pprint is used
 from pprint import pprint

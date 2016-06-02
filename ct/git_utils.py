@@ -1,6 +1,6 @@
 import os
 import subprocess
-from memoize import memoize
+from ct.memoize import memoize
 
 
 def find_git_root(filename=None):
