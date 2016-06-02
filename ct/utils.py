@@ -1,6 +1,6 @@
 import subprocess
 import configargparse
-import ct.git_utils as utils
+import ct.git_utils as git_utils
 import collections
 import os.path
 import sys
