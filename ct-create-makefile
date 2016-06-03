@@ -61,16 +61,22 @@ class MakefileCreator:
         utils.setattr_args(self)
         self.hunter = Hunter()
 
-
     def create(self):
-        # Find the realpaths of the given filenames (to avoid this being duplicated many times)
+        # Find the realpaths of the given filenames (to avoid this being
+        # duplicated many times)
         realpath_sources = map(utils.realpath, self.args.filename)
 
         # Keep track of what build artifacts are created for easier cleanup
         self.objects = set()
         self.object_directories = set()
-        all_exes_dirs = [str(exe_dir) for exe_dir in map(self.namer.executable_dir,realpath_sources)]
-        all_exes = [str(exe) for exe in map(self.namer.executable_pathname,realpath_sources)]
+        all_exes_dirs = [
+            str(exe_dir) for exe_dir in map(
+                self.namer.executable_dir,
+                realpath_sources)]
+        all_exes = [
+            str(exe) for exe in map(
+                self.namer.executable_pathname,
+                realpath_sources)]
 
         # By using a set, duplicate rules will be eliminated.
         self.rules = utils.OrderedSet()
@@ -81,22 +87,44 @@ class MakefileCreator:
         self.rules.add(rule_all)
 
         for realpath_source in realpath_sources:
-            self.rules = self.rules | self._create_makefile_rules_for_source(realpath_source)
+            self.rules = self.rules | self._create_makefile_rules_for_source(
+                realpath_source)
 
         rule_mkdir_output = Rule(
             target="mkdir_output",
             prerequisites="",
-            recipe=" ".join(["mkdir -p"] + all_exes_dirs + list(self.object_directories)),
+            recipe=" ".join(
+                ["mkdir -p"] +
+                all_exes_dirs +
+                list(
+                    self.object_directories)),
             phony=True)
         self.rules.add(rule_mkdir_output)
-   
-        # Use a "./" in front of files/directories to be removed to avoid any nasy surprises by files beginning with "-"
-        safe_rm_objdir = ["find","./"+self.args.objdir,"-type d -empty -delete"]
-        safe_rm_bindir = ["find","./"+self.args.bindir,"-type d -empty -delete"]
+
+        # Use a "./" in front of files/directories to be removed to avoid any
+        # nasy surprises by files beginning with "-"
+        safe_rm_objdir = [
+            "find",
+            "./" +
+            self.args.objdir,
+            "-type d -empty -delete"]
+        safe_rm_bindir = [
+            "find",
+            "./" +
+            self.args.bindir,
+            "-type d -empty -delete"]
         rule_clean = Rule(
             target="clean",
             prerequisites="",
-            recipe=" ".join(["rm -f"] + all_exes + list(self.objects) + [";"] + safe_rm_objdir +  [";"] + safe_rm_bindir ),
+            recipe=" ".join(
+                ["rm -f"] +
+                all_exes +
+                list(
+                    self.objects) +
+                [";"] +
+                safe_rm_objdir +
+                [";"] +
+                safe_rm_bindir),
             phony=True)
         self.rules.add(rule_clean)
 
@@ -112,22 +140,33 @@ class MakefileCreator:
     def _create_compile_rule_for_source(self, source):
         """ For a given source file return the compile rule required for the Makefile """
         deplist = self.hunter.header_dependencies(source)
-        self.object_directories.add( self.namer.object_dir(source) )
+        self.object_directories.add(self.namer.object_dir(source))
         obj_name = self.namer.object_pathname(source)
-        self.objects.add( obj_name )
-        magic_cxx_flags = self.hunter.magic()[source].get('CXXFLAGS', [])
-        return Rule(target=obj_name,
-                    prerequisites=" ".join([source] + [str(dep) for dep in deplist]),
-                    recipe=" ".join([self.args.CXX,
-                                     self.args.CXXFLAGS] + list(magic_cxx_flags) + ["-c",
+        self.objects.add(obj_name)
+        if utils.isc(source):
+            magic_c_flags = self.hunter.magic()[source].get('CFLAGS', [])
+            return Rule(target=obj_name,
+                        prerequisites=" ".join([source] + [str(dep) for dep in deplist]),
+                        recipe=" ".join([self.args.CC,
+                                         self.args.CFLAGS] + list(magic_c_flags) + ["-c",
                                                                                     "-o",
                                                                                     obj_name,
                                                                                     source]))
+        else:
+            magic_cxx_flags = self.hunter.magic()[source].get('CXXFLAGS', [])
+            return Rule(target=obj_name,
+                        prerequisites=" ".join([source] + [str(dep) for dep in deplist]),
+                        recipe=" ".join([self.args.CXX,
+                                         self.args.CXXFLAGS] + list(magic_cxx_flags) + ["-c",
+                                                                                        "-o",
+                                                                                        obj_name,
+                                                                                        source]))
 
     def _create_link_rule(self, source_filename, complete_sources):
         """ For a given source file (so usually the file with the main) and the set of complete sources (i.e., all the other source files + the original) return the link rule required for the Makefile """
 
-        exe_name = self.namer.executable_pathname(utils.realpath(source_filename))
+        exe_name = self.namer.executable_pathname(
+            utils.realpath(source_filename))
         object_names = " ".join(
             str(obj) for obj in map(
                 self.namer.object_pathname,
@@ -144,9 +183,9 @@ class MakefileCreator:
         return Rule(target=exe_name,
                     prerequisites=object_names,
                     recipe=" ".join([self.args.LD,
-                                     self.args.LDFLAGS] + list(all_magic_ldflags) + ["-o",
-                                                                                     exe_name,
-                                                                                     object_names]))
+                                     self.args.LDFLAGS] + ["-o",
+                                                           exe_name,
+                                                           object_names] + list(all_magic_ldflags)))
 
     def _create_makefile_rules_for_source(self, source):
         """ For a given source file return the set of rules required for the Makefile """

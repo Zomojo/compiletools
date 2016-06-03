@@ -20,10 +20,17 @@ def realpath(trialpath):
     """ Just a cached version of os.path.realpath """
     return os.path.realpath(trialpath)
 
-@memoize 
+
+@memoize
 def dirname(trialpath):
     """ A cached verion of os.path.dirname """
     return os.path.dirname(trialpath)
+
+
+def isc(trialpath):
+    """ Is the given file a C file ? """
+    return ".c" == os.path.splitext(trialpath)[1]
+
 
 def to_bool(value):
     """
@@ -121,6 +128,7 @@ def add_common_arguments(cap):
         "--CPP",
         help="C preprocessor",
         default="unsupplied_implies_use_CXX")
+    cap.add("--CC", help="C compiler", default="gcc")
     cap.add("--CXX", help="C++ compiler", default="g++")
     cap.add(
         "--CPPFLAGS",
@@ -158,6 +166,7 @@ def add_link_arguments(cap):
         help="Linker flags",
         default="unsupplied_implies_use_CXXFLAGS")
 
+
 def add_output_directory_arguments(cap, variant):
     cap.add(
         "--bindir",
@@ -167,7 +176,7 @@ def add_output_directory_arguments(cap, variant):
         "--objdir",
         help="Output directory for object files",
         default="".join(["bin/", variant, "/obj"]))
-    
+
 
 def add_target_arguments(cap):
     """ Insert the arguments that control what targets get created into the configargparse singleton """
@@ -214,7 +223,7 @@ def common_substitutions(args):
 
     # Unless turned off, the git root will be added to the list of include
     # paths
-    if args.git_root and hasattr(args,'filename'):
+    if args.git_root and hasattr(args, 'filename'):
         filename = None
         # The filename/s in args could be either a string or a list
         try:
@@ -265,7 +274,9 @@ def verbose_print_args(args):
         cap = configargparse.getArgumentParser()
         cap.print_values()
 
+
 class Namer:
+
     """ From source filenames, calculate names like executable name, object name, etc """
 
     def __init__(self, cap, variant):
@@ -276,7 +287,7 @@ class Namer:
     @memoize
     def object_dir(self, source_filename):
         """ Put objects into a directory structure that starts with the command line objdir
-            but then replicates the project directory structure.  This way we can separate 
+            but then replicates the project directory structure.  This way we can separate
             object files that have the same name but different paths
         """
         project_pathname = git_utils.strip_git_root(source_filename)
@@ -291,17 +302,18 @@ class Namer:
 
     @memoize
     def object_pathname(self, source_filename):
-        return "".join([self.object_dir(source_filename), "/", self.object_name(source_filename)])
+        return "".join(
+            [self.object_dir(source_filename), "/", self.object_name(source_filename)])
 
     @memoize
     def executable_dir(self, source_filename):
         """ Put the binaries into a directory structure that starts with the command line bindir
-            but then replicates the project directory structure.  This way we can separate 
+            but then replicates the project directory structure.  This way we can separate
             executable files that have the same name but different paths
         """
         project_pathname = git_utils.strip_git_root(source_filename)
         return "".join([self.args.bindir, "/", dirname(project_pathname)])
-        
+
     @memoize
     def executable_name(self, source_filename):
         name = os.path.split(source_filename)[1]
@@ -309,7 +321,10 @@ class Namer:
 
     @memoize
     def executable_pathname(self, source_filename):
-        return "".join([self.executable_dir(source_filename), "/", self.executable_name(source_filename)])
+        return "".join([self.executable_dir(source_filename),
+                        "/",
+                        self.executable_name(source_filename)])
+
 
 class OrderedSet(collections.MutableSet):
 
