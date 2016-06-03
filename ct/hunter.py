@@ -269,16 +269,18 @@ class Hunter:
                         source_filename))
 
     @memoize
-    def _required_source_files_impl(self, source_filename):
-        """ The recursive implementation that finds the source files.  Necessary because we don't want to wipe out the cycle detection. """
+    def _required_files_impl(self, filename, source_only = True):
+        """ The recursive implementation that finds the source files.  
+            Necessary because we don't want to wipe out the cycle detection. 
+            The source_only flag describes whether the return set of files 
+            contains source files only or all headers and files encountered.
+        """
         # TODO: See if we can just make it a precondition that source_filename
         # is a realpath.  The current check could be expensive.
-        realpath = utils.realpath(source_filename)
+        realpath = utils.realpath(filename)
         self.cycle_detection.add(realpath)
-        sources = set()
-        sources.add(realpath)
         deplist = self.header_deps.process(realpath)
-        if source_filename not in self.magic_flags:
+        if filename not in self.magic_flags:
             self.parse_magic_flags(realpath, deplist)
 
         # One of the magic flags is SOURCE.  If that was present, add to the
@@ -295,13 +297,18 @@ class Hunter:
                         "Adding extra source files due to magic SOURCE flag: " +
                         es_realpath)
 
-        for nextfile in filelist:
-            implied = implied_source(nextfile)
-            # Use the existence of magic_flags to break cycles
-            if implied and implied not in self.cycle_detection:
-                sources |= self._required_source_files_impl(implied)
+        encountered_files = set([realpath])
+        if not source_only:
+            # Now if the magic source specified a source file this will miss them when source_only = True
+            # However, they will get caught as an implied file below
+            encountered_files |= filelist
 
-        return sources
+        for nextfile in filelist:
+            implied = implied_source(nextfile)            
+            if implied and implied not in self.cycle_detection:
+                encountered_files |= self._required_files_impl(implied,source_only)
+
+        return encountered_files
 
     @memoize
     def required_source_files(self, source_filename):
@@ -310,7 +317,17 @@ class Hunter:
             As a side effect, examine the files to determine the magic //#... flags
         """
         self.cycle_detection = set()
-        return self._required_source_files_impl(source_filename)
+        return self._required_files_impl(source_filename)
+
+    @memoize
+    def required_files(self, filename):
+        """ Create the list of files (both header and source) 
+            that are either directly or indirectly utilised by the given file.
+            The returned set will contain the original filename.
+            As a side effect, examine the files to determine the magic //#... flags
+        """
+        self.cycle_detection = set()
+        return self._required_files_impl(filename, source_only = False)
 
     def header_dependencies(self, source_filename):
         return self.header_deps.process(source_filename)
