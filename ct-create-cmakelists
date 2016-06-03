@@ -5,11 +5,12 @@ import configargparse
 import ct.utils as utils
 from ct.hunter import Hunter
 
+
 class CMakefileCreator:
 
     """ Create a CMakefile.txt based on the filename, --static and --dynamic command line options """
 
-    def __init__(self,cap,variant):
+    def __init__(self, cap, variant):
         self.namer = utils.Namer(cap, variant)
         utils.add_target_arguments(cap)
         utils.add_link_arguments(cap)
@@ -24,9 +25,11 @@ class CMakefileCreator:
             cmf.write("cmake_minimum_required (VERSION 2.8)\n\n")
             # TODO: Set "project" to be the name of the cwd
             cmf.write("project (CompileTools)\n")
-            
-            cmf.write(''.join(['set(CMAKE_CXX_COMPILER "',self.args.CXX,'")\n']))
-            cmf.write(''.join(['set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}"',self.args.CXXFLAGS,'")\n']))
+
+            cmf.write(
+                ''.join(['set(CMAKE_CXX_COMPILER "', self.args.CXX, '")\n']))
+            cmf.write(
+                ''.join(['set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}"', self.args.CXXFLAGS, '")\n']))
 
             cmf.write("include_directories(")
             for inc in self.args.include:
@@ -35,14 +38,23 @@ class CMakefileCreator:
 
             for source_filename in self.args.filename:
                 src_realpath = utils.realpath(source_filename)
-                complete_sources = self.hunter.required_source_files(src_realpath)
+                complete_sources = self.hunter.required_source_files(
+                    src_realpath)
                 exe_name = self.namer.executable_name(src_realpath)
-                exe_source_files_cmake_name = "".join([exe_name,"_source_files"])
-                cmf.write(" ".join(["set(",exe_source_files_cmake_name]+list(complete_sources)+[")\n"]))
-                cmf.write("".join(["add_executable(",exe_name," ${",exe_source_files_cmake_name,"})\n"]))
-                cmf.write(" ".join(["target_include_directories(",exe_name,"PUBLIC", utils.dirname(src_realpath),")\n"]))
+                exe_source_files_cmake_name = "".join(
+                    [exe_name, "_source_files"]).upper()
+                cmf.write("\n".join(
+                    ["set(", exe_source_files_cmake_name] + list(complete_sources) + [")\n"]))
+                cmf.write("".join(
+                    ["add_executable(", exe_name, " ${", exe_source_files_cmake_name, "})\n"]))
+                cmf.write(" ".join(
+                    ["target_include_directories(", exe_name, "PUBLIC", utils.dirname(src_realpath), ")\n"]))
 
-                cmf.write(" ".join(["install (TARGETS",exe_name,"DESTINATION",self.namer.executable_dir(src_realpath),")\n\n"]))
+                cmf.write(" ".join(["install (TARGETS",
+                                    exe_name,
+                                    "DESTINATION",
+                                    self.namer.executable_dir(src_realpath),
+                                    ")\n\n"]))
 
 if __name__ == '__main__':
     variant = utils.extract_variant_from_argv()
@@ -57,7 +69,7 @@ if __name__ == '__main__':
         is_config_file=True,
         help="Manually specify the config file path if you want to override the variant default")
 
-    cmakefile_creator = CMakefileCreator(cap,variant)
+    cmakefile_creator = CMakefileCreator(cap, variant)
     myargs = cap.parse_known_args()
     utils.verbose_print_args(myargs[0])
 
