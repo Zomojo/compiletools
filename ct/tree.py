@@ -81,6 +81,7 @@ class InTree():
     """" Initialize with a tree then when you call it with a key
          it will return whether or not the key exists in the tree.
     """
+
     def __init__(self, tree_):
         self.tree = tree_
         self.key = None
@@ -88,7 +89,9 @@ class InTree():
 
     def __call__(self, key):
         self.key = key
-        depth_first_traverse(node=self.tree, pre_traverse_function=self._has_key)
+        depth_first_traverse(
+            node=self.tree,
+            pre_traverse_function=self._has_key)
         return self.result
 
     def _has_key(self, key):
