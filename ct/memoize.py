@@ -1,6 +1,10 @@
+""" memoize is a simple decorator to memoize results.
+    When python2 is no longer a target, switch to using
+    functools.lru_cache(maxsize=None) rather than our custom memoize
+"""
 import functools
 
-#When python2 is no longer a target, switch to using functools.lru_cache(maxsize=None) rather than our custom memoize
+
 def memoize(obj):
     cache = obj.cache = {}
 

@@ -1,12 +1,9 @@
-import subprocess
-import configargparse
-import ct.git_utils as git_utils
 import collections
 import os.path
 import sys
+import configargparse
 from ct.memoize import memoize
-
-import pdb
+import ct.git_utils as git_utils
 
 
 @memoize
@@ -29,7 +26,7 @@ def dirname(trialpath):
 
 def isc(trialpath):
     """ Is the given file a C file ? """
-    return ".c" == os.path.splitext(trialpath)[1]
+    return os.path.splitext(trialpath)[1] == ".c"
 
 
 def to_bool(value):
@@ -50,6 +47,7 @@ def add_boolean_argument(parser, name, dest=None, default=False, help=None):
     if not dest:
         dest = name
     group = parser.add_mutually_exclusive_group()
+    bool_help = help + " Use --no-" + name + " to turn the feature off."
     group.add_argument(
         '--' + name,
         metavar="",
@@ -58,15 +56,17 @@ def add_boolean_argument(parser, name, dest=None, default=False, help=None):
         default=default,
         const=True,
         type=to_bool,
-        help=help + " Use --no-" + name + " to turn the feature off.")
+        help=bool_help)
     group.add_argument('--no-' + name, dest=dest, action='store_false')
 
 
 def extract_variant_from_argv():
-    """ The variant argument is parsed directly so that it can specify what actual config to load up """
+    """ The variant argument is parsed directly from the command line arguments
+        so that it can be used to specify the default config for configargparse.
+    """
 
     # Parse the command line, extract the variant the user wants, then use
-    # that as the default config file.
+    # that as the default config file for configargparse
     variant = "debug"
     for arg in sys.argv:
         try:
@@ -75,7 +75,7 @@ def extract_variant_from_argv():
             elif "--variant" in arg:
                 variant_index = sys.argv.index("--variant")
                 variant = sys.argv[variant_index + 1]
-        except:
+        except ValueError:
             pass
 
     return variant
@@ -112,7 +112,8 @@ def add_common_arguments(cap):
     # the help.
     cap.add(
         "--variant",
-        help="Specifies which variant of the config should be used. Use the config name without the .conf",
+        help="Specifies which variant of the config should be used. "
+             "Use the config name without the .conf",
         default="debug")
     cap.add(
         "-v",
@@ -179,7 +180,9 @@ def add_output_directory_arguments(cap, variant):
 
 
 def add_target_arguments(cap):
-    """ Insert the arguments that control what targets get created into the configargparse singleton """
+    """ Insert the arguments that control what targets get created
+        into the configargparse singleton.
+    """
     cap.add("filename", nargs="*", help="File to compile to an executable")
     cap.add(
         "--dynamic",
@@ -192,7 +195,9 @@ def add_target_arguments(cap):
 
 
 def unsupplied_replacement(variable, default_variable, verbose, variable_str):
-    """ If a given variable has the letters "unsupplied" in it, return the given default variable """
+    """ If a given variable has the letters "unsupplied" in it
+        then return the given default variable.
+    """
     replacement = variable
     if "unsupplied" in variable:
         replacement = default_variable
@@ -204,7 +209,9 @@ def unsupplied_replacement(variable, default_variable, verbose, variable_str):
 
 
 def common_substitutions(args):
-    """ If certain arguments have not been specified but others have then there are some obvious substitutions to make """
+    """ If certain arguments have not been specified but others have
+        then there are some obvious substitutions to make
+    """
 
     # If C PreProcessor variables (and the same for the LD*) are not set but CXX ones are set then
     # just use the CXX equivalents
@@ -213,12 +220,12 @@ def common_substitutions(args):
         args.CPPFLAGS, args.CXXFLAGS, args.verbose, "CPPFLAGS")
     try:
         args.LD = unsupplied_replacement(args.LD, args.CXX, args.verbose, "LD")
-    except:
+    except AttributeError:
         pass
     try:
         args.LDFLAGS = unsupplied_replacement(
             args.LDFLAGS, args.CXXFLAGS, args.verbose, "LDFLAGS")
-    except:
+    except AttributeError:
         pass
 
     # Unless turned off, the git root will be added to the list of include
@@ -277,39 +284,46 @@ def verbose_print_args(args):
 
 class Namer:
 
-    """ From source filenames, calculate names like executable name, object name, etc """
+    """ From a source filename, calculate related names
+        like executable name, object name, etc.
+    """
 
     def __init__(self, cap, variant):
         add_output_directory_arguments(cap, variant)
+        self.args = None  # Keep pylint happy
         # self.args will exist after this call
         setattr_args(self)
 
     @memoize
     def object_dir(self, source_filename):
-        """ Put objects into a directory structure that starts with the command line objdir
-            but then replicates the project directory structure.  This way we can separate
-            object files that have the same name but different paths
+        """ Put objects into a directory structure that starts with the
+            command line objdir but then replicates the project directory
+            structure.  This way we can separate object files that have
+            the same name but different paths.
         """
         project_pathname = git_utils.strip_git_root(source_filename)
         return "".join([self.args.objdir, "/", dirname(project_pathname)])
 
     @memoize
     def object_name(self, source_filename):
-        """ Return the name (not the path) of the object file for the given source """
+        """ Return the name (not the path) of the object file
+            for the given source.
+        """
         name = os.path.split(source_filename)[1]
         basename = os.path.splitext(name)[0]
         return "".join([basename, ".o"])
 
     @memoize
     def object_pathname(self, source_filename):
-        return "".join(
-            [self.object_dir(source_filename), "/", self.object_name(source_filename)])
+        return "".join([self.object_dir(source_filename),
+                        "/", self.object_name(source_filename)])
 
     @memoize
     def executable_dir(self, source_filename):
-        """ Put the binaries into a directory structure that starts with the command line bindir
-            but then replicates the project directory structure.  This way we can separate
-            executable files that have the same name but different paths
+        """ Put the binaries into a directory structure that starts with the
+            command line bindir but then replicates the project directory
+            structure.  This way we can separate executable files that have
+            the same name but different paths.
         """
         project_pathname = git_utils.strip_git_root(source_filename)
         return "".join([self.args.bindir, "/", dirname(project_pathname)])
@@ -328,7 +342,9 @@ class Namer:
 
 class OrderedSet(collections.MutableSet):
 
-    """ Set that remembers original insertion order.  https://code.activestate.com/recipes/576694/ """
+    """ Set that remembers original insertion order.
+        See https://code.activestate.com/recipes/576694/
+    """
 
     def __init__(self, iterable=None):
         self.end = end = []
@@ -351,9 +367,9 @@ class OrderedSet(collections.MutableSet):
 
     def discard(self, key):
         if key in self.map:
-            key, prev, next = self.map.pop(key)
-            prev[2] = next
-            next[1] = prev
+            key, prev, next_ = self.map.pop(key)
+            prev[2] = next_
+            next_[1] = prev
 
     def __iter__(self):
         end = self.end
