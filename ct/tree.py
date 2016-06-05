@@ -1,3 +1,8 @@
+"""  This module contains a very simple tree implementation and utility functions
+    using it.  For a quick tutorial on this autovivification technique see
+    https://gist.github.com/hrldcpr/2012250
+"""
+
 from collections import defaultdict
 import inspect
 
@@ -9,7 +14,7 @@ def tree():
 
 def dicts(tree_):
     """ Convert the tree to a standard dict.
-        For example, to pretree_y print, pprint(dicts(tree_obj))
+        For example, to pretty print, pprint(dicts(tree_obj))
     """
     return {key: dicts(tree_[key]) for key in tree_}
 
@@ -71,17 +76,23 @@ def depth_first_traverse(
             value,
             post_kwargs)
 
+
 class InTree():
-    def __init__(self,tree):
-        self.tree=tree
+    """" Initialize with a tree then when you call it with a key
+         it will return whether or not the key exists in the tree.
+    """
+    def __init__(self, tree_):
+        self.tree = tree_
+        self.key = None
         self.result = False
-        
-    def __call__(self,key):  
-        self.key=key
-        depth_first_traverse(node=self.tree,pre_traverse_function=self.is_eq)
+
+    def __call__(self, key):
+        self.key = key
+        depth_first_traverse(node=self.tree, pre_traverse_function=self._has_key)
         return self.result
 
-    def is_eq(self,key):
+    def _has_key(self, key):
+        """ This is called recursively over the tree.
+            Returns true if the given key matches any of the keys in the tree.
+        """
         self.result = self.result or (key == self.key)
-        
-
