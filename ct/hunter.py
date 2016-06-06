@@ -284,7 +284,7 @@ class Hunter:
             self.parse_magic_flags(realpath, deplist)
 
         # One of the magic flags is SOURCE.  If that was present, add to the
-        # file list.
+        # file list.  WARNING:  Only use //#SOURCE= in a cpp file.
         cwd = os.path.dirname(realpath)
         filelist = deplist
         extra_sources = self.magic_flags[realpath].get('SOURCE', set())
