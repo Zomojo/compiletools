@@ -15,7 +15,10 @@ def isfile(trialpath):
 @memoize
 def realpath(trialpath):
     """ Just a cached version of os.path.realpath """
-    return os.path.realpath(trialpath)
+    rp = os.path.realpath(trialpath)
+    if not isfile(rp):
+        raise FileNotFoundError
+    return rp
 
 
 @memoize
