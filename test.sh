@@ -81,7 +81,7 @@ fi
 # Test a slightly deeper chain of include files
 #
 rm -rf bin/*
-./cake tests/test_direct_include.cpp --config=$CONFIG "$@"
+./cake --quiet tests/test_direct_include.cpp --config=$CONFIG "$@"
 result=$(bin/test_direct_include)
 ((++counter))
 if [ "$result" != "2 1" ]; then
@@ -93,8 +93,8 @@ fi
 # Test static library compilation
 #
 rm -rf bin/*
-./cake --static-library tests/get_numbers.cpp --config=$CONFIG "$@"
-./cake tests/test_library.cpp --config=$CONFIG "$@"
+./cake --quiet --static-library tests/get_numbers.cpp --config=$CONFIG "$@"
+./cake --quiet tests/test_library.cpp --config=$CONFIG "$@"
 result=$(bin/test_library)
 ((++counter))
 if [ "$result" != "1 2" ]; then
@@ -106,10 +106,10 @@ fi
 # Test dynamic library compilation
 #
 rm -rf bin/*
-./cake --dynamic-library tests/get_numbers.cpp --config=$CONFIG "$@"
+./cake --quiet --dynamic-library tests/get_numbers.cpp --config=$CONFIG "$@"
 LD_LIBRARY_PATH=bin
 export LD_LIBRARY_PATH
-./cake tests/test_library.cpp --config=$CONFIG "$@"
+./cake --quiet tests/test_library.cpp --config=$CONFIG "$@"
 result=$(bin/test_library)
 unset LD_LIBRARY_PATH
 ((++counter))
@@ -122,7 +122,7 @@ fi
 # Test the explict adding of extra source files via the //#SOURCE flag
 #
 rm -rf bin/* 
-CAKE_PREPROCESS=True ./cake tests/test_source.cpp  --config=$CONFIG "$@"
+CAKE_PREPROCESS=True ./cake --quiet tests/test_source.cpp  --config=$CONFIG "$@"
 result=$(bin/test_source)
 ((++counter))
 if [ "$result" != "hello world from lin" ]; then
@@ -149,5 +149,17 @@ result=$(CAKE_PREPROCESS=False ./cake --file-list --quiet tests/test_source.cpp 
 ((++counter))
 if [ "$result" != "tests/test_source.cpp tests/cross_platform.cpp tests/cross_platform_lin.cpp tests/cross_platform_win.cpp tests/cross_platform.hpp " ]; then
     echo test $counter: Incorrect result from the SOURCE + PREPROCESS=False test: $result
+    exit 1
+fi
+
+#
+# Test the SOURCE flag for the factory use case
+#
+rm -rf bin/* 
+./cake --quiet tests/factory/test_factory.cpp  --config=$CONFIG "$@" | tr -d '\n' 
+result=$(bin/test_factory)
+((++counter))
+if [ "$result" != "az" ]; then
+    echo test $counter: Incorrect result from the SOURCE/factory test: $result
     exit 1
 fi
