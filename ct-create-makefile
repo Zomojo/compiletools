@@ -1,12 +1,8 @@
 #! /usr/bin/env python
 # vim: set filetype=python:
 from __future__ import print_function
-import os.path
 import configargparse
 import ct.utils as utils
-import ct.git_utils as git_utils
-from ct.memoize import memoize
-from ct.hunter import HeaderDependencies
 from ct.hunter import Hunter
 
 
@@ -14,7 +10,10 @@ class Rule:
 
     """ A rule is a target, prerequisites and optionally a recipe
         https://www.gnu.org/software/make/manual/html_node/Rule-Introduction.html#Rule-Introduction
-        Example: myrule = Rule(target='mytarget' prerequisites='file1.hpp file2.hpp', recipe='g++ -c mytarget.cpp -o mytarget.o')
+        Example: myrule = Rule( target='mytarget'
+                              , prerequisites='file1.hpp file2.hpp'
+                              , recipe='g++ -c mytarget.cpp -o mytarget.o'
+                              )
         Note: it had to be a class rather than a dict so that we could hash it.
     """
 
@@ -44,7 +43,7 @@ class Rule:
         makefile.write(self.target + ": " + self.prerequisites + "\n")
         try:
             makefile.write("\t" + self.recipe + "\n")
-        except:
+        except TypeError:
             pass
         makefile.write("\n")
 
@@ -53,33 +52,35 @@ class MakefileCreator:
 
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
-    def __init__(self, cap, variant):
-        self.namer = utils.Namer(cap, variant)
-        utils.add_target_arguments(cap)
-        utils.add_link_arguments(cap)
+    def __init__(self, parser, variant):
+        self.namer = utils.Namer(parser, variant)
+        utils.add_target_arguments(parser)
+        utils.add_link_arguments(parser)
+
+        # Keep track of what build artifacts are created for easier cleanup
+        self.objects = set()
+        self.object_directories = set()
+
+        # The rules need to be written to disk in a specific order
+        self.rules = utils.OrderedSet()
+
+        self.args = None
         # self.args will exist after this call
         utils.setattr_args(self)
+
         self.hunter = Hunter()
 
     def create(self):
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
-        realpath_sources = map(utils.realpath, self.args.filename)
-
-        # Keep track of what build artifacts are created for easier cleanup
-        self.objects = set()
-        self.object_directories = set()
+        realpath_sources = [utils.realpath(filename)
+                            for filename in self.args.filename]
         all_exes_dirs = [
-            str(exe_dir) for exe_dir in map(
-                self.namer.executable_dir,
-                realpath_sources)]
-        all_exes = [
-            str(exe) for exe in map(
-                self.namer.executable_pathname,
-                realpath_sources)]
+            self.namer.executable_dir(source) for source in realpath_sources]
+        all_exes = [self.namer.executable_pathname(
+            source) for source in realpath_sources]
 
         # By using a set, duplicate rules will be eliminated.
-        self.rules = utils.OrderedSet()
         rule_all = Rule(
             target="all",
             prerequisites=" ".join(["mkdir_output"] + all_exes),
@@ -128,11 +129,8 @@ class MakefileCreator:
             phony=True)
         self.rules.add(rule_clean)
 
-        rule_realclean = Rule(
-            target="realclean",
-            prerequisites="",
-            recipe=" ".join(["rm -rf", self.args.bindir, "; rm -rf", self.args.objdir]),
-            phony=True)
+        rule_realclean = Rule(target="realclean", prerequisites="", recipe=" ".join(
+            ["rm -rf", self.args.bindir, "; rm -rf", self.args.objdir]), phony=True)
         self.rules.add(rule_realclean)
 
         self.write()
@@ -163,18 +161,19 @@ class MakefileCreator:
                                                                                         source]))
 
     def _create_link_rule(self, source_filename, complete_sources):
-        """ For a given source file (so usually the file with the main) and the set of complete sources (i.e., all the other source files + the original) return the link rule required for the Makefile """
+        """ For a given source file (so usually the file with the main) and the
+            set of complete sources (i.e., all the other source files + the original)
+            return the link rule required for the Makefile
+        """
 
         exe_name = self.namer.executable_pathname(
             utils.realpath(source_filename))
         object_names = " ".join(
-            str(obj) for obj in map(
-                self.namer.object_pathname,
-                complete_sources))
+            self.namer.object_pathname(source) for source in complete_sources)
 
         all_magic_ldflags = set()
-        for sf in complete_sources:
-            magic_flags = self.hunter.magic()[sf]
+        for source in complete_sources:
+            magic_flags = self.hunter.magic()[source]
             all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
             all_magic_ldflags |= magic_flags.get(
                 'LINKFLAGS',
@@ -217,16 +216,19 @@ class MakefileCreator:
 
     def write(self, makefile_name='Makefile'):
         """ Take a list of rules and write the rules to a Makefile """
-        with open(makefile_name, mode='w+') as mf:
-            mf.write("# Makefile generated by ct-create-makefile\n")
+        with open(makefile_name, mode='w+') as mfile:
+            mfile.write("# Makefile generated by ct-create-makefile\n")
             for rule in self.rules:
-                rule.write(mf)
+                rule.write(mfile)
 
-if __name__ == '__main__':
+
+def main():
     variant = utils.extract_variant_from_argv()
     config_files = utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
-        description='Create a Makefile that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.',
+        description='Create a Makefile that will compile the given source file into an '
+                    'executable (or library). Each given file is assumed to be compiled '
+                    'into a separate executable and/or library.',
         formatter_class=configargparse.DefaultsRawFormatter,
         default_config_files=config_files)
 
@@ -243,3 +245,6 @@ if __name__ == '__main__':
     utils.verbose_print_args(myargs[0])
 
     makefile_creator.create()
+
+if __name__ == '__main__':
+    main()
