@@ -4,8 +4,6 @@
 #include <memory>
 #include <string>
 //#include <iostream>
-//#SOURCE=a_widget.cpp
-//#SOURCE=z_widget.cpp
 
 // Singleton widget factory
 struct widget_factory

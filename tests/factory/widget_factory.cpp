@@ -1,4 +1,6 @@
 #include "widget_factory.hpp"
+//#SOURCE=a_widget.cpp
+//#SOURCE=z_widget.cpp
 
 
 widget_factory* widget_factory::instance()
