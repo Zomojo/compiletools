@@ -5,6 +5,7 @@ from collections import defaultdict
 from collections import Counter
 import inspect
 import math
+import ct.wrappedos
 from ct.hunter import HeaderTree
 import ct.git_utils as git_utils
 import ct.utils as utils
@@ -261,7 +262,7 @@ if __name__ == '__main__':
     myargs = cap.parse_known_args()
     utils.verbose_print_args(myargs[0])
 
-    if not utils.isfile(myargs[0].filename[0]):
+    if not ct.wrappedos.isfile(myargs[0].filename[0]):
         sys.stderr.write(
             "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(myargs[0].filename[0]))
         exit(1)

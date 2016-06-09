@@ -2,7 +2,8 @@
 # vim: set filetype=python:
 from __future__ import print_function
 import configargparse
-import ct.utils as utils
+import ct.wrappedos
+import ct.utils
 from ct.hunter import Hunter
 
 
@@ -11,13 +12,13 @@ class CMakefileCreator:
     """ Create a CMakefile.txt based on the filename, --static and --dynamic command line options """
 
     def __init__(self, cap, variant):
-        self.namer = utils.Namer(cap, variant)
-        utils.add_target_arguments(cap)
-        utils.add_link_arguments(cap)
+        self.namer = ct.utils.Namer(cap, variant)
+        ct.utils.add_target_arguments(cap)
+        ct.utils.add_link_arguments(cap)
         self.hunter = Hunter()
 
         # self.args will exist after this call
-        utils.setattr_args(self)
+        ct.utils.setattr_args(self)
 
     def create(self):
         with open("CMakeLists.txt", mode='w+') as cmf:
@@ -37,7 +38,7 @@ class CMakefileCreator:
             cmf.write(")\n")
 
             for source_filename in self.args.filename:
-                src_realpath = utils.realpath(source_filename)
+                src_realpath = ct.wrappedos.realpath(source_filename)
                 complete_sources = self.hunter.required_source_files(
                     src_realpath)
                 exe_name = self.namer.executable_name(src_realpath)
@@ -48,7 +49,7 @@ class CMakefileCreator:
                 cmf.write("".join(
                     ["add_executable(", exe_name, " ${", exe_source_files_cmake_name, "})\n"]))
                 cmf.write(" ".join(
-                    ["target_include_directories(", exe_name, "PUBLIC", utils.dirname(src_realpath), ")\n"]))
+                    ["target_include_directories(", exe_name, "PUBLIC", ct.wrappedos.dirname(src_realpath), ")\n"]))
 
                 cmf.write(" ".join(["install (TARGETS",
                                     exe_name,
@@ -57,8 +58,8 @@ class CMakefileCreator:
                                     ")\n\n"]))
 
 if __name__ == '__main__':
-    variant = utils.extract_variant_from_argv()
-    config_files = utils.config_files_from_variant()
+    variant = ct.utils.extract_variant_from_argv()
+    config_files = ct.utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a CMakefile.txt that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.',
         formatter_class=configargparse.DefaultsRawFormatter,
@@ -71,6 +72,6 @@ if __name__ == '__main__':
 
     cmakefile_creator = CMakefileCreator(cap, variant)
     myargs = cap.parse_known_args()
-    utils.verbose_print_args(myargs[0])
+    ct.utils.verbose_print_args(myargs[0])
 
     cmakefile_creator.create()

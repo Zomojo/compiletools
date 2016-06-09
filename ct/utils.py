@@ -1,35 +1,10 @@
 import collections
-import os.path
+import os
 import sys
 import configargparse
+import ct.wrappedos
 from ct.memoize import memoize
 import ct.git_utils as git_utils
-
-
-@memoize
-def isfile(trialpath):
-    """ Just a cached version of os.path.isfile """
-    return os.path.isfile(trialpath)
-
-
-@memoize
-def realpath(trialpath):
-    """ Just a cached version of os.path.realpath """
-    rp = os.path.realpath(trialpath)
-    if not isfile(rp):
-        raise FileNotFoundError
-    return rp
-
-
-@memoize
-def dirname(trialpath):
-    """ A cached verion of os.path.dirname """
-    return os.path.dirname(trialpath)
-
-
-def isc(trialpath):
-    """ Is the given file a C file ? """
-    return os.path.splitext(trialpath)[1] == ".c"
 
 
 def to_bool(value):
@@ -91,11 +66,13 @@ def default_config_directories():
     # 3) user config
     # 4) given on the command line
     # 5) environment variables
+    
+    # TODO: use the python xdg module to make this more robust
     user_config_dir = os.path.join(os.path.expanduser("~"), ".config/ct/")
     system_config_dir = "/etc/ct.conf.d/"
     executable_config_dir = os.path.join(
-        os.path.dirname(
-            os.path.realpath(sys.argv[0])),
+        ct.wrappedos.dirname(
+            ct.wrappedos.realpath(sys.argv[0])),
         "ct.conf.d/")
     return [user_config_dir, system_config_dir, executable_config_dir]
 
@@ -305,7 +282,7 @@ class Namer:
             the same name but different paths.
         """
         project_pathname = git_utils.strip_git_root(source_filename)
-        return "".join([self.args.objdir, "/", dirname(project_pathname)])
+        return "".join([self.args.objdir, "/", ct.wrappedos.dirname(project_pathname)])
 
     @memoize
     def object_name(self, source_filename):
@@ -329,7 +306,7 @@ class Namer:
             the same name but different paths.
         """
         project_pathname = git_utils.strip_git_root(source_filename)
-        return "".join([self.args.bindir, "/", dirname(project_pathname)])
+        return "".join([self.args.bindir, "/", ct.wrappedos.dirname(project_pathname)])
 
     @memoize
     def executable_name(self, source_filename):

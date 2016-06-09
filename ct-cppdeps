@@ -2,11 +2,12 @@
 from __future__ import print_function
 import sys
 import configargparse
-import ct.utils as utils
+import ct.wrappedos
+import ct.utils
 from ct.hunter import HeaderDependencies
 
 if __name__ == '__main__':
-    config_files = utils.config_files_from_variant()
+    config_files = ct.utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Determine header dependencies of a C/C++ file by invoking $CPP -MM <filename>. ',
         formatter_class=configargparse.DefaultsRawFormatter,
@@ -24,9 +25,9 @@ if __name__ == '__main__':
     # This will add the common arguments as a side effect
     hh = HeaderDependencies()
     myargs = cap.parse_known_args()
-    utils.verbose_print_args(myargs[0])
+    ct.utils.verbose_print_args(myargs[0])
 
-    if not utils.isfile(myargs[0].filename[0]):
+    if not ct.wrappedos.isfile(myargs[0].filename[0]):
         sys.stderr.write(
             "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(myargs[0].filename[0]))
         exit(1)

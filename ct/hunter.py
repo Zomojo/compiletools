@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 from __future__ import print_function
+import os
 import subprocess
 import sys
-import ct.utils as utils
 import configargparse
-import os
 import re
+import ct.wrappedos
+import ct.utils as utils
 import ct.tree as tree
 from ct.memoize import memoize
+from ct.diskcache import diskcache
 
 # At deep verbose levels pprint is used
 from pprint import pprint
@@ -20,7 +22,7 @@ def implied_source(filename):
     extensions = [".cpp", ".cxx", ".cc", ".c", ".C", ".CC"]
     for ext in extensions:
         trialpath = basename + ext
-        if utils.isfile(trialpath):
+        if ct.wrappedos.isfile(trialpath):
             return trialpath
     else:
         return None
@@ -49,7 +51,7 @@ class HeaderTree:
         """ Internal use.  Find the given include file in the project include paths """
         for inc_dir in self.includes:
             trialpath = os.path.join(inc_dir, include)
-            if utils.isfile(trialpath):
+            if ct.wrappedos.isfile(trialpath):
                 return trialpath
 
         # else:
@@ -66,7 +68,7 @@ class HeaderTree:
         # Check if the file is referable from the current working directory
         # if that guess doesn't exist then try all the include paths
         trialpath = os.path.join(cwd, include)
-        if utils.isfile(trialpath):
+        if ct.wrappedos.isfile(trialpath):
             return trialpath
         else:
             return self._search_project_includes(include)
@@ -90,7 +92,7 @@ class HeaderTree:
             The node is passed recursively, however the original caller
             does not need to pass it in.
         """
-        realpath = utils.realpath(filename)
+        realpath = ct.wrappedos.realpath(filename)
 
         if self.args.verbose >= 4:
             print("HeaderTree::process: " + realpath)
@@ -186,7 +188,7 @@ class HeaderDependencies:
 
         # Use realpath to get rid of  // and ../../ etc in paths (similar to normpath) and
         # to get the full path even to files in the current working directory
-        return set(map(utils.realpath, work_in_progress))
+        return set(map(ct.wrappedos.realpath, work_in_progress))
 
 
 class Hunter:
@@ -223,7 +225,8 @@ class Hunter:
     def magic(self):
         return self.magic_flags
 
-    def parse_magic_flags(self, source_filename, headers):
+    @diskcache('magic_flags')
+    def reparse_magic_flags(self, source_filename):
         """ Extract all the magics flags from the given source (and all its included headers).
             A magic flag is anything that starts with a //# and ends with an =
         """
@@ -252,11 +255,12 @@ class Hunter:
             # reading and handling as one string is slightly faster than
             # handling a list of strings.
             # Only read first 2k for speed
+            headers = self.header_dependencies(source_filename)
             for filename in headers | set([source_filename]):
                 with open(filename) as ff:
                     text += ff.read(2048)
 
-        flags_for_filename = self.magic_flags.setdefault(source_filename, {})
+        flags_for_filename = {}
 
         for match in self.magic_pattern.finditer(text):
             magic, flag = match.groups()
@@ -268,6 +272,12 @@ class Hunter:
                         flag,
                         source_filename))
 
+        return flags_for_filename
+
+    def parse_magic_flags(self, source_filename):
+        flags_for_filename = self.reparse_magic_flags(source_filename)
+        self.magic_flags[source_filename] = flags_for_filename
+
     @memoize
     def _required_files_impl(self, filename, source_only = True):
         """ The recursive implementation that finds the source files.  
@@ -277,11 +287,11 @@ class Hunter:
         """
         # TODO: See if we can just make it a precondition that source_filename
         # is a realpath.  The current check could be expensive.
-        realpath = utils.realpath(filename)
+        realpath = ct.wrappedos.realpath(filename)
         self.cycle_detection.add(realpath)
         deplist = self.header_deps.process(realpath)
         if filename not in self.magic_flags:
-            self.parse_magic_flags(realpath, deplist)
+            self.parse_magic_flags(realpath)
 
         # One of the magic flags is SOURCE.  If that was present, add to the
         # file list.  WARNING:  Only use //#SOURCE= in a cpp file.
@@ -289,7 +299,7 @@ class Hunter:
         filelist = deplist
         extra_sources = self.magic_flags[realpath].get('SOURCE', set())
         for es in extra_sources:
-            es_realpath = utils.realpath(os.path.join(cwd, es))
+            es_realpath = ct.wrappedos.realpath(os.path.join(cwd, es))
             if es_realpath not in self.cycle_detection:
                 filelist.add(es_realpath)
                 if self.args.verbose >= 2:

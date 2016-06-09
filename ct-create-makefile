@@ -2,7 +2,8 @@
 # vim: set filetype=python:
 from __future__ import print_function
 import configargparse
-import ct.utils as utils
+import ct.wrappedos
+import ct.utils
 from ct.hunter import Hunter
 
 
@@ -53,27 +54,27 @@ class MakefileCreator:
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
     def __init__(self, parser, variant):
-        self.namer = utils.Namer(parser, variant)
-        utils.add_target_arguments(parser)
-        utils.add_link_arguments(parser)
+        self.namer = ct.utils.Namer(parser, variant)
+        ct.utils.add_target_arguments(parser)
+        ct.utils.add_link_arguments(parser)
 
         # Keep track of what build artifacts are created for easier cleanup
         self.objects = set()
         self.object_directories = set()
 
         # The rules need to be written to disk in a specific order
-        self.rules = utils.OrderedSet()
+        self.rules = ct.utils.OrderedSet()
 
         self.args = None
         # self.args will exist after this call
-        utils.setattr_args(self)
+        ct.utils.setattr_args(self)
 
         self.hunter = Hunter()
 
     def create(self):
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
-        realpath_sources = [utils.realpath(filename)
+        realpath_sources = [ct.wrappedos.realpath(filename)
                             for filename in self.args.filename]
         all_exes_dirs = [
             self.namer.executable_dir(source) for source in realpath_sources]
@@ -141,7 +142,7 @@ class MakefileCreator:
         self.object_directories.add(self.namer.object_dir(source))
         obj_name = self.namer.object_pathname(source)
         self.objects.add(obj_name)
-        if utils.isc(source):
+        if ct.wrappedos.isc(source):
             magic_c_flags = self.hunter.magic()[source].get('CFLAGS', [])
             return Rule(target=obj_name,
                         prerequisites=" ".join([source] + [str(dep) for dep in deplist]),
@@ -167,7 +168,7 @@ class MakefileCreator:
         """
 
         exe_name = self.namer.executable_pathname(
-            utils.realpath(source_filename))
+            ct.wrappedos.realpath(source_filename))
         object_names = " ".join(
             self.namer.object_pathname(source) for source in complete_sources)
 
@@ -194,7 +195,7 @@ class MakefileCreator:
 
         # The set of rules needed to turn the source file into an executable
         # (or library as appropriate)
-        rules_for_source = utils.OrderedSet()
+        rules_for_source = ct.utils.OrderedSet()
 
         complete_sources = self.hunter.required_source_files(source)
         if self.args.verbose >= 6:
@@ -223,8 +224,8 @@ class MakefileCreator:
 
 
 def main():
-    variant = utils.extract_variant_from_argv()
-    config_files = utils.config_files_from_variant()
+    variant = ct.utils.extract_variant_from_argv()
+    config_files = ct.utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a Makefile that will compile the given source file into an '
                     'executable (or library). Each given file is assumed to be compiled '
@@ -233,7 +234,7 @@ def main():
         default_config_files=config_files)
 
     # The config file has to be added here.  For some reason doing it in the
-    # utils.add_common_arguments fails.
+    # ct.utils.add_common_arguments fails.
     cap.add(
         "-c",
         "--config",
@@ -242,7 +243,7 @@ def main():
     makefile_creator = MakefileCreator(cap, variant)
 
     myargs = cap.parse_known_args()
-    utils.verbose_print_args(myargs[0])
+    ct.utils.verbose_print_args(myargs[0])
 
     makefile_creator.create()
 
