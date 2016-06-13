@@ -1,5 +1,6 @@
 import os
 import functools
+import cPickle as pickle
 import ct.wrappedos
 
 class diskcache:
@@ -34,12 +35,22 @@ class diskcache:
                 to accomodate the "self" if we are caching a member function
             """
             filename = args[-1]
-            cachefile = os.path.join(self.cachedir,filename)
-            if ct.wrappedos.getmtime(filename) > ct.wrappedos.getmtime(cachefile):
+            cachefile = ''.join([self.cachedir,filename,'.',self.cache_identifier])
+            recalc = True
+            try:
+                if ct.wrappedos.getmtime(filename) < ct.wrappedos.getmtime(cachefile):
+                    recalc = False
+            except OSError:
+                pass
+            
+            if recalc:
                 result = func(*args)
+                ct.wrappedos.makedirs(ct.wrappedos.dirname(cachefile))
+                with open(cachefile,'w') as cf:
+                    pickle.dump(result,cf)
             else:
-                #TODO unpickle.  but just cheat for the moment
-                result = func(*args)
+                with open(cachefile,'r') as cf:
+                    result = pickle.load(cf)
 
             return result
 
