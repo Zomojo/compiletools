@@ -32,12 +32,13 @@ class HeaderTree:
 
     """ Create a tree structure that shows the header include tree """
 
-    def __init__(self):
+    def __init__(self, argv=None):
         # Keep track of ancestor paths so that we can do header cycle detection
         self.ancestor_paths = []
 
+        self.args = None
         # self.args will exist after this call
-        utils.setattr_args(self)
+        utils.setattr_args(self, argv)
 
         # Grab the include paths from the CPPFLAGS
         pat = re.compile('-I ([\S]*)')
@@ -136,9 +137,10 @@ class HeaderDependencies:
 
     """ Using the C Pre Processor, create the list of headers that the given file depends upon. """
 
-    def __init__(self):
+    def __init__(self, argv=None):
+        self.args = None
         # self.args will exist after this call
-        utils.setattr_args(self)
+        utils.setattr_args(self, argv)
 
     @memoize
     def _is_header(self, filename):
@@ -200,8 +202,8 @@ class Hunter:
         other required source files, other required compile/link flags.
     """
 
-    def __init__(self):
-        self.header_deps = HeaderDependencies()
+    def __init__(self, argv=None):
+        self.header_deps = HeaderDependencies(argv)
 
         cap = configargparse.getArgumentParser()
         utils.add_boolean_argument(
@@ -210,8 +212,9 @@ class Hunter:
             default=False,
             help="Invoke the preprocessor to find the magic flags (by default it just reads the file directly).")
 
+        self.args = None
         # self.args will exist after this call
-        utils.setattr_args(self)
+        utils.setattr_args(self, argv)
 
         # The Hunter needs to maintain a map of filenames to the map of all magic flags and each flag is a set
         # E.g., { '/somepath/libs/base/somefile.hpp':

@@ -97,7 +97,7 @@ def config_files_from_variant(variant=None, argv=None):
     return [
         defaultdir +
         variant +
-        ".conf" for defaultdir in default_config_directories()]
+        ".conf" for defaultdir in default_config_directories(argv=argv)]
 
 
 def add_common_arguments(cap):
@@ -264,7 +264,7 @@ def setattr_args(obj, argv=None):
 
     if argv is None:
         argv = sys.argv
-    args = cap.parse_known_args(argv)
+    args = cap.parse_known_args(argv[1:])
 
     # parse_known_args returns a tuple.  The properly parsed arguments are in
     # the zeroth element.
