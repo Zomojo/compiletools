@@ -7,7 +7,7 @@ import ct.cppdeps
 
 class TestCPPDeps(unittest.TestCase):
 
-    def test_something(self):
+    def test_cppdeps(self):
         ct.cppdeps.main([os.path.realpath('ct-cppdeps'),
                          '--filename',
                          'samples/numbers/test_direct_include.cpp'])
