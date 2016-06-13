@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 from __future__ import print_function
 import unittest
 import configargparse
@@ -14,20 +12,27 @@ def add_to_parser_in_func(recursion_depth=0):
             help="Output verbosity. Add more v's to make it more verbose",
             action="count",
             default=0)
-        args = cap.parse_known_args()
+        print(cap.format_values())
+        parsed_args = cap.parse_known_args(args=["-v"])
+        
+        # Note that is_config_file is False
+        # The unit test fails if it is set to True
+        # I wanted this knowledge to be written down somewhere
+        # hence the reason for this unit tests existence
         cap.add(
             "-c",
-            "--config",
-            is_config_file=True,
+            "--cfg",
+            is_config_file=False,
             help="Manually specify the config file path if you want to override the variant default")
         add_to_parser_in_func(recursion_depth+1)
-        args = cap.parse_known_args()
+        parsed_args = cap.parse_known_args(args=["-v"])
 
 class TestConfigArgParse(unittest.TestCase):
 
     def test_multiple_parse_known_args(self):
         non_existent_config_files = ['/blah/foo.conf','/usr/bin/ba.conf']
         cap = configargparse.getArgumentParser(
+            prog='UnitTest',
             description='unit testing',
             formatter_class=configargparse.DefaultsRawFormatter,
             default_config_files=non_existent_config_files)
@@ -36,16 +41,17 @@ class TestConfigArgParse(unittest.TestCase):
             "--variant",
             help="Specifies which variant of the config should be used. Use the config name without the .conf",
             default="debug")
-        args = cap.parse_known_args()
+        parsed_args = cap.parse_known_args()
 
         add_to_parser_in_func()
 
         cap.add(
             "-c",
-            "--config",
+            "--cfg",
             is_config_file=True,
             help="Manually specify the config file path if you want to override the variant default")
-        args = cap.parse_known_args()
+        parsed_args = cap.parse_known_args(args=['--variant','release'])
+
         
 if __name__ == '__main__':
     unittest.main()
