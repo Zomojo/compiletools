@@ -53,7 +53,7 @@ class MakefileCreator:
 
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
-    def __init__(self, parser, variant):
+    def __init__(self, parser, variant, argv=None):
         self.namer = ct.utils.Namer(parser, variant)
         ct.utils.add_target_arguments(parser)
         ct.utils.add_link_arguments(parser)
@@ -67,7 +67,7 @@ class MakefileCreator:
 
         self.args = None
         # self.args will exist after this call
-        ct.utils.setattr_args(self)
+        ct.utils.setattr_args(self,argv)
 
         self.hunter = Hunter()
 
@@ -223,8 +223,10 @@ class MakefileCreator:
                 rule.write(mfile)
 
 
-def main():
-    variant = ct.utils.extract_variant_from_argv()
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+    variant = ct.utils.extract_variant_from_argv(argv)
     config_files = ct.utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a Makefile that will compile the given source file into an '
@@ -242,7 +244,7 @@ def main():
         help="Manually specify the config file path if you want to override the variant default")
     makefile_creator = MakefileCreator(cap, variant)
 
-    myargs = cap.parse_known_args()
+    myargs = cap.parse_known_args(argv[1:])
     ct.utils.verbose_print_args(myargs[0])
 
     makefile_creator.create()

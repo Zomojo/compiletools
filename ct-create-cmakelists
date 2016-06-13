@@ -11,14 +11,15 @@ class CMakefileCreator:
 
     """ Create a CMakefile.txt based on the filename, --static and --dynamic command line options """
 
-    def __init__(self, cap, variant):
+    def __init__(self, cap, variant, argv):
         self.namer = ct.utils.Namer(cap, variant)
         ct.utils.add_target_arguments(cap)
         ct.utils.add_link_arguments(cap)
         self.hunter = Hunter()
 
+        self.args = None
         # self.args will exist after this call
-        ct.utils.setattr_args(self)
+        ct.utils.setattr_args(self, argv)
 
     def create(self):
         with open("CMakeLists.txt", mode='w+') as cmf:
