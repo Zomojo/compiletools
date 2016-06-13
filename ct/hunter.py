@@ -87,12 +87,11 @@ class HeaderTree:
 
         return pat.findall(text)
 
-    def process(self, filename, node=None):
+    def _process_impl(self, realpath, node=None):
         """ Return a tree that describes the header includes
             The node is passed recursively, however the original caller
             does not need to pass it in.
         """
-        realpath = ct.wrappedos.realpath(filename)
 
         if self.args.verbose >= 4:
             print("HeaderTree::process: " + realpath)
@@ -120,13 +119,17 @@ class HeaderTree:
         for include in self._create_include_list(realpath):
             trialpath = self._find_include(include, cwd)
             if trialpath:
-                self.process(trialpath, node[realpath])
+                self._process_impl(trialpath, node[realpath])
                 if self.args.verbose >= 5:
                     print("HeaderHunter building tree: ")
                     pprint(tree.dicts(node))
 
         self.ancestor_paths.pop()
         return node
+
+    def process(self, filename):
+        realpath = ct.wrappedos.realpath(filename)
+        return self._process_impl(realpath)
 
 
 class HeaderDependencies:
@@ -144,18 +147,18 @@ class HeaderDependencies:
             '.')[-1].lower() in ["h", "hpp", "hxx", "hh", "inl"]
 
     @memoize
-    def process(self, filename):
+    def _process_impl(self, realpath):
         """ Use the -MM option to the compiler to generate the list of dependencies
             If you supply a header file rather than a source file then
             a dummy, blank, source file will be transparently provided
             and the supplied header file will be included into the dummy source file.
         """
-        cmd = self.args.CPP.split()+self.args.CPPFLAGS.split()+["-MM"]
-        if self._is_header(filename):
+        cmd = self.args.CPP.split() + self.args.CPPFLAGS.split() + ["-MM"]
+        if self._is_header(realpath):
             # Use /dev/null as the dummy source file.
-            cmd.extend(["-include", filename, "-x", "c++", "/dev/null"])
+            cmd.extend(["-include", realpath, "-x", "c++", "/dev/null"])
         else:
-            cmd.append(filename)
+            cmd.append(realpath)
 
         if self.args.verbose >= 3:
             print(" ".join(cmd))
@@ -179,16 +182,16 @@ class HeaderDependencies:
         deplist = output.split(":")[1]
 
         # Strip non-space whitespace, remove any backslashes, and remove any empty strings
-        # Also remove the initially given filename and /dev/null from the list
+        # Also remove the initially given realpath and /dev/null from the list
         # Use a set to inherently remove any redundancies
-        work_in_progress = {
-            x for x in deplist.split() if x.strip('\\\t\n\r') and x not in [
-                filename,
-                "/dev/null"]}
-
         # Use realpath to get rid of  // and ../../ etc in paths (similar to normpath) and
         # to get the full path even to files in the current working directory
-        return set(map(ct.wrappedos.realpath, work_in_progress))
+        return {ct.wrappedos.realpath(x) for x in deplist.split() if x.strip(
+            '\\\t\n\r') and x not in [realpath, "/dev/null"]}
+
+    def process(self, filename):
+        realpath = ct.wrappedos.realpath(filename)
+        return self._process_impl(realpath)
 
 
 class Hunter:
@@ -225,7 +228,7 @@ class Hunter:
     def magic(self):
         return self.magic_flags
 
-    @diskcache('magic_flags')
+    @memoize
     def reparse_magic_flags(self, source_filename):
         """ Extract all the magics flags from the given source (and all its included headers).
             A magic flag is anything that starts with a //# and ends with an =
@@ -279,10 +282,10 @@ class Hunter:
         self.magic_flags[source_filename] = flags_for_filename
 
     @memoize
-    def _required_files_impl(self, filename, source_only = True):
-        """ The recursive implementation that finds the source files.  
-            Necessary because we don't want to wipe out the cycle detection. 
-            The source_only flag describes whether the return set of files 
+    def _required_files_impl(self, filename, source_only=True):
+        """ The recursive implementation that finds the source files.
+            Necessary because we don't want to wipe out the cycle detection.
+            The source_only flag describes whether the return set of files
             contains source files only or all headers and files encountered.
         """
         # TODO: See if we can just make it a precondition that source_filename
@@ -314,9 +317,11 @@ class Hunter:
             encountered_files |= filelist
 
         for nextfile in filelist:
-            implied = implied_source(nextfile)            
+            implied = implied_source(nextfile)
             if implied and implied not in self.cycle_detection:
-                encountered_files |= self._required_files_impl(implied,source_only)
+                encountered_files |= self._required_files_impl(
+                    implied,
+                    source_only)
 
         return encountered_files
 
@@ -331,13 +336,13 @@ class Hunter:
 
     @memoize
     def required_files(self, filename):
-        """ Create the list of files (both header and source) 
+        """ Create the list of files (both header and source)
             that are either directly or indirectly utilised by the given file.
             The returned set will contain the original filename.
             As a side effect, examine the files to determine the magic //#... flags
         """
         self.cycle_detection = set()
-        return self._required_files_impl(filename, source_only = False)
+        return self._required_files_impl(filename, source_only=False)
 
     def header_dependencies(self, source_filename):
         return self.header_deps.process(source_filename)
