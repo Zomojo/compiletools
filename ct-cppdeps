@@ -1,10 +1,7 @@
 #!/usr/bin/env python
-from __future__ import print_function
 import sys
 import configargparse
-import ct.wrappedos
-import ct.utils
-from ct.hunter import HeaderDependencies
+import ct.cppdeps
 
 if __name__ == '__main__':
     config_files = ct.utils.config_files_from_variant()
@@ -12,25 +9,4 @@ if __name__ == '__main__':
         description='Determine header dependencies of a C/C++ file by invoking $CPP -MM <filename>. ',
         formatter_class=configargparse.DefaultsRawFormatter,
         default_config_files=config_files)
-    cap.add(
-        "-c",
-        "--config",
-        is_config_file=True,
-        help="Manually specify the config file path if you want to override the variant default")
-    cap.add(
-        "filename",
-        help='File to use in "$CPP $CPPFLAGS -MM filename"',
-        nargs='+')
-
-    # This will add the common arguments as a side effect
-    hh = HeaderDependencies()
-    myargs = cap.parse_known_args()
-    ct.utils.verbose_print_args(myargs[0])
-
-    if not ct.wrappedos.isfile(myargs[0].filename[0]):
-        sys.stderr.write(
-            "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(myargs[0].filename[0]))
-        exit(1)
-
-    for dep in hh.process(myargs[0].filename[0]):
-        print(dep)
+    sys.exit(ct.cppdeps.main())
