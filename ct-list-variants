@@ -1,24 +1,11 @@
 #! /usr/bin/env python
 from __future__ import print_function
 import argparse
-import fnmatch
-import os
-import ct.utils
-
-def find_possible_variants():
-    print("From highest to lowest priority configuration directories, the possible variants are: ")
-    for cfg_dir in ct.utils.default_config_directories():
-        print()
-        print(cfg_dir)
-        try:
-            for cfg_file in os.listdir(cfg_dir):
-                if fnmatch.fnmatch(cfg_file, '*.conf'):
-                    print("\t"+os.path.splitext(cfg_file)[0])
-        except:
-            print("\tNone found")
+import ct.listvariants
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Find the possible variants by looking in the system config files, user config files and the executable's directory.")
     parser.parse_args()
 
-    find_possible_variants()
+    for line in ct.listvariants.find_possible_variants():
+        print(line)
