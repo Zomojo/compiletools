@@ -80,7 +80,7 @@ class diskcache:
         # we know that the cachefile exists.  So we can open
         # it and find out what dependencies also need to be
         # checked
-        for dep in pickle.load(open(cachefile, 'r')):
+        for dep in pickle.load(open(cachefile, 'rb')):
             if self._any_recursive_changes(dep, self._cachefile(dep)):
                 return True
         else:
@@ -96,7 +96,7 @@ class diskcache:
             return True
 
         deps_cachefile = self._deps_cachefile(filename)
-        for dep in pickle.load(open(deps_cachefile, 'r')):
+        for dep in pickle.load(open(deps_cachefile, 'rb')):
             # Note that cachefile is the cachefile corresponding to
             # filename that came in the function the argument
             # not the dep we are currently processing
@@ -114,12 +114,12 @@ class diskcache:
             newargs = args[:-1] + (filename,)
             result = func(*newargs)
             ct.wrappedos.makedirs(ct.wrappedos.dirname(cachefile))
-            with open(cachefile, 'w') as cf:
+            with open(cachefile, 'wb') as cf:
                 pickle.dump(result, cf)
 
         if self.deps_mode:
             cachefile = self._cachefile(filename)
-            for dep in pickle.load(open(cachefile, 'r')):
+            for dep in pickle.load(open(cachefile, 'rb')):
                 # Due to the recursive nature of this function
                 # you have to recheck if there are any changes.
                 if self._any_changes(dep, self._cachefile(dep)):
@@ -151,7 +151,7 @@ class diskcache:
                     cachefile):
                 self._refresh_cache(filename, func, *args)
 
-            return pickle.load(open(cachefile, 'r'))
+            return pickle.load(open(cachefile, 'rb'))
 
         # Return for __call__
         return diskcacher
