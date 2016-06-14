@@ -9,6 +9,7 @@ import ct.wrappedos
 import ct.utils as utils
 import ct.tree as tree
 from ct.memoize import memoize
+from ct.memoize import memoize_false
 from ct.diskcache import diskcache
 
 # At deep verbose levels pprint is used
@@ -148,7 +149,7 @@ class HeaderDependencies:
         return filename.split(
             '.')[-1].lower() in ["h", "hpp", "hxx", "hh", "inl"]
 
-    @diskcache('deps',deps_cache=True)
+    @diskcache('deps',deps_mode=True)
     def _process_impl(self, realpath):
         """ Use the -MM option to the compiler to generate the list of dependencies
             If you supply a header file rather than a source file then
@@ -231,7 +232,8 @@ class Hunter:
     def magic(self):
         return self.magic_flags
 
-    @memoize
+
+    @diskcache('magicflags',magic_mode=True)
     def reparse_magic_flags(self, source_filename):
         """ Extract all the magics flags from the given source (and all its included headers).
             A magic flag is anything that starts with a //# and ends with an =
