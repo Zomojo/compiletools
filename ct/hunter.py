@@ -143,12 +143,6 @@ class HeaderDependencies:
         # self.args will exist after this call
         utils.setattr_args(self, argv)
 
-    @memoize
-    def _is_header(self, filename):
-        """ Internal use.  Is filename a header file?"""
-        return filename.split(
-            '.')[-1].lower() in ["h", "hpp", "hxx", "hh", "inl"]
-
     @diskcache('deps',deps_mode=True)
     def _process_impl(self, realpath):
         """ Use the -MM option to the compiler to generate the list of dependencies
@@ -157,7 +151,7 @@ class HeaderDependencies:
             and the supplied header file will be included into the dummy source file.
         """
         cmd = self.args.CPP.split() + self.args.CPPFLAGS.split() + ["-MM"]
-        if self._is_header(realpath):
+        if ct.utils.isheader(realpath):
             # Use /dev/null as the dummy source file.
             cmd.extend(["-include", realpath, "-x", "c++", "/dev/null"])
         else:
@@ -282,9 +276,9 @@ class Hunter:
 
         return flags_for_filename
 
-    def parse_magic_flags(self, source_filename):
-        flags_for_filename = self.reparse_magic_flags(source_filename)
-        self.magic_flags[source_filename] = flags_for_filename
+    def parse_magic_flags(self, realpath):
+        flags_for_filename = self.reparse_magic_flags(realpath)
+        self.magic_flags[realpath] = flags_for_filename
 
     @memoize
     def _required_files_impl(self, filename, source_only=True):
@@ -297,23 +291,25 @@ class Hunter:
         # is a realpath.  The current check could be expensive.
         realpath = ct.wrappedos.realpath(filename)
         self.cycle_detection.add(realpath)
-        deplist = self.header_deps.process(realpath)
-        if filename not in self.magic_flags:
+        filelist = self.header_deps.process(realpath)
+        if realpath not in self.magic_flags:
             self.parse_magic_flags(realpath)
 
         # One of the magic flags is SOURCE.  If that was present, add to the
         # file list.  WARNING:  Only use //#SOURCE= in a cpp file.
         cwd = os.path.dirname(realpath)
-        filelist = deplist
-        extra_sources = self.magic_flags[realpath].get('SOURCE', set())
-        for es in extra_sources:
-            es_realpath = ct.wrappedos.realpath(os.path.join(cwd, es))
-            if es_realpath not in self.cycle_detection:
-                filelist.add(es_realpath)
-                if self.args.verbose >= 2:
-                    print(
-                        "Adding extra source files due to magic SOURCE flag: " +
-                        es_realpath)
+        try:
+            extra_sources = self.magic_flags[realpath].get('SOURCE', set())
+            for es in extra_sources:
+                es_realpath = ct.wrappedos.realpath(os.path.join(cwd, es))
+                if es_realpath not in self.cycle_detection:
+                    filelist.add(es_realpath)
+                    if self.args.verbose >= 2:
+                        print(
+                            "Adding extra source files due to magic SOURCE flag: " +
+                            es_realpath)
+        except KeyError:
+            pass
 
         encountered_files = set([realpath])
         if not source_only:
@@ -323,7 +319,7 @@ class Hunter:
 
         for nextfile in filelist:
             implied = implied_source(nextfile)
-            if implied and implied not in self.cycle_detection:
+            if implied and implied not in self.cycle_detection and ct.utils.issource(implied):
                 encountered_files |= self._required_files_impl(
                     implied,
                     source_only)
