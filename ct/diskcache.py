@@ -4,6 +4,8 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
+from ct.memoize import memoize
 from ct.memoize import memoize_false
 import ct.wrappedos
 
@@ -54,6 +56,10 @@ class diskcache:
         """ What deps cachefile corresponds to the given filename """
         return ''.join([self.cachedir, filename, '.deps'])
 
+    @memoize
+    def _memcached_cachefile(self, cachefile):
+        return pickle.load(open(cachefile, 'rb'))
+
     @memoize_false
     def _any_changes(self, filename, cachefile):
         """ Has this file changed since the cachefile was modified? """
@@ -68,7 +74,7 @@ class diskcache:
         return False
 
     @memoize_false
-    def _any_recursive_changes(self, filename, cachefile):
+    def _recursive_any_changes(self, filename, cachefile):
         """ Has this file (or any [recursive] dependency) changed? """
         if self._any_changes(filename, cachefile):
             return True
@@ -80,8 +86,8 @@ class diskcache:
         # we know that the cachefile exists.  So we can open
         # it and find out what dependencies also need to be
         # checked
-        for dep in pickle.load(open(cachefile, 'rb')):
-            if self._any_recursive_changes(dep, self._cachefile(dep)):
+        for dep in self._memcached_cachefile(cachefile):
+            if self._recursive_any_changes(dep, self._cachefile(dep)):
                 return True
         else:
             return False
@@ -96,7 +102,7 @@ class diskcache:
             return True
 
         deps_cachefile = self._deps_cachefile(filename)
-        for dep in pickle.load(open(deps_cachefile, 'rb')):
+        for dep in self._memcached_cachefile(deps_cachefile):
             # Note that cachefile is the cachefile corresponding to
             # filename that came in the function the argument
             # not the dep we are currently processing
@@ -119,7 +125,7 @@ class diskcache:
 
         if self.deps_mode:
             cachefile = self._cachefile(filename)
-            for dep in pickle.load(open(cachefile, 'rb')):
+            for dep in self._memcached_cachefile(cachefile):
                 # Due to the recursive nature of this function
                 # you have to recheck if there are any changes.
                 if self._any_changes(dep, self._cachefile(dep)):
@@ -141,7 +147,7 @@ class diskcache:
                     cachefile):
                 self._refresh_cache(filename, func, *args)
 
-            if self.deps_mode and self._any_recursive_changes(
+            if self.deps_mode and self._recursive_any_changes(
                     filename,
                     cachefile):
                 self._refresh_cache(filename, func, *args)
@@ -151,7 +157,7 @@ class diskcache:
                     cachefile):
                 self._refresh_cache(filename, func, *args)
 
-            return pickle.load(open(cachefile, 'rb'))
+            return self._memcached_cachefile(cachefile)
 
         # Return for __call__
         return diskcacher
