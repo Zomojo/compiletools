@@ -7,7 +7,20 @@ from ct.memoize import memoize
 import ct.git_utils as git_utils
 
 
-def to_bool(value):
+@memoize
+def isheader(filename):
+    """ Internal use.  Is filename a header file?"""
+    return filename.split(
+        '.')[-1].lower() in ["h", "hpp", "hxx", "hh", "inl"]
+
+
+@memoize
+def issource(filename):
+    """ Internal use. Is the filename a source file?"""
+    return filename.split('.')[-1].lower() in ["cpp", "cxx", "cc", "c"]
+
+
+def tobool(value):
     """
     Tries to convert a wide variety of values to a boolean
     Raises an exception for unrecognised values
@@ -33,7 +46,7 @@ def add_boolean_argument(parser, name, dest=None, default=False, help=None):
         dest=dest,
         default=default,
         const=True,
-        type=to_bool,
+        type=tobool,
         help=bool_help)
     group.add_argument('--no-' + name, dest=dest, action='store_false')
 

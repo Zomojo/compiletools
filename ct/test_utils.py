@@ -2,6 +2,44 @@ from __future__ import print_function
 import unittest
 import ct.utils as utils
 
+class TestIsFuncs(unittest.TestCase):
+    def test_isheader(self):
+        self.assertTrue(utils.isheader("myfile.h"))
+        self.assertTrue(utils.isheader("/home/user/myfile.h"))
+        self.assertTrue(utils.isheader("myfile.H"))
+        self.assertTrue(utils.isheader("My File.H"))
+        self.assertTrue(utils.isheader("myfile.inl"))
+        self.assertTrue(utils.isheader("myfile.hh"))
+        self.assertTrue(utils.isheader("myfile.hxx"))
+        self.assertTrue(utils.isheader("myfile.hpp"))
+        self.assertTrue(utils.isheader("/home/user/myfile.hpp"))
+        self.assertTrue(utils.isheader("myfile.with.dots.hpp"))
+        self.assertTrue(utils.isheader("/home/user/myfile.with.dots.hpp"))
+        self.assertTrue(utils.isheader("myfile_underscore.h"))
+        self.assertTrue(utils.isheader("myfile-hypen.h"))
+        self.assertTrue(utils.isheader("myfile.h"))
+
+        self.assertFalse(utils.isheader("myfile.c"))
+        self.assertFalse(utils.isheader("myfile.cc"))
+        self.assertFalse(utils.isheader("myfile.cpp"))
+        self.assertFalse(utils.isheader("/home/user/myfile"))
+
+    def test_issource(self):
+        self.assertTrue(utils.issource("myfile.c"))
+        self.assertTrue(utils.issource("myfile.cc"))
+        self.assertTrue(utils.issource("myfile.cpp"))
+        self.assertTrue(utils.issource("/home/user/myfile.cpp"))
+        self.assertTrue(utils.issource("/home/user/myfile.with.dots.cpp"))
+        self.assertTrue(utils.issource("myfile.C"))
+        self.assertTrue(utils.issource("myfile.CC"))
+        self.assertTrue(utils.issource("My File.c"))
+        self.assertTrue(utils.issource("My File.cpp"))
+        self.assertTrue(utils.issource("myfile.cxx"))
+
+        self.assertFalse(utils.issource("myfile.h"))
+        self.assertFalse(utils.issource("myfile.hh"))
+        self.assertFalse(utils.issource("myfile.hpp"))
+        self.assertFalse(utils.issource("/home/user/myfile.with.dots.hpp"))
 
 class TestOrderedSet(unittest.TestCase):
 
