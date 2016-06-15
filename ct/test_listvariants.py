@@ -10,14 +10,14 @@ class TestListVariants(unittest.TestCase):
         # no config files will be found
         uhd = "/home/dummy"
         scd = "/usr/lib"
-        argv = ["/usr/lib/libc.so"]
+        argv = ["/var/log/syslog"]
         expected_output = [
             'From highest to lowest priority configuration directories, the possible variants are: ',
             '/home/dummy/.config/ct/',
             '\tNone found',
             '/usr/lib/ct.conf.d/',
             '\tNone found',
-            '/usr/lib/ct.conf.d/',
+            '/var/log/ct.conf.d/',
             '\tNone found']
         output = ct.listvariants.find_possible_variants(
             user_home_dir=uhd,
