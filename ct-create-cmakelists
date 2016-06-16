@@ -11,7 +11,7 @@ class CMakefileCreator:
 
     """ Create a CMakefile.txt based on the filename, --static and --dynamic command line options """
 
-    def __init__(self, cap, variant, argv):
+    def __init__(self, cap, variant, argv=None):
         self.namer = ct.utils.Namer(cap, variant)
         ct.utils.add_target_arguments(cap)
         ct.utils.add_link_arguments(cap)
@@ -30,27 +30,33 @@ class CMakefileCreator:
 
             cmf.write(
                 ''.join(['set(CMAKE_CXX_COMPILER "', self.args.CXX, '")\n']))
-            cmf.write(
-                ''.join(['set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS}"', self.args.CXXFLAGS, '")\n']))
+            cmf.write(''.join(
+                ['set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ', self.args.CXXFLAGS, '")\n\n']))
 
-            cmf.write("include_directories(")
-            for inc in self.args.include:
-                cmf.write(inc)
-            cmf.write(")\n")
+            cmf.write("include_directories(\n    ")
+            cmf.write("\n    ".join(self.args.include))
+            cmf.write("\n)\n")
 
             for source_filename in self.args.filename:
                 src_realpath = ct.wrappedos.realpath(source_filename)
                 complete_sources = self.hunter.required_source_files(
                     src_realpath)
                 exe_name = self.namer.executable_name(src_realpath)
-                exe_source_files_cmake_name = "".join(
-                    [exe_name, "_source_files"]).upper()
-                cmf.write("\n".join(
-                    ["set(", exe_source_files_cmake_name] + list(complete_sources) + [")\n"]))
+                exe_source_files_cmake_name = exe_name.upper() + \
+                    "_SOURCE_FILES"
+                cmf.write("\nset(" + exe_source_files_cmake_name + "\n    ")
+                cmf.write("\n    ".join(list(complete_sources)))
+                cmf.write("\n)\n\n")
                 cmf.write("".join(
-                    ["add_executable(", exe_name, " ${", exe_source_files_cmake_name, "})\n"]))
-                cmf.write(" ".join(
-                    ["target_include_directories(", exe_name, "PUBLIC", ct.wrappedos.dirname(src_realpath), ")\n"]))
+                    ["add_executable(", exe_name, " ${", exe_source_files_cmake_name, "})\n\n"]))
+                cmf.write(
+                    " ".join(
+                        [
+                            "target_include_directories(",
+                            exe_name,
+                            "PUBLIC",
+                            ct.wrappedos.dirname(src_realpath),
+                            ")\n"]))
 
                 cmf.write(" ".join(["install (TARGETS",
                                     exe_name,
