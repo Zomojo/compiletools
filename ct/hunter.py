@@ -227,6 +227,13 @@ class Hunter:
         return self.magic_flags
 
 
+    # TODO: Rethink the whole diskcache concept.
+    # Each diskcache is its own object.  So the deps files end up being loaded 
+    # twice.  Once for the HeaderDependencies deps diskcache and once for the
+    # Hunter diskcache because the magic flags need to know what the tree of 
+    # dependencies are. My current thoughts are that the deps cache and 
+    # magic cache should be their own objects rather than trying to use
+    # decorators
     @diskcache('magicflags',magic_mode=True)
     def reparse_magic_flags(self, source_filename):
         """ Extract all the magics flags from the given source (and all its included headers).

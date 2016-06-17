@@ -1,4 +1,5 @@
 import os
+import atexit
 import functools
 try:
     import cPickle as pickle
@@ -48,6 +49,9 @@ class diskcache:
         self.cachedir = os.path.join(os.path.expanduser("~"), ".cache/ct")
         ct.wrappedos.makedirs(self.cachedir)
 
+        # Keep a copy of the cachefile in memory to reduce disk IO
+        self._memcache = {}
+
     def _cachefile(self, filename):
         """ What cachefile corresponds to the given filename """
         return ''.join([self.cachedir, filename, '.', self.cache_identifier])
@@ -56,9 +60,14 @@ class diskcache:
         """ What deps cachefile corresponds to the given filename """
         return ''.join([self.cachedir, filename, '.deps'])
 
-    @memoize
     def _memcached_cachefile(self, cachefile):
-        return pickle.load(open(cachefile, 'rb'))
+        """ Rather than using @memoize, keep the cache so that 
+            we can manually prepopulate it.
+        """
+        if cachefile not in self._memcache:
+            self._memcache[cachefile] = pickle.load(open(cachefile, 'rb'))
+
+        return self._memcache[cachefile]
 
     @memoize_false
     def _any_changes(self, filename, cachefile):
@@ -111,25 +120,30 @@ class diskcache:
         else:
             return False
 
-    def _refresh_cache(self, filename, func, *args):
+    def _refresh_cache(self, filename, cachefile, func, *args):
         """ If there are changes to the file
             then update the cache (potentially recursively)
         """
-        cachefile = self._cachefile(filename)
         if self._any_changes(filename, cachefile):
+            # args must have some sort of filename as the last argument
+            # So we strip that off and replace it with the filename
+            # that we are currently interested in.
             newargs = args[:-1] + (filename,)
             result = func(*newargs)
+            if cachefile in self._memcache:
+                print("_refresh_cache replacing an existing cachfile: " + cachefile)
+            self._memcache[cachefile] = result
             ct.wrappedos.makedirs(ct.wrappedos.dirname(cachefile))
             with open(cachefile, 'wb') as cf:
                 pickle.dump(result, cf)
 
         if self.deps_mode:
-            cachefile = self._cachefile(filename)
             for dep in self._memcached_cachefile(cachefile):
                 # Due to the recursive nature of this function
                 # you have to recheck if there are any changes.
-                if self._any_changes(dep, self._cachefile(dep)):
-                    self._refresh_cache(dep, func, *args)
+                depcachefile = self._cachefile(dep)
+                if self._any_changes(dep, depcachefile):
+                    self._refresh_cache(dep, depcachefile, func, *args)
 
     def __call__(self, func):
         @functools.wraps(func)
@@ -145,17 +159,17 @@ class diskcache:
             if not self.deps_mode and not self.magic_mode and self._any_changes(
                     filename,
                     cachefile):
-                self._refresh_cache(filename, func, *args)
+                self._refresh_cache(filename, cachefile, func, *args)
 
             if self.deps_mode and self._recursive_any_changes(
                     filename,
                     cachefile):
-                self._refresh_cache(filename, func, *args)
+                self._refresh_cache(filename, cachefile, func, *args)
 
             if self.magic_mode and self._magic_mode_any_changes(
                     filename,
                     cachefile):
-                self._refresh_cache(filename, func, *args)
+                self._refresh_cache(filename, cachefile, func, *args)
 
             return self._memcached_cachefile(cachefile)
 
