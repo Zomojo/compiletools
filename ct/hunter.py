@@ -114,7 +114,7 @@ class HeaderTree:
         node[realpath]
 
         if self.args.verbose >= 6:
-            print("HeaderHunter inserted: " + realpath)
+            print("HeaderTree inserted: " + realpath)
             pprint(tree.dicts(node))
 
         cwd = os.path.dirname(realpath)
@@ -123,7 +123,7 @@ class HeaderTree:
             if trialpath:
                 self._process_impl(trialpath, node[realpath])
                 if self.args.verbose >= 5:
-                    print("HeaderHunter building tree: ")
+                    print("HeaderTree building tree: ")
                     pprint(tree.dicts(node))
 
         self.ancestor_paths.pop()
@@ -288,15 +288,16 @@ class Hunter:
         self.magic_flags[realpath] = flags_for_filename
 
     @memoize
-    def _required_files_impl(self, filename, source_only=True):
+    def _required_files_impl(self, realpath, source_only=True):
         """ The recursive implementation that finds the source files.
             Necessary because we don't want to wipe out the cycle detection.
             The source_only flag describes whether the return set of files
             contains source files only or all headers and files encountered.
+            It is a precondition that realpath actually is a realpath.
         """
-        # TODO: See if we can just make it a precondition that source_filename
-        # is a realpath.  The current check could be expensive.
-        realpath = ct.wrappedos.realpath(filename)
+        if self.args.verbose >= 5:
+            print("Hunter is recursively following " + realpath)
+
         self.cycle_detection.add(realpath)
         filelist = self.header_deps.process(realpath)
         if realpath not in self.magic_flags:
@@ -350,7 +351,7 @@ class Hunter:
             As a side effect, examine the files to determine the magic //#... flags
         """
         self.cycle_detection = set()
-        return self._required_files_impl(filename, source_only=False)
+        return self._required_files_impl(ct.wrappedos.realpath(filename), source_only=False)
 
     def header_dependencies(self, source_filename):
         return self.header_deps.process(source_filename)

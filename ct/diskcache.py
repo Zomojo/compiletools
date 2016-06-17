@@ -83,8 +83,13 @@ class diskcache:
         return False
 
     @memoize_false
-    def _recursive_any_changes(self, filename, cachefile):
-        """ Has this file (or any [recursive] dependency) changed? """
+    def _recursive_any_changes(self, filename, cachefile, originalcachefile = None):
+        """ Has this file (or any [recursive] dependency) changed? """        
+   
+        if originalcachefile is not None:
+            if self._any_changes(filename, originalcachefile):
+                return True
+
         if self._any_changes(filename, cachefile):
             return True
 
@@ -96,7 +101,7 @@ class diskcache:
         # it and find out what dependencies also need to be
         # checked
         for dep in self._memcached_cachefile(cachefile):
-            if self._recursive_any_changes(dep, self._cachefile(dep)):
+            if self._recursive_any_changes(dep, self._cachefile(dep), cachefile):
                 return True
         else:
             return False
@@ -124,6 +129,17 @@ class diskcache:
         """ If there are changes to the file
             then update the cache (potentially recursively)
         """
+        # Files may have been deleted while their cachefile still exists
+        # This will help in the cleanup
+        # Note that (unlike cache files) source files are not allowed
+        # to magically appear (or disappear) during the middle of a build.
+        if not ct.wrappedos.isfile(filename):
+            try:
+                os.remove(cachefile)
+            except OSError:
+                pass
+            return
+
         if self._any_changes(filename, cachefile):
             # args must have some sort of filename as the last argument
             # So we strip that off and replace it with the filename
