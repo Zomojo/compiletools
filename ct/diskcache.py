@@ -130,8 +130,6 @@ class diskcache:
             # that we are currently interested in.
             newargs = args[:-1] + (filename,)
             result = func(*newargs)
-            if cachefile in self._memcache:
-                print("_refresh_cache replacing an existing cachfile: " + cachefile)
             self._memcache[cachefile] = result
             ct.wrappedos.makedirs(ct.wrappedos.dirname(cachefile))
             with open(cachefile, 'wb') as cf:
