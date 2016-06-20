@@ -34,6 +34,7 @@ class HeaderTree:
     """ Create a tree structure that shows the header include tree """
 
     def __init__(self, argv=None):
+
         # Keep track of ancestor paths so that we can do header cycle detection
         self.ancestor_paths = []
 
@@ -45,6 +46,8 @@ class HeaderTree:
         pat = re.compile('-I ([\S]*)')
         self.includes = pat.findall(self.args.CPPFLAGS)
 
+        if self.args.verbose >= 8:
+            print("HeaderTree::__init__")
         if self.args.verbose >= 3:
             print("Includes=" + str(self.includes))
 
@@ -89,7 +92,7 @@ class HeaderTree:
 
         return pat.findall(text)
 
-    def _process_impl(self, realpath, node=None):
+    def _generate_tree_impl(self, realpath, node=None):
         """ Return a tree that describes the header includes
             The node is passed recursively, however the original caller
             does not need to pass it in.
@@ -121,7 +124,7 @@ class HeaderTree:
         for include in self._create_include_list(realpath):
             trialpath = self._find_include(include, cwd)
             if trialpath:
-                self._process_impl(trialpath, node[realpath])
+                self._generate_tree_impl(trialpath, node[realpath])
                 if self.args.verbose >= 5:
                     print("HeaderTree building tree: ")
                     pprint(tree.dicts(node))
@@ -132,7 +135,18 @@ class HeaderTree:
     def generatetree(self, filename):
         """ Returns the tree of include files """
         realpath = ct.wrappedos.realpath(filename)
-        return self._process_impl(realpath)
+        return self._generate_tree_impl(realpath)
+
+
+    def _process_impl(self, realpath):
+        results = set([realpath])
+        cwd = os.path.dirname(realpath)
+        for include in self._create_include_list(realpath):
+            trialpath = self._find_include(include, cwd)
+            if trialpath and trialpath not in results:
+                results |= self._process_impl(trialpath)
+        return results
+
 
     # TODO: Stop writing to the same cache as HeaderDependencies.  
     # Because the magic flags rely on the .deps cache, this hack was put in place.
@@ -140,8 +154,9 @@ class HeaderTree:
     def process(self, filename):
         """ Returns the dependencies in the same format as HeaderDependencies """
         realpath = ct.wrappedos.realpath(filename)
-        inctree = self.generatetree(realpath) 
-        flat = tree.flatten(inctree) 
+        # It is 10% faster to use _process_impl rather than generatetree
+        #flat = tree.flatten(self.generatetree(realpath)) 
+        flat = self._process_impl(realpath)
         flat.remove(realpath)
         return flat
 
@@ -153,6 +168,9 @@ class HeaderDependencies:
         self.args = None
         # self.args will exist after this call
         utils.setattr_args(self, argv)
+
+        if self.args.verbose >= 8:
+            print("HeaderDependencies::__init__")
 
     @diskcache('deps',deps_mode=True)
     def _process_impl(self, realpath):
@@ -213,8 +231,8 @@ class Hunter:
         utils.add_boolean_argument(
             parser=cap,
             name="directread",
-            default=False,
-            help="Follow includes by directly reading files (by default it uses gcc -MM ...).")        
+            default=True,
+            help="Follow includes by directly reading files (the alternative is to use gcc -MM ... which is slower but more accurate).")        
         utils.add_boolean_argument(
             parser=cap,
             name="preprocess",
@@ -226,9 +244,9 @@ class Hunter:
         utils.setattr_args(self, argv)
 
         if self.args.directread:
-            self.header_deps = HeaderDependencies(argv)
-        else:
             self.header_deps = HeaderTree(argv)
+        else:
+            self.header_deps = HeaderDependencies(argv)
 
         # Extra command line options will now be understood so reprocess the commandline
         utils.setattr_args(self, argv)
