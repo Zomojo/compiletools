@@ -14,10 +14,18 @@ def tree():
 
 def dicts(tree_):
     """ Convert the tree to a standard dict.
-        For example, to pretty print, pprint(dicts(tree_obj))
+        For example, to pretty print, pprint(tree.dicts(tree_obj))
     """
     return {key: dicts(tree_[key]) for key in tree_}
 
+def flatten(tree_):
+    """ Convert a tree to a set of the keys """
+    flat = set()
+    for key in tree_:
+        flat.add(key)
+        flat |= flatten(tree_[key])
+    
+    return flat
 
 def depth_first_traverse(
         node,
