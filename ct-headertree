@@ -268,7 +268,7 @@ if __name__ == '__main__':
         exit(1)
 
     # Create the headertree then print it in the appropriate style
-    inctree = ht.process(myargs[0].filename[0])
+    inctree = ht.generatetree(myargs[0].filename[0])
     style_class = globals()[myargs[0].style + 'Style']
 
     # Build up the appropriate arguments to pass to the initialization of the style object

@@ -129,10 +129,21 @@ class HeaderTree:
         self.ancestor_paths.pop()
         return node
 
-    def process(self, filename):
+    def generatetree(self, filename):
+        """ Returns the tree of include files """
         realpath = ct.wrappedos.realpath(filename)
         return self._process_impl(realpath)
 
+    # TODO: Stop writing to the same cache as HeaderDependencies.  
+    # Because the magic flags rely on the .deps cache, this hack was put in place.
+    @diskcache('deps',deps_mode=True)
+    def process(self, filename):
+        """ Returns the dependencies in the same format as HeaderDependencies """
+        realpath = ct.wrappedos.realpath(filename)
+        inctree = self.generatetree(realpath) 
+        flat = tree.flatten(inctree) 
+        flat.remove(realpath)
+        return flat
 
 class HeaderDependencies:
 
@@ -198,9 +209,12 @@ class Hunter:
     """
 
     def __init__(self, argv=None):
-        self.header_deps = HeaderDependencies(argv)
-
         cap = configargparse.getArgumentParser()
+        utils.add_boolean_argument(
+            parser=cap,
+            name="directread",
+            default=False,
+            help="Follow includes by directly reading files (by default it uses gcc -MM ...).")        
         utils.add_boolean_argument(
             parser=cap,
             name="preprocess",
@@ -209,6 +223,14 @@ class Hunter:
 
         self.args = None
         # self.args will exist after this call
+        utils.setattr_args(self, argv)
+
+        if self.args.directread:
+            self.header_deps = HeaderDependencies(argv)
+        else:
+            self.header_deps = HeaderTree(argv)
+
+        # Extra command line options will now be understood so reprocess the commandline
         utils.setattr_args(self, argv)
 
         # The Hunter needs to maintain a map of filenames to the map of all magic flags and each flag is a set
@@ -300,6 +322,7 @@ class Hunter:
 
         self.cycle_detection.add(realpath)
         filelist = self.header_deps.process(realpath)
+
         if realpath not in self.magic_flags:
             self.parse_magic_flags(realpath)
 
