@@ -22,10 +22,10 @@ def isdir(trialpath):
 
 @memoize
 def realpath(trialpath):
-    """ Cache os.path.realpath and raise an exception if realpath isn't a file """
+    """ Cache os.path.realpath """
+    # Note: We can't raise an exception on file non-existence 
+    # because this is sometimes called in order to create the file.
     rp = os.path.realpath(trialpath)
-    if not isfile(rp):
-        raise FileNotFoundError
     return rp
 
 
