@@ -1,3 +1,4 @@
+from __future__ import print_function
 import collections
 import os
 import sys
@@ -294,7 +295,7 @@ def verbose_print_args(args):
         cap.print_values()
 
 
-class Namer:
+class Namer(object):
 
     """ From a source filename, calculate related names
         like executable name, object name, etc.
@@ -314,8 +315,9 @@ class Namer:
             the same name but different paths.
         """
         project_pathname = git_utils.strip_git_root(source_filename)
-        return "".join(
+        relative = "".join(
             [self.args.objdir, "/", ct.wrappedos.dirname(project_pathname)])
+        return ct.wrappedos.realpath(relative)
 
     @memoize
     def object_name(self, source_filename):
@@ -339,8 +341,9 @@ class Namer:
             the same name but different paths.
         """
         project_pathname = git_utils.strip_git_root(source_filename)
-        return "".join(
+        relative = "".join(
             [self.args.bindir, "/", ct.wrappedos.dirname(project_pathname)])
+        return relative
 
     @memoize
     def executable_name(self, source_filename):
