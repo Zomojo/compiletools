@@ -24,7 +24,7 @@ def implied_source(filename):
     for ext in extensions:
         trialpath = basename + ext
         if ct.wrappedos.isfile(trialpath):
-            return trialpath
+            return ct.wrappedos.realpath(trialpath)
     else:
         return None
 
