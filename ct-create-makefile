@@ -89,9 +89,7 @@ class MakefileCreator:
             phony=True)
         self.rules.add(rule_all)
 
-        for realpath_source in realpath_sources:
-            self.rules = self.rules | self._create_makefile_rules_for_source(
-                realpath_source)
+        self.rules |= self._create_makefile_rules_for_sources(realpath_sources)
 
         rule_mkdir_output = Rule(
             target="mkdir_output",
@@ -140,13 +138,15 @@ class MakefileCreator:
     def _create_compile_rule_for_source(self, source):
         """ For a given source file return the compile rule required for the Makefile """
         deplist = self.hunter.header_dependencies(source)
+        prerequisites = [source] + sorted([str(dep) for dep in deplist])
+
         self.object_directories.add(self.namer.object_dir(source))
         obj_name = self.namer.object_pathname(source)
         self.objects.add(obj_name)
         if ct.wrappedos.isc(source):
             magic_c_flags = self.hunter.magic()[source].get('CFLAGS', [])
             return Rule(target=obj_name,
-                        prerequisites=" ".join([source] + [str(dep) for dep in deplist]),
+                        prerequisites=" ".join(prerequisites),
                         recipe=" ".join([self.args.CC,
                                          self.args.CFLAGS] + list(magic_c_flags) + ["-c",
                                                                                     "-o",
@@ -155,7 +155,7 @@ class MakefileCreator:
         else:
             magic_cxx_flags = self.hunter.magic()[source].get('CXXFLAGS', [])
             return Rule(target=obj_name,
-                        prerequisites=" ".join([source] + [str(dep) for dep in deplist]),
+                        prerequisites=" ".join(prerequisites),
                         recipe=" ".join([self.args.CXX,
                                          self.args.CXXFLAGS] + list(magic_cxx_flags) + ["-c",
                                                                                         "-o",
@@ -188,31 +188,38 @@ class MakefileCreator:
                                                            exe_name,
                                                            object_names] + list(all_magic_ldflags)))
 
-    def _create_makefile_rules_for_source(self, source):
-        """ For a given source file return the set of rules required for the Makefile """
+    def _create_makefile_rules_for_sources(self, sources):
+        """ For all the given source files return the set of rules required for the Makefile """
 
-        # Reset the cycle detection because we are starting a new source file
-        cycle_detection = set()
 
         # The set of rules needed to turn the source file into an executable
         # (or library as appropriate)
         rules_for_source = ct.utils.OrderedSet()
+       
+        # Output all the link rules
+        for source in sources:
+            complete_sources = self.hunter.required_source_files(source)
+            if self.args.verbose >= 6:
+                print(
+                    "Complete list of implied source files for " +
+                    source +
+                    ": " +
+                    " ".join(
+                        cs for cs in complete_sources))
+            rules_for_source.add(self._create_link_rule(source, complete_sources))
 
-        complete_sources = self.hunter.required_source_files(source)
-        if self.args.verbose >= 6:
-            print(
-                "Complete list of implied source files for " +
-                source +
-                ": " +
-                " ".join(
-                    cs for cs in complete_sources))
-        rules_for_source.add(self._create_link_rule(source, complete_sources))
-
-        for item in complete_sources:
-            if item not in cycle_detection:
-                cycle_detection.add(item)
-                rules_for_source.add(
-                    self._create_compile_rule_for_source(item))
+        # Output all the compile rules
+        for source in sources:
+            # Reset the cycle detection because we are starting a new source file
+            cycle_detection = set()
+            complete_sources = self.hunter.required_source_files(source)
+            for item in complete_sources:
+                if item not in cycle_detection:
+                    cycle_detection.add(item)
+                    rules_for_source.add(
+                        self._create_compile_rule_for_source(item))
+                else:                    
+                    print("ct-create-makefile detected cycle on source " + item)
 
         return rules_for_source
 
