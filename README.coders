@@ -10,5 +10,8 @@ autopep8 --in-place --aggressive --aggressive somefile.py
 When you are doing performance testing there are 3 caches you need to be aware of
 
 1) ccache:  This can be cleaned by ccache -C
-2) cake:  The default is for any caches to be kept in the bin directory.  rm -rf bin 
-3) ct-*:  Default cache is the XDG user cache directory. I.e.,  ~/.cache/ct.  rm -rf ~/.cache/ct
+2) cake:    The default is for any caches to be kept in the bin directory.  rm -rf bin 
+3) ct-*:    The default cache is supplied by the appdirs module.  
+            So on linux that means the XDG user cache directory which defaults to $HOME/.cache/ct.  
+                rm -rf ~/.cache/ct
+            Note that it obeys the XDG variables.  Alter XDG_CACHE_HOME if you need to move the cache.
