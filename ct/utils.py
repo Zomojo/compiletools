@@ -343,7 +343,7 @@ class Namer(object):
         project_pathname = git_utils.strip_git_root(source_filename)
         relative = "".join(
             [self.args.bindir, "/", ct.wrappedos.dirname(project_pathname)])
-        return relative
+        return ct.wrappedos.realpath(relative)
 
     @memoize
     def executable_name(self, source_filename):
