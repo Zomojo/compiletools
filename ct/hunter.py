@@ -57,7 +57,7 @@ class HeaderTree:
         for inc_dir in self.includes:
             trialpath = os.path.join(inc_dir, include)
             if ct.wrappedos.isfile(trialpath):
-                return trialpath
+                return ct.wrappedos.realpath(trialpath)
 
         # else:
         #    TODO: Try system include paths if the user sets (the currently nonexistent) "use-system" flag
@@ -74,7 +74,7 @@ class HeaderTree:
         # if that guess doesn't exist then try all the include paths
         trialpath = os.path.join(cwd, include)
         if ct.wrappedos.isfile(trialpath):
-            return trialpath
+            return ct.wrappedos.realpath(trialpath)
         else:
             return self._search_project_includes(include)
 
@@ -335,14 +335,15 @@ class Hunter:
             contains source files only or all headers and files encountered.
             It is a precondition that realpath actually is a realpath.
         """
-        if self.args.verbose >= 5:
-            print("Hunter is recursively following " + realpath)
 
         self.cycle_detection.add(realpath)
-        filelist = self.header_deps.process(realpath)
 
         if realpath not in self.magic_flags:
             self.parse_magic_flags(realpath)
+
+        filelist = self.header_deps.process(realpath)
+        if self.args.verbose >= 9:
+            print("Hunter::_required_files_impl. Files to follow are: " + str(filelist))
 
         # One of the magic flags is SOURCE.  If that was present, add to the
         # file list.  WARNING:  Only use //#SOURCE= in a cpp file.
@@ -351,27 +352,46 @@ class Hunter:
             extra_sources = self.magic_flags[realpath].get('SOURCE', set())
             for es in extra_sources:
                 es_realpath = ct.wrappedos.realpath(os.path.join(cwd, es))
-                if es_realpath not in self.cycle_detection:
-                    filelist.add(es_realpath)
-                    if self.args.verbose >= 2:
-                        print(
-                            "Adding extra source files due to magic SOURCE flag: " +
-                            es_realpath)
+                filelist.add(es_realpath)
+                if self.args.verbose >= 2:
+                    print(
+                        "Adding extra source files due to magic SOURCE flag: " +
+                        es_realpath)
         except KeyError:
-            pass
+            if self.args.verbose >= 9:
+                print("Hunter::_required_files_impl. KeyError occured on realpath=" + realpath)
 
+        if self.args.verbose >= 9:
+            print("Hunter::_required_files_impl. Adding " + realpath + " to the encountered_files")
         encountered_files = set([realpath])
+
         if not source_only:
             # Now if the magic source specified a source file this will miss them when source_only = True
             # However, they will get caught as an implied file below
+            if self.args.verbose >= 9:
+                print("Hunter::_required_files_impl. Adding filelist=" + filelist + " to the encountered_files")
             encountered_files |= filelist
 
         for nextfile in filelist:
             implied = implied_source(nextfile)
-            if implied and implied not in self.cycle_detection and ct.utils.issource(implied):
-                encountered_files |= self._required_files_impl(
-                    implied,
-                    source_only)
+            if not implied:
+                if self.args.verbose >= 8:
+                    print("Hunter::_required_files_impl. Couldn't find an implied source file for filename=" + nextfile)
+                continue
+
+            if implied in self.cycle_detection:
+                if self.args.verbose >= 8:
+                    print("Hunter::_required_files_impl detected cycle on " + implied)
+                continue
+
+            if not ct.utils.issource(implied):
+                if self.args.verbose >= 8:
+                    print("Hunter::_required_files_impl. Implied file " + implied + " is not a source file.")
+                continue
+
+            if self.args.verbose >= 5:
+                print("Hunter::_required_files_impl is recursively following " + implied)
+            encountered_files |= self._required_files_impl(implied,source_only)
 
         return encountered_files
 
@@ -381,8 +401,15 @@ class Hunter:
             The returned set will contain the original source_filename.
             As a side effect, examine the files to determine the magic //#... flags
         """
+        if self.args.verbose >= 9:
+            print("Hunter::required_source_files for " + source_filename)
         self.cycle_detection = set()
-        return self._required_files_impl(source_filename)
+        result = self._required_files_impl(source_filename)
+
+        if not self.cycle_detection.issubset(result):
+            print("Found elements in the cycle detection but not in the complete source file list: " + str(self.cycle_detection.difference(result)))
+
+        return result
 
     @memoize
     def required_files(self, filename):
