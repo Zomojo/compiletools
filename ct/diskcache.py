@@ -5,6 +5,7 @@ try:
     import cPickle as pickle
 except ImportError:
     import pickle
+
 import appdirs
 
 from ct.memoize import memoize
@@ -45,10 +46,7 @@ class diskcache:
         self.cache_identifier = cache_identifier
         self.deps_mode = deps_mode
         self.magic_mode = magic_mode
-
-        # TODO: use the python xdg module to make this more robust
-        #self.cachedir = os.path.join(os.path.expanduser("~"), ".cache/ct")
-        self.cachedir = appdirs.user_cache_dir(appname='ct', appauthor='Zomojo')
+        self.cachedir = appdirs.user_cache_dir(appname='ct')
         ct.wrappedos.makedirs(self.cachedir)
 
         # Keep a copy of the cachefile in memory to reduce disk IO

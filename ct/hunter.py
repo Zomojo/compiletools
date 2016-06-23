@@ -216,6 +216,7 @@ class HeaderDependencies:
             '\\\t\n\r') and x not in [realpath, "/dev/null"]}
 
     def process(self, filename):
+        """ Return the set of dependencies for a given filename """
         realpath = ct.wrappedos.realpath(filename)
         return self._process_impl(realpath)
 
