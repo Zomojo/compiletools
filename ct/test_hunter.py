@@ -22,6 +22,7 @@ def call_process(headerobj, filenames):
         result |= headerobj.process(realpath)
     return result
 
+
 class TestHunterModule(unittest.TestCase):
 
     def test_implied_source_nonexistent_file(self):
@@ -34,8 +35,33 @@ class TestHunterModule(unittest.TestCase):
         result = ct.hunter.implied_source(filename)
         self.assertEqual(expected,result)
 
-    @unittest.skipUnless(sys.platform.startswith("linux"),"test_ht_and_hd_generate_same_results relies on XDG_CACHE_HOME")
+    def _ht_hd_tester(self, filename, extra_args=[]):
+        """ For a given filename call HeaderTree.process() and HeaderDependencies.process """
+        realpath = ct.wrappedos.realpath(filename)
+        argv = ['ct-test',realpath] + extra_args
+        ht = ct.hunter.HeaderTree(argv)
+        hd = ct.hunter.HeaderDependencies(argv)
+        htresult = ht.process(realpath)
+        hdresult = hd.process(realpath)
+        self.assertSetEqual(htresult,hdresult)
+
     def test_ht_and_hd_generate_same_results(self):
+        filenames = ['samples/factory/test_factory.cpp', 'samples/numbers/test_direct_include.cpp']
+        for filename in filenames:
+            self._ht_hd_tester(filename)
+
+    def test_ht_and_hd_generate_same_results_preprocess(self):
+        filenames = ['samples/factory/test_factory.cpp', 'samples/numbers/test_direct_include.cpp']
+        for filename in filenames:
+            self._ht_hd_tester(filename, ["--preprocess"])
+
+    def test_ht_and_hd_generate_same_results_nodirectread(self):
+        filenames = ['samples/factory/test_factory.cpp', 'samples/numbers/test_direct_include.cpp']
+        for filename in filenames:
+            self._ht_hd_tester(filename, ["--no-directread"])
+
+    @unittest.skipUnless(sys.platform.startswith("linux"),"test_ht_and_hd_generate_same_results relies on XDG_CACHE_HOME")
+    def test_ht_and_hd_generate_same_results_ex(self):
         """ Test that HeaderTree and HeaderDependencies give the same results.
             Rather than polluting the real ct cache, use temporary cache 
             directories.
@@ -78,27 +104,6 @@ class TestHunterModule(unittest.TestCase):
         shutil.rmtree(tempdir)
         os.environ['XDG_CACHE_HOME'] = origcache
 
-    def test_ht_and_hd_generate_same_results_preprocess(self):
-        filenames = ['samples/factory/test_factory.cpp', 'samples/numbers/test_direct_include.cpp']
-        for filename in filenames:
-            realpath = ct.wrappedos.realpath(filename)
-            argv = ['ct-test',realpath,'--preprocess']
-            ht = ct.hunter.HeaderTree(argv)
-            hd = ct.hunter.HeaderDependencies(argv)
-            htresult = ht.process(realpath)
-            hdresult = hd.process(realpath)
-            self.assertSetEqual(htresult,hdresult)
-
-    def test_ht_and_hd_generate_same_results_directread(self):
-        filenames = ['samples/factory/test_factory.cpp', 'samples/numbers/test_direct_include.cpp']
-        for filename in filenames:
-            realpath = ct.wrappedos.realpath(filename)
-            argv = ['ct-test',realpath,'--directread']
-            ht = ct.hunter.HeaderTree(argv)
-            hd = ct.hunter.HeaderDependencies(argv)
-            htresult = ht.process(realpath)
-            hdresult = hd.process(realpath)
-            self.assertSetEqual(htresult,hdresult)
 
 if __name__ == '__main__':
     unittest.main()
