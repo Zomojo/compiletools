@@ -60,8 +60,7 @@ class TestHunterModule(unittest.TestCase):
         for filename in filenames:
             self._ht_hd_tester(filename, ["--no-directread"])
 
-    @unittest.skipUnless(sys.platform.startswith("linux"),"test_ht_and_hd_generate_same_results relies on XDG_CACHE_HOME")
-    def test_ht_and_hd_generate_same_results_ex(self):
+    def _ht_and_hd_generate_same_results_ex(self, extra_args=[]):
         """ Test that HeaderTree and HeaderDependencies give the same results.
             Rather than polluting the real ct cache, use temporary cache 
             directories.
@@ -73,7 +72,7 @@ class TestHunterModule(unittest.TestCase):
         
         tempdir = tempfile.mkdtemp()
         filenames = ['samples/factory/test_factory.cpp', 'samples/numbers/test_direct_include.cpp']
-        argv = ['ct-test'] + filenames
+        argv = ['ct-test'] + extra_args + filenames
 
         # The following paragraphs are cut-n-paste  because my current level of
         # python prowess was insufficient in the attempt to move it to a function.
@@ -104,6 +103,18 @@ class TestHunterModule(unittest.TestCase):
         shutil.rmtree(tempdir)
         os.environ['XDG_CACHE_HOME'] = origcache
 
+
+    @unittest.skipUnless(sys.platform.startswith("linux"),"test_ht_and_hd_generate_same_results relies on XDG_CACHE_HOME")
+    def test_ht_and_hd_generate_same_results_ex(self):
+        self._ht_and_hd_generate_same_results_ex()
+
+    @unittest.skipUnless(sys.platform.startswith("linux"),"test_ht_and_hd_generate_same_results relies on XDG_CACHE_HOME")
+    def test_ht_and_hd_generate_same_results_ex_preprocess(self):
+        self._ht_and_hd_generate_same_results_ex(["--preprocess"])
+
+    @unittest.skipUnless(sys.platform.startswith("linux"),"test_ht_and_hd_generate_same_results relies on XDG_CACHE_HOME")
+    def test_ht_and_hd_generate_same_results_ex_nodirectread(self):
+        self._ht_and_hd_generate_same_results_ex(["--no-directread"])
 
 if __name__ == '__main__':
     unittest.main()
