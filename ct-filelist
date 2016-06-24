@@ -12,7 +12,9 @@ def check_filename(filename):
             "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(filename))
         exit(1)
 
-if __name__ == '__main__':
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
     config_files = ct.utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Determine header and source dependencies of a C/C++ file. ',
@@ -29,8 +31,8 @@ if __name__ == '__main__':
         nargs='+')
 
     # This will add the common arguments as a side effect
-    hh = Hunter()
-    myargs = cap.parse_known_args()
+    hh = Hunter(argv)
+    myargs = cap.parse_known_args(argv[1:])
     ct.utils.verbose_print_args(myargs[0])
 
     check_filename(myargs[0].filename[0])
@@ -42,3 +44,6 @@ if __name__ == '__main__':
 
     for filename in results:
         print( filename )
+
+if __name__ == '__main__':
+    main()
