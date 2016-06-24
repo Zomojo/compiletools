@@ -12,10 +12,10 @@ class CMakefileCreator:
     """ Create a CMakefile.txt based on the filename, --static and --dynamic command line options """
 
     def __init__(self, cap, variant, argv=None):
-        self.namer = ct.utils.Namer(cap, variant)
+        self.namer = ct.utils.Namer(cap, variant, argv)
         ct.utils.add_target_arguments(cap)
         ct.utils.add_link_arguments(cap)
-        self.hunter = Hunter()
+        self.hunter = Hunter(argv)
 
         self.args = None
         # self.args will exist after this call
@@ -64,8 +64,10 @@ class CMakefileCreator:
                                     self.namer.executable_dir(src_realpath),
                                     ")\n\n"]))
 
-if __name__ == '__main__':
-    variant = ct.utils.extract_variant_from_argv()
+def main(argv=None):
+    if argv is None:
+        argv = sys.argv
+    variant = ct.utils.extract_variant_from_argv(argv)
     config_files = ct.utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a CMakefile.txt that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.',
@@ -78,7 +80,10 @@ if __name__ == '__main__':
         help="Manually specify the config file path if you want to override the variant default")
 
     cmakefile_creator = CMakefileCreator(cap, variant)
-    myargs = cap.parse_known_args()
+    myargs = cap.parse_known_args(argv[1:])
     ct.utils.verbose_print_args(myargs[0])
 
     cmakefile_creator.create()
+
+if __name__ == '__main__':
+    main()
