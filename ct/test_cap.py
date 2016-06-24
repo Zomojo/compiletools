@@ -2,6 +2,7 @@ from __future__ import print_function
 import unittest
 import configargparse
 
+import ct.unittesthelper as uth
 
 def add_to_parser_in_func(recursion_depth=0):
     if recursion_depth < 6:
@@ -28,6 +29,9 @@ def add_to_parser_in_func(recursion_depth=0):
         parsed_args = cap.parse_known_args(args=["-v"])
 
 class TestConfigArgParse(unittest.TestCase):
+
+    def setUp(self):
+        uth.delete_existing_parsers()
 
     def test_multiple_parse_known_args(self):
         non_existent_config_files = ['/blah/foo.conf','/usr/bin/ba.conf']

@@ -1,9 +1,13 @@
 from __future__ import print_function
 import unittest
+import ct.unittesthelper as uth
 import ct.listvariants
 
 
 class TestListVariants(unittest.TestCase):
+
+    def setUp(self):
+        uth.delete_existing_parsers()
 
     def test_none_found(self):
         # These values are deliberately chosen so that we can know that

@@ -2,10 +2,14 @@ from __future__ import print_function
 import unittest
 import os
 import sys
+import ct.unittesthelper as uth
 import ct.cppdeps
 
 
 class TestCPPDeps(unittest.TestCase):
+
+    def setUp(self):
+        uth.delete_existing_parsers()
 
     def test_cppdeps(self):
         ct.cppdeps.main([os.path.realpath('ct-cppdeps'),
