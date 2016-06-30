@@ -1,3 +1,4 @@
+from __future__ import print_function
 import configargparse
 
 def delete_existing_parsers():
@@ -6,5 +7,4 @@ def delete_existing_parsers():
         This function will delete them so you are 
         starting with a clean slate
     """
-    for name, parser in configargparse._parsers.items():
-        del parser
+    configargparse._parsers = {}
