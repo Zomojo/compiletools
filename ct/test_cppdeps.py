@@ -26,5 +26,8 @@ class TestCPPDeps(unittest.TestCase):
             "/data/home/geoff/Cake/samples/numbers/get_numbers.hpp"]
         self.assertEquals(expected_output.sort(), output.sort())
 
+    def tearDown(self):
+        uth.delete_existing_parsers()
+
 if __name__ == '__main__':
     unittest.main()

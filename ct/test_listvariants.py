@@ -29,5 +29,8 @@ class TestListVariants(unittest.TestCase):
             argv=argv)
         self.assertEqual(expected_output, output)
 
+    def tearDown(self):
+        uth.delete_existing_parsers()
+
 if __name__ == '__main__':
     unittest.main()

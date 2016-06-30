@@ -249,6 +249,8 @@ def common_substitutions(args):
         except:
             pass
         finally:
+            if args.verbose >= 4:                
+                print("Using '" + str(filename) + "' to determine the git root to include.")
             args.include.append(git_utils.find_git_root(filename))
 
     # Add all the include paths to all three compile flags

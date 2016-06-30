@@ -21,13 +21,16 @@ class TestMakefile(unittest.TestCase):
 
         relativepaths = ['samples/numbers/test_direct_include.cpp']
         realpaths = [ os.path.join(cakedir,filename) for filename in relativepaths]
-        ct.makefile.main(['ct-test-makefile','-vvvv','--CXXFLAGS=-std=c++1z', '--filename'] + realpaths)
+        ct.makefile.main(['ct-test-makefile','-vvvv','--CXXFLAGS=-std=c++1z'] + realpaths)
         
         #cmd = ['make']
         #subprocess.check_output(cmd, universal_newlines=True)
         self.assertTrue(True)
         # Cleanup
         shutil.rmtree(tempdir)
+
+    def tearDown(self):
+        uth.delete_existing_parsers()
 
 if __name__ == '__main__':
     unittest.main()

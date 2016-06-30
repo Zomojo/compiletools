@@ -56,6 +56,8 @@ class TestConfigArgParse(unittest.TestCase):
             help="Manually specify the config file path if you want to override the variant default")
         parsed_args = cap.parse_known_args(args=['--variant','release'])
 
-        
+    def tearDown(self):
+        uth.delete_existing_parsers()
+
 if __name__ == '__main__':
     unittest.main()

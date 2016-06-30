@@ -10,6 +10,7 @@ try:
 except NameError:
     from importlib import reload
 
+import ct.unittesthelper as uth
 import ct.wrappedos
 from ct.hunter import HeaderTree
 from ct.hunter import HeaderDependencies
@@ -24,6 +25,9 @@ def call_process(headerobj, filenames):
 
 
 class TestHunterModule(unittest.TestCase):
+
+    def setUp(self):
+        uth.delete_existing_parsers()
 
     def test_implied_source_nonexistent_file(self):
         self.assertIsNone(ct.hunter.implied_source('nonexistent_file.hpp'))
@@ -72,8 +76,7 @@ class TestHunterModule(unittest.TestCase):
         
         tempdir = tempfile.mkdtemp()
         filenames = ['samples/factory/test_factory.cpp', 'samples/numbers/test_direct_include.cpp']
-        argv = ['ct-test'] + extra_args + filenames
-
+        argv = ['ct-test','--variant','debug','--CPPFLAGS=-std=c++1z'] + extra_args + filenames
         # The following paragraphs are cut-n-paste  because my current level of
         # python prowess was insufficient in the attempt to move it to a function.
         # It is the reload that defeats me.
@@ -115,6 +118,9 @@ class TestHunterModule(unittest.TestCase):
     @unittest.skipUnless(sys.platform.startswith("linux"),"test_ht_and_hd_generate_same_results relies on XDG_CACHE_HOME")
     def test_ht_and_hd_generate_same_results_ex_nodirectread(self):
         self._ht_and_hd_generate_same_results_ex(["--no-directread"])
+
+    def tearDown(self):
+        uth.delete_existing_parsers()
 
 if __name__ == '__main__':
     unittest.main()

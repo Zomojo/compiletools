@@ -238,9 +238,8 @@ def main(argv=None):
         print(argv)
     variant = ct.utils.extract_variant_from_argv(argv)
     cap = configargparse.getArgumentParser()
-    makefile_creator = MakefileCreator(cap, variant, argv)
-
-    myargs = cap.parse_known_args(argv[1:])
+    makefile_creator = MakefileCreator(parser=cap, variant=variant, argv=argv)
+    myargs = cap.parse_known_args(args=argv[1:])
     ct.utils.verbose_print_args(myargs[0])
 
     makefile_creator.create()
