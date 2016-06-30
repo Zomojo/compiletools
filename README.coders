@@ -1,5 +1,10 @@
 This files contains notes to coders who want to contribute to the project
 
+#
+# Code Style
+#
+The code must run under both python2.7 and 3.x
+
 Write code following the PEP 8 style guide.  
 While I dislike some of PEP 8, making it the convention avoids bike shed arguments.
 Before check-in you should format the code using
@@ -7,6 +12,17 @@ Before check-in you should format the code using
 autopep8 --in-place --aggressive --aggressive somefile.py
 
 
+#
+# Running unittests
+#
+The unit tests are written using the python unittest framework.  They can be run using
+python3 -m unittest discover -b
+nosetests
+noestests-3.x  (where is is appropriate to your machine)
+
+#
+# Caches/Performance
+#
 When you are doing performance testing there are 3 caches you need to be aware of
 
 1) ccache:  This can be cleaned by ccache -C
