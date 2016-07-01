@@ -6,21 +6,27 @@ import ct.utils
 
 
 def find_possible_variants(
-        user_home_dir=None,
+        user_config_dir=None,
         system_config_dir=None,
         argv=None):
     output = [
         "From highest to lowest priority configuration directories, the possible variants are: "]
     for cfg_dir in ct.utils.default_config_directories(
-            user_home_dir=user_home_dir,
+            user_config_dir=user_config_dir,
             system_config_dir=system_config_dir,
             argv=argv):
         output.append(cfg_dir)
+        cfgs = []
         try:
             for cfg_file in os.listdir(cfg_dir):
                 if fnmatch.fnmatch(cfg_file, '*.conf'):
-                    output.append("\t" + os.path.splitext(cfg_file)[0])
-        except:
+                    cfgs.append("\t" + os.path.splitext(cfg_file)[0])
+        except OSError:
+            pass
+
+        if not cfgs:
             output.append("\tNone found")
+        else:
+            output.extend(cfgs)
 
     return output

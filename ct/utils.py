@@ -3,6 +3,7 @@ import collections
 import os
 import sys
 import configargparse
+import appdirs
 import ct.wrappedos
 from ct.memoize import memoize
 import ct.git_utils as git_utils
@@ -76,32 +77,28 @@ def extract_variant_from_argv(argv=None):
 
 
 def default_config_directories(
-        user_home_dir=None,
+        user_config_dir=None,
         system_config_dir=None,
         argv=None):
     # Use configuration in the order (lowest to highest priority)
     # 1) same path as exe,
-    # 2) system config
-    # 3) user config
+    # 2) system config (XDG compliant.  /etc/xdg/ct)
+    # 3) user config   (XDG compliant. ~/.config/ct)
     # 4) given on the command line
     # 5) environment variables
 
-    # TODO: use the python xdg module to make this more robust
-
     # These variables are settable to assist writing tests
-    if user_home_dir is None:
-        user_home_dir = os.path.expanduser("~")
+    if user_config_dir is None:
+        user_config_dir = appdirs.user_config_dir(appname='ct')
     if system_config_dir is None:
-        system_config_dir = "/etc"
+        system_config_dir = appdirs.site_config_dir(appname='ct')
     if argv is None:
         argv = sys.argv
 
-    user_config_dir = os.path.join(user_home_dir, ".config/ct/")
-    system_config_dir = os.path.join(system_config_dir, "ct.conf.d/")
     executable_config_dir = os.path.join(
         ct.wrappedos.dirname(
             ct.wrappedos.realpath(argv[0])),
-        "ct.conf.d/")
+        "ct.conf.d")
     return [user_config_dir, system_config_dir, executable_config_dir]
 
 
