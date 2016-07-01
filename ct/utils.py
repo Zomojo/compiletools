@@ -106,9 +106,8 @@ def config_files_from_variant(variant=None, argv=None):
     if variant is None:
         variant = extract_variant_from_argv(argv)
     return [
-        defaultdir +
-        variant +
-        ".conf" for defaultdir in default_config_directories(argv=argv)]
+        os.path.join(defaultdir, variant)
+        + ".conf" for defaultdir in default_config_directories(argv=argv)]
 
 
 def add_common_arguments(cap):
@@ -237,18 +236,17 @@ def common_substitutions(args):
     # Unless turned off, the git root will be added to the list of include
     # paths
     if args.git_root and hasattr(args, 'filename'):
-        filename = None
-        # The filename/s in args could be either a string or a list
-        try:
-            filename = args.filename[0]
-        except AttributeError:
-            filename = args.filename
-        except:
-            pass
-        finally:
-            if args.verbose >= 4:                
-                print("Using '" + str(filename) + "' to determine the git root to include.")
-            args.include.append(git_utils.find_git_root(filename))
+        git_roots = set()
+
+        # No matter whether args.filename is a single value or a list,
+        # filenames will be a list
+        filenames = []
+        filenames.extend(args.filename)
+
+        for filename in filenames:
+            git_roots.add(git_utils.find_git_root(filename))
+
+        args.include.extend(git_roots)
 
     # Add all the include paths to all three compile flags
     if args.include:
