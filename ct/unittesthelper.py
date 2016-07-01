@@ -1,5 +1,6 @@
 from __future__ import print_function
 import configargparse
+import os
 
 def delete_existing_parsers():
     """ The singleton parsers supplied by configargparse 
@@ -8,3 +9,6 @@ def delete_existing_parsers():
         starting with a clean slate
     """
     configargparse._parsers = {}
+
+def is_executable(filename):
+    return os.path.isfile(filename) and os.access(filename,os.X_OK)
