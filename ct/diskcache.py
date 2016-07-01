@@ -136,6 +136,7 @@ class diskcache:
         if not ct.wrappedos.isfile(filename):
             try:
                 os.remove(cachefile)
+                self._memcache[cachefile] = None
             except OSError:
                 pass
             return
