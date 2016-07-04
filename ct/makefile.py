@@ -54,9 +54,9 @@ class MakefileCreator:
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
     def __init__(self, parser, variant, argv=None):
-        self.namer = ct.utils.Namer(parser, variant, argv)
         ct.utils.add_target_arguments(parser)
         ct.utils.add_link_arguments(parser)
+        ct.utils.add_output_directory_arguments(parser, variant)
 
         # Keep track of what build artifacts are created for easier cleanup
         self.objects = set()
@@ -69,6 +69,7 @@ class MakefileCreator:
         # self.args will exist after this call
         ct.utils.setattr_args(self,argv)
 
+        self.namer = ct.utils.Namer(parser, variant, argv)
         self.hunter = Hunter(argv)
 
     def create(self):
@@ -76,6 +77,7 @@ class MakefileCreator:
         # duplicated many times)
         realpath_sources = [ct.wrappedos.realpath(filename)
                             for filename in self.args.filename]
+        realpath_sources.sort()
         all_exes_dirs = [
             self.namer.executable_dir(source) for source in realpath_sources]
         all_exes = [self.namer.executable_pathname(
