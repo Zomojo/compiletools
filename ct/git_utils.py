@@ -2,9 +2,10 @@ import os
 import subprocess
 from ct.memoize import memoize
 
-
 def find_git_root(filename=None):
     """ Return the absolute path of .git for the given filename """
+    # Note: You can't memoize this one since the None parameter will 
+    # return different results as the cwd changes
     if filename:
         directory = os.path.dirname(os.path.realpath(filename))
     else:
