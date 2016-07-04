@@ -245,8 +245,12 @@ class Hunter:
         utils.setattr_args(self, argv)
 
         if self.args.directread:
+            if self.args.verbose >= 4:
+                print("Using HeaderTree to trace dependencies")
             self.header_deps = HeaderTree(argv)
         else:
+            if self.args.verbose >= 4:
+                print("Using HeaderDependencies to trace dependencies")
             self.header_deps = HeaderDependencies(argv)
 
         # Extra command line options will now be understood so reprocess the commandline
@@ -328,7 +332,7 @@ class Hunter:
         flags_for_filename = self.reparse_magic_flags(realpath)
         self.magic_flags[realpath] = flags_for_filename
 
-    @memoize
+    #@memoize
     def _required_files_impl(self, realpath, source_only=True):
         """ The recursive implementation that finds the source files.
             Necessary because we don't want to wipe out the cycle detection.
@@ -337,7 +341,6 @@ class Hunter:
             It is a precondition that realpath actually is a realpath.
         """
 
-        self.cycle_detection.add(realpath)
 
         if realpath not in self.magic_flags:
             self.parse_magic_flags(realpath)
@@ -365,6 +368,7 @@ class Hunter:
         if self.args.verbose >= 9:
             print("Hunter::_required_files_impl. Adding " + realpath + " to the encountered_files")
         encountered_files = set([realpath])
+        self.cycle_detection.add(realpath)
 
         if not source_only:
             # Now if the magic source specified a source file this will miss them when source_only = True
