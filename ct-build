@@ -1,0 +1,7 @@
+#!/bin/bash
+
+all_exes=$(find . -name '*.c*' |xargs grep -l main\()
+ct-create-makefile $all_exes "$@"
+
+cpu_count=$(cat /proc/cpuinfo |grep processor | wc -l)
+make -j$((2*cpu_count))
