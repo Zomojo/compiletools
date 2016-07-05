@@ -48,7 +48,9 @@ class TestMakefile(unittest.TestCase):
         origdir = os.getcwd()
 
         tempdir1 = tempfile.mkdtemp()
-        self._create_makefile_and_make(samplesdir, tempdir1)
+        self._create_makefile_and_make(
+            ct.unittesthelper.samplesdir(),
+            tempdir1)
 
         # Verify that the Makefiles and build products are identical between the two runs
         # This doesn't work because the Namer uses the wrappedos functions that cache
