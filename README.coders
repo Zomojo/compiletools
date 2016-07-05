@@ -31,6 +31,7 @@ When you are doing performance testing there are 3 caches you need to be aware o
             So on linux that means the XDG user cache directory which defaults to $HOME/.cache/ct.  
                 rm -rf ~/.cache/ct
             Note that it obeys the XDG variables.  Alter XDG_CACHE_HOME if you need to move the cache.
+            ct-cache-clean will correctly remove the cache as specified by the XDG_CACHE_HOME
 
 #
 # Gotchas
@@ -40,4 +41,4 @@ If you encounter
     ValueError: unsupported pickle protocol: 3
 
 its because you are doing python2/3 testing and the pickled cache is in python3 format 
-and you are currently testing in python2.  Solution is to remove the ct cache.
+and you are currently testing in python2.  Solution is to remove the ct cache (ct-cache-clean).
