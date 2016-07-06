@@ -1,6 +1,7 @@
 #!/bin/bash
 
-all_exes=$(find . -name '*.c*' |xargs grep -l main\()
+# TODO: compile c source too. don't look in bindir, objdir for source files
+all_exes=$(find . -name '*.cpp' |xargs grep -l main\( | tr '\n' ' ')
 ct-create-makefile $all_exes "$@"
 
 cpu_count=$(cat /proc/cpuinfo |grep processor | wc -l)
