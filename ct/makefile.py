@@ -75,29 +75,54 @@ class MakefileCreator:
     def create(self):
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
-        realpath_sources = [ct.wrappedos.realpath(filename)
-                            for filename in self.args.filename]
-        realpath_sources.sort()
-        all_exes_dirs = [
-            self.namer.executable_dir(source) for source in realpath_sources]
-        all_exes = [self.namer.executable_pathname(
-            source) for source in realpath_sources]
+        realpaths = list()
+        all_outputs = list()
+        if self.args.filename:
+            realpath_sources = [ct.wrappedos.realpath(filename)
+                                for filename in self.args.filename]
+            realpath_sources.sort()
+            realpaths.extend(realpath_sources)
+            all_exes = [self.namer.executable_pathname(source) for source in realpath_sources]
+            all_outputs.extend(all_exes)
+
+        if self.args.static:
+            realpath_static = [ct.wrappedos.realpath(filename)
+                                for filename in self.args.static]
+            realpaths.extend(realpath_static)
+            all_outputs.append(self.namer.staticlibrary_pathname(realpath_static[0]))
+
+        if self.args.dynamic:
+            realpath_dynamic = [ct.wrappedos.realpath(filename)
+                                for filename in self.args.dynamic]
+            realpaths.extend(realpath_dynamic)
+            all_outputs.append(self.namer.dynamiclibrary_pathname(realpath_dynamic[0]))
+
+        all_output_dirs = [
+            self.namer.executable_dir(source) for source in realpaths]
+        
 
         # By using a set, duplicate rules will be eliminated.
         rule_all = Rule(
             target="all",
-            prerequisites=" ".join(["mkdir_output"] + all_exes),
+            prerequisites=" ".join(["mkdir_output"] + all_outputs),
             phony=True)
         self.rules.add(rule_all)
 
-        self.rules |= self._create_makefile_rules_for_sources(realpath_sources)
+        if self.args.filename:
+            self.rules |= self._create_makefile_rules_for_sources(realpath_sources,exe_static_dynamic='exe')
+
+        if self.args.static:
+            self.rules |= self._create_makefile_rules_for_sources(realpath_static,exe_static_dynamic='static')
+
+        if self.args.dynamic:
+            self.rules |= self._create_makefile_rules_for_sources(realpath_dynamic,exe_dynamic_dynamic='dynamic')
 
         rule_mkdir_output = Rule(
             target="mkdir_output",
             prerequisites="",
             recipe=" ".join(
                 ["mkdir -p"] +
-                all_exes_dirs +
+                all_output_dirs +
                 list(
                     self.object_directories)),
             phony=True)
@@ -120,7 +145,7 @@ class MakefileCreator:
             prerequisites="",
             recipe=" ".join(
                 ["rm -f"] +
-                all_exes +
+                all_outputs +
                 list(
                     self.objects) +
                 [";"] +
@@ -163,58 +188,82 @@ class MakefileCreator:
                                                                                         obj_name,
                                                                                         source]))
 
-    def _create_link_rule(self, source_filename, complete_sources):
+    def _create_link_rule(self, outputname, complete_sources, linker, linkerflags):
         """ For a given source file (so usually the file with the main) and the
             set of complete sources (i.e., all the other source files + the original)
             return the link rule required for the Makefile
         """
-
-        exe_name = self.namer.executable_pathname(
-            ct.wrappedos.realpath(source_filename))
         object_names = " ".join(
             self.namer.object_pathname(source) for source in complete_sources)
 
         all_magic_ldflags = set()
         for source in complete_sources:
-            magic_flags = self.hunter.magic()[source]
+            magic_flags = self.hunter.magic().get(source,{})
             all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
             all_magic_ldflags |= magic_flags.get(
                 'LINKFLAGS',
                 set())  # For backward compatibility with cake
 
-        return Rule(target=exe_name,
+        return Rule(target=outputname,
                     prerequisites=object_names,
-                    recipe=" ".join([self.args.LD,
-                                     self.args.LDFLAGS] + ["-o",
-                                                           exe_name,
+                    recipe=" ".join([linker,
+                                     linkerflags] + ["-o",
+                                                           outputname,
                                                            object_names] + list(all_magic_ldflags)))
 
-    def _create_makefile_rules_for_sources(self, sources):
-        """ For all the given source files return the set of rules required for the Makefile """
+    def _create_link_rule_exe(self, sourcefilename, completesources):
+        exename = self.namer.executable_pathname(
+            ct.wrappedos.realpath(sourcefilename))
+        return self._create_link_rule(exename, completesources, self.args.LD, self.args.LDFLAGS)
 
+    def _create_link_rule_static_library(self, sourcefilename, completesources):
+        outputname = self.namer.staticlibrary_pathname(ct.wrappedos.realpath(sourcefilename))
+        return self._create_link_rule(outputname, completesources, "ar -src","")
+
+    def _create_link_rule_dynamic_library(self, sourcefilename, completesources):
+        flags = self.hunter.magic()[sourcefilename]
+        flags.setdefault('LDFLAGS', set()).add('-shared')
+        outputname = self.namer.dynamiclibrary_pathname(ct.wrappedos.realpath(sourcefilename))
+        return self._create_link_rule(outputname, completesources, self.args.LD, self.args.LDFLAGS)
+
+    def _create_makefile_rules_for_sources(self, sources, exe_static_dynamic):
+        """ For all the given source files return the set of rules required
+            for the Makefile that will turn the source files into executables.
+        """
 
         # The set of rules needed to turn the source file into an executable
         # (or library as appropriate)
         rules_for_source = ct.utils.OrderedSet()
        
         # Output all the link rules
-        for source in sources:
-            complete_sources = self.hunter.required_source_files(source)
-            if self.args.verbose >= 6:
-                print(
-                    "Complete list of implied source files for " +
-                    source +
-                    ": " +
-                    " ".join(
-                        cs for cs in complete_sources))
-            rules_for_source.add(self._create_link_rule(source, complete_sources))
+        if 'exe' in exe_static_dynamic:
+            for source in sources:
+                completesources = self.hunter.required_source_files(source)
+                if self.args.verbose >= 6:
+                    print(
+                        "Complete list of implied source files for " +
+                        source +
+                        ": " +
+                        " ".join(
+                            cs for cs in completesources))
+                linkrules = self._create_link_rule_exe(source, completesources)
+                rules_for_source.add(linkrules)
+        elif 'static' in exe_static_dynamic:
+            linkrules = self._create_link_rule_static_library(sources[0], sources)
+            rules_for_source.add(linkrules)
+        elif 'dynamic' in exe_static_dynamic:
+            linkrules = self._create_link_rule_dynamic_library(sources[0], sources)
+            rules_for_source.add(linkrules)
+        else:
+            raise Exception('Unknown exe_static_dynamic')
+
 
         # Output all the compile rules
         for source in sources:
             # Reset the cycle detection because we are starting a new source file
             cycle_detection = set()
-            complete_sources = self.hunter.required_source_files(source)
-            for item in complete_sources:
+            completesources = self.hunter.required_source_files(source)
+            for item in completesources:
                 if item not in cycle_detection:
                     cycle_detection.add(item)
                     rules_for_source.add(

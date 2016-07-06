@@ -188,15 +188,15 @@ def add_target_arguments(cap):
     """ Insert the arguments that control what targets get created
         into the configargparse singleton.
     """
-    cap.add("filename", nargs="*", help="File to compile to an executable")
+    cap.add("filename", nargs="*", help="File(s) to compile to an executable(s)")
     cap.add(
         "--dynamic",
         nargs='*',
-        help="File to compile to an dynamic library")
+        help="File(s) to compile to a dynamic library")
     cap.add(
         "--static",
         nargs='*',
-        help="File to compile to an dynamic library")
+        help="File(s) to compile to a static library")
 
 
 def unsupplied_replacement(variable, default_variable, verbose, variable_str):
@@ -305,54 +305,77 @@ class Namer(object):
         setattr_args(self, argv)
 
     @memoize
-    def object_dir(self, source_filename):
+    def object_dir(self, sourcefilename):
         """ Put objects into a directory structure that starts with the
             command line objdir but then replicates the project directory
             structure.  This way we can separate object files that have
             the same name but different paths.
         """
-        project_pathname = git_utils.strip_git_root(source_filename)
+        project_pathname = git_utils.strip_git_root(sourcefilename)
         relative = "".join(
             [self.args.objdir, "/", ct.wrappedos.dirname(project_pathname)])
         return ct.wrappedos.realpath(relative)
 
     @memoize
-    def object_name(self, source_filename):
+    def object_name(self, sourcefilename):
         """ Return the name (not the path) of the object file
             for the given source.
         """
-        name = os.path.split(source_filename)[1]
+        name = os.path.split(sourcefilename)[1]
         basename = os.path.splitext(name)[0]
         return "".join([basename, ".o"])
 
     @memoize
-    def object_pathname(self, source_filename):
-        return "".join([self.object_dir(source_filename),
-                        "/", self.object_name(source_filename)])
+    def object_pathname(self, sourcefilename):
+        return "".join([self.object_dir(sourcefilename),
+                        "/", self.object_name(sourcefilename)])
 
     @memoize
-    def executable_dir(self, source_filename):
+    def executable_dir(self, sourcefilename):
         """ Put the binaries into a directory structure that starts with the
             command line bindir but then replicates the project directory
             structure.  This way we can separate executable files that have
             the same name but different paths.
         """
-        project_pathname = git_utils.strip_git_root(source_filename)
+        project_pathname = git_utils.strip_git_root(sourcefilename)
         relative = "".join(
             [self.args.bindir, "/", ct.wrappedos.dirname(project_pathname)])
         return ct.wrappedos.realpath(relative)
 
     @memoize
-    def executable_name(self, source_filename):
-        name = os.path.split(source_filename)[1]
+    def executable_name(self, sourcefilename):
+        name = os.path.split(sourcefilename)[1]
         return os.path.splitext(name)[0]
 
     @memoize
-    def executable_pathname(self, source_filename):
-        return "".join([self.executable_dir(source_filename),
+    def executable_pathname(self, sourcefilename):
+        return "".join([self.executable_dir(sourcefilename),
                         "/",
-                        self.executable_name(source_filename)])
+                        self.executable_name(sourcefilename)])
 
+    @memoize
+    def staticlibrary_name(self, sourcefilename):
+        name = os.path.split(sourcefilename)[1]
+        return "lib" + os.path.splitext(name)[0] + ".a"
+
+    @memoize
+    def staticlibrary_pathname(self, sourcefilename):
+        """ Put static libraries in the same directory as executables """
+        return "".join([self.executable_dir(sourcefilename),
+                        "/",
+                        self.staticlibrary_name(sourcefilename)])
+
+    @memoize
+    def dynamiclibrary_name(self, sourcefilename):
+        name = os.path.split(sourcefilename)[1]
+        return "lib" + os.path.splitext(name)[0] + ".so"
+
+    @memoize
+    def dynamiclibrary_pathname(self, sourcefilename):
+        """ Put dynamic libraries in the same directory as executables """
+        return "".join([self.executable_dir(sourcefilename),
+                        "/",
+                        self.dynamiclibrary_name(sourcefilename)])
 
 class OrderedSet(collections.MutableSet):
 
