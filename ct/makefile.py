@@ -1,6 +1,7 @@
 # vim: set filetype=python:
 from __future__ import print_function
 import sys
+import os
 import configargparse
 import ct.wrappedos
 import ct.utils
@@ -165,37 +166,30 @@ class MakefileCreator:
             phony=True)
         self.rules.add(rule_mkdir_output)
 
-        # Use a "./" in front of files/directories to be removed to avoid any
-        # nasy surprises by files beginning with "-"
-        safe_rm_objdir = [
-            "find",
-            self.namer.object_dir(),
-            "-type d -empty -delete"]
-        safe_rm_bindir = [
-            "find",
-            self.namer.executable_dir(),
-            "-type d -empty -delete"]
+        recipe = " ".join(["rm -f",
+                           os.path.join(self.namer.executable_dir(),
+                                        '*'),
+                           " 2>/dev/null;"] + ["rm -f"] + all_outputs + list(self.objects) + [";find",
+                                                                                              self.namer.object_dir(),
+                                                                                              "-type d -empty -delete"])
+        if self.namer.executable_dir() != self.namer.object_dir():
+            recipe += " ".join([";find",
+                                self.namer.executable_dir(),
+                                "-type d -empty -delete"])
+
         rule_clean = Rule(
             target="clean",
             prerequisites="",
-            recipe=" ".join(
-                ["rm -f"] +
-                all_outputs +
-                list(
-                    self.objects) +
-                [";"] +
-                safe_rm_objdir +
-                [";"] +
-                safe_rm_bindir),
+            recipe=recipe,
             phony=True)
         self.rules.add(rule_clean)
 
+        recipe = " ".join(["rm -rf", self.namer.executable_dir()])
+        if self.namer.executable_dir() != self.namer.object_dir():
+            recipe += "; rm -rf " + self.namer.object_dir()
         rule_realclean = Rule(target="realclean",
                               prerequisites="",
-                              recipe=" ".join(["rm -rf",
-                                               self.namer.executable_dir(),
-                                               "; rm -rf",
-                                               self.namer.object_dir()]),
+                              recipe=recipe,
                               phony=True)
         self.rules.add(rule_realclean)
 
