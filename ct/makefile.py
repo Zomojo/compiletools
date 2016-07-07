@@ -63,7 +63,9 @@ class MakefileCreator:
         self.objects = set()
         self.object_directories = set()
 
-        # The rules need to be written to disk in a specific order
+        # By using a set, duplicate rules will be eliminated.
+        # However, rules need to be written to disk in a specific order
+        # so we use an OrderedSet
         self.rules = ct.utils.OrderedSet()
 
         self.args = None
@@ -73,11 +75,59 @@ class MakefileCreator:
         self.namer = ct.utils.Namer(parser, variant, argv)
         self.hunter = Hunter(argv)
 
+    def _create_all_rule(self, prerequisites):
+        """ Create the rule that in depends on all build products """
+        rule_all = Rule(
+            target="all",
+            prerequisites=" ".join(prerequisites),
+            phony=True)
+        self.rules.add(rule_all)
+
+    def _create_mkdir_rule(self, alloutputs):
+        outputdirs = [ct.wrappedos.dirname(output) for output in alloutputs]
+        recipe=" ".join(["mkdir -p"] + outputdirs + list(self.object_directories))
+        rule_mkdir_output = Rule(
+            target="mkdir_output",
+            prerequisites="",
+            recipe=recipe,
+            phony=True)
+        self.rules.add(rule_mkdir_output)
+
+    def _create_clean_rules(self, alloutputs):
+        rmcopiedexes = " ".join(["rm -f",
+                                os.path.join(self.namer.executable_dir(),'*'),
+                                " 2>/dev/null"])
+        rmtargetsandobjects = " ".join(["rm -f"] + alloutputs + list(self.objects))
+        rmemptydirs = " ".join(["find", self.namer.object_dir(), "-type d -empty -delete"])
+        recipe = ";".join([rmcopiedexes,rmtargetsandobjects,rmemptydirs])
+
+        if self.namer.executable_dir() != self.namer.object_dir():
+            recipe += " ".join([";find",
+                                self.namer.executable_dir(),
+                                "-type d -empty -delete"])
+
+        rule_clean = Rule(
+            target="clean",
+            prerequisites="",
+            recipe=recipe,
+            phony=True)
+        self.rules.add(rule_clean)
+
+        recipe = " ".join(["rm -rf", self.namer.executable_dir()])
+        if self.namer.executable_dir() != self.namer.object_dir():
+            recipe += "; rm -rf " + self.namer.object_dir()
+        rule_realclean = Rule(target="realclean",
+                              prerequisites="",
+                              recipe=recipe,
+                              phony=True)
+        self.rules.add(rule_realclean)
+
     def create(self):
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
         realpaths = list()
         all_outputs = list()
+        all_prerequisites = ["mkdir_output"]
 
         if self.args.static:
             realpath_static = [ct.wrappedos.realpath(filename)
@@ -86,6 +136,7 @@ class MakefileCreator:
             staticlibrarypathname = self.namer.staticlibrary_pathname(
                 realpath_static[0])
             all_outputs.append(staticlibrarypathname)
+            all_prerequisites.append("cp_static_libraries")
 
         if self.args.dynamic:
             realpath_dynamic = [ct.wrappedos.realpath(filename)
@@ -94,6 +145,7 @@ class MakefileCreator:
             dynamiclibrarypathname = self.namer.dynamiclibrary_pathname(
                 realpath_dynamic[0])
             all_outputs.append(dynamiclibrarypathname)
+            all_prerequisites.append("cp_dynamic_libraries")
 
         if self.args.filename:
             realpath_sources = sorted([ct.wrappedos.realpath(filename)
@@ -102,25 +154,10 @@ class MakefileCreator:
             all_exes = [
                 self.namer.executable_pathname(source) for source in realpath_sources]
             all_outputs.extend(all_exes)
-
-        all_output_dirs = [
-            self.namer.executable_dir(source) for source in realpaths]
-
-        # By using a set, duplicate rules will be eliminated.
-        all_prerequisites = ["mkdir_output"]
-        if self.args.static:
-            all_prerequisites.append("cp_static_libraries")
-        if self.args.dynamic:
-            all_prerequisites.append("cp_dynamic_libraries")
-        if self.args.filename:
             all_prerequisites.append("cp_executables")
-        all_prerequisites.extend(all_outputs)
 
-        rule_all = Rule(
-            target="all",
-            prerequisites=" ".join(all_prerequisites),
-            phony=True)
-        self.rules.add(rule_all)
+        all_prerequisites.extend(all_outputs)
+        self._create_all_rule(all_prerequisites)
 
         if self.args.filename:
             rule_cp_executables = Rule(
@@ -155,43 +192,8 @@ class MakefileCreator:
                 realpath_dynamic,
                 exe_static_dynamic='dynamic')
 
-        rule_mkdir_output = Rule(
-            target="mkdir_output",
-            prerequisites="",
-            recipe=" ".join(
-                ["mkdir -p"] +
-                all_output_dirs +
-                list(
-                    self.object_directories)),
-            phony=True)
-        self.rules.add(rule_mkdir_output)
-
-        recipe = " ".join(["rm -f",
-                           os.path.join(self.namer.executable_dir(),
-                                        '*'),
-                           " 2>/dev/null;"] + ["rm -f"] + all_outputs + list(self.objects) + [";find",
-                                                                                              self.namer.object_dir(),
-                                                                                              "-type d -empty -delete"])
-        if self.namer.executable_dir() != self.namer.object_dir():
-            recipe += " ".join([";find",
-                                self.namer.executable_dir(),
-                                "-type d -empty -delete"])
-
-        rule_clean = Rule(
-            target="clean",
-            prerequisites="",
-            recipe=recipe,
-            phony=True)
-        self.rules.add(rule_clean)
-
-        recipe = " ".join(["rm -rf", self.namer.executable_dir()])
-        if self.namer.executable_dir() != self.namer.object_dir():
-            recipe += "; rm -rf " + self.namer.object_dir()
-        rule_realclean = Rule(target="realclean",
-                              prerequisites="",
-                              recipe=recipe,
-                              phony=True)
-        self.rules.add(rule_realclean)
+        self._create_mkdir_rule(all_outputs)
+        self._create_clean_rules(all_outputs)
 
         self.write()
 
