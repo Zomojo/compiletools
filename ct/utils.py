@@ -188,7 +188,10 @@ def add_target_arguments(cap):
     """ Insert the arguments that control what targets get created
         into the configargparse singleton.
     """
-    cap.add("filename", nargs="*", help="File(s) to compile to an executable(s)")
+    cap.add(
+        "filename",
+        nargs="*",
+        help="File(s) to compile to an executable(s)")
     cap.add(
         "--dynamic",
         nargs='*',
@@ -305,15 +308,18 @@ class Namer(object):
         setattr_args(self, argv)
 
     @memoize
-    def object_dir(self, sourcefilename):
+    def object_dir(self, sourcefilename=None):
         """ Put objects into a directory structure that starts with the
             command line objdir but then replicates the project directory
             structure.  This way we can separate object files that have
             the same name but different paths.
         """
-        project_pathname = git_utils.strip_git_root(sourcefilename)
-        relative = "".join(
-            [self.args.objdir, "/", ct.wrappedos.dirname(project_pathname)])
+        if sourcefilename:
+            project_pathname = git_utils.strip_git_root(sourcefilename)
+            relative = "".join(
+                [self.args.objdir, "/", ct.wrappedos.dirname(project_pathname)])
+        else:
+            relative = self.args.objdir
         return ct.wrappedos.realpath(relative)
 
     @memoize
@@ -331,15 +337,19 @@ class Namer(object):
                         "/", self.object_name(sourcefilename)])
 
     @memoize
-    def executable_dir(self, sourcefilename):
+    def executable_dir(self, sourcefilename=None):
         """ Put the binaries into a directory structure that starts with the
             command line bindir but then replicates the project directory
             structure.  This way we can separate executable files that have
             the same name but different paths.
         """
-        project_pathname = git_utils.strip_git_root(sourcefilename)
-        relative = "".join(
-            [self.args.bindir, "/", ct.wrappedos.dirname(project_pathname)])
+        if sourcefilename:
+            project_pathname = git_utils.strip_git_root(sourcefilename)
+            relative = os.path.join(
+                self.args.bindir,
+                ct.wrappedos.dirname(project_pathname))
+        else:
+            relative = self.args.bindir
         return ct.wrappedos.realpath(relative)
 
     @memoize
@@ -376,6 +386,7 @@ class Namer(object):
         return "".join([self.executable_dir(sourcefilename),
                         "/",
                         self.dynamiclibrary_name(sourcefilename)])
+
 
 class OrderedSet(collections.MutableSet):
 

@@ -43,10 +43,7 @@ class TestMakefile(unittest.TestCase):
         self.assertSetEqual(expected_exes, actual_exes)
 
     def test_makefile(self):
-        ctdir = os.path.dirname(os.path.realpath(__file__))
-        samplesdir = os.path.realpath(os.path.join(ctdir, "../samples"))
         origdir = os.getcwd()
-
         tempdir1 = tempfile.mkdtemp()
         self._create_makefile_and_make(
             ct.unittesthelper.samplesdir(),
@@ -54,7 +51,7 @@ class TestMakefile(unittest.TestCase):
 
         # Verify that the Makefiles and build products are identical between the two runs
         # This doesn't work because the Namer uses the wrappedos functions that cache
-        # results.  They caching then doesn't see the current working directory has
+        # results.  The caching then doesn't see the current working directory has
         # changed. This is only a problem in testland so I'm putting it onto the long term
         # TODO list rather than fixing it now.
         #tempdir2 = tempfile.mkdtemp()
@@ -66,6 +63,37 @@ class TestMakefile(unittest.TestCase):
         os.chdir(origdir)
         shutil.rmtree(tempdir1)
         # shutil.rmtree(tempdir2)
+
+    def test_static_library(self):
+        """ Manually specify what files to turn into the static library and
+            test linkage
+        """
+        origdir = os.getcwd()
+        tempdir = tempfile.mkdtemp()
+        os.chdir(tempdir)
+
+        exerelativepath = 'numbers/test_library.cpp'
+        librelativepaths = [
+            'numbers/get_numbers.cpp',
+            'numbers/get_int.cpp',
+            'numbers/get_double.cpp']
+        samplesdir = ct.unittesthelper.samplesdir()
+        exerealpath = os.path.join(samplesdir, exerelativepath)
+        librealpaths = [
+            os.path.join(
+                samplesdir,
+                filename) for filename in librelativepaths]
+        argv = ['ct-test', '--static'] + \
+            librealpaths + ['--filename', exerealpath]
+        ct.makefile.main(argv)
+
+        cmd = ['make']
+        subprocess.check_output(cmd, universal_newlines=True)
+
+        # Cleanup
+        os.chdir(origdir)
+        # self.assertTrue(False)
+        shutil.rmtree(tempdir)
 
     def tearDown(self):
         uth.delete_existing_parsers()

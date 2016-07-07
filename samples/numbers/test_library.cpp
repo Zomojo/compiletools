@@ -9,7 +9,7 @@
 int get_int(void);
 double get_double(void);
 
-//#LINKFLAGS=-Lbin -lget_numbers
+//#LDFLAGS=-lget_numbers
 //#CXXFLAGS = -std=c++1z
 int main(int argc, char* argv[] )
 {
