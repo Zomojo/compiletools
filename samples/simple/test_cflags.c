@@ -1,4 +1,4 @@
-//#CFLAGS="-std=gnu99"
+//#CFLAGS=-std=gnu99
 
 int main(int argc, char** argv)
 {

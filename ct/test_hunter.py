@@ -196,6 +196,16 @@ class TestHunterModule(unittest.TestCase):
     def test_ht_and_hd_generate_same_results_ex_nodirectread(self):
         self._ht_and_hd_generate_same_results_ex(["--no-directread"])
 
+
+    def test_parsing_CFLAGS(self):
+        relativepath = 'simple/test_cflags.c'
+        samplesdir = ct.unittesthelper.samplesdir()
+        realpath = os.path.join(samplesdir, relativepath)
+        argv = ['ct-test', realpath]
+        hunter = ct.hunter.Hunter(argv)
+        hunter.required_files(realpath)
+        self.assertSetEqual(hunter.magic()[realpath].get('CFLAGS'),set(['-std=gnu99']))
+
     def tearDown(self):
         uth.delete_existing_parsers()
 
