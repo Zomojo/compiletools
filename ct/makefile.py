@@ -122,6 +122,14 @@ class MakefileCreator:
                               phony=True)
         self.rules.add(rule_realclean)
 
+    def _create_cp_rule(self, static_dynamic_executables, prerequisites):
+        rule_cp = Rule(
+            target="_".join(["cp",static_dynamic_executables]),
+            prerequisites=prerequisites,
+            recipe=" ".join(["cp", prerequisites, self.namer.executable_dir()]),
+            phony=True)
+        self.rules.add(rule_cp)
+        
     def create(self):
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
@@ -136,7 +144,7 @@ class MakefileCreator:
             staticlibrarypathname = self.namer.staticlibrary_pathname(
                 realpath_static[0])
             all_outputs.append(staticlibrarypathname)
-            all_prerequisites.append("cp_static_libraries")
+            all_prerequisites.append("cp_static_library")
 
         if self.args.dynamic:
             realpath_dynamic = [ct.wrappedos.realpath(filename)
@@ -145,7 +153,7 @@ class MakefileCreator:
             dynamiclibrarypathname = self.namer.dynamiclibrary_pathname(
                 realpath_dynamic[0])
             all_outputs.append(dynamiclibrarypathname)
-            all_prerequisites.append("cp_dynamic_libraries")
+            all_prerequisites.append("cp_dynamic_library")
 
         if self.args.filename:
             realpath_sources = sorted([ct.wrappedos.realpath(filename)
@@ -160,34 +168,19 @@ class MakefileCreator:
         self._create_all_rule(all_prerequisites)
 
         if self.args.filename:
-            rule_cp_executables = Rule(
-                target="cp_executables",
-                prerequisites=" ".join(all_exes),
-                recipe=" ".join(["cp"] + all_exes + [self.namer.executable_dir()]),
-                phony=True)
-            self.rules.add(rule_cp_executables)
+            self._create_cp_rule('executables', " ".join(all_exes))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_sources,
                 exe_static_dynamic='exe')
 
         if self.args.static:
-            rule_cp_static_libraries = Rule(
-                target="cp_static_libraries",
-                prerequisites=staticlibrarypathname,
-                recipe=" ".join(["cp", staticlibrarypathname, self.namer.executable_dir()]),
-                phony=True)
-            self.rules.add(rule_cp_static_libraries)
+            self._create_cp_rule('static_library', staticlibrarypathname)
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_static,
                 exe_static_dynamic='static')
 
         if self.args.dynamic:
-            rule_cp_dynamic_libraries = Rule(
-                target="cp_dynamic_libraries",
-                prerequisites=dynamiclibrarypathname,
-                recipe=" ".join(["cp", dynamiclibrarypathname, self.namer.executable_dir()]),
-                phony=True)
-            self.rules.add(rule_cp_dynamic_libraries)
+            self._create_cp_rule('dynamic_library', dynamiclibrarypathname)
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_dynamic,
                 exe_static_dynamic='dynamic')
@@ -261,13 +254,16 @@ class MakefileCreator:
             ct.wrappedos.realpath(sourcefilename))
         extraprereqs = []
         linkerflags = self.args.LDFLAGS
+
+        # If there is also a library being built then automatically
+        # include the path to that library to allow easy linking
         if self.args.static:
-            extraprereqs.append("cp_static_libraries")
+            extraprereqs.append("cp_static_library")
             linkerflags += " -L"
             linkerflags += self.namer.executable_dir()
 
         if self.args.dynamic:
-            extraprereqs.append("cp_dynamic_libraries")
+            extraprereqs.append("cp_dynamic_library")
             linkerflags += " -L"
             linkerflags += self.namer.executable_dir()
 
