@@ -190,32 +190,38 @@ class MakefileCreator:
 
         self.write()
 
-    def _create_compile_rule_for_source(self, source):
+    def _create_compile_rule_for_source(self, filename):
         """ For a given source file return the compile rule required for the Makefile """
-        deplist = self.hunter.header_dependencies(source)
-        prerequisites = [source] + sorted([str(dep) for dep in deplist])
+        deplist = self.hunter.header_dependencies(filename)
+        prerequisites = [filename] + sorted([str(dep) for dep in deplist])
 
-        self.object_directories.add(self.namer.object_dir(source))
-        obj_name = self.namer.object_pathname(source)
+        self.object_directories.add(self.namer.object_dir(filename))
+        obj_name = self.namer.object_pathname(filename)
         self.objects.add(obj_name)
-        if ct.wrappedos.isc(source):
-            magic_c_flags = self.hunter.magic()[source].get('CFLAGS', [])
-            return Rule(target=obj_name,
-                        prerequisites=" ".join(prerequisites),
-                        recipe=" ".join([self.args.CC,
-                                         self.args.CFLAGS] + list(magic_c_flags) + ["-c",
-                                                                                    "-o",
-                                                                                    obj_name,
-                                                                                    source]))
+
+        source = filename 
+        # If filename is actually a header then change source
+        if ct.utils.isheader(source):
+            source = ct.utils.implied_source(filename)
+            # If the implied source doesn't exist then 
+            # use /dev/null as the dummy source file.
+            if not source:
+                source = " ".join(["-include", filename, "-x", "c++", "/dev/null"])
+
+        if ct.wrappedos.isc(filename):
+            magic_c_flags = self.hunter.magic()[filename].get('CFLAGS', [])
+            recipe=" ".join([self.args.CC, self.args.CFLAGS] 
+                            + list(magic_c_flags) 
+                            + ["-c", "-o", obj_name, source])
         else:
-            magic_cxx_flags = self.hunter.magic()[source].get('CXXFLAGS', [])
-            return Rule(target=obj_name,
-                        prerequisites=" ".join(prerequisites),
-                        recipe=" ".join([self.args.CXX,
-                                         self.args.CXXFLAGS] + list(magic_cxx_flags) + ["-c",
-                                                                                        "-o",
-                                                                                        obj_name,
-                                                                                        source]))
+            magic_cxx_flags = self.hunter.magic()[filename].get('CXXFLAGS', [])
+            recipe=" ".join([self.args.CXX,self.args.CXXFLAGS] 
+                             + list(magic_cxx_flags) 
+                             + ["-c","-o", obj_name, source])
+
+        return Rule(target=obj_name,
+                    prerequisites=" ".join(prerequisites),
+                    recipe=recipe)
 
     def _create_link_rule(
             self,

@@ -16,19 +16,6 @@ from ct.diskcache import diskcache
 from pprint import pprint
 
 
-@memoize
-def implied_source(filename):
-    """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
-    basename = os.path.splitext(filename)[0]
-    extensions = [".cpp", ".cxx", ".cc", ".c", ".C", ".CC"]
-    for ext in extensions:
-        trialpath = basename + ext
-        if ct.wrappedos.isfile(trialpath):
-            return ct.wrappedos.realpath(trialpath)
-    else:
-        return None
-
-
 class HeaderTree:
 
     """ Create a tree structure that shows the header include tree """
@@ -137,28 +124,29 @@ class HeaderTree:
         realpath = ct.wrappedos.realpath(filename)
         return self._generate_tree_impl(realpath)
 
-
-    def _process_impl(self, realpath):
+    def _process_impl_recursive(self, realpath):
         results = set([realpath])
         cwd = os.path.dirname(realpath)
         for include in self._create_include_list(realpath):
             trialpath = self._find_include(include, cwd)
             if trialpath and trialpath not in results:
-                results |= self._process_impl(trialpath)
+                results |= self._process_impl_recursive(trialpath)
         return results
 
+    # TODO: Stop writing to the same cache as HeaderDependencies.
+    # Because the magic flags rely on the .deps cache, this hack was put in
+    # place.
+    @diskcache('deps', deps_mode=True)
+    def _process_impl(self, realpath):
+        results = self._process_impl_recursive(realpath)
+        results.remove(realpath)
+        return results
 
-    # TODO: Stop writing to the same cache as HeaderDependencies.  
-    # Because the magic flags rely on the .deps cache, this hack was put in place.
-    @diskcache('deps',deps_mode=True)
     def process(self, filename):
         """ Returns the dependencies in the same format as HeaderDependencies """
         realpath = ct.wrappedos.realpath(filename)
-        # It is 10% faster to use _process_impl rather than generatetree
-        #flat = tree.flatten(self.generatetree(realpath)) 
-        flat = self._process_impl(realpath)
-        flat.remove(realpath)
-        return flat
+        return self._process_impl(realpath)
+
 
 class HeaderDependencies:
 
@@ -172,7 +160,7 @@ class HeaderDependencies:
         if self.args.verbose >= 8:
             print("HeaderDependencies::__init__")
 
-    @diskcache('deps',deps_mode=True)
+    @diskcache('deps', deps_mode=True)
     def _process_impl(self, realpath):
         """ Use the -MM option to the compiler to generate the list of dependencies
             If you supply a header file rather than a source file then
@@ -233,7 +221,7 @@ class Hunter:
             parser=cap,
             name="directread",
             default=True,
-            help="Follow includes by directly reading files (the alternative is to use gcc -MM ... which is slower but more accurate).")        
+            help="Follow includes by directly reading files (the alternative is to use gcc -MM ... which is slower but more accurate).")
         utils.add_boolean_argument(
             parser=cap,
             name="preprocess",
@@ -253,7 +241,8 @@ class Hunter:
                 print("Using HeaderDependencies to trace dependencies")
             self.header_deps = HeaderDependencies(argv)
 
-        # Extra command line options will now be understood so reprocess the commandline
+        # Extra command line options will now be understood so reprocess the
+        # commandline
         utils.setattr_args(self, argv)
 
         # The Hunter needs to maintain a map of filenames to the map of all magic flags and each flag is a set
@@ -271,15 +260,14 @@ class Hunter:
     def magic(self):
         return self.magic_flags
 
-
     # TODO: Rethink the whole diskcache concept.
-    # Each diskcache is its own object.  So the deps files end up being loaded 
+    # Each diskcache is its own object.  So the deps files end up being loaded
     # twice.  Once for the HeaderDependencies deps diskcache and once for the
-    # Hunter diskcache because the magic flags need to know what the tree of 
-    # dependencies are. My current thoughts are that the deps cache and 
+    # Hunter diskcache because the magic flags need to know what the tree of
+    # dependencies are. My current thoughts are that the deps cache and
     # magic cache should be their own objects rather than trying to use
     # decorators
-    @diskcache('magicflags',magic_mode=True)
+    @diskcache('magicflags', magic_mode=True)
     def reparse_magic_flags(self, source_filename):
         """ Extract all the magics flags from the given source (and all its included headers).
             A magic flag is anything that starts with a //# and ends with an =
@@ -341,13 +329,14 @@ class Hunter:
             It is a precondition that realpath actually is a realpath.
         """
 
-
         if realpath not in self.magic_flags:
             self.parse_magic_flags(realpath)
 
         filelist = self.header_deps.process(realpath)
         if self.args.verbose >= 9:
-            print("Hunter::_required_files_impl. Files to follow are: " + str(filelist))
+            print(
+                "Hunter::_required_files_impl. Files to follow are: " +
+                str(filelist))
 
         # One of the magic flags is SOURCE.  If that was present, add to the
         # file list.  WARNING:  Only use //#SOURCE= in a cpp file.
@@ -363,10 +352,13 @@ class Hunter:
                         es_realpath)
         except KeyError:
             if self.args.verbose >= 9:
-                print("Hunter::_required_files_impl. KeyError occured on realpath=" + realpath)
+                print(
+                    "Hunter::_required_files_impl. KeyError occured on realpath=" +
+                    realpath)
 
         if self.args.verbose >= 9:
-            print("Hunter::_required_files_impl. Adding " + realpath + " to the encountered_files")
+            print("Hunter::_required_files_impl. Adding " +
+                  realpath + " to the encountered_files")
         encountered_files = set([realpath])
         self.cycle_detection.add(realpath)
 
@@ -374,29 +366,42 @@ class Hunter:
             # Now if the magic source specified a source file this will miss them when source_only = True
             # However, they will get caught as an implied file below
             if self.args.verbose >= 9:
-                print("Hunter::_required_files_impl. Adding filelist=" + filelist + " to the encountered_files")
+                print(
+                    "Hunter::_required_files_impl. Adding filelist=" +
+                    filelist +
+                    " to the encountered_files")
             encountered_files |= filelist
 
         for nextfile in filelist:
-            implied = implied_source(nextfile)
+            implied = ct.utils.implied_source(nextfile)
             if not implied:
                 if self.args.verbose >= 8:
-                    print("Hunter::_required_files_impl. Couldn't find an implied source file for filename=" + nextfile)
+                    print(
+                        "Hunter::_required_files_impl. Couldn't find an implied source file for filename=" +
+                        nextfile)
                 continue
 
             if implied in self.cycle_detection:
                 if self.args.verbose >= 8:
-                    print("Hunter::_required_files_impl detected cycle on " + implied)
+                    print(
+                        "Hunter::_required_files_impl detected cycle on " +
+                        implied)
                 continue
 
             if not ct.utils.issource(implied):
                 if self.args.verbose >= 8:
-                    print("Hunter::_required_files_impl. Implied file " + implied + " is not a source file.")
+                    print(
+                        "Hunter::_required_files_impl. Implied file " +
+                        implied +
+                        " is not a source file.")
                 continue
 
             if self.args.verbose >= 5:
-                print("Hunter::_required_files_impl is recursively following " + implied)
-            encountered_files |= self._required_files_impl(implied,source_only)
+                print(
+                    "Hunter::_required_files_impl is recursively following " +
+                    implied)
+            encountered_files |= self._required_files_impl(
+                implied, source_only)
 
         return encountered_files
 
@@ -412,7 +417,10 @@ class Hunter:
         result = self._required_files_impl(source_filename)
 
         if not self.cycle_detection.issubset(result):
-            print("Found elements in the cycle detection but not in the complete source file list: " + str(self.cycle_detection.difference(result)))
+            print(
+                "Found elements in the cycle detection but not in the complete source file list: " +
+                str(
+                    self.cycle_detection.difference(result)))
 
         return result
 
@@ -424,7 +432,8 @@ class Hunter:
             As a side effect, examine the files to determine the magic //#... flags
         """
         self.cycle_detection = set()
-        return self._required_files_impl(ct.wrappedos.realpath(filename), source_only=False)
+        return self._required_files_impl(
+            ct.wrappedos.realpath(filename), source_only=False)
 
     def header_dependencies(self, source_filename):
         return self.header_deps.process(source_filename)

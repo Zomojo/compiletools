@@ -29,16 +29,6 @@ class TestHunterModule(unittest.TestCase):
     def setUp(self):
         uth.delete_existing_parsers()
 
-    def test_implied_source_nonexistent_file(self):
-        self.assertIsNone(ct.hunter.implied_source('nonexistent_file.hpp'))
-
-    def test_implied_source(self):
-        filename = 'samples/dottypaths/d2/d2.hpp'
-        basename = os.path.splitext(filename)[0]
-        expected = os.path.join(os.getcwd(), basename + '.cpp')
-        result = ct.hunter.implied_source(filename)
-        self.assertEqual(expected, result)
-
     def _ht_hd_tester(self, filename, extraargs=[]):
         """ For a given filename call HeaderTree.process() and HeaderDependencies.process """
         realpath = ct.wrappedos.realpath(filename)
@@ -122,7 +112,6 @@ class TestHunterModule(unittest.TestCase):
         from ct.hunter import HeaderDependencies
         from ct.hunter import HeaderTree
         from ct.hunter import Hunter
-        from ct.hunter import implied_source
 
     def _generatecache(self, tempdir, name, realpaths, extraargs=[]):
         argv = [

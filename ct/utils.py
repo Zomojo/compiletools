@@ -22,6 +22,18 @@ def issource(filename):
     return filename.split('.')[-1].lower() in ["cpp", "cxx", "cc", "c"]
 
 
+@memoize
+def implied_source(filename):
+    """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
+    basename = os.path.splitext(filename)[0]
+    extensions = [".cpp", ".cxx", ".cc", ".c", ".C", ".CC"]
+    for ext in extensions:
+        trialpath = basename + ext
+        if ct.wrappedos.isfile(trialpath):
+            return ct.wrappedos.realpath(trialpath)
+    else:
+        return None
+
 def tobool(value):
     """
     Tries to convert a wide variety of values to a boolean
@@ -244,7 +256,15 @@ def common_substitutions(args):
         # No matter whether args.filename is a single value or a list,
         # filenames will be a list
         filenames = []
-        filenames.extend(args.filename)
+
+        if hasattr(args,'filename') and args.filename:
+            filenames.extend(args.filename)
+
+        if hasattr(args,'static') and args.static:
+            filenames.extend(args.static)
+
+        if hasattr(args,'dynamic') and args.dynamic:
+            filenames.extend(args.dynamic)
 
         for filename in filenames:
             git_roots.add(git_utils.find_git_root(filename))

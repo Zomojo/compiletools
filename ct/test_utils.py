@@ -1,5 +1,6 @@
 from __future__ import print_function
 import unittest
+import os
 import ct.utils as utils
 
 class TestIsFuncs(unittest.TestCase):
@@ -40,6 +41,17 @@ class TestIsFuncs(unittest.TestCase):
         self.assertFalse(utils.issource("myfile.hh"))
         self.assertFalse(utils.issource("myfile.hpp"))
         self.assertFalse(utils.issource("/home/user/myfile.with.dots.hpp"))
+
+class TestImpliedSource(unittest.TestCase):
+    def test_implied_source_nonexistent_file(self):
+        self.assertIsNone(utils.implied_source('nonexistent_file.hpp'))
+
+    def test_implied_source(self):
+        filename = 'samples/dottypaths/d2/d2.hpp'
+        basename = os.path.splitext(filename)[0]
+        expected = os.path.join(os.getcwd(), basename + '.cpp')
+        result = utils.implied_source(filename)
+        self.assertEqual(expected, result)
 
 class TestOrderedSet(unittest.TestCase):
 
