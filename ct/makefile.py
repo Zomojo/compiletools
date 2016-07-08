@@ -77,23 +77,22 @@ class MakefileCreator:
 
     def _create_all_rule(self, prerequisites):
         """ Create the rule that in depends on all build products """
-        rule_all = Rule(
+        return Rule(
             target="all",
             prerequisites=" ".join(prerequisites),
             phony=True)
-        self.rules.add(rule_all)
 
     def _create_mkdir_rule(self, alloutputs):
         outputdirs = [ct.wrappedos.dirname(output) for output in alloutputs]
         recipe=" ".join(["mkdir -p"] + outputdirs + list(self.object_directories))
-        rule_mkdir_output = Rule(
+        return Rule(
             target="mkdir_output",
             prerequisites="",
             recipe=recipe,
             phony=True)
-        self.rules.add(rule_mkdir_output)
 
     def _create_clean_rules(self, alloutputs):
+        rules = set()
         rmcopiedexes = " ".join(["rm -f",
                                 os.path.join(self.namer.executable_dir(),'*'),
                                 " 2>/dev/null"])
@@ -111,7 +110,7 @@ class MakefileCreator:
             prerequisites="",
             recipe=recipe,
             phony=True)
-        self.rules.add(rule_clean)
+        rules.add(rule_clean)
 
         recipe = " ".join(["rm -rf", self.namer.executable_dir()])
         if self.namer.executable_dir() != self.namer.object_dir():
@@ -120,15 +119,16 @@ class MakefileCreator:
                               prerequisites="",
                               recipe=recipe,
                               phony=True)
-        self.rules.add(rule_realclean)
+        rules.add(rule_realclean)
+
+        return rules
 
     def _create_cp_rule(self, static_dynamic_executables, prerequisites):
-        rule_cp = Rule(
+        return Rule(
             target="_".join(["cp",static_dynamic_executables]),
             prerequisites=prerequisites,
             recipe=" ".join(["cp", prerequisites, self.namer.executable_dir()]),
             phony=True)
-        self.rules.add(rule_cp)
         
     def create(self):
         # Find the realpaths of the given filenames (to avoid this being
@@ -165,28 +165,28 @@ class MakefileCreator:
             all_prerequisites.append("cp_executables")
 
         all_prerequisites.extend(all_outputs)
-        self._create_all_rule(all_prerequisites)
+        self.rules.add(self._create_all_rule(all_prerequisites))
 
         if self.args.filename:
-            self._create_cp_rule('executables', " ".join(all_exes))
+            self.rules.add(self._create_cp_rule('executables', " ".join(all_exes)))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_sources,
                 exe_static_dynamic='exe')
 
         if self.args.static:
-            self._create_cp_rule('static_library', staticlibrarypathname)
+            self.rules.add(self._create_cp_rule('static_library', staticlibrarypathname))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_static,
                 exe_static_dynamic='static')
 
         if self.args.dynamic:
-            self._create_cp_rule('dynamic_library', dynamiclibrarypathname)
+            self.rules.add(self._create_cp_rule('dynamic_library', dynamiclibrarypathname))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_dynamic,
                 exe_static_dynamic='dynamic')
 
-        self._create_mkdir_rule(all_outputs)
-        self._create_clean_rules(all_outputs)
+        self.rules.add(self._create_mkdir_rule(all_outputs))
+        self.rules |= self._create_clean_rules(all_outputs)
 
         self.write()
 
