@@ -64,7 +64,7 @@ class TestHunterModule(unittest.TestCase):
             self._ht_hd_tester(filename, ["--no-directread"])
 
     def _hunter_is_not_order_dependent(self, precall):
-        samplesdir = ct.unittesthelper.samplesdir()
+        samplesdir = uth.samplesdir()
         relativepaths = [
             'factory/test_factory.cpp',
             'numbers/test_direct_include.cpp',
@@ -79,7 +79,7 @@ class TestHunterModule(unittest.TestCase):
             'debug',
             '--CPPFLAGS=-std=c++1z',
             '--include',
-            ct.unittesthelper.ctdir(),
+            uth.ctdir(),
             '--filename'] + bulkpaths
         hntr = ct.hunter.Hunter(argv)
 
@@ -120,7 +120,7 @@ class TestHunterModule(unittest.TestCase):
             'debug',
             '--CPPFLAGS=-std=c++1z',
             '--include',
-            ct.unittesthelper.ctdir()] + extraargs + realpaths
+            uth.ctdir()] + extraargs + realpaths
         cachename = os.path.join(tempdir, name)
         self._reload_hunter(cachename)
         if name == 'ht':
@@ -140,7 +140,7 @@ class TestHunterModule(unittest.TestCase):
             origcache = os.path.expanduser('~/.cache')
 
         tempdir = tempfile.mkdtemp()
-        samplesdir = ct.unittesthelper.samplesdir()
+        samplesdir = uth.samplesdir()
         relativepaths = [
             'factory/test_factory.cpp',
             'numbers/test_direct_include.cpp',
@@ -188,7 +188,7 @@ class TestHunterModule(unittest.TestCase):
 
     def test_parsing_CFLAGS(self):
         relativepath = 'simple/test_cflags.c'
-        samplesdir = ct.unittesthelper.samplesdir()
+        samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
         argv = ['ct-test', realpath]
         hunter = ct.hunter.Hunter(argv)

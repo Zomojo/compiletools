@@ -84,7 +84,11 @@ class MakefileCreator:
 
     def _create_mkdir_rule(self, alloutputs):
         outputdirs = [ct.wrappedos.dirname(output) for output in alloutputs]
-        recipe=" ".join(["mkdir -p"] + outputdirs + list(self.object_directories))
+        recipe = " ".join(
+            ["mkdir -p"] +
+            outputdirs +
+            list(
+                self.object_directories))
         return Rule(
             target="mkdir_output",
             prerequisites="",
@@ -93,12 +97,16 @@ class MakefileCreator:
 
     def _create_clean_rules(self, alloutputs):
         rules = set()
-        rmcopiedexes = " ".join(["rm -f",
-                                os.path.join(self.namer.executable_dir(),'*'),
-                                " 2>/dev/null"])
-        rmtargetsandobjects = " ".join(["rm -f"] + alloutputs + list(self.objects))
-        rmemptydirs = " ".join(["find", self.namer.object_dir(), "-type d -empty -delete"])
-        recipe = ";".join([rmcopiedexes,rmtargetsandobjects,rmemptydirs])
+        rmcopiedexes = " ".join(
+            ["rm -f", os.path.join(self.namer.executable_dir(), '*'), " 2>/dev/null"])
+        rmtargetsandobjects = " ".join(
+            ["rm -f"] +
+            alloutputs +
+            list(
+                self.objects))
+        rmemptydirs = " ".join(
+            ["find", self.namer.object_dir(), "-type d -empty -delete"])
+        recipe = ";".join([rmcopiedexes, rmtargetsandobjects, rmemptydirs])
 
         if self.namer.executable_dir() != self.namer.object_dir():
             recipe += " ".join([";find",
@@ -125,11 +133,11 @@ class MakefileCreator:
 
     def _create_cp_rule(self, static_dynamic_executables, prerequisites):
         return Rule(
-            target="_".join(["cp",static_dynamic_executables]),
+            target="_".join(["cp", static_dynamic_executables]),
             prerequisites=prerequisites,
             recipe=" ".join(["cp", prerequisites, self.namer.executable_dir()]),
             phony=True)
-        
+
     def create(self):
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
@@ -168,19 +176,28 @@ class MakefileCreator:
         self.rules.add(self._create_all_rule(all_prerequisites))
 
         if self.args.filename:
-            self.rules.add(self._create_cp_rule('executables', " ".join(all_exes)))
+            self.rules.add(
+                self._create_cp_rule(
+                    'executables',
+                    " ".join(all_exes)))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_sources,
                 exe_static_dynamic='exe')
 
         if self.args.static:
-            self.rules.add(self._create_cp_rule('static_library', staticlibrarypathname))
+            self.rules.add(
+                self._create_cp_rule(
+                    'static_library',
+                    staticlibrarypathname))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_static,
                 exe_static_dynamic='static')
 
         if self.args.dynamic:
-            self.rules.add(self._create_cp_rule('dynamic_library', dynamiclibrarypathname))
+            self.rules.add(
+                self._create_cp_rule(
+                    'dynamic_library',
+                    dynamiclibrarypathname))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_dynamic,
                 exe_static_dynamic='dynamic')
@@ -199,25 +216,26 @@ class MakefileCreator:
         obj_name = self.namer.object_pathname(filename)
         self.objects.add(obj_name)
 
-        source = filename 
+        source = filename
         # If filename is actually a header then change source
         if ct.utils.isheader(source):
             source = ct.utils.implied_source(filename)
-            # If the implied source doesn't exist then 
+            # If the implied source doesn't exist then
             # use /dev/null as the dummy source file.
             if not source:
-                source = " ".join(["-include", filename, "-x", "c++", "/dev/null"])
+                source = " ".join(
+                    ["-include", filename, "-x", "c++", "/dev/null"])
 
         if ct.wrappedos.isc(filename):
             magic_c_flags = self.hunter.magic()[filename].get('CFLAGS', [])
-            recipe=" ".join([self.args.CC, self.args.CFLAGS] 
-                            + list(magic_c_flags) 
-                            + ["-c", "-o", obj_name, source])
+            recipe = " ".join([self.args.CC, self.args.CFLAGS]
+                              + list(magic_c_flags)
+                              + ["-c", "-o", obj_name, source])
         else:
             magic_cxx_flags = self.hunter.magic()[filename].get('CXXFLAGS', [])
-            recipe=" ".join([self.args.CXX,self.args.CXXFLAGS] 
-                             + list(magic_cxx_flags) 
-                             + ["-c","-o", obj_name, source])
+            recipe = " ".join([self.args.CXX, self.args.CXXFLAGS]
+                              + list(magic_cxx_flags)
+                              + ["-c", "-o", obj_name, source])
 
         return Rule(target=obj_name,
                     prerequisites=" ".join(prerequisites),
@@ -296,7 +314,7 @@ class MakefileCreator:
             self,
             sourcefilename,
             completesources):
-        flags = self.hunter.magic()[sourcefilename]
+        flags = self.hunter.magic().setdefault(sourcefilename, {})
         flags.setdefault('LDFLAGS', set()).add('-shared')
         outputname = self.namer.dynamiclibrary_pathname(
             ct.wrappedos.realpath(sourcefilename))
