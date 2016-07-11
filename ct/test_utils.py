@@ -2,6 +2,7 @@ from __future__ import print_function
 import unittest
 import os
 import ct.utils as utils
+import ct.unittesthelper as uth
 
 class TestIsFuncs(unittest.TestCase):
     def test_isheader(self):
@@ -47,10 +48,10 @@ class TestImpliedSource(unittest.TestCase):
         self.assertIsNone(utils.implied_source('nonexistent_file.hpp'))
 
     def test_implied_source(self):
-        filename = 'samples/dottypaths/d2/d2.hpp'
-        basename = os.path.splitext(filename)[0]
-        expected = os.path.join(os.getcwd(), basename + '.cpp')
-        result = utils.implied_source(filename)
+        relativefilename = 'dottypaths/d2/d2.hpp'
+        basename = os.path.splitext(relativefilename)[0]
+        expected = os.path.join(uth.samplesdir(), basename + '.cpp')
+        result = utils.implied_source(os.path.join(uth.samplesdir(),relativefilename))
         self.assertEqual(expected, result)
 
 class TestOrderedSet(unittest.TestCase):
