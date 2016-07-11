@@ -93,9 +93,9 @@ class HeaderTree:
 
         # Stop cycles
         if realpath in self.ancestor_paths:
-            if self.args.verbose >= 4:
+            if self.args.verbose >= 7:
                 print(
-                    "HeaderTree::process is breaking the cycle on " +
+                    "HeaderTree::_generate_tree_impl is breaking the cycle on " +
                     realpath)
             return node
         self.ancestor_paths.append(realpath)
@@ -121,24 +121,27 @@ class HeaderTree:
 
     def generatetree(self, filename):
         """ Returns the tree of include files """
+        self.ancestor_paths = []
         realpath = ct.wrappedos.realpath(filename)
         return self._generate_tree_impl(realpath)
 
-    def _process_impl_recursive(self, realpath):
-        results = set([realpath])
+    def _process_impl_recursive(self, realpath, results):
+        results.add(realpath)
         cwd = os.path.dirname(realpath)
         for include in self._create_include_list(realpath):
             trialpath = self._find_include(include, cwd)
             if trialpath and trialpath not in results:
-                results |= self._process_impl_recursive(trialpath)
-        return results
+                if self.args.verbose >= 9:
+                    print("HeaderTree::_process_impl_recursive about to follow ",trialpath)
+                self._process_impl_recursive(trialpath,results)
 
     # TODO: Stop writing to the same cache as HeaderDependencies.
     # Because the magic flags rely on the .deps cache, this hack was put in
     # place.
     @diskcache('deps', deps_mode=True)
     def _process_impl(self, realpath):
-        results = self._process_impl_recursive(realpath)
+        results = set()
+        self._process_impl_recursive(realpath,results)
         results.remove(realpath)
         return results
 
@@ -332,7 +335,9 @@ class Hunter:
         if realpath not in self.magic_flags:
             self.parse_magic_flags(realpath)
 
-        filelist = self.header_deps.process(realpath)
+        if self.args.verbose >=7:
+            print("Hunter::_required_files_impl(. Finding header deps for ",realpath)
+        filelist = self.header_deps.process(realpath)        
         if self.args.verbose >= 9:
             print(
                 "Hunter::_required_files_impl. Files to follow are: " +
@@ -436,4 +441,6 @@ class Hunter:
             ct.wrappedos.realpath(filename), source_only=False)
 
     def header_dependencies(self, source_filename):
+        if self.args.verbose >= 8:
+            print("Hunter asking for header dependencies for ",source_filename)
         return self.header_deps.process(source_filename)

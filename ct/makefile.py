@@ -236,6 +236,8 @@ class MakefileCreator:
             recipe = " ".join([self.args.CXX, self.args.CXXFLAGS]
                               + list(magic_cxx_flags)
                               + ["-c", "-o", obj_name, source])
+        if self.args.verbose >=3:
+            print("Creating rule for ",obj_name)
 
         return Rule(target=obj_name,
                     prerequisites=" ".join(prerequisites),
@@ -334,8 +336,12 @@ class MakefileCreator:
         rules_for_source = ct.utils.OrderedSet()
 
         # Output all the link rules
+        if self.args.verbose >= 3:
+            print("Creating link rule for ", sources)
         if 'exe' in exe_static_dynamic:
             for source in sources:
+                if self.args.verbose >= 4:
+                    print("Asking hunter for required_source_files for source=", source)
                 completesources = self.hunter.required_source_files(source)
                 if self.args.verbose >= 6:
                     print(
