@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail
+
+source=$(ct-deps-source --style Flat "$1"|tr '\n' ' ')
+ct-create-makefile -vvvv --dynamic $source
+
+cpu_count=$(cat /proc/cpuinfo |grep processor | wc -l)
+make -j$((2*cpu_count))
+
+# These are the headers that have to be included
+#headers=$(ct-headertree --style Flat "$1" | tr '\n' ' ')
