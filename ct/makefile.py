@@ -101,7 +101,7 @@ class MakefileCreator:
             ["rm -f", os.path.join(self.namer.executable_dir(), '*'), " 2>/dev/null"])
         rmtargetsandobjects = " ".join(
             ["rm -f"] +
-            alloutputs +
+            list(alloutputs) +
             list(
                 self.objects))
         rmemptydirs = " ".join(
@@ -142,7 +142,7 @@ class MakefileCreator:
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
         realpaths = list()
-        all_outputs = list()
+        all_outputs = set()
         all_prerequisites = ["mkdir_output"]
 
         if self.args.static:
@@ -151,7 +151,7 @@ class MakefileCreator:
             realpaths.extend(realpath_static)
             staticlibrarypathname = self.namer.staticlibrary_pathname(
                 realpath_static[0])
-            all_outputs.append(staticlibrarypathname)
+            all_outputs.add(staticlibrarypathname)
             all_prerequisites.append("cp_static_library")
 
         if self.args.dynamic:
@@ -160,16 +160,16 @@ class MakefileCreator:
             realpaths.extend(realpath_dynamic)
             dynamiclibrarypathname = self.namer.dynamiclibrary_pathname(
                 realpath_dynamic[0])
-            all_outputs.append(dynamiclibrarypathname)
+            all_outputs.add(dynamiclibrarypathname)
             all_prerequisites.append("cp_dynamic_library")
 
         if self.args.filename:
             realpath_sources = sorted([ct.wrappedos.realpath(filename)
                                        for filename in self.args.filename])
             realpaths.extend(realpath_sources)
-            all_exes = [
-                self.namer.executable_pathname(source) for source in realpath_sources]
-            all_outputs.extend(all_exes)
+            all_exes = {
+                self.namer.executable_pathname(source) for source in realpath_sources}
+            all_outputs |= all_exes
             all_prerequisites.append("cp_executables")
 
         all_prerequisites.extend(all_outputs)
