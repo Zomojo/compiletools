@@ -1,6 +1,7 @@
 from __future__ import print_function
 import collections
 import os
+import subprocess
 import sys
 import configargparse
 import appdirs
@@ -33,6 +34,7 @@ def implied_source(filename):
             return ct.wrappedos.realpath(trialpath)
     else:
         return None
+
 
 def tobool(value):
     """
@@ -212,6 +214,14 @@ def add_target_arguments(cap):
         "--static",
         nargs='*',
         help="File(s) to compile to a static library")
+    cap.add(
+        "--project-version",
+        dest="projectversion",
+        help="Set the CAKE_PROJECT_VERSION macro to this value")
+    cap.add(
+        "--project-version-cmd",
+        dest="projectversioncmd",
+        help="Execute this command to determine the CAKE_PROJECT_VERSION macro")
 
 
 def unsupplied_replacement(variable, default_variable, verbose, variable_str):
@@ -228,13 +238,10 @@ def unsupplied_replacement(variable, default_variable, verbose, variable_str):
     return replacement
 
 
-def common_substitutions(args):
-    """ If certain arguments have not been specified but others have
-        then there are some obvious substitutions to make
+def _substitute_CXX_for_missing(args):
+    """ If C PreProcessor variables (and the same for the LD*) are not set
+        but CXX ones are set then just use the CXX equivalents
     """
-
-    # If C PreProcessor variables (and the same for the LD*) are not set but CXX ones are set then
-    # just use the CXX equivalents
     args.CPP = unsupplied_replacement(args.CPP, args.CXX, args.verbose, "CPP")
     args.CPPFLAGS = unsupplied_replacement(
         args.CPPFLAGS, args.CXXFLAGS, args.verbose, "CPPFLAGS")
@@ -248,22 +255,32 @@ def common_substitutions(args):
     except AttributeError:
         pass
 
-    # Unless turned off, the git root will be added to the list of include
-    # paths
-    if args.git_root and hasattr(args, 'filename'):
+
+def _extend_includes_using_git_root(args):
+    """ Unless turned off, the git root will be added
+        to the list of include paths
+    """
+    if args.git_root and (
+        hasattr(
+            args,
+            'filename') or hasattr(
+            args,
+            'static') or hasattr(
+                args,
+            'dynamic')):
         git_roots = set()
 
         # No matter whether args.filename is a single value or a list,
         # filenames will be a list
         filenames = []
 
-        if hasattr(args,'filename') and args.filename:
+        if hasattr(args, 'filename') and args.filename:
             filenames.extend(args.filename)
 
-        if hasattr(args,'static') and args.static:
+        if hasattr(args, 'static') and args.static:
             filenames.extend(args.static)
 
-        if hasattr(args,'dynamic') and args.dynamic:
+        if hasattr(args, 'dynamic') and args.dynamic:
             filenames.extend(args.dynamic)
 
         for filename in filenames:
@@ -271,7 +288,9 @@ def common_substitutions(args):
 
         args.include.extend(git_roots)
 
-    # Add all the include paths to all three compile flags
+
+def _add_include_paths_to_flags(args):
+    """ Add all the include paths to all three compile flags """
     if args.include:
         for path in args.include:
             if path is None:
@@ -286,6 +305,58 @@ def common_substitutions(args):
             print("\tCPPFLAGS=" + args.CPPFLAGS)
             print("\tCFLAGS=" + args.CFLAGS)
             print("\tCXXFLAGS=" + args.CXXFLAGS)
+
+
+def _set_project_version(args):
+    """ C/C++ source code can rely on the CAKE_PROJECT_VERSION macro being set.
+        Preferentially execute projectversioncmd to determine projectversion.
+        Otherwise, fall back to any given projectversion.
+        In the completely unspecified case, use the zero version.
+    """
+    try:
+        args.projectversion = subprocess.check_output(
+            args.projectversioncmd.split(),
+            universal_newlines=True).strip('\n')
+        if args.verbose >= 4:
+            print("Used projectversioncmd to set projectversion")
+    except AttributeError:
+        if args.verbose >= 6:
+            print(
+                "Could not use projectversioncmd to set projectversion. Will use either existing projectversion or the zero version.")
+
+    try:
+        if not args.projectversion:
+            args.projectversion = "-".join(
+                [os.path.basename(os.getcwd()), "0.0.0-0"])
+            if args.verbose >= 5:
+                print("Set projectversion to the zero version")
+
+        args.CPPFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
+            args.projectversion + '\\"'
+        args.CFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
+            args.projectversion + '\\"'
+        args.CXXFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
+            args.projectversion + '\\"'
+
+        if args.verbose >= 3:
+            print(
+                "*FLAG variables have been modified with the project version:")
+            print("\tCPPFLAGS=" + args.CPPFLAGS)
+            print("\tCFLAGS=" + args.CFLAGS)
+            print("\tCXXFLAGS=" + args.CXXFLAGS)
+    except AttributeError:
+        if args.verbose >= 3:
+            print("No projectversion specified for the args.")
+
+
+def common_substitutions(args):
+    """ If certain arguments have not been specified but others have
+        then there are some obvious substitutions to make
+    """
+    _substitute_CXX_for_missing(args)
+    _extend_includes_using_git_root(args)
+    _add_include_paths_to_flags(args)
+    _set_project_version(args)
 
 
 def setattr_args(obj, argv=None):
