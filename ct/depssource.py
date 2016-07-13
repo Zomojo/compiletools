@@ -47,7 +47,12 @@ def main(argv=None):
     for filename in myargs[0].filename:
         realpath = ct.wrappedos.realpath(filename)        
         sourcefiles = hunter.required_source_files(realpath)
-        sourcefiles.remove(realpath)
+        try:
+            # Remove realpath from the list so that we can 
+            # have it left justified and tab in the deps
+            sourcefiles.remove(realpath)
+        except KeyError:
+            pass
         print(realpath)
         styleobject(sourcefiles)
 
