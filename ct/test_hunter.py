@@ -63,6 +63,16 @@ class TestHunterModule(unittest.TestCase):
         for filename in filenames:
             self._ht_hd_tester(filename, ["--no-directread"])
 
+    def _reload_hunter(self, xdg_cache_home):
+        """ Set the XDG_CACHE_HOME environment variable to xdg_cache_home
+            and reload the ct.hunter module
+        """
+        os.environ['XDG_CACHE_HOME'] = xdg_cache_home
+        reload(ct.hunter)
+        from ct.hunter import HeaderDependencies
+        from ct.hunter import HeaderTree
+        from ct.hunter import Hunter
+
     def _hunter_is_not_order_dependent(self, precall):
         samplesdir = uth.samplesdir()
         relativepaths = [
@@ -94,6 +104,14 @@ class TestHunterModule(unittest.TestCase):
             return result
 
     def test_hunter_is_not_order_dependent(self):
+        try:
+            origcache = os.environ['XDG_CACHE_HOME']
+        except KeyError:
+            origcache = os.path.expanduser('~/.cache')
+
+        tempdir = tempfile.mkdtemp()
+        self._reload_hunter(tempdir)
+
         result2 = self._hunter_is_not_order_dependent(True)
         result1 = self._hunter_is_not_order_dependent(False)
         result3 = self._hunter_is_not_order_dependent(False)
@@ -103,15 +121,9 @@ class TestHunterModule(unittest.TestCase):
         self.assertSetEqual(result3, result2)
         self.assertSetEqual(result4, result2)
 
-    def _reload_hunter(self, xdg_cache_home):
-        """ Set the XDG_CACHE_HOME environment variable to xdg_cache_home
-            and reload the ct.hunter module
-        """
-        os.environ['XDG_CACHE_HOME'] = xdg_cache_home
-        reload(ct.hunter)
-        from ct.hunter import HeaderDependencies
-        from ct.hunter import HeaderTree
-        from ct.hunter import Hunter
+        # Cleanup
+        shutil.rmtree(tempdir)
+        self._reload_hunter(origcache)
 
     def _generatecache(self, tempdir, name, realpaths, extraargs=[]):
         argv = [
@@ -193,7 +205,7 @@ class TestHunterModule(unittest.TestCase):
         argv = ['ct-test', realpath]
         hunter = ct.hunter.Hunter(argv)
         hunter.required_files(realpath)
-        self.assertSetEqual(hunter.magic()[realpath].get('CFLAGS'),set(['-std=gnu99']))
+        self.assertSetEqual(hunter.parse_magic_flags(realpath).get('CFLAGS'),set(['-std=gnu99']))
 
     def tearDown(self):
         uth.delete_existing_parsers()
