@@ -226,18 +226,19 @@ class MakefileCreator:
                 source = " ".join(
                     ["-include", filename, "-x", "c++", "/dev/null"])
 
+        magicflags = self.hunter.parse_magic_flags(filename)
         if ct.wrappedos.isc(filename):
-            magic_c_flags = self.hunter.magic()[filename].get('CFLAGS', [])
+            magic_c_flags = magicflags.get('CFLAGS', [])
             recipe = " ".join([self.args.CC, self.args.CFLAGS]
                               + list(magic_c_flags)
                               + ["-c", "-o", obj_name, source])
         else:
-            magic_cxx_flags = self.hunter.magic()[filename].get('CXXFLAGS', [])
+            magic_cxx_flags = magicflags.get('CXXFLAGS', [])
             recipe = " ".join([self.args.CXX, self.args.CXXFLAGS]
                               + list(magic_cxx_flags)
                               + ["-c", "-o", obj_name, source])
-        if self.args.verbose >=3:
-            print("Creating rule for ",obj_name)
+        if self.args.verbose >= 3:
+            print("Creating rule for ", obj_name)
 
         return Rule(target=obj_name,
                     prerequisites=" ".join(prerequisites),
@@ -262,7 +263,7 @@ class MakefileCreator:
 
         all_magic_ldflags = set()
         for source in completesources:
-            magic_flags = self.hunter.magic().get(source, {})
+            magic_flags = self.hunter.parse_magic_flags(source)
             all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
             all_magic_ldflags |= magic_flags.get(
                 'LINKFLAGS',
@@ -316,15 +317,17 @@ class MakefileCreator:
             self,
             sourcefilename,
             completesources):
-        flags = self.hunter.magic().setdefault(sourcefilename, {})
-        flags.setdefault('LDFLAGS', set()).add('-shared')
+        magicflags = self.hunter.parse_magic_flags(sourcefilename)
+        magicflags.setdefault('LDFLAGS', set()).add('-shared')
         outputname = self.namer.dynamiclibrary_pathname(
             ct.wrappedos.realpath(sourcefilename))
-        return self._create_link_rule(
+        rule = self._create_link_rule(
             outputname,
             completesources,
             self.args.LD,
             self.args.LDFLAGS)
+        magicflags.get('LDFLAGS').remove('-shared')
+        return rule
 
     def _create_makefile_rules_for_sources(self, sources, exe_static_dynamic):
         """ For all the given source files return the set of rules required
@@ -341,7 +344,9 @@ class MakefileCreator:
         if 'exe' in exe_static_dynamic:
             for source in sources:
                 if self.args.verbose >= 4:
-                    print("Asking hunter for required_source_files for source=", source)
+                    print(
+                        "Asking hunter for required_source_files for source=",
+                        source)
                 completesources = self.hunter.required_source_files(source)
                 if self.args.verbose >= 6:
                     print(
