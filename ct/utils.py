@@ -35,6 +35,19 @@ def implied_source(filename):
     else:
         return None
 
+@memoize
+def impliedheader(filename):
+    """ Guess what the header file is corresponding to the given source file """
+    basename = os.path.splitext(filename)[0]
+    extensions = [".hpp", ".hxx", ".hh", ".h", ".H", ".HH"]
+    for ext in extensions:
+        trialpath = basename + ext
+        if ct.wrappedos.isfile(trialpath):
+            return ct.wrappedos.realpath(trialpath)
+    else:
+        return None
+
+
 
 def tobool(value):
     """
