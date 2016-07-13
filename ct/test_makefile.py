@@ -40,7 +40,7 @@ class TestMakefile(unittest.TestCase):
         realpaths = [os.path.join(samplesdir, filename)
                      for filename in relativepaths]
         ct.makefile.main(
-            ['ct-test-makefile', '--CXXFLAGS=-std=c++1z'] + realpaths)
+            ['ct-test-makefile', '--CXXFLAGS=-std=c++1z -fPIC'] + realpaths)
 
         cmd = ['make']
         subprocess.check_output(cmd, universal_newlines=True)
@@ -98,7 +98,7 @@ class TestMakefile(unittest.TestCase):
             os.path.join(
                 samplesdir,
                 filename) for filename in librelativepaths]
-        argv = ['ct-test', static_dynamic] + \
+        argv = ['ct-test', '--CXXFLAGS=-std=c++1z -fPIC', static_dynamic] + \
             librealpaths + ['--filename', exerealpath]
         ct.makefile.main(argv)
 
