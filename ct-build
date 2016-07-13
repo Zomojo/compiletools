@@ -2,13 +2,16 @@
 set -euo pipefail
 
 # TODO: compile c source too. don't look in bindir, objdir for source files
-all_exes_sources=$(find . -name '*.cpp' |xargs grep -l main\( | tr '\n' ' ')
+all_exe_sources=$(find . -name '*.cpp' |xargs grep -l main\( | tr '\n' ' ')
+
 test_dirs=$(find . -maxdepth 1 -type d -name 'test*' | tr '\n' ' ')
 all_test_sources=""
 for test_dir in $test_dirs; do
     all_test_sources+=$(find "$test_dir" -name 'test*cpp' | tr '\n' ' ')
 done
-ct-create-makefile $all_exes_sources $all_test_sources "$@"
+cmd="ct-create-makefile ${all_exe_sources} ${all_test_sources} $@"
+echo $cmd
+$cmd
 
 cpu_count=$(cat /proc/cpuinfo |grep processor | wc -l)
 make -j$((2*cpu_count))
