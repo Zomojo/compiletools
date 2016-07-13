@@ -54,11 +54,14 @@ class diskcache:
 
     def _cachefile(self, filename):
         """ What cachefile corresponds to the given filename """
-        return ''.join([self.cachedir, filename, '.', self.cache_identifier])
+        # Note that we can't use os.path.join because it 
+        # THROWS AWAY self.cachedir due to filename being an absolute path.
+        # That _feature_ cost me half a day.
+        return ct.wrappedos.realpath(''.join([self.cachedir,os.sep,filename, '.', self.cache_identifier]))
 
     def _deps_cachefile(self, filename):
         """ What deps cachefile corresponds to the given filename """
-        return ''.join([self.cachedir, filename, '.deps'])
+        return ct.wrappedos.realpath(''.join([self.cachedir,os.sep,filename, '.deps']))
 
     def _memcached_cachefile(self, cachefile):
         """ Rather than using @memoize, keep the cache so that 
@@ -77,9 +80,11 @@ class diskcache:
             # _refresh_cache may update it.
             if ct.wrappedos.getmtime(filename) > os.path.getmtime(cachefile):
                 return True
+#            else:
+#                print("diskcache::_any_changes. ", cachefile, " is newer than ",filename)
         except OSError:
             return True
-
+        
         return False
 
     @memoize_false
@@ -140,17 +145,20 @@ class diskcache:
             except OSError:
                 pass
             return
-
+        
         if self._any_changes(filename, cachefile):
             # args must have some sort of filename as the last argument
             # So we strip that off and replace it with the filename
             # that we are currently interested in.
             newargs = args[:-1] + (filename,)
             result = func(*newargs)
-            self._memcache[cachefile] = result
             ct.wrappedos.makedirs(ct.wrappedos.dirname(cachefile))
             with open(cachefile, 'wb') as cf:
                 pickle.dump(result, cf)
+            self._memcache[cachefile] = result
+        else:
+            # Prepopulate the in memory cache
+            dummy = self._memcached_cachefile(cachefile)
 
         if self.deps_mode:
             for dep in self._memcached_cachefile(cachefile):
@@ -185,7 +193,7 @@ class diskcache:
                     filename,
                     cachefile):
                 self._refresh_cache(filename, cachefile, func, *args)
-
+           
             return self._memcached_cachefile(cachefile)
 
         # Return for __call__
