@@ -1,17 +1,23 @@
 #! /usr/bin/env python
-from __future__ import unicode_literals
 from __future__ import print_function
+from __future__ import unicode_literals
+
 import sys
+
 import configargparse
+
 import ct.utils
 import ct.wrappedos
 from ct.hunter import Hunter
 
+
 def check_filename(filename):
     if not ct.wrappedos.isfile(filename):
         sys.stderr.write(
-            "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(filename))
+            "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(
+                filename))
         exit(1)
+
 
 def main(argv=None):
     if argv is None:
@@ -44,7 +50,8 @@ def main(argv=None):
         results |= hh.required_files(filename)
 
     for filename in results:
-        print( filename )
+        print(filename)
+
 
 if __name__ == '__main__':
     main()

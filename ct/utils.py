@@ -1,16 +1,17 @@
-from __future__ import unicode_literals
 from __future__ import print_function
-from builtins import str
-from builtins import object
+from __future__ import unicode_literals
+
 import collections
 import os
 import subprocess
 import sys
-import configargparse
+
 import appdirs
+import configargparse
+
+import ct.git_utils as git_utils
 import ct.wrappedos
 from ct.memoize import memoize
-import ct.git_utils as git_utils
 
 
 @memoize

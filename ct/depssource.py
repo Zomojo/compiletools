@@ -1,10 +1,14 @@
-from __future__ import unicode_literals
 from __future__ import print_function
+from __future__ import unicode_literals
+
 import sys
+
 import configargparse
-import ct.wrappedos
+
 import ct.utils
+import ct.wrappedos
 from ct.hunter import Hunter
+
 
 class FlatStyle:
     def __call__(self, sourcefiles):
@@ -15,7 +19,7 @@ class FlatStyle:
 class IndentStyle:
     def __call__(self, sourcefiles):
         for source in sourcefiles:
-            print('\t',source)
+            print('\t', source)
 
 
 def main(argv=None):
@@ -46,7 +50,7 @@ def main(argv=None):
     styleobject = styleclass()
 
     for filename in myargs[0].filename:
-        realpath = ct.wrappedos.realpath(filename)        
+        realpath = ct.wrappedos.realpath(filename)
         sourcefiles = hunter.required_source_files(realpath)
         try:
             # Remove realpath from the list so that we can 

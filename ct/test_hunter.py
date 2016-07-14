@@ -1,13 +1,15 @@
-from __future__ import unicode_literals
 from __future__ import print_function
-import unittest
+from __future__ import unicode_literals
+
+import filecmp
 import os
+import shutil
 import sys
 import tempfile
-import shutil
-import filecmp
+import unittest
+
 try:
-    reload
+    reload(unittest)
 except NameError:
     from importlib import reload
 
@@ -25,13 +27,42 @@ def callprocess(headerobj, filenames):
     return result
 
 
+def _reload_hunter(xdg_cache_home):
+    """ Set the XDG_CACHE_HOME environment variable to xdg_cache_home
+        and reload the ct.hunter module
+    """
+    os.environ['XDG_CACHE_HOME'] = xdg_cache_home
+    reload(ct.hunter)
+
+
+def _generatecache(tempdir, name, realpaths, extraargs=None):
+    if extraargs is None:
+        extraargs = []
+    argv = [
+               'ct-test',
+               '--variant',
+               'debug',
+               '--CPPFLAGS=-std=c++1z',
+               '--include',
+               uth.ctdir()] + extraargs + realpaths
+    cachename = os.path.join(tempdir, name)
+    _reload_hunter(cachename)
+    if name == 'ht':
+        headerobj = HeaderTree(argv)
+    else:
+        headerobj = HeaderDependencies(argv)
+    return cachename, callprocess(headerobj, realpaths)
+
+
 class TestHunterModule(unittest.TestCase):
 
     def setUp(self):
         uth.delete_existing_parsers()
 
-    def _ht_hd_tester(self, filename, extraargs=[]):
+    def _ht_hd_tester(self, filename, extraargs=None):
         """ For a given filename call HeaderTree.process() and HeaderDependencies.process """
+        if extraargs is None:
+            extraargs = []
         realpath = ct.wrappedos.realpath(filename)
         argv = ['ct-test', realpath] + extraargs
         ht = ct.hunter.HeaderTree(argv)
@@ -64,17 +95,8 @@ class TestHunterModule(unittest.TestCase):
         for filename in filenames:
             self._ht_hd_tester(filename, ["--no-directread"])
 
-    def _reload_hunter(self, xdg_cache_home):
-        """ Set the XDG_CACHE_HOME environment variable to xdg_cache_home
-            and reload the ct.hunter module
-        """
-        os.environ['XDG_CACHE_HOME'] = xdg_cache_home
-        reload(ct.hunter)
-        from ct.hunter import HeaderDependencies
-        from ct.hunter import HeaderTree
-        from ct.hunter import Hunter
-
-    def _hunter_is_not_order_dependent(self, precall):
+    @staticmethod
+    def _hunter_is_not_order_dependent(precall):
         samplesdir = uth.samplesdir()
         relativepaths = [
             'factory/test_factory.cpp',
@@ -111,7 +133,7 @@ class TestHunterModule(unittest.TestCase):
             origcache = os.path.expanduser('~/.cache')
 
         tempdir = tempfile.mkdtemp()
-        self._reload_hunter(tempdir)
+        _reload_hunter(tempdir)
 
         result2 = self._hunter_is_not_order_dependent(True)
         result1 = self._hunter_is_not_order_dependent(False)
@@ -124,29 +146,15 @@ class TestHunterModule(unittest.TestCase):
 
         # Cleanup
         shutil.rmtree(tempdir)
-        self._reload_hunter(origcache)
+        _reload_hunter(origcache)
 
-    def _generatecache(self, tempdir, name, realpaths, extraargs=[]):
-        argv = [
-            'ct-test',
-            '--variant',
-            'debug',
-            '--CPPFLAGS=-std=c++1z',
-            '--include',
-            uth.ctdir()] + extraargs + realpaths
-        cachename = os.path.join(tempdir, name)
-        self._reload_hunter(cachename)
-        if name == 'ht':
-            headerobj = HeaderTree(argv)
-        else:
-            headerobj = HeaderDependencies(argv)
-        return cachename, callprocess(headerobj, realpaths)
-
-    def _ht_and_hd_generate_same_results_ex(self, extraargs=[]):
+    def _ht_and_hd_generate_same_results_ex(self, extraargs=None):
         """ Test that HeaderTree and HeaderDependencies give the same results.
             Rather than polluting the real ct cache, use temporary cache
             directories.
         """
+        if extraargs is None:
+            extraargs = []
         try:
             origcache = os.environ['XDG_CACHE_HOME']
         except KeyError:
@@ -163,9 +171,9 @@ class TestHunterModule(unittest.TestCase):
         realpaths = [os.path.join(samplesdir, filename)
                      for filename in relativepaths]
 
-        htcache, htresults = self._generatecache(
+        htcache, htresults = _generatecache(
             tempdir, 'ht', realpaths, extraargs)
-        hdcache, hdresults = self._generatecache(
+        hdcache, hdresults = _generatecache(
             tempdir, 'hd', realpaths, extraargs)
 
         # Check the returned python sets are the same regardless of methodology
@@ -178,7 +186,7 @@ class TestHunterModule(unittest.TestCase):
 
         # Cleanup
         shutil.rmtree(tempdir)
-        self._reload_hunter(origcache)
+        _reload_hunter(origcache)
 
     @unittest.skipUnless(
         sys.platform.startswith("linux"),
@@ -206,7 +214,7 @@ class TestHunterModule(unittest.TestCase):
         argv = ['ct-test', realpath]
         hunter = ct.hunter.Hunter(argv)
         hunter.required_files(realpath)
-        self.assertSetEqual(hunter.parse_magic_flags(realpath).get('CFLAGS'),set(['-std=gnu99']))
+        self.assertSetEqual(hunter.parse_magic_flags(realpath).get('CFLAGS'), {'-std=gnu99'})
 
     def tearDown(self):
         uth.delete_existing_parsers()

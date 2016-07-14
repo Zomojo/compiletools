@@ -1,6 +1,8 @@
 import os
 import subprocess
+
 from ct.memoize import memoize
+
 
 def find_git_root(filename=None):
     """ Return the absolute path of .git for the given filename """

@@ -1,12 +1,15 @@
 # vim: set filetype=python:
-from __future__ import unicode_literals
 from __future__ import print_function
-import sys
+from __future__ import unicode_literals
+
 import os
-import configargparse
+import sys
 from io import open
-import ct.wrappedos
+
+import configargparse
+
 import ct.utils
+import ct.wrappedos
 from ct.hunter import Hunter
 
 
@@ -31,7 +34,7 @@ class Rule:
         return "%s(%r)" % (self.__class__, self.__dict__)
 
     def __str__(self):
-        return "%r" % (self.__dict__)
+        return "%r" % self.__dict__
 
     def __eq__(self, other):
         return self.target == other.target
@@ -77,7 +80,8 @@ class MakefileCreator:
         self.namer = ct.utils.Namer(parser, variant, argv)
         self.hunter = Hunter(argv)
 
-    def _create_all_rule(self, prerequisites):
+    @staticmethod
+    def _create_all_rule(prerequisites):
         """ Create the rule that in depends on all build products """
         return Rule(
             target="all",
@@ -252,11 +256,14 @@ class MakefileCreator:
             completesources,
             linker,
             linkerflags,
-            extraprereqs=[]):
+            extraprereqs=None):
         """ For a given source file (so usually the file with the main) and the
             set of complete sources (i.e., all the other source files + the original)
             return the link rule required for the Makefile
         """
+        if extraprereqs is None:
+            extraprereqs = []
+
         allprerequisites = " ".join(extraprereqs)
         object_names = " ".join(
             self.namer.object_pathname(source) for source in completesources)

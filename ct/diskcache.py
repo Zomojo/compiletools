@@ -1,7 +1,7 @@
-import os
-import atexit
 import functools
+import os
 from io import open
+
 try:
     import cPickle as pickle
 except ImportError:
@@ -9,13 +9,11 @@ except ImportError:
 
 import appdirs
 
-from ct.memoize import memoize
 from ct.memoize import memoize_false
 import ct.wrappedos
 
 
 class diskcache:
-
     """ If a function takes a filename for its sole argument,
         then this diskcache decorator
         will use pickle to store the output of the function.
@@ -38,6 +36,7 @@ class diskcache:
         def my_func_uses_deps(doh, ray):
             ....
     """
+
     # Bruce Eckel argues that this class based decorator with argument
     # approach is easier to understand and maintain over the
     # decorator function with decorator argument approach. See
@@ -58,11 +57,11 @@ class diskcache:
         # Note that we can't use os.path.join because it 
         # THROWS AWAY self.cachedir due to filename being an absolute path.
         # That _feature_ cost me half a day.
-        return ct.wrappedos.realpath(''.join([self.cachedir,os.sep,filename, '.', self.cache_identifier]))
+        return ct.wrappedos.realpath(''.join([self.cachedir, os.sep, filename, '.', self.cache_identifier]))
 
     def _deps_cachefile(self, filename):
         """ What deps cachefile corresponds to the given filename """
-        return ct.wrappedos.realpath(''.join([self.cachedir,os.sep,filename, '.deps']))
+        return ct.wrappedos.realpath(''.join([self.cachedir, os.sep, filename, '.deps']))
 
     def _memcached_cachefile(self, cachefile):
         """ Rather than using @memoize, keep the cache so that 
@@ -81,17 +80,17 @@ class diskcache:
             # _refresh_cache may update it.
             if ct.wrappedos.getmtime(filename) > os.path.getmtime(cachefile):
                 return True
-#            else:
-#                print("diskcache::_any_changes. ", cachefile, " is newer than ",filename)
+                #            else:
+                #                print("diskcache::_any_changes. ", cachefile, " is newer than ",filename)
         except OSError:
             return True
-        
+
         return False
 
     @memoize_false
-    def _recursive_any_changes(self, filename, cachefile, originalcachefile = None):
-        """ Has this file (or any [recursive] dependency) changed? """        
-   
+    def _recursive_any_changes(self, filename, cachefile, originalcachefile=None):
+        """ Has this file (or any [recursive] dependency) changed? """
+
         if originalcachefile is not None:
             if self._any_changes(filename, originalcachefile):
                 return True
@@ -146,7 +145,7 @@ class diskcache:
             except OSError:
                 pass
             return
-        
+
         if self._any_changes(filename, cachefile):
             # args must have some sort of filename as the last argument
             # So we strip that off and replace it with the filename
@@ -194,7 +193,7 @@ class diskcache:
                     filename,
                     cachefile):
                 self._refresh_cache(filename, cachefile, func, *args)
-           
+
             return self._memcached_cachefile(cachefile)
 
         # Return for __call__

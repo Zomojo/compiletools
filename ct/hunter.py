@@ -1,27 +1,26 @@
 #!/usr/bin/env python
-from __future__ import unicode_literals
 from __future__ import print_function
-from builtins import str
-from builtins import object
+from __future__ import unicode_literals
+
 import os
+import re
 import subprocess
 import sys
-import configargparse
-import re
 from io import open
-import ct.wrappedos
-import ct.utils as utils
+
+import configargparse
+
 import ct.tree as tree
-from ct.memoize import memoize
-from ct.memoize import memoize_false
+import ct.utils as utils
+import ct.wrappedos
 from ct.diskcache import diskcache
+from ct.memoize import memoize
 
 # At deep verbose levels pprint is used
 from pprint import pprint
 
 
 class HeaderTree(object):
-
     """ Create a tree structure that shows the header include tree """
 
     def __init__(self, argv=None):
@@ -90,7 +89,7 @@ class HeaderTree(object):
         """
 
         if self.args.verbose >= 4:
-            print("HeaderTree::_generate_tree_impl: ",realpath)
+            print("HeaderTree::_generate_tree_impl: ", realpath)
 
         if node is None:
             node = tree.tree()
@@ -136,8 +135,8 @@ class HeaderTree(object):
             trialpath = self._find_include(include, cwd)
             if trialpath and trialpath not in results:
                 if self.args.verbose >= 9:
-                    print("HeaderTree::_process_impl_recursive about to follow ",trialpath)
-                self._process_impl_recursive(trialpath,results)
+                    print("HeaderTree::_process_impl_recursive about to follow ", trialpath)
+                self._process_impl_recursive(trialpath, results)
 
     # TODO: Stop writing to the same cache as HeaderDependencies.
     # Because the magic flags rely on the .deps cache, this hack was put in
@@ -148,7 +147,7 @@ class HeaderTree(object):
             print("HeaderTree::_process_impl: " + realpath)
 
         results = set()
-        self._process_impl_recursive(realpath,results)
+        self._process_impl_recursive(realpath, results)
         results.remove(realpath)
         return results
 
@@ -161,7 +160,6 @@ class HeaderTree(object):
 
 
 class HeaderDependencies(object):
-
     """ Using the C Pre Processor, create the list of headers that the given file depends upon. """
 
     def __init__(self, argv=None):
@@ -222,7 +220,6 @@ class HeaderDependencies(object):
 
 
 class Hunter(object):
-
     """ Deeply inspect files to understand what are the header dependencies,
         other required source files, other required compile/link flags.
     """
@@ -307,7 +304,7 @@ class Hunter(object):
             # handling a list of strings.
             # Only read first 2k for speed
             headers = self.header_dependencies(source_filename)
-            for filename in headers | set([source_filename]):
+            for filename in headers | {source_filename}:
                 with open(filename, encoding='utf-8') as ff:
                     text += ff.read(2048)
 
@@ -330,9 +327,9 @@ class Hunter(object):
 
     def _extractSOURCE(self, realpath):
         sources = self.parse_magic_flags(realpath).get('SOURCE', set())
-        cwd = os.path.dirname(realpath)        
+        cwd = os.path.dirname(realpath)
         return {ct.wrappedos.realpath(os.path.join(cwd, es)) for es in sources}
-    
+
     def _required_files_impl(self, realpath, source_only, processed=None, result=None):
         """ The recursive implementation that finds the source files.
             The source_only flag describes whether the return set of files
@@ -344,9 +341,9 @@ class Hunter(object):
         if not result:
             result = set()
 
-        if self.args.verbose >=7:
-            print("Hunter::_required_files_impl. Finding header deps for ",realpath)
-        
+        if self.args.verbose >= 7:
+            print("Hunter::_required_files_impl. Finding header deps for ", realpath)
+
         # Don't try and collapse these lines.  
         # We don't want todo as a handle to the header_deps.process object.
         todo = set()
@@ -356,7 +353,7 @@ class Hunter(object):
         # file list.  WARNING:  Only use //#SOURCE= in a cpp file.
         ess = self._extractSOURCE(realpath)
         if self.args.verbose >= 2:
-            print("Hunter. SOURCE flag files:",ess)
+            print("Hunter. SOURCE flag files:", ess)
         todo |= ess
 
         # The header deps and magic flags have been parsed at this point so it 
@@ -378,10 +375,10 @@ class Hunter(object):
         while todo:
             morefiles = set()
             for nextfile in todo:
-                morefiles |= self._required_files_impl(nextfile,source_only,processed,result)
+                morefiles |= self._required_files_impl(nextfile, source_only, processed, result)
             todo = morefiles.difference(processed)
             if self.args.verbose >= 9:
-                print("Hunter::_required_files_impl. todo:",todo)
+                print("Hunter::_required_files_impl. todo:", todo)
 
         if self.args.verbose >= 9:
             print("Hunter::_required_files_impl. Returning ", result)
@@ -411,5 +408,5 @@ class Hunter(object):
 
     def header_dependencies(self, source_filename):
         if self.args.verbose >= 8:
-            print("Hunter asking for header dependencies for ",source_filename)
+            print("Hunter asking for header dependencies for ", source_filename)
         return self.header_deps.process(source_filename)

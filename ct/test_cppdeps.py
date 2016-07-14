@@ -1,14 +1,15 @@
-from __future__ import unicode_literals
 from __future__ import print_function
-import unittest
+from __future__ import unicode_literals
+
 import os
 import sys
-import ct.unittesthelper as uth
+import unittest
+
 import ct.cppdeps
+import ct.unittesthelper as uth
 
 
 class TestCPPDeps(unittest.TestCase):
-
     def setUp(self):
         uth.delete_existing_parsers()
 
@@ -29,6 +30,7 @@ class TestCPPDeps(unittest.TestCase):
 
     def tearDown(self):
         uth.delete_existing_parsers()
+
 
 if __name__ == '__main__':
     unittest.main()

@@ -3,10 +3,9 @@
     https://gist.github.com/hrldcpr/2012250
 """
 from __future__ import unicode_literals
-from builtins import object
 
-from collections import defaultdict
 import inspect
+from collections import defaultdict
 
 
 def tree():
@@ -20,14 +19,16 @@ def dicts(tree_):
     """
     return {key: dicts(tree_[key]) for key in tree_}
 
+
 def flatten(tree_):
     """ Convert a tree to a set of the keys """
     flat = set()
     for key in tree_:
         flat.add(key)
         flat |= flatten(tree_[key])
-    
+
     return flat
+
 
 def depth_first_traverse(
         node,

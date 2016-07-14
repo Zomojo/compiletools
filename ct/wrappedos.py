@@ -1,5 +1,6 @@
 """ Wrap and memoize a variety of os calls """
 import os
+
 from ct.memoize import memoize
 
 
@@ -7,6 +8,7 @@ from ct.memoize import memoize
 def getmtime(realpath):
     """ Cached version of os.path.getmtime """
     return os.path.getmtime(realpath)
+
 
 @memoize
 def isfile(trialpath):

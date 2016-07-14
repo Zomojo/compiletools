@@ -1,17 +1,19 @@
 #! /usr/bin/env python
 # vim: set filetype=python:
-from __future__ import unicode_literals
 from __future__ import print_function
+from __future__ import unicode_literals
+
 import sys
-import configargparse
 from io import open
-import ct.wrappedos
+
+import configargparse
+
 import ct.utils
+import ct.wrappedos
 from ct.hunter import Hunter
 
 
 class CMakefileCreator:
-
     """ Create a CMakefile.txt based on the filename, --static and --dynamic command line options """
 
     def __init__(self, cap, variant, argv=None):
@@ -34,7 +36,7 @@ class CMakefileCreator:
             cmf.write(
                 ''.join(['set(CMAKE_CXX_COMPILER "', self.args.CXX, '")\n']))
             cmf.write(''.join(
-                ['set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ', self.args.CXXFLAGS.replace('\\','\\\\\\'), '")\n\n']))
+                ['set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ', self.args.CXXFLAGS.replace('\\', '\\\\\\'), '")\n\n']))
 
             cmf.write("include_directories(\n    ")
             cmf.write("\n    ".join(self.args.include))
@@ -46,7 +48,7 @@ class CMakefileCreator:
                     src_realpath)
                 exe_name = self.namer.executable_name(src_realpath)
                 exe_source_files_cmake_name = exe_name.upper() + \
-                    "_SOURCE_FILES"
+                                              "_SOURCE_FILES"
                 cmf.write("\nset(" + exe_source_files_cmake_name + "\n    ")
                 cmf.write("\n    ".join(list(complete_sources)))
                 cmf.write("\n)\n\n")
@@ -66,6 +68,7 @@ class CMakefileCreator:
                                     "DESTINATION",
                                     self.namer.executable_dir(src_realpath),
                                     ")\n\n"]))
+
 
 def main(argv=None):
     if argv is None:
@@ -87,6 +90,7 @@ def main(argv=None):
     ct.utils.verbose_print_args(myargs[0])
 
     cmakefile_creator.create()
+
 
 if __name__ == '__main__':
     main()

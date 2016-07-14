@@ -1,12 +1,14 @@
-from __future__ import unicode_literals
 from __future__ import print_function
-import unittest
+from __future__ import unicode_literals
+
 import os
-import tempfile
-import subprocess
 import shutil
-import ct.unittesthelper as uth
+import subprocess
+import tempfile
+import unittest
+
 import ct.makefile
+import ct.unittesthelper as uth
 
 # The memoizing of directories is really messsing about with tests.
 # The current workaround is to simply use the same temp directory
@@ -79,46 +81,48 @@ class TestMakefile(unittest.TestCase):
         shutil.rmtree(tempdir1, ignore_errors=True)
         # shutil.rmtree(tempdir2)
 
-    def _test_library(self, static_dynamic):
-        """ Manually specify what files to turn into the static (or dynamic)
-            library and test linkage
-        """
-        samplesdir = uth.samplesdir()
-        origdir = uth.ctdir()
-        tempdir = _moduletmpdir
-        #tempdir = tempfile.mkdtemp()
-        os.chdir(tempdir)
-
-        exerelativepath = 'numbers/test_library.cpp'
-        librelativepaths = [
-            'numbers/get_numbers.cpp',
-            'numbers/get_int.cpp',
-            'numbers/get_double.cpp']
-        exerealpath = os.path.join(samplesdir, exerelativepath)
-        librealpaths = [
-            os.path.join(
-                samplesdir,
-                filename) for filename in librelativepaths]
-        argv = ['ct-test', '--CXXFLAGS=-std=c++1z -fPIC', static_dynamic] + \
-            librealpaths + ['--filename', exerealpath]
-        ct.makefile.main(argv)
-
-        cmd = ['make']
-        subprocess.check_output(cmd, universal_newlines=True)
-
-        # Cleanup
-        os.chdir(origdir)
-        shutil.rmtree(tempdir, ignore_errors=True)
-
     def test_static_library(self):
-        self._test_library("--static")
+        _test_library("--static")
 
     def test_dynamic_library(self):
-        self._test_library("--dynamic")
+        _test_library("--dynamic")
 
     def tearDown(self):
         shutil.rmtree(_moduletmpdir, ignore_errors=True)
         uth.delete_existing_parsers()
+
+
+def _test_library(static_dynamic):
+    """ Manually specify what files to turn into the static (or dynamic)
+        library and test linkage
+    """
+    samplesdir = uth.samplesdir()
+    origdir = uth.ctdir()
+    tempdir = _moduletmpdir
+    # tempdir = tempfile.mkdtemp()
+    os.chdir(tempdir)
+
+    exerelativepath = 'numbers/test_library.cpp'
+    librelativepaths = [
+        'numbers/get_numbers.cpp',
+        'numbers/get_int.cpp',
+        'numbers/get_double.cpp']
+    exerealpath = os.path.join(samplesdir, exerelativepath)
+    librealpaths = [
+        os.path.join(
+            samplesdir,
+            filename) for filename in librelativepaths]
+    argv = ['ct-test', '--CXXFLAGS=-std=c++1z -fPIC', static_dynamic] + \
+           librealpaths + ['--filename', exerealpath]
+    ct.makefile.main(argv)
+
+    cmd = ['make']
+    subprocess.check_output(cmd, universal_newlines=True)
+
+    # Cleanup
+    os.chdir(origdir)
+    shutil.rmtree(tempdir, ignore_errors=True)
+
 
 if __name__ == '__main__':
     unittest.main()

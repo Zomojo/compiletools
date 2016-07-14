@@ -1,9 +1,12 @@
-from __future__ import unicode_literals
 from __future__ import print_function
+from __future__ import unicode_literals
+
 import unittest
+
 import configargparse
 
 import ct.unittesthelper as uth
+
 
 def add_to_parser_in_func(recursion_depth=0):
     if recursion_depth < 6:
@@ -16,7 +19,7 @@ def add_to_parser_in_func(recursion_depth=0):
             default=0)
         print(cap.format_values())
         parsed_args = cap.parse_known_args(args=["-v"])
-        
+
         # Note that is_config_file is False
         # The unit test fails if it is set to True
         # I wanted this knowledge to be written down somewhere
@@ -26,16 +29,16 @@ def add_to_parser_in_func(recursion_depth=0):
             "--cfg",
             is_config_file=False,
             help="Manually specify the config file path if you want to override the variant default")
-        add_to_parser_in_func(recursion_depth+1)
+        add_to_parser_in_func(recursion_depth + 1)
         parsed_args = cap.parse_known_args(args=["-v"])
 
-class TestConfigArgParse(unittest.TestCase):
 
+class TestConfigArgParse(unittest.TestCase):
     def setUp(self):
         uth.delete_existing_parsers()
 
     def test_multiple_parse_known_args(self):
-        non_existent_config_files = ['/blah/foo.conf','/usr/bin/ba.conf']
+        non_existent_config_files = ['/blah/foo.conf', '/usr/bin/ba.conf']
         cap = configargparse.getArgumentParser(
             prog='UnitTest',
             description='unit testing',
@@ -55,10 +58,11 @@ class TestConfigArgParse(unittest.TestCase):
             "--cfg",
             is_config_file=True,
             help="Manually specify the config file path if you want to override the variant default")
-        parsed_args = cap.parse_known_args(args=['--variant','release'])
+        parsed_args = cap.parse_known_args(args=['--variant', 'release'])
 
     def tearDown(self):
         uth.delete_existing_parsers()
+
 
 if __name__ == '__main__':
     unittest.main()
