@@ -141,7 +141,7 @@ class TreeStyle(object):
         try:
             # push the immediate parent into the set of parents of the file
             self.parents[key].add(self.parent_stack[-1])
-        except KeyError:
+        except IndexError:
             pass
         last = self.counter.pop()
         self.counter[-1] += last + 1
