@@ -1,10 +1,14 @@
 #!/usr/bin/env python
+from __future__ import unicode_literals
 from __future__ import print_function
+from builtins import str
+from builtins import object
 import os
 import subprocess
 import sys
 import configargparse
 import re
+from io import open
 import ct.wrappedos
 import ct.utils as utils
 import ct.tree as tree
@@ -16,7 +20,7 @@ from ct.diskcache import diskcache
 from pprint import pprint
 
 
-class HeaderTree:
+class HeaderTree(object):
 
     """ Create a tree structure that shows the header include tree """
 
@@ -68,7 +72,7 @@ class HeaderTree:
     @memoize
     def _create_include_list(self, realpath):
         """ Internal use. Create the list of includes for the given file """
-        with open(realpath) as ff:
+        with open(realpath, encoding='utf-8') as ff:
             # Assume that all includes occur in the first 2048 bytes
             text = ff.read(2048)
 
@@ -156,7 +160,7 @@ class HeaderTree:
         return self._process_impl(realpath)
 
 
-class HeaderDependencies:
+class HeaderDependencies(object):
 
     """ Using the C Pre Processor, create the list of headers that the given file depends upon. """
 
@@ -217,7 +221,7 @@ class HeaderDependencies:
         return self._process_impl(realpath)
 
 
-class Hunter:
+class Hunter(object):
 
     """ Deeply inspect files to understand what are the header dependencies,
         other required source files, other required compile/link flags.
@@ -304,7 +308,7 @@ class Hunter:
             # Only read first 2k for speed
             headers = self.header_dependencies(source_filename)
             for filename in headers | set([source_filename]):
-                with open(filename) as ff:
+                with open(filename, encoding='utf-8') as ff:
                     text += ff.read(2048)
 
         flags_for_filename = {}

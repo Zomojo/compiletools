@@ -2,6 +2,8 @@
     using it.  For a quick tutorial on this autovivification technique see
     https://gist.github.com/hrldcpr/2012250
 """
+from __future__ import unicode_literals
+from builtins import object
 
 from collections import defaultdict
 import inspect
@@ -65,7 +67,7 @@ def depth_first_traverse(
                 function(key)
 
     # traverse the tree recursively
-    for key, value in node.items():
+    for key, value in list(node.items()):
         _call_function(
             pre_traverse_function,
             pre_function_args,
@@ -85,7 +87,7 @@ def depth_first_traverse(
             post_kwargs)
 
 
-class InTree():
+class InTree(object):
     """" Initialize with a tree then when you call it with a key
          it will return whether or not the key exists in the tree.
     """

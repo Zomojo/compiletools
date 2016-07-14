@@ -1,6 +1,7 @@
 import os
 import atexit
 import functools
+from io import open
 try:
     import cPickle as pickle
 except ImportError:
@@ -68,7 +69,7 @@ class diskcache:
             we can manually prepopulate it.
         """
         if cachefile not in self._memcache:
-            self._memcache[cachefile] = pickle.load(open(cachefile, 'rb'))
+            self._memcache[cachefile] = pickle.load(open(cachefile, mode='rb'))
 
         return self._memcache[cachefile]
 
@@ -153,7 +154,7 @@ class diskcache:
             newargs = args[:-1] + (filename,)
             result = func(*newargs)
             ct.wrappedos.makedirs(ct.wrappedos.dirname(cachefile))
-            with open(cachefile, 'wb') as cf:
+            with open(cachefile, mode='wb') as cf:
                 pickle.dump(result, cf)
             self._memcache[cachefile] = result
         else:

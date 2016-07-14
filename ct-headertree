@@ -1,6 +1,15 @@
 #!/usr/bin/env python
+from __future__ import unicode_literals
 from __future__ import print_function
+from __future__ import division
+from __future__ import absolute_import
+from builtins import dict
+from builtins import int
+from builtins import str
+from builtins import object
 import sys
+if sys.version_info[0] < 3:
+    import codecs
 from collections import defaultdict
 from collections import Counter
 import inspect
@@ -13,7 +22,7 @@ import ct.tree as tree
 import configargparse
 
 
-class FlatStyle:
+class FlatStyle(object):
 
     """ Print a newline delimited list of header files """
 
@@ -31,7 +40,7 @@ class FlatStyle:
         print(name)
 
 
-class DepthStyle:
+class DepthStyle(object):
 
     """ Print the include tree with some sort of indicator of depth """
 
@@ -50,7 +59,7 @@ class DepthStyle:
         print(self.indicator * depth + name)
 
 
-class DotStyle:
+class DotStyle(object):
 
     """ Print the include tree in graphviz dot format. """
 
@@ -88,7 +97,7 @@ class DotStyle:
             print('"' + name + '"->"' + child_name + '"')
 
 
-class TreeStyle:
+class TreeStyle(object):
 
     """ Show the cumulative cost and self cost of including the header files """
 
@@ -227,6 +236,11 @@ class TreeStyle:
 
 
 if __name__ == '__main__':
+    # Python 3 stdout accepts unicode by default
+    # So we only need to force python 2 stdout to accept unicode
+    if sys.version_info[0] < 3:
+        UTF8Writer = codecs.getwriter('utf8')
+        sys.stdout = UTF8Writer(sys.stdout)
     config_files = utils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a tree of header dependencies starting at a given C/C++ file. ',
@@ -276,7 +290,7 @@ if __name__ == '__main__':
     # the __init__
     kwargs = {}
     function_args = inspect.getargspec(style_class.__init__).args
-    for key, value in vars(myargs[0]).items():
+    for key, value in list(vars(myargs[0]).items()):
         if key in function_args:
             kwargs[key] = value
 
