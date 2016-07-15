@@ -21,6 +21,7 @@ from pprint import pprint
 
 
 class HeaderTree(object):
+
     """ Create a tree structure that shows the header include tree """
 
     def __init__(self, argv=None):
@@ -135,7 +136,9 @@ class HeaderTree(object):
             trialpath = self._find_include(include, cwd)
             if trialpath and trialpath not in results:
                 if self.args.verbose >= 9:
-                    print("HeaderTree::_process_impl_recursive about to follow ", trialpath)
+                    print(
+                        "HeaderTree::_process_impl_recursive about to follow ",
+                        trialpath)
                 self._process_impl_recursive(trialpath, results)
 
     # TODO: Stop writing to the same cache as HeaderDependencies.
@@ -160,6 +163,7 @@ class HeaderTree(object):
 
 
 class HeaderDependencies(object):
+
     """ Using the C Pre Processor, create the list of headers that the given file depends upon. """
 
     def __init__(self, argv=None):
@@ -220,6 +224,7 @@ class HeaderDependencies(object):
 
 
 class Hunter(object):
+
     """ Deeply inspect files to understand what are the header dependencies,
         other required source files, other required compile/link flags.
     """
@@ -267,16 +272,17 @@ class Hunter(object):
     # magic cache should be their own objects rather than trying to use
     # decorators
     @diskcache('magicflags', magic_mode=True)
-    def reparse_magic_flags(self, source_filename):
+    def parse_magic_flags(self, source_filename):
         """ The Hunter needs to maintain a map of filenames
             to the map of all magic flags and each flag is a set
             E.g., { '/somepath/libs/base/somefile.hpp':
                        {'CPPFLAGS':set('-D MYMACRO','-D MACRO2'),
                         'CXXFLAGS':set('-fsomeoption'),
                         'LDFLAGS':set('-lsomelib')}}
-            This function will extract all the magics flags from the given 
+            This function will extract all the magics flags from the given
             source (and all its included headers).
             A magic flag is anything that starts with a //# and ends with an =
+            source_filename must be an absolute path
         """
         text = ""
         if self.args.preprocess:
@@ -322,77 +328,80 @@ class Hunter(object):
 
         return flags_for_filename
 
-    def parse_magic_flags(self, realpath):
-        return self.reparse_magic_flags(realpath)
-
     def _extractSOURCE(self, realpath):
         sources = self.parse_magic_flags(realpath).get('SOURCE', set())
-        cwd = os.path.dirname(realpath)
-        return {ct.wrappedos.realpath(os.path.join(cwd, es)) for es in sources}
+        cwd = ct.wrappedos.dirname(realpath)
+        ess = {ct.wrappedos.realpath(os.path.join(cwd, es)) for es in sources}
+        if self.args.verbose >= 2 and ess:
+            print(
+                "Hunter::_extractSOURCE. realpath=",
+                realpath,
+                " SOURCE flag:",
+                ess)
+        return ess
 
-    def _required_files_impl(self, realpath, source_only, processed=None, result=None):
+    def _required_files_impl(self, realpath, processed=None):
         """ The recursive implementation that finds the source files.
-            The source_only flag describes whether the return set of files
-            contains source files only or all headers and files encountered.
+            This function returns all headers and source files encountered.
+            If you only need the source files then post process the result.
             It is a precondition that realpath actually is a realpath.
         """
         if not processed:
             processed = set()
-        if not result:
-            result = set()
-
         if self.args.verbose >= 7:
-            print("Hunter::_required_files_impl. Finding header deps for ", realpath)
+            print(
+                "Hunter::_required_files_impl. Finding header deps for ",
+                realpath)
 
-        # Don't try and collapse these lines.  
+        # Don't try and collapse these lines.
         # We don't want todo as a handle to the header_deps.process object.
         todo = set()
         todo |= self.header_deps.process(realpath)
 
         # One of the magic flags is SOURCE.  If that was present, add to the
         # file list.  WARNING:  Only use //#SOURCE= in a cpp file.
-        ess = self._extractSOURCE(realpath)
-        if self.args.verbose >= 2:
-            print("Hunter. SOURCE flag files:", ess)
-        todo |= ess
+        todo |= self._extractSOURCE(realpath)
 
-        # The header deps and magic flags have been parsed at this point so it 
+        # The header deps and magic flags have been parsed at this point so it
         # is now safe to mark the realpath as processed.
         processed.add(realpath)
-        if not source_only or ct.utils.issource(realpath):
-            result.add(realpath)
 
         implied = ct.utils.implied_source(realpath)
-        if implied and implied not in processed:
+        if implied:
             todo.add(implied)
 
-        try:
-            todo.remove(realpath)
-        except KeyError:
-            pass
         todo -= processed
-
         while todo:
+            if self.args.verbose >= 9:
+                print(
+                    "Hunter::_required_files_impl. ",
+                    realpath,
+                    " remaining todo:",
+                    todo)
             morefiles = set()
             for nextfile in todo:
-                morefiles |= self._required_files_impl(nextfile, source_only, processed, result)
+                morefiles |= self._required_files_impl(nextfile, processed)
             todo = morefiles.difference(processed)
-            if self.args.verbose >= 9:
-                print("Hunter::_required_files_impl. todo:", todo)
 
         if self.args.verbose >= 9:
-            print("Hunter::_required_files_impl. Returning ", result)
-        return result
+            print(
+                "Hunter::_required_files_impl. ",
+                realpath,
+                " Returning ",
+                processed)
+        return processed
 
     @memoize
     def required_source_files(self, filename):
-        """ Create the list of source files that also need to be compiled to complete the linkage of the given source file.
-            The returned set will contain the original source_filename.
-            As a side effect, examine the files to determine the magic //#... flags
+        """ Create the list of source files that also need to be compiled
+            to complete the linkage of the given file. If filename is a source
+            file itself then the returned set will contain the given filename.
+            As a side effect, the magic //#... flags are cached.
         """
         if self.args.verbose >= 9:
             print("Hunter::required_source_files for " + filename)
-        return self._required_files_impl(filename, source_only=True)
+        return {filename for filename in self.required_files(
+            filename) if ct.utils.issource(filename)}
 
     @memoize
     def required_files(self, filename):
@@ -403,10 +412,11 @@ class Hunter(object):
         """
         if self.args.verbose >= 9:
             print("Hunter::required_files for " + filename)
-        return self._required_files_impl(
-            ct.wrappedos.realpath(filename), source_only=False)
+        return self._required_files_impl(ct.wrappedos.realpath(filename))
 
     def header_dependencies(self, source_filename):
         if self.args.verbose >= 8:
-            print("Hunter asking for header dependencies for ", source_filename)
+            print(
+                "Hunter asking for header dependencies for ",
+                source_filename)
         return self.header_deps.process(source_filename)

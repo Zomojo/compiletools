@@ -39,12 +39,12 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
     if extraargs is None:
         extraargs = []
     argv = [
-               'ct-test',
-               '--variant',
-               'debug',
-               '--CPPFLAGS=-std=c++1z',
-               '--include',
-               uth.ctdir()] + extraargs + realpaths
+        'ct-test',
+        '--variant',
+        'debug',
+        '--CPPFLAGS=-std=c++1z',
+        '--include',
+        uth.ctdir()] + extraargs + realpaths
     cachename = os.path.join(tempdir, name)
     _reload_hunter(cachename)
     if name == 'ht':
@@ -94,6 +94,22 @@ class TestHunterModule(unittest.TestCase):
             'samples/dottypaths/dottypaths.cpp']
         for filename in filenames:
             self._ht_hd_tester(filename, ["--no-directread"])
+
+    def test_hunter_follows_source_files_from_header(self):
+        argv = [
+            'ct-test',
+            '--variant',
+            'debug',
+            '--CPPFLAGS=-std=c++1z',
+            '--include',
+            uth.ctdir()]
+        ht = ct.hunter.Hunter(argv)
+        relativepath = 'factory/widget_factory.hpp'
+        realpath = os.path.join(uth.samplesdir(), relativepath)
+        filesfromheader = ht.required_source_files(realpath)
+        filesfromsource = ht.required_source_files(
+            ct.utils.implied_source(realpath))
+        self.assertSetEqual(filesfromheader, filesfromsource)
 
     @staticmethod
     def _hunter_is_not_order_dependent(precall):
@@ -206,7 +222,6 @@ class TestHunterModule(unittest.TestCase):
     def test_ht_and_hd_generate_same_results_ex_nodirectread(self):
         self._ht_and_hd_generate_same_results_ex(["--no-directread"])
 
-
     def test_parsing_CFLAGS(self):
         relativepath = 'simple/test_cflags.c'
         samplesdir = uth.samplesdir()
@@ -214,7 +229,9 @@ class TestHunterModule(unittest.TestCase):
         argv = ['ct-test', realpath]
         hunter = ct.hunter.Hunter(argv)
         hunter.required_files(realpath)
-        self.assertSetEqual(hunter.parse_magic_flags(realpath).get('CFLAGS'), {'-std=gnu99'})
+        self.assertSetEqual(
+            hunter.parse_magic_flags(realpath).get('CFLAGS'),
+            {'-std=gnu99'})
 
     def tearDown(self):
         uth.delete_existing_parsers()
