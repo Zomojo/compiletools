@@ -1,8 +1,8 @@
 #!/bin/bash
 set -euo pipefail
 
-source=$(ct-deps-source --style Flat "$1"|tr '\n' ' ')
-ct-create-makefile -vvvv --static $source
+source=$(ct-filelist --filter=source --style Flat "$1"|tr '\n' ' ')
+ct-create-makefile -vvvv --static "$1" $source
 
 cpu_count=$(cat /proc/cpuinfo |grep processor | wc -l)
 make -j$((2*cpu_count))

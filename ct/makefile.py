@@ -152,20 +152,20 @@ class MakefileCreator:
         all_prerequisites = ["mkdir_output"]
 
         if self.args.static:
-            realpath_static = [ct.wrappedos.realpath(filename)
-                               for filename in self.args.static]
+            realpath_static = {ct.wrappedos.realpath(filename)
+                               for filename in self.args.static}
             realpaths.extend(realpath_static)
             staticlibrarypathname = self.namer.staticlibrary_pathname(
-                realpath_static[0])
+                ct.wrappedos.realpath(self.args.static[0]))
             all_outputs.add(staticlibrarypathname)
             all_prerequisites.append("cp_static_library")
 
         if self.args.dynamic:
-            realpath_dynamic = [ct.wrappedos.realpath(filename)
-                                for filename in self.args.dynamic]
+            realpath_dynamic = {ct.wrappedos.realpath(filename)
+                                for filename in self.args.dynamic}
             realpaths.extend(realpath_dynamic)
             dynamiclibrarypathname = self.namer.dynamiclibrary_pathname(
-                realpath_dynamic[0])
+                ct.wrappedos.realpath(self.args.dynamic[0]))
             all_outputs.add(dynamiclibrarypathname)
             all_prerequisites.append("cp_dynamic_library")
 
@@ -197,7 +197,8 @@ class MakefileCreator:
                     staticlibrarypathname))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_static,
-                exe_static_dynamic='static')
+                exe_static_dynamic='static',
+                libraryname=staticlibrarypathname)
 
         if self.args.dynamic:
             self.rules.add(
@@ -206,7 +207,8 @@ class MakefileCreator:
                     dynamiclibrarypathname))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_dynamic,
-                exe_static_dynamic='dynamic')
+                exe_static_dynamic='dynamic',
+                libraryname=dynamiclibrarypathname)
 
         self.rules.add(self._create_mkdir_rule(all_outputs))
         self.rules |= self._create_clean_rules(all_outputs)
@@ -268,10 +270,9 @@ class MakefileCreator:
             linkerflags=""
 
         allprerequisites = " ".join(extraprereqs)
-        object_names = " ".join(
-            self.namer.object_pathname(source) for source in completesources)
+        object_names = {self.namer.object_pathname(source) for source in completesources}
         allprerequisites += " "
-        allprerequisites += object_names
+        allprerequisites += " ".join(object_names)
 
         all_magic_ldflags = set()
         if not suppressmagicldflags:
@@ -284,10 +285,10 @@ class MakefileCreator:
 
         return Rule(target=outputname,
                     prerequisites=allprerequisites,
-                    recipe=" ".join([linker,
-                                     linkerflags] + ["-o",
-                                                     outputname,
-                                                     object_names] + list(all_magic_ldflags)))
+                    recipe=" ".join([linker, linkerflags] + 
+                                    ["-o", outputname] +
+                                    list(object_names) +
+                                    list(all_magic_ldflags)))
 
     def _create_link_rule_exe(self, sourcefilename, completesources):
         exename = self.namer.executable_pathname(
@@ -316,10 +317,8 @@ class MakefileCreator:
 
     def _create_link_rule_static_library(
             self,
-            sourcefilename,
+            outputname,
             completesources):
-        outputname = self.namer.staticlibrary_pathname(
-            ct.wrappedos.realpath(sourcefilename))
         return self._create_link_rule(
             outputname=outputname,
             completesources=completesources,
@@ -328,21 +327,15 @@ class MakefileCreator:
 
     def _create_link_rule_dynamic_library(
             self,
-            sourcefilename,
-            completesources):
-        magicflags = self.hunter.parse_magic_flags(sourcefilename)
-        magicflags.setdefault('LDFLAGS', set()).add('-shared')
-        outputname = self.namer.dynamiclibrary_pathname(
-            ct.wrappedos.realpath(sourcefilename))
-        rule = self._create_link_rule(
             outputname,
-            completesources,
-            self.args.LD,
-            self.args.LDFLAGS)
-        magicflags.get('LDFLAGS').remove('-shared')
-        return rule
+            completesources):
+        return self._create_link_rule(
+            outputname=outputname,
+            completesources=completesources,
+            linker=self.args.LD,
+            linkerflags=self.args.LDFLAGS+" -shared")
 
-    def _create_makefile_rules_for_sources(self, sources, exe_static_dynamic):
+    def _create_makefile_rules_for_sources(self, sources, exe_static_dynamic, libraryname=None):
         """ For all the given source files return the set of rules required
             for the Makefile that will turn the source files into executables.
         """
@@ -372,12 +365,12 @@ class MakefileCreator:
                 rules_for_source.add(linkrules)
         elif 'static' in exe_static_dynamic:
             linkrules = self._create_link_rule_static_library(
-                sources[0],
+                libraryname,
                 sources)
             rules_for_source.add(linkrules)
         elif 'dynamic' in exe_static_dynamic:
             linkrules = self._create_link_rule_dynamic_library(
-                sources[0],
+                libraryname,
                 sources)
             rules_for_source.add(linkrules)
         else:
