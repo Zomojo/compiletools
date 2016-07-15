@@ -255,14 +255,17 @@ class MakefileCreator:
             outputname,
             completesources,
             linker,
-            linkerflags,
-            extraprereqs=None):
+            linkerflags=None,
+            extraprereqs=None,
+            suppressmagicldflags=False):
         """ For a given source file (so usually the file with the main) and the
             set of complete sources (i.e., all the other source files + the original)
             return the link rule required for the Makefile
         """
         if extraprereqs is None:
             extraprereqs = []
+        if linkerflags is None:
+            linkerflags=""
 
         allprerequisites = " ".join(extraprereqs)
         object_names = " ".join(
@@ -271,12 +274,13 @@ class MakefileCreator:
         allprerequisites += object_names
 
         all_magic_ldflags = set()
-        for source in completesources:
-            magic_flags = self.hunter.parse_magic_flags(source)
-            all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
-            all_magic_ldflags |= magic_flags.get(
-                'LINKFLAGS',
-                set())  # For backward compatibility with cake
+        if not suppressmagicldflags:
+            for source in completesources:
+                magic_flags = self.hunter.parse_magic_flags(source)
+                all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
+                all_magic_ldflags |= magic_flags.get(
+                    'LINKFLAGS',
+                    set())  # For backward compatibility with cake
 
         return Rule(target=outputname,
                     prerequisites=allprerequisites,
@@ -317,10 +321,10 @@ class MakefileCreator:
         outputname = self.namer.staticlibrary_pathname(
             ct.wrappedos.realpath(sourcefilename))
         return self._create_link_rule(
-            outputname,
-            completesources,
-            "ar -src",
-            "")
+            outputname=outputname,
+            completesources=completesources,
+            linker="ar -src",
+            suppressmagicldflags=True)
 
     def _create_link_rule_dynamic_library(
             self,
