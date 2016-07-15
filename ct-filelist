@@ -3,55 +3,14 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys
-
 import configargparse
-
 import ct.utils
-import ct.wrappedos
-from ct.hunter import Hunter
-
-
-def check_filename(filename):
-    if not ct.wrappedos.isfile(filename):
-        sys.stderr.write(
-            "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(
-                filename))
-        exit(1)
-
-
-def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-    config_files = ct.utils.config_files_from_variant()
-    cap = configargparse.getArgumentParser(
-        description='Determine header and source dependencies of a C/C++ file. ',
-        formatter_class=configargparse.DefaultsRawFormatter,
-        default_config_files=config_files)
-    cap.add(
-        "-c",
-        "--config",
-        is_config_file=True,
-        help="Manually specify the config file path if you want to override the variant default")
-    cap.add(
-        "filename",
-        help='File(s) to start following dependencies from."',
-        nargs='+')
-
-    # This will add the common arguments as a side effect
-    hh = Hunter(argv)
-    myargs = cap.parse_known_args(argv[1:])
-    ct.utils.verbose_print_args(myargs[0])
-
-    check_filename(myargs[0].filename[0])
-
-    results = set()
-    for filename in myargs[0].filename:
-        check_filename(filename)
-        results |= hh.required_files(filename)
-
-    for filename in results:
-        print(filename)
-
+import ct.filelist
 
 if __name__ == '__main__':
-    main()
+    config_files = ct.utils.config_files_from_variant()
+    cap = configargparse.getArgumentParser(
+        description='Determine header and source dependencies of a C/C++ file by following headers and implied source files.',
+        formatter_class=configargparse.DefaultsRawFormatter,
+        default_config_files=config_files)
+    sys.exit(ct.filelist.main())
