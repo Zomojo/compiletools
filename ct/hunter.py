@@ -294,7 +294,12 @@ class Hunter(object):
             if self.args.verbose >= 3:
                 print(" ".join(cmd))
             try:
-                text = subprocess.check_output(cmd, universal_newlines=True)
+                # Redirect stderr to stdout (which is captured) rather than
+                # have it spew over the console
+                text = subprocess.check_output(
+                    cmd,
+                    stderr=subprocess.STDOUT,
+                    universal_newlines=True)
                 if self.args.verbose >= 7:
                     print(text)
             except OSError as err:
