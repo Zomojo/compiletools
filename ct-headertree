@@ -292,4 +292,7 @@ if __name__ == '__main__':
 
     # Construct an instance of the style class which will print the header
     # tree as a side effect
-    style_object = style_class(inctree, **kwargs)
+    try:
+        style_object = style_class(inctree, **kwargs)
+    except IOError:
+        pass
