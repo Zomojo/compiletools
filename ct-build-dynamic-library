@@ -1,8 +1,10 @@
 #!/bin/bash
 set -euo pipefail
 
-source=$(ct-filelist --filter=source --style Flat "$1"|tr '\n' ' ')
-ct-create-makefile -vvvv --dynamic "$1" $source
+startsource=$1
+shift
+source=$(ct-filelist --filter=source --style Flat "$startsource"|tr '\n' ' ')
+ct-create-makefile --dynamic "$startsource" ${source} "$@"
 
 cpu_count=$(cat /proc/cpuinfo |grep processor | wc -l)
 make -j$((2*cpu_count))
