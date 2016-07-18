@@ -9,8 +9,8 @@ all_test_sources=""
 for test_dir in $test_dirs; do
     all_test_sources+=$(find "$test_dir" -name 'test*cpp' | tr '\n' ' ')
 done
-
-cmd="ct-create-cmakelists ${all_exe_sources} ${all_test_sources} $@"
+all=$(echo ${all_exe_sources} ${all_test_sources} |tr ' ' '\n'|sort -u | tr '\n' ' ')
+cmd="ct-create-cmakelists ${all} $@"
 echo $cmd
 $cmd
 
