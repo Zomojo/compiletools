@@ -1,8 +1,10 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import sys
 import os
 import unittest
+import configargparse
 
 import ct.unittesthelper as uth
 import ct.utils as utils
@@ -59,6 +61,12 @@ class TestImpliedSource(unittest.TestCase):
         result = utils.implied_source(os.path.join(uth.samplesdir(), relativefilename))
         self.assertEqual(expected, result)
 
+class TestNamer(unittest.TestCase):
+    def test_executable_pathname(self):
+        cap = configargparse.getArgumentParser()
+        namer = utils.Namer(cap=cap,variant='myvar',argv=['--no-git-root'])
+        exename = namer.executable_pathname('/home/user/code/my.cpp')
+        self.assertEqual(exename,os.path.join(os.getcwd(),'bin/myvar.37ab0615/home/user/code/my'))
 
 class TestOrderedSet(unittest.TestCase):
     def test_initialization(self):

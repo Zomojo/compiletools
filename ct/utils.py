@@ -413,6 +413,10 @@ def verbose_print_args(args):
         print(args)
 
 
+def removemount(absolutepath):
+    """ Remove the '/' on unix and (TODO) 'C:\' on Windows """
+    return absolutepath[1:]
+
 class Namer(object):
 
     """ From a source filename, calculate related names
@@ -425,6 +429,23 @@ class Namer(object):
         # self.args will exist after this call
         setattr_args(self, argv)
 
+    def _outputdir(self, defaultdir, sourcefilename=None):
+        """ Used by object_dir and executable_dir.
+            defaultdir must be either self.args.objdir or self.args.bindir
+        """
+        if sourcefilename:
+            try:
+                project_pathname = git_utils.strip_git_root(sourcefilename)
+            except OSError:
+                project_pathname = removemount(sourcefilename)
+
+            relative = os.path.join(
+                defaultdir,
+                ct.wrappedos.dirname(project_pathname))
+        else:
+            relative = defaultdir
+        return ct.wrappedos.realpath(relative)
+
     @memoize
     def object_dir(self, sourcefilename=None):
         """ Put objects into a directory structure that starts with the
@@ -432,13 +453,7 @@ class Namer(object):
             structure.  This way we can separate object files that have
             the same name but different paths.
         """
-        if sourcefilename:
-            project_pathname = git_utils.strip_git_root(sourcefilename)
-            relative = "".join(
-                [self.args.objdir, "/", ct.wrappedos.dirname(project_pathname)])
-        else:
-            relative = self.args.objdir
-        return ct.wrappedos.realpath(relative)
+        return self._outputdir(self.args.objdir,sourcefilename)
 
     @memoize
     def object_name(self, sourcefilename):
@@ -461,14 +476,7 @@ class Namer(object):
             structure.  This way we can separate executable files that have
             the same name but different paths.
         """
-        if sourcefilename:
-            project_pathname = git_utils.strip_git_root(sourcefilename)
-            relative = os.path.join(
-                self.args.bindir,
-                ct.wrappedos.dirname(project_pathname))
-        else:
-            relative = self.args.bindir
-        return ct.wrappedos.realpath(relative)
+        return self._outputdir(self.args.bindir,sourcefilename)
 
     @memoize
     def executable_name(self, sourcefilename):
