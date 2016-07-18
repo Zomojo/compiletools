@@ -199,8 +199,13 @@ def add_common_arguments(cap):
         "--include",
         help="Extra path(s) to add to the list of include paths",
         nargs='*',
-        default=[])
-
+        default=[])    
+    add_boolean_argument(
+        cap,
+        "shorten",
+        'strip_git_root',
+        default=False,
+        help="Strip the git root from the filenames")
 
 def add_link_arguments(cap):
     """ Insert the link arguments into the configargparse singleton """
