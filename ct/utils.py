@@ -5,7 +5,7 @@ import collections
 import os
 import subprocess
 import sys
-
+import zlib
 import appdirs
 import configargparse
 
@@ -105,6 +105,16 @@ def extract_variant_from_argv(argv=None):
             pass
 
     return variant
+
+def variant_with_hash(argv=None,variant=None):
+    """ Note that the argv can override the options in the config file.
+        If we want to keep the differently specified flags separate then
+        some hash of the argv must be added onto the config file name.
+        Choose adler32 for speed
+    """
+    if not variant:
+        variant = extract_variant_from_argv(argv)
+    return "%s.%08x" % (variant,(zlib.adler32(str(argv)) & 0xffffffff))
 
 
 def default_config_directories(
@@ -396,11 +406,11 @@ def setattr_args(obj, argv=None):
 
 
 def verbose_print_args(args):
-    if args.verbose >= 2:
-        print(args)
     if args.verbose >= 3:
         cap = configargparse.getArgumentParser()
         cap.print_values()
+    if args.verbose >= 2:
+        print(args)
 
 
 class Namer(object):
@@ -410,7 +420,7 @@ class Namer(object):
     """
 
     def __init__(self, cap, variant, argv=None):
-        add_output_directory_arguments(cap, variant)
+        add_output_directory_arguments(cap, variant_with_hash(argv=argv,variant=variant))
         self.args = None  # Keep pylint happy
         # self.args will exist after this call
         setattr_args(self, argv)
