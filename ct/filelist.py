@@ -6,6 +6,7 @@ import sys
 import configargparse
 
 import ct.utils
+import ct.git_utils
 import ct.wrappedos
 from ct.hunter import Hunter
 
@@ -93,10 +94,19 @@ def main(argv=None):
                 filteredfiles.remove(realpath)
             except KeyError:
                 pass
-            print(realpath)
-            styleobject(filteredfiles)
+            outputpath=realpath
+            if myargs[0].strip_git_root:
+                output=ct.git_utils.strip_git_root(realpath)
+            print(outputpath)
+            if myargs[0].strip_git_root:
+                styleobject({ct.git_utils.strip_git_root(ff) for ff in filteredfiles})
+            else:
+                styleobject(filteredfiles)
 
     if myargs[0].merge:
-        styleobject(sorted(mergedfiles))
+        if myargs[0].strip_git_root:
+            styleobject({ct.git_utils.strip_git_root(ff) for ff in mergedfiles})
+        else:
+            styleobject(sorted(mergedfiles))
 
     return 0
