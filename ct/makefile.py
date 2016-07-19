@@ -138,10 +138,11 @@ class MakefileCreator:
         return rules
 
     def _create_cp_rule(self, static_dynamic_executables, prerequisites):
+
         return Rule(
             target="_".join(["cp", static_dynamic_executables]),
             prerequisites=prerequisites,
-            recipe=" ".join(["cp", prerequisites, self.namer.executable_dir()]),
+            recipe=" ".join(["cp", prerequisites, self.namer.executable_dir(), "2>/dev/null ||true"]),
             phony=True)
 
     def create(self):
