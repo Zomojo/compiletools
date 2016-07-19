@@ -66,7 +66,7 @@ class TestNamer(unittest.TestCase):
         cap = configargparse.getArgumentParser()
         namer = utils.Namer(cap=cap,variant='myvar',argv=['--no-git-root'])
         exename = namer.executable_pathname('/home/user/code/my.cpp')
-        self.assertEqual(exename,os.path.join(os.getcwd(),'bin/myvar.37ab0615/home/user/code/my'))
+        self.assertEqual(exename,os.path.join(os.getcwd(),'bin/myvar.011500b9/home/user/code/my'))
 
 class TestOrderedSet(unittest.TestCase):
     def test_initialization(self):

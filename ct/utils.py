@@ -40,6 +40,7 @@ def implied_source(filename):
     else:
         return None
 
+
 @memoize
 def impliedheader(filename):
     """ Guess what the header file is corresponding to the given source file """
@@ -52,7 +53,8 @@ def impliedheader(filename):
     else:
         return None
 
-def extractinitargs(args,classname):
+
+def extractinitargs(args, classname):
     """ Extract the arguments that classname.__init__ needs out of args """
     # Build up the appropriate arguments to pass to the __init__ of the object.
     # For each argument given on the command line, check if it matches one for
@@ -63,6 +65,7 @@ def extractinitargs(args,classname):
         if key in function_args:
             kwargs[key] = value
     return kwargs
+
 
 def tobool(value):
     """
@@ -117,15 +120,22 @@ def extract_variant_from_argv(argv=None):
 
     return variant
 
-def variant_with_hash(argv=None,variant=None):
+
+def variant_with_hash(argv=None, variant=None):
     """ Note that the argv can override the options in the config file.
         If we want to keep the differently specified flags separate then
         some hash of the argv must be added onto the config file name.
         Choose adler32 for speed
     """
+    if argv is None:
+        argv = sys.argv
+
     if not variant:
         variant = extract_variant_from_argv(argv)
-    return "%s.%08x" % (variant,(zlib.adler32(str(argv)) & 0xffffffff))
+
+    # Don't include the executable name in the hash (just want the options)
+    # The & <magicnumber> at the end is so that python2/3 give the same result
+    return "%s.%08x" % (variant, (zlib.adler32(str(argv[1:])) & 0xffffffff))
 
 
 def default_config_directories(
@@ -210,13 +220,14 @@ def add_common_arguments(cap):
         "--include",
         help="Extra path(s) to add to the list of include paths",
         nargs='*',
-        default=[])    
+        default=[])
     add_boolean_argument(
         cap,
         "shorten",
         'strip_git_root',
         default=False,
         help="Strip the git root from the filenames")
+
 
 def add_link_arguments(cap):
     """ Insert the link arguments into the configargparse singleton """
@@ -433,6 +444,7 @@ def removemount(absolutepath):
     """ Remove the '/' on unix and (TODO) 'C:\' on Windows """
     return absolutepath[1:]
 
+
 class Namer(object):
 
     """ From a source filename, calculate related names
@@ -440,7 +452,11 @@ class Namer(object):
     """
 
     def __init__(self, cap, variant, argv=None):
-        add_output_directory_arguments(cap, variant_with_hash(argv=argv,variant=variant))
+        add_output_directory_arguments(
+            cap,
+            variant_with_hash(
+                argv=argv,
+                variant=variant))
         self.args = None  # Keep pylint happy
         # self.args will exist after this call
         setattr_args(self, argv)
@@ -469,7 +485,7 @@ class Namer(object):
             structure.  This way we can separate object files that have
             the same name but different paths.
         """
-        return self._outputdir(self.args.objdir,sourcefilename)
+        return self._outputdir(self.args.objdir, sourcefilename)
 
     @memoize
     def object_name(self, sourcefilename):
@@ -492,7 +508,7 @@ class Namer(object):
             structure.  This way we can separate executable files that have
             the same name but different paths.
         """
-        return self._outputdir(self.args.bindir,sourcefilename)
+        return self._outputdir(self.args.bindir, sourcefilename)
 
     @memoize
     def executable_name(self, sourcefilename):
