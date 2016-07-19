@@ -20,9 +20,25 @@ def _find_git_root(directory):
     """ Internal function to find the git root but cache it against the given directory """
     original_cwd = os.getcwd()
     os.chdir(directory)
-    git_root = subprocess.check_output(
-        ["git", "rev-parse", "--show-toplevel"], universal_newlines=True).strip('\n')
-    os.chdir(original_cwd)
+    try:
+        # Redirect stderr to stdout (which is captured) rather than
+        # have it spew over the console
+        git_root = subprocess.check_output(
+            ["git", "rev-parse", "--show-toplevel"], 
+            stderr=subprocess.STDOUT,
+            universal_newlines=True).strip('\n')
+    except subprocess.CalledProcessError:
+        # An exception means we aren't in a real git repository.
+        # But are we in a fake git repository? (i.e., there exists a dummy .git file)
+        trialgitroot = directory
+
+        while (trialgitroot != "/"):
+            if (os.path.exists( trialgitroot + "/.git" )):
+                git_root = trialgitroot
+                break
+            trialgitroot = os.path.dirname(trialgitroot)
+    finally:
+        os.chdir(original_cwd)
     return git_root
 
 
