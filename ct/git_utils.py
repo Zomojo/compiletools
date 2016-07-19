@@ -58,6 +58,6 @@ class NameAdjuster(object):
 
     def adjust(self, name):
         if self.strip_git_root:
-            return ct.git_utils.strip_git_root(ff)
+            return strip_git_root(name)
         else:
             return name
