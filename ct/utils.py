@@ -5,6 +5,7 @@ import collections
 import os
 import subprocess
 import sys
+import inspect
 import zlib
 import appdirs
 import configargparse
@@ -51,7 +52,17 @@ def impliedheader(filename):
     else:
         return None
 
-
+def extractinitargs(args,classname):
+    """ Extract the arguments that classname.__init__ needs out of args """
+    # Build up the appropriate arguments to pass to the __init__ of the object.
+    # For each argument given on the command line, check if it matches one for
+    # the __init__
+    kwargs = {}
+    function_args = inspect.getargspec(classname.__init__).args
+    for key, value in list(vars(args).items()):
+        if key in function_args:
+            kwargs[key] = value
+    return kwargs
 
 def tobool(value):
     """

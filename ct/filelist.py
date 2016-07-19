@@ -2,7 +2,6 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys
-
 import configargparse
 
 import ct.utils
@@ -10,19 +9,40 @@ import ct.git_utils
 import ct.wrappedos
 from ct.hunter import Hunter
 
+class NameAdjuster(object):
+    def __init__(self, strip_git_root):
+        self.strip_git_root = strip_git_root
 
-class FlatStyle:
+    def adjust(self,name):
+        if self.strip_git_root:
+            return ct.git_utils.strip_git_root(ff) 
+        else:
+            return name
+
+class FlatStyle(NameAdjuster):
 
     def __call__(self, sourcefiles):
         for source in sourcefiles:
-            print(source)
+            print(self.adjust(source))
 
-
-class IndentStyle:
+class IndentStyle(NameAdjuster):
 
     def __call__(self, sourcefiles):
         for source in sourcefiles:
-            print('\t', source)
+            print('\t', self.adjust(source))
+
+
+class HeaderFilter(object):
+    def process(self,files):
+        return {fn for fn in files if ct.utils.isheader(fn)}
+
+class SourceFilter(object):
+    def process(self,files):
+        return {fn for fn in files if ct.utils.issource(fn)}
+
+class AllFilter(object):
+    def process(self,files):
+        return files
 
 
 def check_filename(filename):
@@ -55,11 +75,11 @@ def main(argv=None):
         default='Flat',
         help="Output formatting style")
 
-    passfilters = ['header', 'source', 'all']
+    passfilters = [st[:-6] for st in dict(globals()) if st.endswith('Filter')]
     cap.add(
         '--filter',
         choices=passfilters,
-        default='all',
+        default='All',
         help="What type of files are allowed in the output")
 
     ct.utils.add_boolean_argument(cap, 'merge', default=True, help='Merge all outputs into a single list')
@@ -69,21 +89,18 @@ def main(argv=None):
     ct.utils.verbose_print_args(myargs[0])
 
     styleclass = globals()[myargs[0].style + 'Style']
-    styleobject = styleclass()
+    kwargs = ct.utils.extractinitargs(myargs[0],styleclass)
+    styleobject = styleclass(**kwargs)
+
+    filterclass = globals()[myargs[0].filter + 'Filter']
+    filterobject = filterclass()
 
     mergedfiles = set()
     for filename in myargs[0].filename:
         check_filename(filename)
         realpath = ct.wrappedos.realpath(filename)
         files = hunter.required_files(realpath)
-        if myargs[0].filter == 'header':
-            filteredfiles = {
-                filename for filename in files if ct.utils.isheader(filename)}
-        elif myargs[0].filter == 'source':
-            filteredfiles = {
-                filename for filename in files if ct.utils.issource(filename)}
-        else:
-            filteredfiles = files
+        filteredfiles = filterobject.process(files)
 
         if myargs[0].merge:
             mergedfiles |= filteredfiles
@@ -94,19 +111,10 @@ def main(argv=None):
                 filteredfiles.remove(realpath)
             except KeyError:
                 pass
-            outputpath=realpath
-            if myargs[0].strip_git_root:
-                output=ct.git_utils.strip_git_root(realpath)
-            print(outputpath)
-            if myargs[0].strip_git_root:
-                styleobject({ct.git_utils.strip_git_root(ff) for ff in filteredfiles})
-            else:
-                styleobject(filteredfiles)
+            print(styleobject.adjust(realpath))
+            styleobject(filteredfiles)
 
     if myargs[0].merge:
-        if myargs[0].strip_git_root:
-            styleobject({ct.git_utils.strip_git_root(ff) for ff in mergedfiles})
-        else:
-            styleobject(sorted(mergedfiles))
+        styleobject(sorted(mergedfiles))
 
     return 0
