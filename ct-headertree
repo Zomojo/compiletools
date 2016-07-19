@@ -10,7 +10,6 @@ if sys.version_info[0] < 3:
     import codecs
 from collections import defaultdict
 from collections import Counter
-import inspect
 import math
 import configargparse
 import ct.wrappedos
@@ -20,28 +19,27 @@ import ct.utils as utils
 import ct.tree as tree
 
 
-class FlatStyle(object):
+class FlatStyle(ct.git_utils.NameAdjuster):
+
     """ Print a newline delimited list of header files """
 
     def __init__(self, tree_, strip_git_root=True):
-        self.strip_git_root = strip_git_root
+        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
         tree.depth_first_traverse(
             node=tree_,
             pre_traverse_function=self.print_wrapper)
 
     def print_wrapper(self, key):
         """ Wrap the builtin print so that it can be passed to the tree.depth_first_traverse """
-        name = key
-        if self.strip_git_root:
-            name = git_utils.strip_git_root(key)
-        print(name)
+        print(self.adjust(key))
 
 
-class DepthStyle(object):
+class DepthStyle(ct.git_utils.NameAdjuster):
+
     """ Print the include tree with some sort of indicator of depth """
 
     def __init__(self, tree_, strip_git_root=True, indicator="--"):
-        self.strip_git_root = strip_git_root
+        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
         self.indicator = indicator
         tree.depth_first_traverse(
             node=tree_,
@@ -49,24 +47,19 @@ class DepthStyle(object):
 
     def depth_indicator_print(self, key, depth):
         """ Print the filenames with a leading indicator to denote the depth of the file from the root """
-        name = key
-        if self.strip_git_root:
-            name = git_utils.strip_git_root(key)
-        print(self.indicator * depth + name)
+        print(self.indicator * depth + self.adjust(key))
 
 
-class DotStyle(object):
+class DotStyle(ct.git_utils.NameAdjuster):
+
     """ Print the include tree in graphviz dot format. """
 
     def __init__(self, tree_, strip_git_root=True):
-        self.strip_git_root = strip_git_root
+        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
         for key in tree_:
             # TODO: Take care of the case where there are multiple top level
             # nodes
-            if strip_git_root:
-                self.name = git_utils.strip_git_root(key)
-            else:
-                self.name = key
+            self.name = self.adjust(key)
         self._print_header()
         tree.depth_first_traverse(
             node=tree_,
@@ -81,19 +74,19 @@ class DotStyle(object):
         print("}")
 
     def _print_node(self, key, value):
-        name = key
-        if self.strip_git_root:
-            name = git_utils.strip_git_root(key)
-        print('"' + name + '"')
+        print('"' + self.adjust(key) + '"')
 
         for child_key in value:
-            child_name = child_key
-            if self.strip_git_root:
-                child_name = git_utils.strip_git_root(child_key)
-            print('"' + name + '"->"' + child_name + '"')
+            print(
+                '"' +
+                self.adjust(key) +
+                '"->"' +
+                self.adjust(child_key) +
+                '"')
 
 
-class TreeStyle(object):
+class TreeStyle(ct.git_utils.NameAdjuster):
+
     """ Show the cumulative cost and self cost of including the header files """
 
     # TODO: There are now four different statistics that TreeStyle calculates and
@@ -104,7 +97,7 @@ class TreeStyle(object):
     #       you want
 
     def __init__(self, tree_, strip_git_root=True, verbose=0):
-        self.strip_git_root = strip_git_root
+        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
         self.verbose = verbose
 
         # The various max_* variables are used to figure out the number of
@@ -215,7 +208,7 @@ class TreeStyle(object):
                 " " +
                 parents_format_str.format(
                     p=len(self.parents[
-                              item['key']])) +
+                        item['key']])) +
                 " " +
                 tree_structure +
                 item['name'])
@@ -272,20 +265,12 @@ if __name__ == '__main__':
 
     # Create the headertree then print it in the appropriate style
     inctree = ht.generatetree(myargs[0].filename[0])
-    style_class = globals()[myargs[0].style + 'Style']
-
-    # Build up the appropriate arguments to pass to the initialization of the style object
-    # For each argument given on the command line, check if it matches one for
-    # the __init__
-    kwargs = {}
-    function_args = inspect.getargspec(style_class.__init__).args
-    for key, value in list(vars(myargs[0]).items()):
-        if key in function_args:
-            kwargs[key] = value
+    styleclass = globals()[myargs[0].style + 'Style']
+    kwargs = ct.utils.extractinitargs(myargs[0], styleclass)
 
     # Construct an instance of the style class which will print the header
     # tree as a side effect
     try:
-        style_object = style_class(inctree, **kwargs)
+        styleobject = styleclass(inctree, **kwargs)
     except IOError:
         pass

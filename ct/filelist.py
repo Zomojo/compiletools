@@ -9,39 +9,36 @@ import ct.git_utils
 import ct.wrappedos
 from ct.hunter import Hunter
 
-class NameAdjuster(object):
-    def __init__(self, strip_git_root):
-        self.strip_git_root = strip_git_root
 
-    def adjust(self,name):
-        if self.strip_git_root:
-            return ct.git_utils.strip_git_root(ff) 
-        else:
-            return name
-
-class FlatStyle(NameAdjuster):
+class FlatStyle(ct.git_utils.NameAdjuster):
 
     def __call__(self, sourcefiles):
         for source in sourcefiles:
             print(self.adjust(source))
 
-class IndentStyle(NameAdjuster):
+
+class IndentStyle(ct.git_utils.NameAdjuster):
 
     def __call__(self, sourcefiles):
         for source in sourcefiles:
             print('\t', self.adjust(source))
 
 
-class HeaderFilter(object):
-    def process(self,files):
+class HeaderPassFilter(object):
+
+    def __call__(self, files):
         return {fn for fn in files if ct.utils.isheader(fn)}
 
-class SourceFilter(object):
-    def process(self,files):
+
+class SourcePassFilter(object):
+
+    def __call__(self, files):
         return {fn for fn in files if ct.utils.issource(fn)}
 
-class AllFilter(object):
-    def process(self,files):
+
+class AllPassFilter(object):
+
+    def __call__(self, files):
         return files
 
 
@@ -75,24 +72,29 @@ def main(argv=None):
         default='Flat',
         help="Output formatting style")
 
-    passfilters = [st[:-6] for st in dict(globals()) if st.endswith('Filter')]
+    passfilters = [st[:-10]
+                   for st in dict(globals()) if st.endswith('PassFilter')]
     cap.add(
         '--filter',
         choices=passfilters,
         default='All',
         help="What type of files are allowed in the output")
 
-    ct.utils.add_boolean_argument(cap, 'merge', default=True, help='Merge all outputs into a single list')
+    ct.utils.add_boolean_argument(
+        cap,
+        'merge',
+        default=True,
+        help='Merge all outputs into a single list')
     hunter = Hunter(argv)
 
     myargs = cap.parse_known_args(args=argv[1:])
     ct.utils.verbose_print_args(myargs[0])
 
     styleclass = globals()[myargs[0].style + 'Style']
-    kwargs = ct.utils.extractinitargs(myargs[0],styleclass)
+    kwargs = ct.utils.extractinitargs(myargs[0], styleclass)
     styleobject = styleclass(**kwargs)
 
-    filterclass = globals()[myargs[0].filter + 'Filter']
+    filterclass = globals()[myargs[0].filter + 'PassFilter']
     filterobject = filterclass()
 
     mergedfiles = set()
@@ -100,7 +102,7 @@ def main(argv=None):
         check_filename(filename)
         realpath = ct.wrappedos.realpath(filename)
         files = hunter.required_files(realpath)
-        filteredfiles = filterobject.process(files)
+        filteredfiles = filterobject(files)
 
         if myargs[0].merge:
             mergedfiles |= filteredfiles
@@ -112,7 +114,7 @@ def main(argv=None):
             except KeyError:
                 pass
             print(styleobject.adjust(realpath))
-            styleobject(filteredfiles)
+            styleobject(sorted(filteredfiles))
 
     if myargs[0].merge:
         styleobject(sorted(mergedfiles))
