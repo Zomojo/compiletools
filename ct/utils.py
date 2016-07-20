@@ -269,6 +269,13 @@ def add_target_arguments(cap):
         nargs='*',
         help="File(s) to compile to a static library")
     cap.add(
+        "--tests",
+        nargs='*',
+        help="File(s) to compile to a test and then execute")
+    cap.add(
+        "--TESTPREFIX",
+        help='Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"')
+    cap.add(
         "--project-version",
         dest="projectversion",
         help="Set the CAKE_PROJECT_VERSION macro to this value")

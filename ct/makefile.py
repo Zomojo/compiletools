@@ -260,6 +260,24 @@ class MakefileCreator:
             recipe=" ".join(["cp", prerequisites, self.namer.executable_dir(), "2>/dev/null ||true"]),
             phony=True)
 
+    def _create_test_rules(self, alltestsources):
+        testprefix = ""
+        if self.args.TESTPREFIX:
+            testprefix = self.args.TESTPREFIX
+
+        rules = set()
+        for tt in alltestsources:
+            exename = self.namer.executable_pathname(tt)
+            testresult = ".".join([exename,"result"])
+
+            recipe = " ".join(["@echo ... ", exename,";rm -f", testresult, "&&", testprefix, exename, "&& touch", testresult])
+            rules.add(Rule(
+                    target=testresult,
+                    prerequisites=exename,
+                    recipe=recipe))
+        return rules
+
+
     def _gather_outputs(self):
         alloutputs = set()
 
@@ -274,10 +292,19 @@ class MakefileCreator:
             alloutputs.add(dynamiclibrarypathname)
 
         if self.args.filename:
-            all_exes = {
+            allexes = {
                 self.namer.executable_pathname(
                     ct.wrappedos.realpath(source)) for source in self.args.filename}
-            alloutputs |= all_exes
+            alloutputs |= allexes
+
+        if self.args.tests:
+            alltestsexes = {
+                self.namer.executable_pathname(
+                    ct.wrappedos.realpath(source)) for source in self.args.tests}
+            alloutputs |= alltestsexes
+
+            alltestresults =  {".".join([exename,"result"]) for exename in alltestsexes}
+            alloutputs |= alltestresults
 
         return alloutputs
 
@@ -290,7 +317,7 @@ class MakefileCreator:
         if self.args.dynamic:
             allprerequisites.append("cp_dynamic_library")
 
-        if self.args.filename:
+        if self.args.filename or self.args.tests:
             allprerequisites.append("cp_executables")
 
         allprerequisites.extend(alloutputs)
@@ -303,9 +330,16 @@ class MakefileCreator:
         allprerequisites = self._gather_prerequisites(alloutputs)
         self.rules.add(self._create_all_rule(allprerequisites))
 
+        realpath_sources = []
         if self.args.filename:
-            realpath_sources = sorted(
+            realpath_sources += sorted(
                 ct.wrappedos.realpath(source) for source in self.args.filename)
+        if self.args.tests:
+            realpath_tests = sorted(
+                ct.wrappedos.realpath(source) for source in self.args.tests)
+            realpath_sources += realpath_tests 
+
+        if self.args.filename or self.args.tests:
             allexes = {
                 self.namer.executable_pathname(source) for source in realpath_sources}
             self.rules.add(
@@ -315,6 +349,9 @@ class MakefileCreator:
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_sources,
                 exe_static_dynamic='Exe')
+        
+        if self.args.tests:
+            self.rules |= self._create_test_rules(realpath_tests)
 
         if self.args.static:
             libraryname = self.namer.staticlibrary_pathname(
