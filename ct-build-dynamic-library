@@ -3,7 +3,7 @@ set -euo pipefail
 
 startsource=$1
 shift
-source=$(ct-filelist --filter=source --style Flat "$startsource"|tr '\n' ' ')
+source=$(ct-filelist --filter=Source --style Flat "$startsource"|tr '\n' ' ')
 ct-create-makefile --dynamic "$startsource" ${source} "$@"
 
 cpu_count=$(cat /proc/cpuinfo |grep processor | wc -l)
