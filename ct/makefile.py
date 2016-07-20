@@ -55,6 +55,110 @@ class Rule:
         makefile.write("\n")
 
 
+class LinkRuleCreator(object):
+    """ Base class to provide common infrastructure for the creation of 
+        specific link rules by the derived classes.
+    """
+    def __init__(self, args, namer, hunter):
+        self.args = args
+        self.namer = namer
+        self.hunter = hunter
+
+    def _create_link_rule(
+            self,
+            outputname,
+            completesources,
+            linker,
+            linkerflags=None,
+            extraprereqs=None,
+            suppressmagicldflags=False):
+        """ For a given source file (so usually the file with the main) and the
+            set of complete sources (i.e., all the other source files + the original)
+            return the link rule required for the Makefile
+        """
+        if extraprereqs is None:
+            extraprereqs = []
+        if linkerflags is None:
+            linkerflags=""
+
+        allprerequisites = " ".join(extraprereqs)
+        object_names = {self.namer.object_pathname(source) for source in completesources}
+        allprerequisites += " "
+        allprerequisites += " ".join(object_names)
+
+        all_magic_ldflags = set()
+        if not suppressmagicldflags:
+            for source in completesources:
+                magic_flags = self.hunter.parse_magic_flags(source)
+                all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
+                all_magic_ldflags |= magic_flags.get(
+                    'LINKFLAGS',
+                    set())  # For backward compatibility with cake
+
+        return Rule(target=outputname,
+                    prerequisites=allprerequisites,
+                    recipe=" ".join([linker, linkerflags] + 
+                                    ["-o", outputname] +
+                                    list(object_names) +
+                                    list(all_magic_ldflags)))
+
+class StaticLibraryLinkRuleCreator(LinkRuleCreator):
+    def __call__(self, sources, libraryname):
+        return {self._create_link_rule(
+            outputname=libraryname,
+            completesources=sources,
+            linker="ar -src",
+            suppressmagicldflags=True)}
+
+class DynamicLibraryLinkRuleCreator(LinkRuleCreator):
+    def __call__(self, sources, libraryname):
+        return {self._create_link_rule(
+            outputname=libraryname,
+            completesources=sources,
+            linker=self.args.LD,
+            linkerflags=self.args.LDFLAGS+" -shared")}
+
+class ExeLinkRuleCreator(LinkRuleCreator):
+    def __call__(self, sources, libraryname):
+        extraprereqs = []
+        linkerflags = self.args.LDFLAGS
+
+        # If there is also a library being built then automatically
+        # include the path to that library to allow easy linking
+        if self.args.static:
+            extraprereqs.append("cp_static_library")
+            linkerflags += " -L"
+            linkerflags += self.namer.executable_dir()
+
+        if self.args.dynamic:
+            extraprereqs.append("cp_dynamic_library")
+            linkerflags += " -L"
+            linkerflags += self.namer.executable_dir()
+        
+        linkrules = set()
+        for source in sources:
+            if self.args.verbose >= 4:
+                print(
+                    "ExeLinkRuleCreator. Asking hunter for required_source_files for source=",
+                    source)
+            completesources = self.hunter.required_source_files(source)
+            if self.args.verbose >= 6:
+                print(
+                    "ExeLinkRuleCreator. Complete list of implied source files for " +
+                    source +
+                    ": " +
+                    " ".join(
+                        cs for cs in completesources))
+            exename = self.namer.executable_pathname(ct.wrappedos.realpath(source))
+            linkrules.add(self._create_link_rule(
+                outputname=exename,
+                completesources=completesources,
+                linker=self.args.LD,
+                linkerflags=linkerflags,
+                extraprereqs=extraprereqs))
+
+        return linkrules
+
 class MakefileCreator:
 
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
@@ -189,7 +293,7 @@ class MakefileCreator:
                     " ".join(all_exes)))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_sources,
-                exe_static_dynamic='exe')
+                exe_static_dynamic='Exe')
 
         if self.args.static:
             self.rules.add(
@@ -198,7 +302,7 @@ class MakefileCreator:
                     staticlibrarypathname))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_static,
-                exe_static_dynamic='static',
+                exe_static_dynamic='StaticLibrary',
                 libraryname=staticlibrarypathname)
 
         if self.args.dynamic:
@@ -208,7 +312,7 @@ class MakefileCreator:
                     dynamiclibrarypathname))
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_dynamic,
-                exe_static_dynamic='dynamic',
+                exe_static_dynamic='DynamicLibrary',
                 libraryname=dynamiclibrarypathname)
 
         self.rules.add(self._create_mkdir_rule(all_outputs))
@@ -253,88 +357,6 @@ class MakefileCreator:
                     prerequisites=" ".join(prerequisites),
                     recipe=recipe)
 
-    def _create_link_rule(
-            self,
-            outputname,
-            completesources,
-            linker,
-            linkerflags=None,
-            extraprereqs=None,
-            suppressmagicldflags=False):
-        """ For a given source file (so usually the file with the main) and the
-            set of complete sources (i.e., all the other source files + the original)
-            return the link rule required for the Makefile
-        """
-        if extraprereqs is None:
-            extraprereqs = []
-        if linkerflags is None:
-            linkerflags=""
-
-        allprerequisites = " ".join(extraprereqs)
-        object_names = {self.namer.object_pathname(source) for source in completesources}
-        allprerequisites += " "
-        allprerequisites += " ".join(object_names)
-
-        all_magic_ldflags = set()
-        if not suppressmagicldflags:
-            for source in completesources:
-                magic_flags = self.hunter.parse_magic_flags(source)
-                all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
-                all_magic_ldflags |= magic_flags.get(
-                    'LINKFLAGS',
-                    set())  # For backward compatibility with cake
-
-        return Rule(target=outputname,
-                    prerequisites=allprerequisites,
-                    recipe=" ".join([linker, linkerflags] + 
-                                    ["-o", outputname] +
-                                    list(object_names) +
-                                    list(all_magic_ldflags)))
-
-    def _create_link_rule_exe(self, sourcefilename, completesources):
-        exename = self.namer.executable_pathname(
-            ct.wrappedos.realpath(sourcefilename))
-        extraprereqs = []
-        linkerflags = self.args.LDFLAGS
-
-        # If there is also a library being built then automatically
-        # include the path to that library to allow easy linking
-        if self.args.static:
-            extraprereqs.append("cp_static_library")
-            linkerflags += " -L"
-            linkerflags += self.namer.executable_dir()
-
-        if self.args.dynamic:
-            extraprereqs.append("cp_dynamic_library")
-            linkerflags += " -L"
-            linkerflags += self.namer.executable_dir()
-
-        return self._create_link_rule(
-            outputname=exename,
-            completesources=completesources,
-            linker=self.args.LD,
-            linkerflags=linkerflags,
-            extraprereqs=extraprereqs)
-
-    def _create_link_rule_static_library(
-            self,
-            outputname,
-            completesources):
-        return self._create_link_rule(
-            outputname=outputname,
-            completesources=completesources,
-            linker="ar -src",
-            suppressmagicldflags=True)
-
-    def _create_link_rule_dynamic_library(
-            self,
-            outputname,
-            completesources):
-        return self._create_link_rule(
-            outputname=outputname,
-            completesources=completesources,
-            linker=self.args.LD,
-            linkerflags=self.args.LDFLAGS+" -shared")
 
     def _create_makefile_rules_for_sources(self, sources, exe_static_dynamic, libraryname=None):
         """ For all the given source files return the set of rules required
@@ -348,34 +370,9 @@ class MakefileCreator:
         # Output all the link rules
         if self.args.verbose >= 3:
             print("Creating link rule for ", sources)
-        if 'exe' in exe_static_dynamic:
-            for source in sources:
-                if self.args.verbose >= 4:
-                    print(
-                        "Asking hunter for required_source_files for source=",
-                        source)
-                completesources = self.hunter.required_source_files(source)
-                if self.args.verbose >= 6:
-                    print(
-                        "Complete list of implied source files for " +
-                        source +
-                        ": " +
-                        " ".join(
-                            cs for cs in completesources))
-                linkrules = self._create_link_rule_exe(source, completesources)
-                rules_for_source.add(linkrules)
-        elif 'static' in exe_static_dynamic:
-            linkrules = self._create_link_rule_static_library(
-                libraryname,
-                sources)
-            rules_for_source.add(linkrules)
-        elif 'dynamic' in exe_static_dynamic:
-            linkrules = self._create_link_rule_dynamic_library(
-                libraryname,
-                sources)
-            rules_for_source.add(linkrules)
-        else:
-            raise Exception('Unknown exe_static_dynamic')
+        linkrulecreatorclass = globals()[exe_static_dynamic + 'LinkRuleCreator']
+        linkrulecreatorobject = linkrulecreatorclass(args=self.args, namer=self.namer, hunter=self.hunter)
+        rules_for_source |= linkrulecreatorobject(libraryname=libraryname,sources=sources)
 
         # Output all the compile rules
         for source in sources:
