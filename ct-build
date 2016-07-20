@@ -14,7 +14,7 @@ echo $cmd
 $cmd
 
 cpu_count=$(cat /proc/cpuinfo |grep processor | wc -l)
-make -j$((2*cpu_count))
+make -j$((2*cpu_count)) -f Makefile*
 
 # Execute the tests
 TESTPREFIX="timeout 300 valgrind --quiet --error-exitcode=1 "

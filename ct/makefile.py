@@ -56,9 +56,11 @@ class Rule:
 
 
 class LinkRuleCreator(object):
-    """ Base class to provide common infrastructure for the creation of 
+
+    """ Base class to provide common infrastructure for the creation of
         specific link rules by the derived classes.
     """
+
     def __init__(self, args, namer, hunter):
         self.args = args
         self.namer = namer
@@ -79,10 +81,11 @@ class LinkRuleCreator(object):
         if extraprereqs is None:
             extraprereqs = []
         if linkerflags is None:
-            linkerflags=""
+            linkerflags = ""
 
         allprerequisites = " ".join(extraprereqs)
-        object_names = {self.namer.object_pathname(source) for source in completesources}
+        object_names = {
+            self.namer.object_pathname(source) for source in completesources}
         allprerequisites += " "
         allprerequisites += " ".join(object_names)
 
@@ -97,12 +100,14 @@ class LinkRuleCreator(object):
 
         return Rule(target=outputname,
                     prerequisites=allprerequisites,
-                    recipe=" ".join([linker, linkerflags] + 
+                    recipe=" ".join([linker, linkerflags] +
                                     ["-o", outputname] +
                                     list(object_names) +
                                     list(all_magic_ldflags)))
 
+
 class StaticLibraryLinkRuleCreator(LinkRuleCreator):
+
     def __call__(self, sources, libraryname):
         return {self._create_link_rule(
             outputname=libraryname,
@@ -110,15 +115,19 @@ class StaticLibraryLinkRuleCreator(LinkRuleCreator):
             linker="ar -src",
             suppressmagicldflags=True)}
 
+
 class DynamicLibraryLinkRuleCreator(LinkRuleCreator):
+
     def __call__(self, sources, libraryname):
         return {self._create_link_rule(
             outputname=libraryname,
             completesources=sources,
             linker=self.args.LD,
-            linkerflags=self.args.LDFLAGS+" -shared")}
+            linkerflags=self.args.LDFLAGS + " -shared")}
+
 
 class ExeLinkRuleCreator(LinkRuleCreator):
+
     def __call__(self, sources, libraryname):
         extraprereqs = []
         linkerflags = self.args.LDFLAGS
@@ -134,7 +143,7 @@ class ExeLinkRuleCreator(LinkRuleCreator):
             extraprereqs.append("cp_dynamic_library")
             linkerflags += " -L"
             linkerflags += self.namer.executable_dir()
-        
+
         linkrules = set()
         for source in sources:
             if self.args.verbose >= 4:
@@ -149,7 +158,8 @@ class ExeLinkRuleCreator(LinkRuleCreator):
                     ": " +
                     " ".join(
                         cs for cs in completesources))
-            exename = self.namer.executable_pathname(ct.wrappedos.realpath(source))
+            exename = self.namer.executable_pathname(
+                ct.wrappedos.realpath(source))
             linkrules.add(self._create_link_rule(
                 outputname=exename,
                 completesources=completesources,
@@ -265,11 +275,12 @@ class MakefileCreator:
 
         if self.args.filename:
             all_exes = {
-                self.namer.executable_pathname(ct.wrappedos.realpath(source)) for source in self.args.filename}
+                self.namer.executable_pathname(
+                    ct.wrappedos.realpath(source)) for source in self.args.filename}
             alloutputs |= all_exes
 
         return alloutputs
-    
+
     def _gather_prerequisites(self, alloutputs):
         allprerequisites = ["mkdir_output"]
 
@@ -293,8 +304,10 @@ class MakefileCreator:
         self.rules.add(self._create_all_rule(allprerequisites))
 
         if self.args.filename:
-            realpath_sources = sorted(ct.wrappedos.realpath(source) for source in self.args.filename)
-            allexes = {self.namer.executable_pathname(source) for source in realpath_sources}
+            realpath_sources = sorted(
+                ct.wrappedos.realpath(source) for source in self.args.filename)
+            allexes = {
+                self.namer.executable_pathname(source) for source in realpath_sources}
             self.rules.add(
                 self._create_cp_rule(
                     'executables',
@@ -310,7 +323,8 @@ class MakefileCreator:
                 self._create_cp_rule(
                     'static_library',
                     libraryname))
-            realpath_static = {ct.wrappedos.realpath(filename) for filename in self.args.static}
+            realpath_static = {
+                ct.wrappedos.realpath(filename) for filename in self.args.static}
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_static,
                 exe_static_dynamic='StaticLibrary',
@@ -323,7 +337,8 @@ class MakefileCreator:
                 self._create_cp_rule(
                     'dynamic_library',
                     libraryname))
-            realpath_dynamic = {ct.wrappedos.realpath(filename) for filename in self.args.dynamic}
+            realpath_dynamic = {
+                ct.wrappedos.realpath(filename) for filename in self.args.dynamic}
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_dynamic,
                 exe_static_dynamic='DynamicLibrary',
@@ -332,12 +347,14 @@ class MakefileCreator:
         self.rules.add(self._create_mkdir_rule(alloutputs))
         self.rules |= self._create_clean_rules(alloutputs)
 
-        self.write()
+        self.write('Makefile.' + ct.utils.variant_with_hash())
 
     def _create_compile_rule_for_source(self, filename):
         """ For a given source file return the compile rule required for the Makefile """
         if ct.utils.isheader(filename):
-            sys.stderr.write("Error.  Trying to create a compile rule for a header file: ", filename)
+            sys.stderr.write(
+                "Error.  Trying to create a compile rule for a header file: ",
+                filename)
 
         deplist = self.hunter.header_dependencies(filename)
         prerequisites = [filename] + sorted([str(dep) for dep in deplist])
@@ -365,8 +382,11 @@ class MakefileCreator:
                     prerequisites=" ".join(prerequisites),
                     recipe=recipe)
 
-
-    def _create_makefile_rules_for_sources(self, sources, exe_static_dynamic, libraryname=None):
+    def _create_makefile_rules_for_sources(
+            self,
+            sources,
+            exe_static_dynamic,
+            libraryname=None):
         """ For all the given source files return the set of rules required
             for the Makefile that will turn the source files into executables.
         """
@@ -378,9 +398,16 @@ class MakefileCreator:
         # Output all the link rules
         if self.args.verbose >= 3:
             print("Creating link rule for ", sources)
-        linkrulecreatorclass = globals()[exe_static_dynamic + 'LinkRuleCreator']
-        linkrulecreatorobject = linkrulecreatorclass(args=self.args, namer=self.namer, hunter=self.hunter)
-        rules_for_source |= linkrulecreatorobject(libraryname=libraryname,sources=sources)
+        linkrulecreatorclass = globals()[
+            exe_static_dynamic +
+            'LinkRuleCreator']
+        linkrulecreatorobject = linkrulecreatorclass(
+            args=self.args,
+            namer=self.namer,
+            hunter=self.hunter)
+        rules_for_source |= linkrulecreatorobject(
+            libraryname=libraryname,
+            sources=sources)
 
         # Output all the compile rules
         for source in sources:
@@ -403,7 +430,11 @@ class MakefileCreator:
     def write(self, makefile_name='Makefile'):
         """ Take a list of rules and write the rules to a Makefile """
         with open(makefile_name, mode='w', encoding='utf-8') as mfile:
-            mfile.write("# Makefile generated by ct-create-makefile\n")
+            mfile.write("# Makefile generated by")
+            for arg in sys.argv:
+                mfile.write(' ')
+                mfile.write(unicode(arg, 'utf-8'))
+            mfile.write("\n")
             for rule in self.rules:
                 rule.write(mfile)
 

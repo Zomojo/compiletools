@@ -45,7 +45,9 @@ class TestMakefile(unittest.TestCase):
         ct.makefile.main(
             ['ct-test-makefile', '--CXXFLAGS=-std=c++1z -fPIC'] + realpaths)
 
-        cmd = ['make']
+        filelist = os.listdir('.')
+        makefilename = [ff for ff in filelist if ff.startswith('Makefile')]
+        cmd = ['make', '-f'] + makefilename
         subprocess.check_output(cmd, universal_newlines=True)
 
         # Check that an executable got built for each cpp
@@ -113,10 +115,13 @@ def _test_library(static_dynamic):
             samplesdir,
             filename) for filename in librelativepaths]
     argv = ['ct-test', '--CXXFLAGS=-std=c++1z -fPIC', static_dynamic] + \
-           librealpaths + ['--filename', exerealpath]
+        librealpaths + ['--filename', exerealpath]
     ct.makefile.main(argv)
 
-    cmd = ['make']
+    # Figure out the name of the makefile and run make
+    filelist = os.listdir('.')
+    makefilename = [ff for ff in filelist if ff.startswith('Makefile')]
+    cmd = ['make', '-f'] + makefilename
     subprocess.check_output(cmd, universal_newlines=True)
 
     # Cleanup
