@@ -11,6 +11,7 @@ import ct.utils as utils
 
 
 class TestIsFuncs(unittest.TestCase):
+
     def test_isheader(self):
         self.assertTrue(utils.isheader("myfile.h"))
         self.assertTrue(utils.isheader("/home/user/myfile.h"))
@@ -51,6 +52,7 @@ class TestIsFuncs(unittest.TestCase):
 
 
 class TestImpliedSource(unittest.TestCase):
+
     def test_implied_source_nonexistent_file(self):
         self.assertIsNone(utils.implied_source('nonexistent_file.hpp'))
 
@@ -58,17 +60,30 @@ class TestImpliedSource(unittest.TestCase):
         relativefilename = 'dottypaths/d2/d2.hpp'
         basename = os.path.splitext(relativefilename)[0]
         expected = os.path.join(uth.samplesdir(), basename + '.cpp')
-        result = utils.implied_source(os.path.join(uth.samplesdir(), relativefilename))
+        result = utils.implied_source(
+            os.path.join(
+                uth.samplesdir(),
+                relativefilename))
         self.assertEqual(expected, result)
 
+
 class TestNamer(unittest.TestCase):
+
     def test_executable_pathname(self):
         cap = configargparse.getArgumentParser()
-        namer = utils.Namer(cap=cap,variant='myvar',argv=['--no-git-root'])
+        argv = ['--no-git-root']
+        utils.Namer.add_arguments(cap=cap, variant='myvar', argv=argv)
+        namer = utils.Namer(argv=argv)
         exename = namer.executable_pathname('/home/user/code/my.cpp')
-        self.assertEqual(exename,os.path.join(os.getcwd(),'bin/myvar.011500b9/home/user/code/my'))
+        self.assertEqual(
+            exename,
+            os.path.join(
+                os.getcwd(),
+                'bin/myvar.011500b9/home/user/code/my'))
+
 
 class TestOrderedSet(unittest.TestCase):
+
     def test_initialization(self):
         s1 = utils.OrderedSet([5, 4, 3, 2, 1])
         self.assertEqual(len(s1), 5)

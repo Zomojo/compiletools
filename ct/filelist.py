@@ -85,6 +85,8 @@ def main(argv=None):
         'merge',
         default=True,
         help='Merge all outputs into a single list')
+    ct.utils.Hunter.add_arguments(argv)
+
     hunter = Hunter(argv)
 
     myargs = cap.parse_known_args(args=argv[1:])

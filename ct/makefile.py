@@ -175,9 +175,6 @@ class MakefileCreator:
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
     def __init__(self, parser, variant, argv=None):
-        ct.utils.add_target_arguments(parser)
-        ct.utils.add_link_arguments(parser)
-        ct.utils.add_output_directory_arguments(parser, variant)
 
         # Keep track of what build artifacts are created for easier cleanup
         self.objects = set()
@@ -192,8 +189,16 @@ class MakefileCreator:
         # self.args will exist after this call
         ct.utils.setattr_args(self, argv)
 
-        self.namer = ct.utils.Namer(parser, variant, argv)
+        self.namer = ct.utils.Namer(argv)
         self.hunter = Hunter(argv)
+
+    @staticmethod
+    def add_arguments(cap, variant, argv=None):
+        ct.utils.add_target_arguments(cap)
+        ct.utils.add_link_arguments(cap)
+        ct.utils.add_output_directory_arguments(cap, variant)
+        ct.utils.Namer.add_arguments(cap, variant, argv)
+        ct.hunter.Hunter.add_arguments(cap)
 
     @staticmethod
     def _create_all_rule(prerequisites):
@@ -268,15 +273,22 @@ class MakefileCreator:
         rules = set()
         for tt in alltestsources:
             exename = self.namer.executable_pathname(tt)
-            testresult = ".".join([exename,"result"])
+            testresult = ".".join([exename, "result"])
 
-            recipe = " ".join(["@echo ... ", exename,";rm -f", testresult, "&&", testprefix, exename, "&& touch", testresult])
+            recipe = " ".join(["@echo ... ",
+                               exename,
+                               ";rm -f",
+                               testresult,
+                               "&&",
+                               testprefix,
+                               exename,
+                               "&& touch",
+                               testresult])
             rules.add(Rule(
-                    target=testresult,
-                    prerequisites=exename,
-                    recipe=recipe))
+                target=testresult,
+                prerequisites=exename,
+                recipe=recipe))
         return rules
-
 
     def _gather_outputs(self):
         alloutputs = set()
@@ -303,7 +315,8 @@ class MakefileCreator:
                     ct.wrappedos.realpath(source)) for source in self.args.tests}
             alloutputs |= alltestsexes
 
-            alltestresults =  {".".join([exename,"result"]) for exename in alltestsexes}
+            alltestresults = {
+                ".".join([exename, "result"]) for exename in alltestsexes}
             alloutputs |= alltestresults
 
         return alloutputs
@@ -337,7 +350,7 @@ class MakefileCreator:
         if self.args.tests:
             realpath_tests = sorted(
                 ct.wrappedos.realpath(source) for source in self.args.tests)
-            realpath_sources += realpath_tests 
+            realpath_sources += realpath_tests
 
         if self.args.filename or self.args.tests:
             allexes = {
@@ -349,7 +362,7 @@ class MakefileCreator:
             self.rules |= self._create_makefile_rules_for_sources(
                 realpath_sources,
                 exe_static_dynamic='Exe')
-        
+
         if self.args.tests:
             self.rules |= self._create_test_rules(realpath_tests)
 
@@ -482,6 +495,7 @@ def main(argv=None):
 
     variant = ct.utils.extract_variant_from_argv(argv)
     cap = configargparse.getArgumentParser()
+    MakefileCreator.add_arguments(cap, variant, argv)
     makefile_creator = MakefileCreator(parser=cap, variant=variant, argv=argv)
     myargs = cap.parse_known_args(args=argv[1:])
     ct.utils.verbose_print_args(myargs[0])

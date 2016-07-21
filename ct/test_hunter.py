@@ -6,9 +6,12 @@ import os
 import shutil
 import sys
 import tempfile
+import configargparse
 import unittest
 
 try:
+    # This call to reload is simply to test
+    # that reload is in the current namespace
     reload(unittest)
 except NameError:
     from importlib import reload
@@ -47,6 +50,9 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
         uth.ctdir()] + extraargs + realpaths
     cachename = os.path.join(tempdir, name)
     _reload_hunter(cachename)
+
+    cap = configargparse.getArgumentParser()
+    ct.hunter.DependenciesBase.add_arguments(cap)
     if name == 'ht':
         headerobj = HeaderTree(argv)
     else:
@@ -65,6 +71,9 @@ class TestHunterModule(unittest.TestCase):
             extraargs = []
         realpath = ct.wrappedos.realpath(filename)
         argv = ['ct-test', realpath] + extraargs
+
+        cap = configargparse.getArgumentParser()
+        ct.hunter.DependenciesBase.add_arguments(cap)
         ht = ct.hunter.HeaderTree(argv)
         hd = ct.hunter.HeaderDependencies(argv)
         htresult = ht.process(realpath)
@@ -103,6 +112,9 @@ class TestHunterModule(unittest.TestCase):
             '--CPPFLAGS=-std=c++1z',
             '--include',
             uth.ctdir()]
+
+        cap = configargparse.getArgumentParser()
+        ct.hunter.Hunter.add_arguments(cap)
         ht = ct.hunter.Hunter(argv)
         relativepath = 'factory/widget_factory.hpp'
         realpath = os.path.join(uth.samplesdir(), relativepath)
@@ -130,6 +142,8 @@ class TestHunterModule(unittest.TestCase):
             '--include',
             uth.ctdir(),
             '--filename'] + bulkpaths
+        cap = configargparse.getArgumentParser()
+        ct.hunter.Hunter.add_arguments(cap)
         hntr = ct.hunter.Hunter(argv)
 
         realpath = os.path.join(samplesdir, 'dottypaths/dottypaths.cpp')
@@ -227,6 +241,8 @@ class TestHunterModule(unittest.TestCase):
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
         argv = ['ct-test', realpath]
+        cap = configargparse.getArgumentParser()
+        ct.hunter.Hunter.add_arguments(cap)
         hunter = ct.hunter.Hunter(argv)
         hunter.required_files(realpath)
         self.assertSetEqual(

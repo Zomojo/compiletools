@@ -20,7 +20,27 @@ from ct.memoize import memoize
 from pprint import pprint
 
 
-class HeaderTree(object):
+class DependenciesBase(object):
+
+    """ Implement the common functionality of the different header
+        searching classes.  This really should be an abstract base class.
+    """
+
+    @staticmethod
+    def add_arguments(cap):
+        ct.utils.add_common_arguments(cap)
+
+    def _process_impl(self, realpath):
+        """ Derived classes implement this function """
+        pass
+
+    def process(self, filename):
+        """ Return the set of dependencies for a given filename """
+        realpath = ct.wrappedos.realpath(filename)
+        return self._process_impl(realpath)
+
+
+class HeaderTree(DependenciesBase):
 
     """ Create a tree structure that shows the header include tree """
 
@@ -33,12 +53,13 @@ class HeaderTree(object):
         # self.args will exist after this call
         utils.setattr_args(self, argv)
 
+        if self.args.verbose >= 4:
+            print("Using HeaderTree to trace dependencies")
+
         # Grab the include paths from the CPPFLAGS
         pat = re.compile('-I ([\S]*)')
         self.includes = pat.findall(self.args.CPPFLAGS)
 
-        if self.args.verbose >= 8:
-            print("HeaderTree::__init__")
         if self.args.verbose >= 3:
             print("Includes=" + str(self.includes))
 
@@ -154,15 +175,8 @@ class HeaderTree(object):
         results.remove(realpath)
         return results
 
-    def process(self, filename):
-        """ Returns the dependencies in the same format as HeaderDependencies """
-        if self.args.verbose >= 8:
-            print("HeaderTree::process: " + filename)
-        realpath = ct.wrappedos.realpath(filename)
-        return self._process_impl(realpath)
 
-
-class HeaderDependencies(object):
+class HeaderDependencies(DependenciesBase):
 
     """ Using the C Pre Processor, create the list of headers that the given file depends upon. """
 
@@ -171,8 +185,8 @@ class HeaderDependencies(object):
         # self.args will exist after this call
         utils.setattr_args(self, argv)
 
-        if self.args.verbose >= 8:
-            print("HeaderDependencies::__init__")
+        if self.args.verbose >= 4:
+            print("Using HeaderDependencies to trace dependencies")
 
     @diskcache('deps', deps_mode=True)
     def _process_impl(self, realpath):
@@ -217,11 +231,6 @@ class HeaderDependencies(object):
         return {ct.wrappedos.realpath(x) for x in deplist.split() if x.strip(
             '\\\t\n\r') and x not in [realpath, "/dev/null"]}
 
-    def process(self, filename):
-        """ Return the set of dependencies for a given filename """
-        realpath = ct.wrappedos.realpath(filename)
-        return self._process_impl(realpath)
-
 
 class Hunter(object):
 
@@ -230,7 +239,23 @@ class Hunter(object):
     """
 
     def __init__(self, argv=None):
-        cap = configargparse.getArgumentParser()
+        self.args = None
+        # self.args will exist after this call
+        utils.setattr_args(self, argv)
+
+        if self.args.directread:
+            self.header_deps = HeaderTree(argv)
+        else:
+            self.header_deps = HeaderDependencies(argv)
+
+        # The magic pattern is //#key=value with whitespace ignored
+        self.magic_pattern = re.compile(
+            '^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)',
+            re.MULTILINE)
+
+    @staticmethod
+    def add_arguments(cap):
+        DependenciesBase.add_arguments(cap)
         utils.add_boolean_argument(
             parser=cap,
             name="directread",
@@ -241,28 +266,6 @@ class Hunter(object):
             name="preprocess",
             default=False,
             help="Invoke the preprocessor to find the magic flags (by default it just reads the file directly).")
-
-        self.args = None
-        # self.args will exist after this call
-        utils.setattr_args(self, argv)
-
-        if self.args.directread:
-            if self.args.verbose >= 4:
-                print("Using HeaderTree to trace dependencies")
-            self.header_deps = HeaderTree(argv)
-        else:
-            if self.args.verbose >= 4:
-                print("Using HeaderDependencies to trace dependencies")
-            self.header_deps = HeaderDependencies(argv)
-
-        # Extra command line options will now be understood so reprocess the
-        # commandline
-        utils.setattr_args(self, argv)
-
-        # The magic pattern is //#key=value with whitespace ignored
-        self.magic_pattern = re.compile(
-            '^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)',
-            re.MULTILINE)
 
     # TODO: Rethink the whole diskcache concept.
     # Each diskcache is its own object.  So the deps files end up being loaded

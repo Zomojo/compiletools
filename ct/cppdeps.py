@@ -22,6 +22,7 @@ def main(argv=None):
         nargs='+')
 
     # This will add the common arguments as a side effect
+    HeaderDependencies.add_arguments(cap)
     hh = HeaderDependencies(argv)
     myargs = cap.parse_known_args(argv[1:])
     ct.utils.verbose_print_args(myargs[0])

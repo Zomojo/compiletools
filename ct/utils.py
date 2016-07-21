@@ -426,7 +426,6 @@ def setattr_args(obj, argv=None):
         as a member of the given object
     """
     cap = configargparse.getArgumentParser()
-    add_common_arguments(cap)
 
     if argv is None:
         argv = sys.argv
@@ -458,15 +457,19 @@ class Namer(object):
         like executable name, object name, etc.
     """
 
-    def __init__(self, cap, variant, argv=None):
+    def __init__(self, argv=None):
+        self.args = None  # Keep pylint happy
+        # self.args will exist after this call
+        setattr_args(self, argv)
+
+    @staticmethod
+    def add_arguments(cap, variant, argv):
+        add_common_arguments(cap)
         add_output_directory_arguments(
             cap,
             variant_with_hash(
                 argv=argv,
                 variant=variant))
-        self.args = None  # Keep pylint happy
-        # self.args will exist after this call
-        setattr_args(self, argv)
 
     def _outputdir(self, defaultdir, sourcefilename=None):
         """ Used by object_dir and executable_dir.
