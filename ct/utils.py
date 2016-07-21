@@ -410,7 +410,7 @@ def _set_project_version(args):
             print("No projectversion specified for the args.")
 
 
-def common_substitutions(args):
+def commonsubstitutions(args):
     """ If certain arguments have not been specified but others have
         then there are some obvious substitutions to make
     """
@@ -419,28 +419,17 @@ def common_substitutions(args):
     _add_include_paths_to_flags(args)
     _set_project_version(args)
 
-
-def setattr_args(obj, argv=None):
-    """ Add the common arguments to the configargparse,
-        parse the args, then add the created args object
-        as a member of the given object
-    """
-    cap = configargparse.getArgumentParser()
-
-    if argv is None:
+def parseargs(cap, argv=None):
+    if not argv:
         argv = sys.argv
-    args = cap.parse_known_args(argv[1:])
+    ka = cap.parse_known_args(args=argv[1:])
+    commonsubstitutions(ka[0])
+    verbose_print_args(cap, ka[0])
+    return ka[0]
+    
 
-    # parse_known_args returns a tuple.  The properly parsed arguments are in
-    # the zeroth element.
-    if args[0]:
-        common_substitutions(args[0])
-        setattr(obj, 'args', args[0])
-
-
-def verbose_print_args(args):
+def verbose_print_args(cap, args):
     if args.verbose >= 3:
-        cap = configargparse.getArgumentParser()
         cap.print_values()
     if args.verbose >= 2:
         print(args)
@@ -457,10 +446,8 @@ class Namer(object):
         like executable name, object name, etc.
     """
 
-    def __init__(self, argv=None):
-        self.args = None  # Keep pylint happy
-        # self.args will exist after this call
-        setattr_args(self, argv)
+    def __init__(self, args):
+        self.args = args
 
     @staticmethod
     def add_arguments(cap, variant, argv):

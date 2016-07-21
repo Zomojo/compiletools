@@ -8,21 +8,22 @@ import ct.makefile
 import ct.filelist
 
 class Cake:
-    def __init__(self, argv=None):
-        self.args = None
-        # self.args will exist after this call
-        ct.utils.setattr_args(self, argv)
+    def __init__(self, args):
+        self.args = args
 
     @staticmethod
     def add_arguments(cap, variant, argv):
         cap.add(
             "--append-CPPFLAGS",
+            dest=appendcppflags,
             help="Appends the given text to the CPPFLAGS already set. Useful for adding search paths etc. ")
         cap.add(
             "--append-CFLAGS",
+            dest=appendcflags,
             help="Appends the given text to the CFLAGS already set. Useful for adding search paths etc. ")
         cap.add(
             "--append-CXXFLAGS",
+            dest=appendcxxflags,
             help="Appends the given text to the CXXFLAGS already set. Useful for adding search paths etc. ")
         ct.utils.add_boolean_argument(
             parser=cap,
@@ -33,12 +34,23 @@ class Cake:
         ct.makefile.MakefileCreator.add_arguments(cap, variant, argv)
         ct.filelist.Filelist.add_arguments(cap)
 
-    def process(self,argv):
-        """ Transform the arguments into suitable versions for ct-* tools """
-        #makefile_creator = ct.makefile.MakefileCreator(parser=cap, variant=variant, argv=argv)
+    def process(self):
+        """ Transform the arguments into suitable versions for ct-* tools 
+            and call the appropriate tool.
+        """
+        if self.args.appendcppflags:
+            self.args.CPPFLAGS += self.args.appendcppflags
+        if self.args.appendcflags:
+            self.args.CFLAGS += self.args.appendcflags
+        if self.args.appendcxxflags:
+            self.args.CXXFLAGS += self.args.appendcxxflags
+
         if self.args.filelist:
-            filelist = ct.filelist.Filelist()
-            filelist.process(argv)
+            filelist = ct.filelist.Filelist(self.args)
+            filelist.process()
+        else:
+            makefile_creator = ct.makefile.MakefileCreator(args)
+            makefile_creator.create()
 
 def main(argv=None):
     if argv is None:
@@ -47,10 +59,8 @@ def main(argv=None):
     variant = ct.utils.extract_variant_from_argv(argv)
     cap = configargparse.getArgumentParser()
     Cake.add_arguments(cap, variant, argv)
-    myargs = cap.parse_known_args(args=argv[1:])
-    ct.utils.verbose_print_args(myargs[0])
-
-    cake = Cake()
-    cake.process(argv)
+    args = ct.utils.parseargs(cap, argv)
+    cake = Cake(args)
+    cake.process()
 
     return 0

@@ -53,10 +53,11 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
 
     cap = configargparse.getArgumentParser()
     ct.hunter.DependenciesBase.add_arguments(cap)
+    args = ct.utils.parseargs(cap, argv)
     if name == 'ht':
-        headerobj = HeaderTree(argv)
+        headerobj = HeaderTree(args)
     else:
-        headerobj = HeaderDependencies(argv)
+        headerobj = HeaderDependencies(args)
     return cachename, callprocess(headerobj, realpaths)
 
 
@@ -74,8 +75,9 @@ class TestHunterModule(unittest.TestCase):
 
         cap = configargparse.getArgumentParser()
         ct.hunter.DependenciesBase.add_arguments(cap)
-        ht = ct.hunter.HeaderTree(argv)
-        hd = ct.hunter.HeaderDependencies(argv)
+        args = ct.utils.parseargs(cap, argv)
+        ht = ct.hunter.HeaderTree(args)
+        hd = ct.hunter.HeaderDependencies(args)
         htresult = ht.process(realpath)
         hdresult = hd.process(realpath)
         self.assertSetEqual(htresult, hdresult)
@@ -112,10 +114,11 @@ class TestHunterModule(unittest.TestCase):
             '--CPPFLAGS=-std=c++1z',
             '--include',
             uth.ctdir()]
-
         cap = configargparse.getArgumentParser()
         ct.hunter.Hunter.add_arguments(cap)
-        ht = ct.hunter.Hunter(argv)
+        args = ct.utils.parseargs(cap, argv)
+        ht = ct.hunter.Hunter(args)
+
         relativepath = 'factory/widget_factory.hpp'
         realpath = os.path.join(uth.samplesdir(), relativepath)
         filesfromheader = ht.required_source_files(realpath)
@@ -144,7 +147,8 @@ class TestHunterModule(unittest.TestCase):
             '--filename'] + bulkpaths
         cap = configargparse.getArgumentParser()
         ct.hunter.Hunter.add_arguments(cap)
-        hntr = ct.hunter.Hunter(argv)
+        args = ct.utils.parseargs(cap, argv)
+        hntr = ct.hunter.Hunter(args)
 
         realpath = os.path.join(samplesdir, 'dottypaths/dottypaths.cpp')
         if precall:
@@ -243,7 +247,8 @@ class TestHunterModule(unittest.TestCase):
         argv = ['ct-test', realpath]
         cap = configargparse.getArgumentParser()
         ct.hunter.Hunter.add_arguments(cap)
-        hunter = ct.hunter.Hunter(argv)
+        args = ct.utils.parseargs(cap, argv)
+        hunter = ct.hunter.Hunter(args)
         hunter.required_files(realpath)
         self.assertSetEqual(
             hunter.parse_magic_flags(realpath).get('CFLAGS'),

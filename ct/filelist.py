@@ -54,10 +54,8 @@ def check_filename(filename):
 
 class Filelist(object):
 
-    def __init__(self, argv=None):
-        self.args = None  # Keep pylint happy
-        # self.args will exist after this call
-        ct.utils.setattr_args(self, argv)
+    def __init__(self, args):
+        self.args = args
 
     @staticmethod
     def add_arguments(cap):
@@ -90,8 +88,8 @@ class Filelist(object):
             help='Merge all outputs into a single list')
         ct.hunter.Hunter.add_arguments(cap)
 
-    def process(self, argv):
-        hunter = Hunter(argv)
+    def process(self):
+        hunter = Hunter(self.args)
 
         styleclass = globals()[self.args.style + 'Style']
         kwargs = ct.utils.extractinitargs(self.args, styleclass)
@@ -128,10 +126,8 @@ def main(argv=None):
 
     cap = configargparse.getArgumentParser()
     Filelist.add_arguments(cap)
-    myargs = cap.parse_known_args(args=argv[1:])
-    ct.utils.verbose_print_args(myargs[0])
-
-    filelist = Filelist()
-    filelist.process(argv)
+    args = ct.utils.parseargs(cap, argv)
+    filelist = Filelist(args)
+    filelist.process()
 
     return 0

@@ -174,7 +174,8 @@ class MakefileCreator:
 
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
-    def __init__(self, parser, variant, argv=None):
+    def __init__(self, args):
+        self.args = args
 
         # Keep track of what build artifacts are created for easier cleanup
         self.objects = set()
@@ -185,12 +186,8 @@ class MakefileCreator:
         # so we use an OrderedSet
         self.rules = ct.utils.OrderedSet()
 
-        self.args = None
-        # self.args will exist after this call
-        ct.utils.setattr_args(self, argv)
-
-        self.namer = ct.utils.Namer(argv)
-        self.hunter = Hunter(argv)
+        self.namer = ct.utils.Namer(args)
+        self.hunter = Hunter(args)
 
     @staticmethod
     def add_arguments(cap, variant, argv=None):
@@ -496,9 +493,7 @@ def main(argv=None):
     variant = ct.utils.extract_variant_from_argv(argv)
     cap = configargparse.getArgumentParser()
     MakefileCreator.add_arguments(cap, variant, argv)
-    makefile_creator = MakefileCreator(parser=cap, variant=variant, argv=argv)
-    myargs = cap.parse_known_args(args=argv[1:])
-    ct.utils.verbose_print_args(myargs[0])
-
+    args = ct.utils.parseargs(cap, argv)
+    makefile_creator = MakefileCreator(args)
     makefile_creator.create()
     return 0

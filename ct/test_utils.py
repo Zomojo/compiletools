@@ -73,7 +73,8 @@ class TestNamer(unittest.TestCase):
         cap = configargparse.getArgumentParser()
         argv = ['--no-git-root']
         utils.Namer.add_arguments(cap=cap, variant='myvar', argv=argv)
-        namer = utils.Namer(argv=argv)
+        args = utils.parseargs(cap, argv)
+        namer = utils.Namer(args)
         exename = namer.executable_pathname('/home/user/code/my.cpp')
         self.assertEqual(
             exename,

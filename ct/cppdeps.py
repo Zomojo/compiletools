@@ -23,22 +23,21 @@ def main(argv=None):
 
     # This will add the common arguments as a side effect
     HeaderDependencies.add_arguments(cap)
-    hh = HeaderDependencies(argv)
-    myargs = cap.parse_known_args(argv[1:])
-    ct.utils.verbose_print_args(myargs[0])
+    args = ct.utils.parseargs(cap, argv)
+    hh = HeaderDependencies(args)
 
-    if not ct.wrappedos.isfile(myargs[0].filename[0]):
+    if not ct.wrappedos.isfile(args.filename[0]):
         sys.stderr.write(
             "The supplied filename ({0}) isn't a file. "
             " Did you spell it correctly?  "
             "Another possible reason is that you didn't supply a filename and "
             "that configargparse has picked an unused positional argument from "
             "the config file.\n".format(
-                myargs[0].filename[0]))
+                args.filename[0]))
         return 1
 
     results = set()
-    for fname in myargs[0].filename:
+    for fname in args.filename:
         results |= hh.process(fname)
 
     for dep in results:

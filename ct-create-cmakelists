@@ -99,10 +99,8 @@ def main(argv=None):
         help="Manually specify the config file path if you want to override the variant default")
 
     CMakefileCreator.add_arguments(cap, variant, argv)
-    cmakefile_creator = CMakefileCreator(argv)
-    myargs = cap.parse_known_args(argv[1:])
-    ct.utils.verbose_print_args(myargs[0])
-
+    args = ct.utils.parseargs(cap, argv)
+    cmakefile_creator = CMakefileCreator(args)
     cmakefile_creator.create()
 
 

@@ -223,17 +223,17 @@ class TreeStyle(ct.git_utils.NameAdjuster):
                 remaining_children.append(item['self'])
 
 
-if __name__ == '__main__':
+def main(argv=None):
+    if not argv:
+        argv = sys.argv
+
     # Python 3 stdout accepts unicode by default
     # So we only need to force python 2 stdout to accept unicode
     if sys.version_info[0] < 3:
         UTF8Writer = codecs.getwriter('utf8')
         sys.stdout = UTF8Writer(sys.stdout)
-    config_files = utils.config_files_from_variant()
-    cap = configargparse.getArgumentParser(
-        description='Create a tree of header dependencies starting at a given C/C++ file. ',
-        formatter_class=configargparse.DefaultsRawFormatter,
-        default_config_files=config_files)
+
+    cap = configargparse.getArgumentParser()
     cap.add(
         "-c",
         "--config",
@@ -250,23 +250,20 @@ if __name__ == '__main__':
         default='Tree',
         help="Output formatting style")
 
-    # Side effect of creating the HeaderTree is that it adds options to the
-    # command line arguments
-    ht = HeaderTree()
+    HeaderTree.add_arguments(cap)
+    args = ct.utils.parseargs(cap, argv)
+    ht = HeaderTree(args)
 
-    myargs = cap.parse_known_args()
-    utils.verbose_print_args(myargs[0])
-
-    if not ct.wrappedos.isfile(myargs[0].filename[0]):
+    if not ct.wrappedos.isfile(args.filename[0]):
         sys.stderr.write(
             "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(
-                myargs[0].filename[0]))
+                args.filename[0]))
         exit(1)
 
     # Create the headertree then print it in the appropriate style
-    inctree = ht.generatetree(myargs[0].filename[0])
-    styleclass = globals()[myargs[0].style + 'Style']
-    kwargs = ct.utils.extractinitargs(myargs[0], styleclass)
+    inctree = ht.generatetree(args.filename[0])
+    styleclass = globals()[args.style + 'Style']
+    kwargs = ct.utils.extractinitargs(args, styleclass)
 
     # Construct an instance of the style class which will print the header
     # tree as a side effect
@@ -274,3 +271,13 @@ if __name__ == '__main__':
         styleobject = styleclass(inctree, **kwargs)
     except IOError:
         pass
+
+    return 0
+
+if __name__ == '__main__':
+    config_files = ct.utils.config_files_from_variant()
+    cap = configargparse.getArgumentParser(
+        description='Create a tree of header dependencies starting at a given C/C++ file. ',
+        formatter_class=configargparse.DefaultsRawFormatter,
+        default_config_files=config_files)
+    sys.exit(main())

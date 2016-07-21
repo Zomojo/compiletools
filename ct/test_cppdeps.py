@@ -10,6 +10,7 @@ import ct.unittesthelper as uth
 
 
 class TestCPPDeps(unittest.TestCase):
+
     def setUp(self):
         uth.delete_existing_parsers()
 

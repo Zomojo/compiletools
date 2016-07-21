@@ -44,17 +44,14 @@ class HeaderTree(DependenciesBase):
 
     """ Create a tree structure that shows the header include tree """
 
-    def __init__(self, argv=None):
+    def __init__(self, args):
+
+        self.args = args
+        if self.args.verbose >= 4:
+            print("Using HeaderTree to trace dependencies")
 
         # Keep track of ancestor paths so that we can do header cycle detection
         self.ancestor_paths = []
-
-        self.args = None
-        # self.args will exist after this call
-        utils.setattr_args(self, argv)
-
-        if self.args.verbose >= 4:
-            print("Using HeaderTree to trace dependencies")
 
         # Grab the include paths from the CPPFLAGS
         pat = re.compile('-I ([\S]*)')
@@ -180,11 +177,8 @@ class HeaderDependencies(DependenciesBase):
 
     """ Using the C Pre Processor, create the list of headers that the given file depends upon. """
 
-    def __init__(self, argv=None):
-        self.args = None
-        # self.args will exist after this call
-        utils.setattr_args(self, argv)
-
+    def __init__(self, args):
+        self.args = args
         if self.args.verbose >= 4:
             print("Using HeaderDependencies to trace dependencies")
 
@@ -238,15 +232,13 @@ class Hunter(object):
         other required source files, other required compile/link flags.
     """
 
-    def __init__(self, argv=None):
-        self.args = None
-        # self.args will exist after this call
-        utils.setattr_args(self, argv)
+    def __init__(self, args):
+        self.args = args
 
         if self.args.directread:
-            self.header_deps = HeaderTree(argv)
+            self.header_deps = HeaderTree(args)
         else:
-            self.header_deps = HeaderDependencies(argv)
+            self.header_deps = HeaderDependencies(args)
 
         # The magic pattern is //#key=value with whitespace ignored
         self.magic_pattern = re.compile(
