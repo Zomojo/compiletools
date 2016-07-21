@@ -40,7 +40,29 @@ class Cake:
             dest='tests',
             nargs='*',
             help="Starts a test block. The cpp files following this declaration will generate executables which are then run. Synonym for --tests")
-        #ct.filelist.Filelist.add_arguments(cap)
+
+    def _callfilelist(self):
+        # The extra arguments were deliberately left off before due to conflicts.  
+        # Add them on now.
+        cap = configargparse.getArgumentParser()
+        ct.filelist.Filelist.add_arguments(cap)
+        args = ct.utils.parseargs(cap)
+        filelist = ct.filelist.Filelist(args)
+        filelist.process()
+
+    def _callmakefile(self):
+        makefile_creator = ct.makefile.MakefileCreator(self.args)
+        makefilename = makefile_creator.create()
+        cmd = ['make', '-f', makefilename]
+        subprocess.check_call(cmd, universal_newlines=True)
+        
+        # Copy the executables into the bindir (as per cake)
+        namer = ct.utils.Namer(self.args)
+        filelist = os.listdir(namer.executable_dir())
+        for ff in filelist:
+            filename = os.path.join(namer.executable_dir(),ff)
+            if ct.utils.isexecutable(filename):
+                shutil.copy2(filename, 'bin/')
 
     def process(self):
         """ Transform the arguments into suitable versions for ct-* tools 
@@ -54,21 +76,9 @@ class Cake:
             self.args.CXXFLAGS += " " + self.args.appendcxxflags
 
         if self.args.filelist:
-            filelist = ct.filelist.Filelist(self.args)
-            filelist.process()
+            self._callfilelist()
         else:
-            makefile_creator = ct.makefile.MakefileCreator(self.args)
-            makefilename = makefile_creator.create()
-            cmd = ['make', '-f', makefilename]
-            subprocess.check_call(cmd, universal_newlines=True)
-            
-            # Copy the executables into the bindir (as per cake)
-            namer = ct.utils.Namer(self.args)
-            filelist = os.listdir(namer.executable_dir())
-            for ff in filelist:
-                filename = os.path.join(namer.executable_dir(),ff)
-                if ct.utils.isexecutable(filename):
-                    shutil.copy2(filename, 'bin/')
+            self._callmakefile()
 
 def main(argv=None):
     if argv is None:
