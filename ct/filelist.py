@@ -52,73 +52,86 @@ def check_filename(filename):
             " from the config file.\n".format(filename))
         exit(1)
 
+class Filelist(object):
+
+    def __init__(self, argv=None):
+        self.args = None  # Keep pylint happy
+        # self.args will exist after this call
+        ct.utils.setattr_args(self, argv)
+
+    @staticmethod
+    def add_arguments(cap):
+        cap.add(
+            "filename",
+            help='File(s) to follow dependencies from.',
+            nargs='+')
+
+        # Figure out what output style classes are available and add them to the
+        # command line options
+        styles = [st[:-5] for st in dict(globals()) if st.endswith('Style')]
+        cap.add(
+            '--style',
+            choices=styles,
+            default='Flat',
+            help="Output formatting style")
+
+        passfilters = [st[:-10]
+                       for st in dict(globals()) if st.endswith('PassFilter')]
+        cap.add(
+            '--filter',
+            choices=passfilters,
+            default='All',
+            help="What type of files are allowed in the output")
+
+        ct.utils.add_boolean_argument(
+            cap,
+            'merge',
+            default=True,
+            help='Merge all outputs into a single list')
+        ct.hunter.Hunter.add_arguments(cap)
+
+    def process(self, argv):
+        hunter = Hunter(argv)
+
+        styleclass = globals()[self.args.style + 'Style']
+        kwargs = ct.utils.extractinitargs(self.args, styleclass)
+        styleobject = styleclass(**kwargs)
+
+        filterclass = globals()[self.args.filter + 'PassFilter']
+        filterobject = filterclass()
+
+        mergedfiles = set()
+        for filename in self.args.filename:
+            check_filename(filename)
+            realpath = ct.wrappedos.realpath(filename)
+            files = hunter.required_files(realpath)
+            filteredfiles = filterobject(files)
+
+            if self.args.merge:
+                mergedfiles |= filteredfiles
+            else:
+                try:
+                    # Remove realpath from the list so that the style object
+                    # doesn't have to worry about it.
+                    filteredfiles.remove(realpath)
+                except KeyError:
+                    pass
+                print(styleobject.adjust(realpath))
+                styleobject(sorted(filteredfiles))
+
+        if self.args.merge:
+            styleobject(sorted(mergedfiles))
 
 def main(argv=None):
     if argv is None:
         argv = sys.argv
 
     cap = configargparse.getArgumentParser()
-    cap.add(
-        "filename",
-        help='File(s) to follow dependencies from.',
-        nargs='+')
-
-    # Figure out what output style classes are available and add them to the
-    # command line options
-    styles = [st[:-5] for st in dict(globals()) if st.endswith('Style')]
-    cap.add(
-        '--style',
-        choices=styles,
-        default='Flat',
-        help="Output formatting style")
-
-    passfilters = [st[:-10]
-                   for st in dict(globals()) if st.endswith('PassFilter')]
-    cap.add(
-        '--filter',
-        choices=passfilters,
-        default='All',
-        help="What type of files are allowed in the output")
-
-    ct.utils.add_boolean_argument(
-        cap,
-        'merge',
-        default=True,
-        help='Merge all outputs into a single list')
-    ct.utils.Hunter.add_arguments(argv)
-
-    hunter = Hunter(argv)
-
+    Filelist.add_arguments(cap)
     myargs = cap.parse_known_args(args=argv[1:])
     ct.utils.verbose_print_args(myargs[0])
 
-    styleclass = globals()[myargs[0].style + 'Style']
-    kwargs = ct.utils.extractinitargs(myargs[0], styleclass)
-    styleobject = styleclass(**kwargs)
-
-    filterclass = globals()[myargs[0].filter + 'PassFilter']
-    filterobject = filterclass()
-
-    mergedfiles = set()
-    for filename in myargs[0].filename:
-        check_filename(filename)
-        realpath = ct.wrappedos.realpath(filename)
-        files = hunter.required_files(realpath)
-        filteredfiles = filterobject(files)
-
-        if myargs[0].merge:
-            mergedfiles |= filteredfiles
-        else:
-            try:
-                # Remove realpath from the list so that the style object
-                # doesn't have to worry about it.
-                filteredfiles.remove(realpath)
-            except KeyError:
-                pass
-            print(styleobject.adjust(realpath))
-            styleobject(sorted(filteredfiles))
-
-    if myargs[0].merge:
-        styleobject(sorted(mergedfiles))
+    filelist = Filelist()
+    filelist.process(argv)
 
     return 0
