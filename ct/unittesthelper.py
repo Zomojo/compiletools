@@ -13,10 +13,6 @@ def delete_existing_parsers():
     configargparse._parsers = {}
 
 
-def is_executable(filename):
-    return os.path.isfile(filename) and os.access(filename, os.X_OK)
-
-
 def ctdir():
     return os.path.dirname(os.path.realpath(__file__))
 

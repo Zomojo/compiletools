@@ -7,6 +7,7 @@ import subprocess
 import tempfile
 import unittest
 
+import ct.utils
 import ct.makefile
 import ct.unittesthelper as uth
 
@@ -54,7 +55,7 @@ class TestMakefile(unittest.TestCase):
         actual_exes = set()
         for root, dirs, files in os.walk(tempdir):
             for ff in files:
-                if uth.is_executable(os.path.join(root, ff)):
+                if ct.utils.isexecutable(os.path.join(root, ff)):
                     actual_exes.add(ff)
 
         expected_exes = {

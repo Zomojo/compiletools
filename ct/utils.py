@@ -28,6 +28,9 @@ def issource(filename):
     return filename.split('.')[-1].lower() in ["cpp", "cxx", "cc", "c"]
 
 
+def isexecutable(filename):
+    return os.path.isfile(filename) and os.access(filename, os.X_OK)
+
 @memoize
 def implied_source(filename):
     """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
@@ -322,13 +325,11 @@ def _extend_includes_using_git_root(args):
         to the list of include paths
     """
     if args.git_root and (
-        hasattr(
-            args,
-            'filename') or hasattr(
-            args,
-            'static') or hasattr(
-                args,
-            'dynamic')):
+        hasattr(args,'filename') or 
+        hasattr(args,'static') or 
+        hasattr(args,'dynamic') or
+        hasattr(args,'tests')):
+
         git_roots = set()
 
         # No matter whether args.filename is a single value or a list,
@@ -343,6 +344,9 @@ def _extend_includes_using_git_root(args):
 
         if hasattr(args, 'dynamic') and args.dynamic:
             filenames.extend(args.dynamic)
+
+        if hasattr(args, 'tests') and args.tests:
+            filenames.extend(args.tests)
 
         for filename in filenames:
             git_roots.add(git_utils.find_git_root(filename))

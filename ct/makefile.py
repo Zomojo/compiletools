@@ -394,7 +394,9 @@ class MakefileCreator:
         self.rules.add(self._create_mkdir_rule(alloutputs))
         self.rules |= self._create_clean_rules(alloutputs)
 
-        self.write('Makefile.' + ct.utils.variant_with_hash())
+        makefilename = 'Makefile.' + ct.utils.variant_with_hash()
+        self.write(makefilename)
+        return makefilename
 
     def _create_compile_rule_for_source(self, filename):
         """ For a given source file return the compile rule required for the Makefile """
