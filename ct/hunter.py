@@ -90,7 +90,7 @@ class HeaderTree(DependenciesBase):
     @memoize
     def _create_include_list(self, realpath):
         """ Internal use. Create the list of includes for the given file """
-        with open(realpath, encoding='utf-8') as ff:
+        with open(realpath, encoding='utf-8', errors='ignore') as ff:
             # Assume that all includes occur in the first 2048 bytes
             text = ff.read(2048)
 
@@ -311,7 +311,7 @@ class Hunter(object):
             # Only read first 2k for speed
             headers = self.header_dependencies(source_filename)
             for filename in headers | {source_filename}:
-                with open(filename, encoding='utf-8') as ff:
+                with open(filename, encoding='utf-8', errors='ignore') as ff:
                     text += ff.read(2048)
 
         flags_for_filename = {}
