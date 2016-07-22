@@ -190,11 +190,13 @@ class MakefileCreator:
         self.hunter = Hunter(args)
 
     @staticmethod
-    def add_arguments(cap, variant, argv=None):
+    def add_arguments(cap):
         ct.utils.add_target_arguments(cap)
         ct.utils.add_link_arguments(cap)
-        ct.utils.add_output_directory_arguments(cap, variant)
-        ct.utils.Namer.add_arguments(cap, variant, argv)
+        # Don't add the output directory arguments
+        # The Namer will do it and get the hash correct
+        #ct.utils.add_output_directory_arguments(parser, variant)
+        ct.utils.Namer.add_arguments(cap)
         ct.hunter.Hunter.add_arguments(cap)
 
     @staticmethod
@@ -394,7 +396,7 @@ class MakefileCreator:
         self.rules.add(self._create_mkdir_rule(alloutputs))
         self.rules |= self._create_clean_rules(alloutputs)
 
-        makefilename = 'Makefile.' + ct.utils.variant_with_hash()
+        makefilename = 'Makefile.' + ct.utils.variant_with_hash(self.args)
         self.write(makefilename)
         return makefilename
 
@@ -494,7 +496,7 @@ def main(argv=None):
 
     variant = ct.utils.extract_variant_from_argv(argv)
     cap = configargparse.getArgumentParser()
-    MakefileCreator.add_arguments(cap, variant, argv)
+    MakefileCreator.add_arguments(cap)
     args = ct.utils.parseargs(cap, argv)
     makefile_creator = MakefileCreator(args)
     makefile_creator.create()
