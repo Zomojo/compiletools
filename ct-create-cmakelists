@@ -17,21 +17,20 @@ class CMakefileCreator:
 
     """ Create a CMakefile.txt based on the filename, --static and --dynamic command line options """
 
-    def __init__(self, argv=None):
-        self.namer = ct.utils.Namer(argv)
-        self.hunter = Hunter(argv)
-
-        self.args = None
-        # self.args will exist after this call
-        ct.utils.setattr_args(self, argv)
+    def __init__(self, args):
+        self.args = args
+        self.namer = ct.utils.Namer(args)
+        self.hunter = Hunter(args)
 
     @staticmethod
-    def add_arguments(cap, variant, argv=None):
-        ct.utils.add_target_arguments(parser)
-        ct.utils.add_link_arguments(parser)
-        ct.utils.add_output_directory_arguments(parser, variant)
-        ct.utils.Namer.add_arguments(parser, variant, argv)
-        ct.utils.Hunter.add_arguments(argv)
+    def add_arguments(cap):
+        ct.utils.add_target_arguments(cap)
+        ct.utils.add_link_arguments(cap)
+        # Don't add the output directory arguments
+        # The Namer will do it and get the hash correct
+        #ct.utils.add_output_directory_arguments(cap, variant)
+        ct.utils.Namer.add_arguments(cap)
+        ct.utils.Hunter.add_arguments(cap)
 
     def create(self):
         with open("CMakeLists.txt", mode='w', encoding='utf-8') as cmf:
@@ -98,7 +97,7 @@ def main(argv=None):
         is_config_file=True,
         help="Manually specify the config file path if you want to override the variant default")
 
-    CMakefileCreator.add_arguments(cap, variant, argv)
+    CMakefileCreator.add_arguments(cap)
     args = ct.utils.parseargs(cap, argv)
     cmakefile_creator = CMakefileCreator(args)
     cmakefile_creator.create()
