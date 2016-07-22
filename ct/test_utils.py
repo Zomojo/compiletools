@@ -72,7 +72,7 @@ class TestNamer(unittest.TestCase):
     def test_executable_pathname(self):
         cap = configargparse.getArgumentParser()
         argv = ['--no-git-root']
-        utils.Namer.add_arguments(cap=cap, variant='myvar', argv=argv)
+        utils.Namer.add_arguments(cap=cap)
         args = utils.parseargs(cap, argv)
         namer = utils.Namer(args)
         exename = namer.executable_pathname('/home/user/code/my.cpp')
@@ -80,7 +80,7 @@ class TestNamer(unittest.TestCase):
             exename,
             os.path.join(
                 os.getcwd(),
-                'bin/myvar.011500b9/home/user/code/my'))
+                'bin/debug.6714530a/home/user/code/my'))
 
 
 class TestOrderedSet(unittest.TestCase):
