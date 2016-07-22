@@ -124,7 +124,7 @@ def extract_variant_from_argv(argv=None):
     return variant
 
 
-def variant_with_hash(argv=None, variant=None):
+def variant_with_hash(args, argv=None, variant=None):
     """ Note that the argv can override the options in the config file.
         If we want to keep the differently specified flags separate then
         some hash of the argv must be added onto the config file name.
@@ -136,9 +136,8 @@ def variant_with_hash(argv=None, variant=None):
     if not variant:
         variant = extract_variant_from_argv(argv)
 
-    # Don't include the executable name in the hash (just want the options)
     # The & <magicnumber> at the end is so that python2/3 give the same result
-    return "%s.%08x" % (variant, (zlib.adler32(str(argv[1:])) & 0xffffffff))
+    return "%s.%08x" % (variant, (zlib.adler32(str(args)) & 0xffffffff))
 
 
 def default_config_directories(
@@ -453,14 +452,17 @@ class Namer(object):
     def __init__(self, args):
         self.args = args
 
+        # If the user didn't explicitly tell us what bindir to use the
+        # generate a unique one for the args
+        if self.args.bindir == 'bin/default':
+            vwh = variant_with_hash(args)
+            self.args.bindir = "".join(["bin/", vwh])
+            self.args.objdir = "".join(["bin/", vwh, "/obj"])
+
     @staticmethod
-    def add_arguments(cap, variant, argv):
+    def add_arguments(cap):
         add_common_arguments(cap)
-        add_output_directory_arguments(
-            cap,
-            variant_with_hash(
-                argv=argv,
-                variant=variant))
+        add_output_directory_arguments(cap,'default')
 
     def _outputdir(self, defaultdir, sourcefilename=None):
         """ Used by object_dir and executable_dir.
