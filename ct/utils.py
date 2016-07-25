@@ -448,13 +448,16 @@ class Namer(object):
     """ From a source filename, calculate related names
         like executable name, object name, etc.
     """
-
+    # The first Namer may change this.  All others need to be able to read it.
+    _using_variant_with_hash_bindir = False
+    
     def __init__(self, args):
         self.args = args
 
         # If the user didn't explicitly tell us what bindir to use the
         # generate a unique one for the args
         if self.args.bindir == 'bin/default':
+            Namer._using_variant_with_hash_bindir = True
             vwh = variant_with_hash(args)
             self.args.bindir = "".join(["bin/", vwh])
             self.args.objdir = "".join(["bin/", vwh, "/obj"])
@@ -463,6 +466,13 @@ class Namer(object):
     def add_arguments(cap):
         add_common_arguments(cap)
         add_output_directory_arguments(cap,'default')
+
+    def topbindir(self):
+        """ What is the topmost part of the bin directory """
+        if self._using_variant_with_hash_bindir:
+            return "bin/"
+        else:
+            return self.args.bindir
 
     def _outputdir(self, defaultdir, sourcefilename=None):
         """ Used by object_dir and executable_dir.
