@@ -15,54 +15,39 @@ class Cake:
         self.args = args
 
     @staticmethod
+    def _add_prepend_append_argument(cap, name, destname=None, extrahelp=None):
+        """ Add a prepend flags argument and an append flags argument to the config arg parser """
+        if destname is None:
+            destname = name
+
+        if extrahelp is None:
+            extrahelp = ""
+
+        cap.add(
+            "".join(["--","prepend","-", name.upper()]),
+            dest="".join(["prepend", destname.lower()]),
+            help=" ".join(["prepend".title(), "the given text to the", name.upper(), "already set. Useful for adding search paths etc.", extrahelp]))
+        cap.add(
+            "".join(["--","append","-", name.upper()]),
+            dest="".join(["append", destname.lower()]),
+            help=" ".join(["append".title(), "the given text to the", name.upper(), "already set. Useful for adding search paths etc.", extrahelp]))
+
+    @staticmethod
     def add_arguments(cap, variant, argv):
-        cap.add(
-            "--prepend-CPPFLAGS",
-            dest='prependcppflags',
-            help="Prepends the given text to the CPPFLAGS already set. Useful for adding search paths etc. ")
-        cap.add(
-            "--prepend-CFLAGS",
-            dest='prependcflags',
-            help="Prepends the given text to the CFLAGS already set. Useful for adding search paths etc. ")
-        cap.add(
-            "--prepend-CXXFLAGS",
-            dest='prependcxxflags',
-            help="Prepends the given text to the CXXFLAGS already set. Useful for adding search paths etc. ")
-        cap.add(
-            "--prepend-LDFLAGS",
-            dest='prependldflags',
-            help="Prepends the given text to the LDFLAGS already set. Useful for adding search paths etc. ")
-        cap.add(
-            "--prepend-LINKFLAGS",
-            dest='prependldflags',
-            help="Prepends the given text to the LDFLAGS already set. Synonym for prepend-LDFLAGS. Useful for adding search paths etc. ")
-        cap.add(
-            "--append-CPPFLAGS",
-            dest='appendcppflags',
-            help="Appends the given text to the CPPFLAGS already set. Useful for adding search paths etc. ")
-        cap.add(
-            "--append-CFLAGS",
-            dest='appendcflags',
-            help="Appends the given text to the CFLAGS already set. Useful for adding search paths etc. ")
-        cap.add(
-            "--append-CXXFLAGS",
-            dest='appendcxxflags',
-            help="Appends the given text to the CXXFLAGS already set. Useful for adding search paths etc. ")
-        cap.add(
-            "--append-LDFLAGS",
-            dest='appendldflags',
-            help="Prepends the given text to the LDFLAGS already set. Useful for adding search paths etc. ")
-        cap.add(
-            "--append-LINKFLAGS",
-            dest='appendldflags',
-            help="Prepends the given text to the LDFLAGS already set. Synonym for append-LDFLAGS. Useful for adding search paths etc. ")
+        ct.makefile.MakefileCreator.add_arguments(cap)
+
+        Cake._add_prepend_append_argument(cap, 'cppflags')
+        Cake._add_prepend_append_argument(cap, 'cflags')
+        Cake._add_prepend_append_argument(cap, 'cxxflags')
+        Cake._add_prepend_append_argument(cap, 'ldflags')
+        Cake._add_prepend_append_argument(cap, 'linkflags', destname='ldflags', extrahelp='Synonym for setting LDFLAGS.')
+
         ct.utils.add_boolean_argument(
             parser=cap,
             name="file-list",
             dest='filelist',
                 default=False,
                 help="Print list of referenced files.")        
-        ct.makefile.MakefileCreator.add_arguments(cap)
         cap.add(
             "--begintests",
             dest='tests',
