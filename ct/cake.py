@@ -63,6 +63,11 @@ class Cake:
             dest='tests',
             nargs='*',
             help="Starts a test block. The cpp files following this declaration will generate executables which are then run. Synonym for --tests")
+        cap.add(
+            "--endtests",
+            action='store_true',
+            help="Ignored. For backwards compatibility only.")
+
         ct.utils.add_boolean_argument(
             parser=cap,
             name="auto",
