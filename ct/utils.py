@@ -137,7 +137,7 @@ def variant_with_hash(args, argv=None, variant=None):
         variant = extract_variant_from_argv(argv)
 
     # The & <magicnumber> at the end is so that python2/3 give the same result
-    return "%s.%08x" % (variant, (zlib.adler32(str(args)) & 0xffffffff))
+    return "%s.%08x" % (variant, (zlib.adler32(str(args).encode('utf-8')) & 0xffffffff))
 
 
 def default_config_directories(

@@ -76,11 +76,13 @@ class TestNamer(unittest.TestCase):
         args = utils.parseargs(cap, argv)
         namer = utils.Namer(args)
         exename = namer.executable_pathname('/home/user/code/my.cpp')
+        print('*********')
+        print(exename)
         self.assertEqual(
             exename,
             os.path.join(
                 os.getcwd(),
-                'bin/debug.6714530a/home/user/code/my'))
+                'bin/debug.d53a4eed/home/user/code/my'))
 
 
 class TestOrderedSet(unittest.TestCase):
