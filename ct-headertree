@@ -13,7 +13,7 @@ from collections import Counter
 import math
 import configargparse
 import ct.wrappedos
-from ct.hunter import HeaderTree
+import ct.headerdeps
 import ct.git_utils as git_utils
 import ct.utils as utils
 import ct.tree as tree
@@ -250,9 +250,9 @@ def main(argv=None):
         default='Tree',
         help="Output formatting style")
 
-    HeaderTree.add_arguments(cap)
+    ct.headerdeps.add_arguments(cap)
     args = ct.utils.parseargs(cap, argv)
-    ht = HeaderTree(args)
+    ht = ct.headerdeps.DirectHeaderDeps(args)
 
     if not ct.wrappedos.isfile(args.filename[0]):
         sys.stderr.write(

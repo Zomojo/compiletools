@@ -8,6 +8,9 @@ import os
 from io import open
 import shutil
 import ct.utils
+import ct.headerdeps
+import ct.magicflags
+import ct.hunter
 import ct.makefile
 import ct.filelist
 
@@ -134,7 +137,10 @@ class Cake:
         if self.args.auto:
             self._find_files()
 
-        makefile_creator = ct.makefile.MakefileCreator(self.args)
+        headerdeps = ct.headerdeps.create(self.args)
+        magicflags = ct.magicflags.create(self.args, headerdeps)
+        hunter = ct.hunter.Hunter(self.args, headerdeps, magicflags)
+        makefile_creator = ct.makefile.MakefileCreator(self.args, hunter)
         makefilename = makefile_creator.create()
         cmd = ['make', '-j', str(self.args.parallel), '-f', makefilename]
         subprocess.check_call(cmd, universal_newlines=True)
