@@ -53,8 +53,8 @@ class MagicFlagsBase:
     """
 
     def __init__(self, args, headerdeps):
-        self.args = args
-        self.headerdeps = headerdeps
+        self._args = args
+        self._headerdeps = headerdeps
 
         # The magic pattern is //#key=value with whitespace ignored
         self.magicpattern = re.compile(
@@ -70,7 +70,7 @@ class MagicFlagsBase:
 
     @memoize
     def parse(self, filename):
-        if self.args.verbose > 4:
+        if self._args.verbose >= 4:
             print("Parsing magic flags for " + filename)
         text = self.readfile(filename)
         flagsforfilename = {}
@@ -78,7 +78,7 @@ class MagicFlagsBase:
         for match in self.magicpattern.finditer(text):
             magic, flag = match.groups()
             flagsforfilename.setdefault(magic, set()).add(flag)
-            if self.args.verbose >= 5:
+            if self._args.verbose >= 5:
                 print(
                     "Using magic flag {0}={1} for source = {2}".format(
                         magic,
@@ -95,7 +95,7 @@ class DirectMagicFlags(MagicFlagsBase):
         # reading and handling as one string is slightly faster than
         # handling a list of strings.
         # Only read first 2k for speed
-        headers = self.headerdeps.process(filename)
+        headers = self._headerdeps.process(filename)
         text = ""
         for filename in headers | {filename}:
             with open(filename, encoding='utf-8', errors='ignore') as ff:
