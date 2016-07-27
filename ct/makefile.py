@@ -92,7 +92,7 @@ class LinkRuleCreator(object):
         all_magic_ldflags = set()
         if not suppressmagicldflags:
             for source in completesources:
-                magic_flags = self.hunter.parse_magic_flags(source)
+                magic_flags = self.hunter.magicflags(source)
                 all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
                 all_magic_ldflags |= magic_flags.get(
                     'LINKFLAGS',
@@ -174,7 +174,7 @@ class MakefileCreator:
 
     """ Create a Makefile based on the filename, --static and --dynamic command line options """
 
-    def __init__(self, args):
+    def __init__(self, args, hunter):
         self.args = args
 
         # Keep track of what build artifacts are created for easier cleanup
@@ -187,7 +187,7 @@ class MakefileCreator:
         self.rules = ct.utils.OrderedSet()
 
         self.namer = ct.utils.Namer(args)
-        self.hunter = Hunter(args)
+        self.hunter = hunter
 
     @staticmethod
     def add_arguments(cap):
@@ -197,7 +197,7 @@ class MakefileCreator:
         # The Namer will do it and get the hash correct
         #ct.utils.add_output_directory_arguments(parser, variant)
         ct.utils.Namer.add_arguments(cap)
-        ct.hunter.Hunter.add_arguments(cap)
+        ct.hunter.add_arguments(cap)
 
     @staticmethod
     def _create_all_rule(prerequisites):
@@ -414,7 +414,7 @@ class MakefileCreator:
         obj_name = self.namer.object_pathname(filename)
         self.objects.add(obj_name)
 
-        magicflags = self.hunter.parse_magic_flags(filename)
+        magicflags = self.hunter.magicflags(filename)
         if ct.wrappedos.isc(filename):
             magic_c_flags = magicflags.get('CFLAGS', [])
             recipe = " ".join([self.args.CC, self.args.CFLAGS]
@@ -497,7 +497,11 @@ def main(argv=None):
     variant = ct.utils.extract_variant_from_argv(argv)
     cap = configargparse.getArgumentParser()
     MakefileCreator.add_arguments(cap)
+    ct.hunter.add_arguments(cap)
     args = ct.utils.parseargs(cap, argv)
-    makefile_creator = MakefileCreator(args)
+    headerdeps = ct.headerdeps.create(args)
+    magicflags = ct.magicflags.create(args, headerdeps)
+    hunter = ct.hunter.Hunter(args, headerdeps, magicflags)
+    makefile_creator = MakefileCreator(args, hunter)
     makefile_creator.create()
     return 0

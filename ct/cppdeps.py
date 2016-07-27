@@ -4,7 +4,7 @@ import sys
 import configargparse
 import ct.wrappedos
 import ct.utils
-from ct.hunter import HeaderDependencies
+import ct.headerdeps
 
 
 def main(argv=None):
@@ -22,9 +22,9 @@ def main(argv=None):
         nargs='+')
 
     # This will add the common arguments as a side effect
-    HeaderDependencies.add_arguments(cap)
+    ct.headerdeps.add_arguments(cap)
     args = ct.utils.parseargs(cap, argv)
-    hh = HeaderDependencies(args)
+    hh = ct.headerdeps.CppHeaderDeps(args)
 
     if not ct.wrappedos.isfile(args.filename[0]):
         sys.stderr.write(
