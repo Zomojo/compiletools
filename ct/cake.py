@@ -137,18 +137,21 @@ class Cake:
         if self.args.auto:
             self._find_files()
 
+        namer = ct.utils.Namer(self.args)
         headerdeps = ct.headerdeps.create(self.args)
         magicflags = ct.magicflags.create(self.args, headerdeps)
         hunter = ct.hunter.Hunter(self.args, headerdeps, magicflags)
         makefile_creator = ct.makefile.MakefileCreator(self.args, hunter)
         makefilename = makefile_creator.create()
-        cmd = ['make', '-j', str(self.args.parallel), '-f', makefilename]
+        movedmakefile = os.path.join(namer.executable_dir(),makefilename)
+        ct.wrappedos.makedirs(namer.executable_dir())
+        shutil.move(makefilename, movedmakefile)
+        cmd = ['make', '-j', str(self.args.parallel), '-f', movedmakefile]
         subprocess.check_call(cmd, universal_newlines=True)
         
         # Copy the executables into the "bin" dir (as per cake)
         # Unless the user has changed the bindir in which case assume
         # that they know what they are doing
-        namer = ct.utils.Namer(self.args)
         outputdir = namer.topbindir()
 
         filelist = os.listdir(namer.executable_dir())
