@@ -69,6 +69,7 @@ class TestImpliedSource(unittest.TestCase):
 
 class TestNamer(unittest.TestCase):
 
+    @unittest.skipUnless(int(sys.version[0]) < 3, "The hardcoded hash value is only valid on python 2")
     def test_executable_pathname(self):
         cap = configargparse.getArgumentParser()
         argv = ['--no-git-root']
@@ -76,13 +77,11 @@ class TestNamer(unittest.TestCase):
         args = utils.parseargs(cap, argv)
         namer = utils.Namer(args)
         exename = namer.executable_pathname('/home/user/code/my.cpp')
-        print('*********')
-        print(exename)
         self.assertEqual(
             exename,
             os.path.join(
                 os.getcwd(),
-                'bin/debug.d53a4eed/home/user/code/my'))
+                'bin/debug.6714530a/home/user/code/my'))
 
 
 class TestOrderedSet(unittest.TestCase):
