@@ -10,7 +10,9 @@ import configargparse
 
 import ct.utils
 import ct.wrappedos
-from ct.hunter import Hunter
+import ct.headerdeps
+import ct.magicflags
+import ct.hunter
 
 
 class Rule:

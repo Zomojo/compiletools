@@ -10,7 +10,10 @@ import configargparse
 
 import ct.utils
 import ct.wrappedos
-from ct.hunter import Hunter
+import ct.headerdeps
+import ct.magicflags
+import ct.hunter
+
 
 
 class CMakefileCreator:
@@ -20,7 +23,9 @@ class CMakefileCreator:
     def __init__(self, args):
         self.args = args
         self.namer = ct.utils.Namer(args)
-        self.hunter = Hunter(args)
+        headerdeps = ct.headerdeps.create(args)
+        magicflags = ct.magicflags.create(args, headerdeps)
+        self.hunter = ct.hunter.Hunter(args, headerdeps, magicflags)
 
     @staticmethod
     def add_arguments(cap):
@@ -30,7 +35,7 @@ class CMakefileCreator:
         # The Namer will do it and get the hash correct
         #ct.utils.add_output_directory_arguments(cap, variant)
         ct.utils.Namer.add_arguments(cap)
-        ct.utils.Hunter.add_arguments(cap)
+        ct.hunter.add_arguments(cap)
 
     def create(self):
         with open("CMakeLists.txt", mode='w', encoding='utf-8') as cmf:
