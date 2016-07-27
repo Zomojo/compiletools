@@ -200,6 +200,7 @@ class MakefileCreator:
         #ct.utils.add_output_directory_arguments(parser, variant)
         ct.utils.Namer.add_arguments(cap)
         ct.hunter.add_arguments(cap)
+        cap.add("--makefilename", default="Makefile")
 
     @staticmethod
     def _create_all_rule(prerequisites):
@@ -398,9 +399,8 @@ class MakefileCreator:
         self.rules.add(self._create_mkdir_rule(alloutputs))
         self.rules |= self._create_clean_rules(alloutputs)
 
-        makefilename = 'Makefile.' + ct.utils.variant_with_hash(self.args)
-        self.write(makefilename)
-        return makefilename
+        self.write(self.args.makefilename)
+        return self.args.makefilename
 
     def _create_compile_rule_for_source(self, filename):
         """ For a given source file return the compile rule required for the Makefile """
