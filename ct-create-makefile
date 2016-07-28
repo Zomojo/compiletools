@@ -14,7 +14,8 @@ if __name__ == '__main__':
                     'executable (or library). Each given file is assumed to be compiled '
                     'into a separate executable and/or library.',
         formatter_class=configargparse.DefaultsRawFormatter,
-        default_config_files=config_files)
+        default_config_files=config_files,
+        ignore_unknown_config_file_keys=True)
 
     # The config file has to be added here.  For some reason doing it in the
     # ct.utils.add_common_arguments, or elsewhere, fails.

@@ -12,5 +12,6 @@ if __name__ == '__main__':
     cap = configargparse.getArgumentParser(
         description='Determine header and source dependencies of a C/C++ file by following headers and implied source files.',
         formatter_class=configargparse.DefaultsRawFormatter,
-        default_config_files=config_files)
+        default_config_files=config_files,
+        ignore_unknown_config_file_keys=True)
     sys.exit(ct.filelist.main())

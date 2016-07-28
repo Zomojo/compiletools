@@ -9,5 +9,6 @@ if __name__ == '__main__':
     cap = configargparse.getArgumentParser(
         description='Determine header dependencies of a C/C++ file by invoking $CPP -MM <filename>. ',
         formatter_class=configargparse.DefaultsRawFormatter,
-        default_config_files=config_files)
+        default_config_files=config_files,
+        ignore_unknown_config_file_keys=True)
     sys.exit(ct.cppdeps.main())

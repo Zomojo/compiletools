@@ -243,7 +243,8 @@ def main(argv=None):
 
     # Figure out what style classes are available and add them to the command
     # line options
-    styles = [st[:-5].lower() for st in dict(globals()) if st.endswith('Style')]
+    styles = [st[:-5].lower()
+              for st in dict(globals()) if st.endswith('Style')]
     cap.add(
         '--style',
         choices=styles,

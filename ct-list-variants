@@ -5,7 +5,8 @@ import argparse
 import ct.listvariants
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Find the possible variants by looking in the system config files, user config files and the executable's directory.")
+    parser = argparse.ArgumentParser(
+        description="Find the possible variants by looking in the system config files, user config files and the executable's directory.")
     parser.parse_args()
 
     for line in ct.listvariants.find_possible_variants():
