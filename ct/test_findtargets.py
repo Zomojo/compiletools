@@ -19,7 +19,8 @@ class TestFindTargetsModule(unittest.TestCase):
         expectedexes = {
             './samples/simple/helloworld_c.c',
             './samples/simple/helloworld_cpp.cpp',
-            './samples/dottypaths/dottypaths.cpp'}
+            './samples/dottypaths/dottypaths.cpp',
+            './samples/lotsofmagic/lotsofmagic.cpp'}
         expectedtests = {
             './samples/cross_platform/test_source.cpp',
             './samples/factory/test_factory.cpp',
