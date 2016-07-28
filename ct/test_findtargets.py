@@ -6,6 +6,7 @@ import unittest
 import configargparse
 
 import ct.unittesthelper as uth
+import ct.utils
 import ct.findtargets
 
 
@@ -26,16 +27,19 @@ class TestFindTargetsModule(unittest.TestCase):
             './samples/numbers/test_library.cpp',
             './samples/simple/test_cflags.c']
 
-        argv = ['ct-test', '-c', 'ct.conf.d/ct.conf']
-        cap = configargparse.getArgumentParser()
+        config_files = ct.utils.config_files_from_variant(exedir=".")
+        cap = configargparse.getArgumentParser(
+            description='Find the source files that are executable targets and tests',
+            formatter_class=configargparse.DefaultsRawFormatter,
+            default_config_files=config_files,
+            ignore_unknown_config_file_keys=True)
         cap.add(
             "-c",
             "--config",
             is_config_file=True,
             help="Manually specify the config file path if you want to override the variant default")
         ct.findtargets.add_arguments(cap)
-        args = ct.utils.parseargs(cap, argv)
-        print(args.exemarkers)
+        args = ct.utils.parseargs(cap, argv=['-vvv'])
         findtargets = ct.findtargets.FindTargets(args)
         executabletargets, testtargets = findtargets()
         self.assertListEqual(expectedexes, executabletargets)

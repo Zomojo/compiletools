@@ -39,14 +39,13 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
     if extraargs is None:
         extraargs = []
     argv = [
-        'ct-test',
         '--headerdeps',
         name,
         '--variant',
         'debug',
         '--CPPFLAGS=-std=c++1z',
         '--include',
-        uth.ctdir()] + extraargs + realpaths
+        uth.ctdir()] + extraargs
     cachename = os.path.join(tempdir, name)
     _reload_headerdeps(cachename)
 
@@ -68,7 +67,7 @@ class TestHeaderDepsModule(unittest.TestCase):
         if extraargs is None:
             extraargs = []
         realpath = ct.wrappedos.realpath(filename)
-        argv = ['ct-test', realpath] + extraargs
+        argv = extraargs
 
         cap = configargparse.getArgumentParser()
         ct.headerdeps.add_arguments(cap)
@@ -92,22 +91,6 @@ class TestHeaderDepsModule(unittest.TestCase):
             'samples/dottypaths/dottypaths.cpp']
         for filename in filenames:
             self._direct_cpp_tester(filename)
-
-    def test_direct_and_cpp_generate_same_results_preprocess(self):
-        filenames = [
-            'samples/factory/test_factory.cpp',
-            'samples/numbers/test_direct_include.cpp',
-            'samples/dottypaths/dottypaths.cpp']
-        for filename in filenames:
-            self._direct_cpp_tester(filename, ["--magic", "cpp"])
-
-    def test_direct_and_cpp_generate_same_results_nodirectread(self):
-        filenames = [
-            'samples/factory/test_factory.cpp',
-            'samples/numbers/test_direct_include.cpp',
-            'samples/dottypaths/dottypaths.cpp']
-        for filename in filenames:
-            self._direct_cpp_tester(filename, ["--magic", "direct"])
 
     def _direct_and_cpp_generate_same_results_ex(self, extraargs=None):
         """ Test that HeaderTree and HeaderDependencies give the same results.
@@ -155,18 +138,6 @@ class TestHeaderDepsModule(unittest.TestCase):
         "test_direct_and_cpp_generate_same_results relies on XDG_CACHE_HOME")
     def test_direct_and_cpp_generate_same_results_ex(self):
         self._direct_and_cpp_generate_same_results_ex()
-
-    @unittest.skipUnless(
-        sys.platform.startswith("linux"),
-        "test_direct_and_cpp_generate_same_results relies on XDG_CACHE_HOME")
-    def test_direct_and_cpp_generate_same_results_ex_preprocess(self):
-        self._direct_and_cpp_generate_same_results_ex(["--preprocess"])
-
-    @unittest.skipUnless(
-        sys.platform.startswith("linux"),
-        "test_direct_and_cpp_generate_same_results relies on XDG_CACHE_HOME")
-    def test_direct_and_cpp_generate_same_results_ex_nodirectread(self):
-        self._direct_and_cpp_generate_same_results_ex(["--no-directread"])
 
     def tearDown(self):
         uth.delete_existing_parsers()

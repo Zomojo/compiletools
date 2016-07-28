@@ -54,8 +54,9 @@ def check_filename(filename):
 
 class Filelist(object):
 
-    def __init__(self, args):
+    def __init__(self, args, hunter):
         self.args = args
+        self._hunter = hunter
 
     @staticmethod
     def add_arguments(cap):
@@ -66,14 +67,14 @@ class Filelist(object):
 
         # Figure out what output style classes are available and add them to the
         # command line options
-        styles = [st[:-5] for st in dict(globals()) if st.endswith('Style')]
+        styles = [st[:-5].lower() for st in dict(globals()) if st.endswith('Style')]
         cap.add(
             '--style',
             choices=styles,
-            default='Flat',
+            default='flat',
             help="Output formatting style")
 
-        passfilters = [st[:-10]
+        passfilters = [st[:-10].lower()
                        for st in dict(globals()) if st.endswith('PassFilter')]
         cap.add(
             '--filter',
@@ -86,23 +87,21 @@ class Filelist(object):
             'merge',
             default=True,
             help='Merge all outputs into a single list')
-        ct.hunter.Hunter.add_arguments(cap)
+        ct.hunter.add_arguments(cap)
 
     def process(self):
-        hunter = Hunter(self.args)
-
-        styleclass = globals()[self.args.style + 'Style']
+        styleclass = globals()[self.args.style.title() + 'Style']
         kwargs = ct.utils.extractinitargs(self.args, styleclass)
         styleobject = styleclass(**kwargs)
 
-        filterclass = globals()[self.args.filter + 'PassFilter']
+        filterclass = globals()[self.args.filter.title() + 'PassFilter']
         filterobject = filterclass()
 
         mergedfiles = set()
         for filename in self.args.filename:
             check_filename(filename)
             realpath = ct.wrappedos.realpath(filename)
-            files = hunter.required_files(realpath)
+            files = self._hunter.required_files(realpath)
             filteredfiles = filterobject(files)
 
             if self.args.merge:
@@ -121,13 +120,13 @@ class Filelist(object):
             styleobject(sorted(mergedfiles))
 
 def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-
     cap = configargparse.getArgumentParser()
     Filelist.add_arguments(cap)
     args = ct.utils.parseargs(cap, argv)
-    filelist = Filelist(args)
+    headerdeps = ct.headerdeps.create(args)
+    magicflags = ct.magicflags.create(args, headerdeps)
+    hunter = ct.hunter.Hunter(args, headerdeps, magicflags)
+    filelist = Filelist(args, hunter)
     filelist.process()
 
     return 0

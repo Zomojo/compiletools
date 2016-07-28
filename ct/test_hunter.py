@@ -43,7 +43,6 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
     if extraargs is None:
         extraargs = []
     argv = [
-        'ct-test',
         '--headerdeps',
         name,
         '--variant',
@@ -69,7 +68,6 @@ class TestHunterModule(unittest.TestCase):
 
     def test_hunter_follows_source_files_from_header(self):
         argv = [
-            'ct-test',
             '--variant',
             'debug',
             '--CPPFLAGS=-std=c++1z',
@@ -101,13 +99,11 @@ class TestHunterModule(unittest.TestCase):
         bulkpaths = [os.path.join(samplesdir, filename)
                      for filename in relativepaths]
         argv = [
-            'ct-test',
             '--variant',
             'debug',
             '--CPPFLAGS=-std=c++1z',
             '--include',
-            uth.ctdir(),
-            '--filename'] + bulkpaths
+            uth.ctdir()] + bulkpaths
         cap = configargparse.getArgumentParser()
         ct.hunter.add_arguments(cap)
         args = ct.utils.parseargs(cap, argv)

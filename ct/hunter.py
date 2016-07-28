@@ -14,7 +14,7 @@ import ct.wrappedos
 from ct.diskcache import diskcache
 from ct.memoize import memoize
 import ct.headerdeps
-
+import ct.magicflags
 
 def add_arguments(cap):
     """ Add the command line arguments that the Hunter classes require """

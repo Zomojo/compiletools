@@ -119,10 +119,6 @@ class CppMagicFlags(MagicFlagsBase):
 
 
 def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-
-    variant = ct.utils.extract_variant_from_argv(argv)
     cap = configargparse.getArgumentParser()
     ct.headerdeps.add_arguments(cap)
     add_arguments(cap)

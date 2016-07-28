@@ -174,7 +174,9 @@ class ExeLinkRuleCreator(LinkRuleCreator):
 
 class MakefileCreator:
 
-    """ Create a Makefile based on the filename, --static and --dynamic command line options """
+    """ Create a Makefile based on the filename, --static and --dynamic 
+        command line options.
+    """
 
     def __init__(self, args, hunter):
         self.args = args
@@ -491,10 +493,6 @@ class MakefileCreator:
 
 
 def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-
-    variant = ct.utils.extract_variant_from_argv(argv)
     cap = configargparse.getArgumentParser()
     MakefileCreator.add_arguments(cap)
     ct.hunter.add_arguments(cap)

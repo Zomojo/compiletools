@@ -81,7 +81,7 @@ class TestNamer(unittest.TestCase):
             exename,
             os.path.join(
                 os.getcwd(),
-                'bin/debug.6714530a/home/user/code/my'))
+                'bin/debug.b4755355/home/user/code/my'))
 
 
 class TestOrderedSet(unittest.TestCase):

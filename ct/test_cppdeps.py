@@ -15,9 +15,7 @@ class TestCPPDeps(unittest.TestCase):
         uth.delete_existing_parsers()
 
     def test_cppdeps(self):
-        ct.cppdeps.main([os.path.realpath('ct-cppdeps'),
-                         '--filename',
-                         'samples/numbers/test_direct_include.cpp'])
+        ct.cppdeps.main(['samples/numbers/test_direct_include.cpp'])
         if not hasattr(sys.stdout, "getvalue"):
             self.fail(
                 "need to run in buffered mode. You can set buffer through unit2 command line flag -b, --buffer or in unittest.main options. The opposite is achieved through nosetest flag --nocapture.")

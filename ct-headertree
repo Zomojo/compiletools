@@ -224,9 +224,6 @@ class TreeStyle(ct.git_utils.NameAdjuster):
 
 
 def main(argv=None):
-    if not argv:
-        argv = sys.argv
-
     # Python 3 stdout accepts unicode by default
     # So we only need to force python 2 stdout to accept unicode
     if sys.version_info[0] < 3:
@@ -280,5 +277,6 @@ if __name__ == '__main__':
     cap = configargparse.getArgumentParser(
         description='Create a tree of header dependencies starting at a given C/C++ file. ',
         formatter_class=configargparse.DefaultsRawFormatter,
-        default_config_files=config_files)
+        default_config_files=config_files,
+        ignore_unknown_config_file_keys=True)
     sys.exit(main())

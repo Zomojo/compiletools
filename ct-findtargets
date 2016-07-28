@@ -12,7 +12,8 @@ if __name__ == '__main__':
     cap = configargparse.getArgumentParser(
         description='Find the source files that are executable targets and tests',
         formatter_class=configargparse.DefaultsRawFormatter,
-        default_config_files=config_files)
+        default_config_files=config_files,
+        ignore_unknown_config_file_keys=True)
 
     # The config file has to be added here.  For some reason doing it in the
     # ct.utils.add_common_arguments, or elsewhere, fails.

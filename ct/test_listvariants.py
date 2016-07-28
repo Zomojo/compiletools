@@ -15,7 +15,6 @@ class TestListVariants(unittest.TestCase):
         # no config files will be found
         ucd = "/home/dummy/.config/ct"
         scd = "/usr/lib"
-        argv = ["/usr/bin/python"]
         expected_output = [
             'From highest to lowest priority configuration directories, the possible variants are: ',
             '/home/dummy/.config/ct',
@@ -27,7 +26,7 @@ class TestListVariants(unittest.TestCase):
         output = ct.listvariants.find_possible_variants(
             user_config_dir=ucd,
             system_config_dir=scd,
-            argv=argv)
+            exedir='/usr/bin')
         print(expected_output)
         print(output)
         self.assertEqual(expected_output, output)

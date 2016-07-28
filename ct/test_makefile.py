@@ -44,7 +44,7 @@ class TestMakefile(unittest.TestCase):
         realpaths = [os.path.join(samplesdir, filename)
                      for filename in relativepaths]
         ct.makefile.main(
-            ['ct-test-makefile', '--CXXFLAGS=-std=c++1z -fPIC'] + realpaths)
+            ['--CXXFLAGS=-std=c++1z -fPIC'] + realpaths)
 
         filelist = os.listdir('.')
         makefilename = [ff for ff in filelist if ff.startswith('Makefile')]
@@ -115,8 +115,10 @@ def _test_library(static_dynamic):
         os.path.join(
             samplesdir,
             filename) for filename in librelativepaths]
-    argv = ['ct-test', '--CXXFLAGS=-std=c++1z -fPIC', static_dynamic] + \
-        librealpaths + ['--filename', exerealpath]
+    argv = [
+        '--CXXFLAGS=-std=c++1z -fPIC',
+        exerealpath,
+        static_dynamic] + librealpaths
     ct.makefile.main(argv)
 
     # Figure out the name of the makefile and run make

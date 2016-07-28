@@ -18,7 +18,7 @@ class TestHeaderDepsModule(unittest.TestCase):
     def _createmagicflags(self, extraargs=None):
         if not extraargs:
             extraargs = []
-        argv = ['ct-test'] + extraargs
+        argv = extraargs
         cap = configargparse.getArgumentParser()
         ct.headerdeps.add_arguments(cap)
         ct.magicflags.add_arguments(cap)

@@ -111,10 +111,6 @@ class FindTargets(object):
 
 
 def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-
-    variant = ct.utils.extract_variant_from_argv(argv)
     cap = configargparse.getArgumentParser()
     ct.findtargets.add_arguments(cap)
 

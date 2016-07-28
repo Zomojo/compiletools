@@ -187,10 +187,6 @@ class Cake:
 
 
 def main(argv=None):
-    if argv is None:
-        argv = sys.argv
-
-    variant = ct.utils.extract_variant_from_argv(argv)
     cap = configargparse.getArgumentParser()
     Cake.add_arguments(cap)
     args = ct.utils.parseargs(cap, argv)

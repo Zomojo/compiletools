@@ -131,9 +131,6 @@ def variant_with_hash(args, argv=None, variant=None):
         some hash of the argv must be added onto the config file name.
         Choose adler32 for speed
     """
-    if argv is None:
-        argv = sys.argv
-
     if not variant:
         variant = extract_variant_from_argv(argv)
 
@@ -145,7 +142,7 @@ def variant_with_hash(args, argv=None, variant=None):
 def default_config_directories(
         user_config_dir=None,
         system_config_dir=None,
-        argv=None):
+        exedir=None):
     # Use configuration in the order (lowest to highest priority)
     # 1) same path as exe,
     # 2) system config (XDG compliant.  /etc/xdg/ct)
@@ -158,29 +155,29 @@ def default_config_directories(
         user_config_dir = appdirs.user_config_dir(appname='ct')
     if system_config_dir is None:
         system_config_dir = appdirs.site_config_dir(appname='ct')
-    if argv is None:
-        argv = sys.argv
+    if exedir is None:
+        exedir = ct.wrappedos.dirname(ct.wrappedos.realpath(sys.argv[0]))
 
-    executable_config_dir = os.path.join(
-        ct.wrappedos.dirname(
-            ct.wrappedos.realpath(argv[0])),
-        "ct.conf.d")
+    executable_config_dir = os.path.join(exedir,"ct.conf.d")
+
     return [user_config_dir, system_config_dir, executable_config_dir]
 
 
-def config_files_from_variant(variant=None, argv=None):
+def config_files_from_variant(variant=None, argv=None, exedir=None):
     if variant is None:
         variant = extract_variant_from_argv(argv)
     variantconfigs = [
         os.path.join(defaultdir, variant)
-        + ".conf" for defaultdir in default_config_directories(argv=argv)]
+        + ".conf" for defaultdir in default_config_directories(exedir=exedir)]
     defaultconfigs = [
         os.path.join(
             defaultdir,
             "ct.conf") for defaultdir in default_config_directories(
-            argv=argv)]
-
-    return variantconfigs + defaultconfigs
+            exedir=exedir)]
+    
+    # Only return the configs that exist
+    configs = [ cfg for cfg in variantconfigs + defaultconfigs if ct.wrappedos.isfile(cfg) ]
+    return configs
 
 
 def add_common_arguments(cap):
@@ -433,12 +430,10 @@ def commonsubstitutions(args):
 
 
 def parseargs(cap, argv=None):
-    if not argv:
-        argv = sys.argv
-    ka = cap.parse_known_args(args=argv[1:])
-    commonsubstitutions(ka[0])
-    verbose_print_args(cap, ka[0])
-    return ka[0]
+    args = cap.parse_args(args=argv)
+    commonsubstitutions(args)
+    verbose_print_args(cap, args)
+    return args
 
 
 def verbose_print_args(cap, args):

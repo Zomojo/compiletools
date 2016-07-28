@@ -8,13 +8,13 @@ import ct.utils
 def find_possible_variants(
         user_config_dir=None,
         system_config_dir=None,
-        argv=None):
+        exedir=None):
     output = [
         "From highest to lowest priority configuration directories, the possible variants are: "]
     for cfg_dir in ct.utils.default_config_directories(
             user_config_dir=user_config_dir,
             system_config_dir=system_config_dir,
-            argv=argv):
+            exedir=exedir):
         output.append(cfg_dir)
         cfgs = []
         try:
