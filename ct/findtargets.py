@@ -50,7 +50,6 @@ class ArgsStyle(object):
 
     def __call__(self, executabletargets, testtargets):
         if executabletargets:
-            sys.stdout.write(' --filename')
             for target in executabletargets:
                 sys.stdout.write(" {}".format(target))
 
