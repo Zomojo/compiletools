@@ -31,6 +31,7 @@ def issource(filename):
 def isexecutable(filename):
     return os.path.isfile(filename) and os.access(filename, os.X_OK)
 
+
 @memoize
 def implied_source(filename):
     """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
@@ -137,7 +138,8 @@ def variant_with_hash(args, argv=None, variant=None):
         variant = extract_variant_from_argv(argv)
 
     # The & <magicnumber> at the end is so that python2/3 give the same result
-    return "%s.%08x" % (variant, (zlib.adler32(str(args).encode('utf-8')) & 0xffffffff))
+    return "%s.%08x" % (
+        variant, (zlib.adler32(str(args).encode('utf-8')) & 0xffffffff))
 
 
 def default_config_directories(
@@ -169,9 +171,16 @@ def default_config_directories(
 def config_files_from_variant(variant=None, argv=None):
     if variant is None:
         variant = extract_variant_from_argv(argv)
-    return [
+    variantconfigs = [
         os.path.join(defaultdir, variant)
         + ".conf" for defaultdir in default_config_directories(argv=argv)]
+    defaultconfigs = [
+        os.path.join(
+            defaultdir,
+            "ct.conf") for defaultdir in default_config_directories(
+            argv=argv)]
+
+    return variantconfigs + defaultconfigs
 
 
 def add_common_arguments(cap):
@@ -324,10 +333,10 @@ def _extend_includes_using_git_root(args):
         to the list of include paths
     """
     if args.git_root and (
-        hasattr(args,'filename') or 
-        hasattr(args,'static') or 
-        hasattr(args,'dynamic') or
-        hasattr(args,'tests')):
+            hasattr(args, 'filename') or
+            hasattr(args, 'static') or
+            hasattr(args, 'dynamic') or
+            hasattr(args, 'tests')):
 
         git_roots = set()
 
@@ -422,6 +431,7 @@ def commonsubstitutions(args):
     _add_include_paths_to_flags(args)
     _set_project_version(args)
 
+
 def parseargs(cap, argv=None):
     if not argv:
         argv = sys.argv
@@ -429,7 +439,7 @@ def parseargs(cap, argv=None):
     commonsubstitutions(ka[0])
     verbose_print_args(cap, ka[0])
     return ka[0]
-    
+
 
 def verbose_print_args(cap, args):
     if args.verbose >= 3:
@@ -450,7 +460,7 @@ class Namer(object):
     """
     # The first Namer may change this.  All others need to be able to read it.
     _using_variant_with_hash_bindir = False
-    
+
     def __init__(self, args):
         self.args = args
 
@@ -465,7 +475,7 @@ class Namer(object):
     @staticmethod
     def add_arguments(cap):
         add_common_arguments(cap)
-        add_output_directory_arguments(cap,'default')
+        add_output_directory_arguments(cap, 'default')
 
     def topbindir(self):
         """ What is the topmost part of the bin directory """
