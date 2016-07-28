@@ -243,11 +243,11 @@ def main(argv=None):
 
     # Figure out what style classes are available and add them to the command
     # line options
-    styles = [st[:-5] for st in dict(globals()) if st.endswith('Style')]
+    styles = [st[:-5].lower() for st in dict(globals()) if st.endswith('Style')]
     cap.add(
         '--style',
         choices=styles,
-        default='Tree',
+        default='tree',
         help="Output formatting style")
 
     ct.headerdeps.add_arguments(cap)
@@ -262,7 +262,7 @@ def main(argv=None):
 
     # Create the headertree then print it in the appropriate style
     inctree = ht.generatetree(args.filename[0])
-    styleclass = globals()[args.style + 'Style']
+    styleclass = globals()[args.style.title() + 'Style']
     kwargs = ct.utils.extractinitargs(args, styleclass)
 
     # Construct an instance of the style class which will print the header
