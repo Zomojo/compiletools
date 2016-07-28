@@ -118,6 +118,26 @@ class CppMagicFlags(MagicFlagsBase):
                                          redirect_stderr_to_stdout=True)
 
 
+class NullStyle(ct.git_utils.NameAdjuster):
+
+    def __init__(self, strip_git_root=True):
+        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
+
+    def __call__(self, realpath, magicflags):
+        print("{}: {}".format(self.adjust(realpath), str(magicflags)))
+
+class PrettyStyle(ct.git_utils.NameAdjuster):
+
+    def __init__(self, strip_git_root=True):
+        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
+
+    def __call__(self, realpath, magicflags):
+        sys.stdout.write("\n{}".format(self.adjust(realpath)))
+        for key in magicflags:
+            sys.stdout.write("\n\t{}:".format(key))
+            for flag in magicflags[key]:
+                sys.stdout.write(" {}".format(flag))
+
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     ct.headerdeps.add_arguments(cap)
@@ -127,16 +147,25 @@ def main(argv=None):
         help='File/s to extract magicflags from"',
         nargs='+')
 
+    # Figure out what style classes are available and add them to the command
+    # line options
+    styles = [st[:-5].lower()
+              for st in dict(globals()) if st.endswith('Style')]
+    cap.add(
+        '--style',
+        choices=styles,
+        default='pretty',
+        help="Output formatting style")
+
     args = ct.utils.parseargs(cap, argv)
     headerdeps = ct.headerdeps.create(args)
-    magicflags = create(args, headerdeps)
-    nameadjuster = ct.git_utils.NameAdjuster(args.strip_git_root)
+    magicparser = create(args, headerdeps)
+
+    styleclass = globals()[args.style.title() + 'Style']
+    styleobject = styleclass(args.strip_git_root)
 
     for fname in args.filename:
         realpath = ct.wrappedos.realpath(fname)
-        print(
-            "{}: {}".format(
-                nameadjuster.adjust(realpath), str(
-                    magicflags.parse(realpath))))
+        styleobject(realpath, magicparser.parse(realpath))
 
     return 0
