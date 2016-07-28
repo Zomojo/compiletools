@@ -30,31 +30,40 @@ class TestHeaderDepsModule(unittest.TestCase):
         relativepath = 'simple/test_cflags.c'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicflags = self._createmagicflags()
-        #magicflags._headerdeps.process(realpath)
+        magicparser = self._createmagicflags()
+        #magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
-            magicflags.parse(realpath).get('CFLAGS'),
+            magicparser.parse(realpath).get('CFLAGS'),
             {'-std=gnu99'})
 
     def test_SOURCE_direct(self):
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicflags = self._createmagicflags()        
-        #magicflags._headerdeps.process(realpath)
+        magicparser = self._createmagicflags()        
+        #magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
-            magicflags.parse(realpath).get('SOURCE'),
+            magicparser.parse(realpath).get('SOURCE'),
             {'cross_platform_lin.cpp', 'cross_platform_win.cpp'})
         
     def test_SOURCE_cpp(self):
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicflags = self._createmagicflags(['--magic','cpp'])        
-        #magicflags._headerdeps.process(realpath)
+        magicparser = self._createmagicflags(['--magic','cpp'])        
+        #magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
-            magicflags.parse(realpath).get('SOURCE'),
+            magicparser.parse(realpath).get('SOURCE'),
             {'cross_platform_lin.cpp'})
+
+    def test_lotsofmagic(self):
+        relativepath = 'lotsofmagic/lotsofmagic.cpp'
+        samplesdir = uth.samplesdir()
+        realpath = os.path.join(samplesdir, relativepath)
+        magicparser = self._createmagicflags(['--magic','cpp'])        
+
+        expected = {'LDFLAGS': {'-lm'}, 'F1': {'1'}, 'LINKFLAGS': {'-lpcap'}, 'F2': {'2'}, 'F3': {'3'}}
+        self.assertEqual(magicparser.parse(realpath), expected)
 
     def tearDown(self):
         uth.delete_existing_parsers()
