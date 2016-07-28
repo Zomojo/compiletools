@@ -105,8 +105,8 @@ class DirectHeaderDeps(HeaderDepsBase):
     def _create_include_list(self, realpath):
         """ Internal use. Create the list of includes for the given file """
         with open(realpath, encoding='utf-8', errors='ignore') as ff:
-            # Assume that all includes occur in the first 2048 bytes
-            text = ff.read(2048)
+            # Assume that all includes occur at the top of the file
+            text = ff.read(4096)
 
         # The pattern is intended to match all include statements
         pat = re.compile(

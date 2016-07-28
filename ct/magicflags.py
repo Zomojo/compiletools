@@ -99,7 +99,7 @@ class DirectMagicFlags(MagicFlagsBase):
         text = ""
         for filename in headers | {filename}:
             with open(filename, encoding='utf-8', errors='ignore') as ff:
-                text += ff.read(2048)
+                text += ff.read(4096)
 
         return text
 
