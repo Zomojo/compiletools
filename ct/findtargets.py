@@ -7,16 +7,29 @@ from io import open
 import configargparse
 import ct.utils
 
+
 def add_arguments(cap):
     """ Add the command line arguments that the HeaderDeps classes require """
     ct.utils.Namer.add_arguments(cap)
+    cap.add(
+        "--exemarkers",
+        action='append',
+        help='String that identifies a file as being an executable source.  e.g., "main ("')
+    cap.add(
+        "--testmarkers",
+        action='append',
+        help='String that identifies a file as being an test source.  e.g., "unit_test.hpp"')
+
 
 class NullStyle(object):
+
     def __call__(self, executabletargets, testtargets):
         print(executabletargets)
         print(testtargets)
 
+
 class IndentStyle(object):
+
     def __call__(self, executabletargets, testtargets):
         print("Executable Targets:")
         if executabletargets:
@@ -31,8 +44,10 @@ class IndentStyle(object):
                 print("\t{}".format(target))
         else:
             print("\tNone found")
-    
+
+
 class ArgsStyle(object):
+
     def __call__(self, executabletargets, testtargets):
         if executabletargets:
             sys.stdout.write(' --filename')
@@ -44,17 +59,20 @@ class ArgsStyle(object):
             for target in testtargets:
                 sys.stdout.write(" {}".format(target))
 
+
 class FindTargets(object):
+
     """ Search the filesystem from the current working directory to find
         all the C/C++ files with main functions and unit tests.
     """
+
     def __init__(self, args):
         self._args = args
-        self._exemarkers = ['main(', 'main (', 'wxIMPLEMENT_APP']
-        self._testmarkers = ['unit_test.hpp']
 
     def __call__(self):
-        """ Returns a tuple ([executabletargets], [testtargets]) """
+        """ Do the file system search and
+            return the tuple ([executabletargets], [testtargets])
+        """
         executabletargets = []
         testtargets = []
         namer = ct.utils.Namer(self._args)
@@ -68,22 +86,29 @@ class FindTargets(object):
                     continue
                 with open(pathname, encoding='utf-8', errors='ignore') as ff:
                     for line in ff:
-                        if any( marker in line for marker in self._exemarkers ):
+                        if any(
+                                marker in line for marker in self._args.exemarkers):
+                            # A file starting with test....cpp will be interpreted
+                            # As a test even though it satisfied the exemarker
                             if filename.startswith('test'):
                                 testtargets.append(pathname)
                                 if self._args.verbose >= 3:
-                                    print("auto found a test: " + pathname)
+                                    print("Found a test: " + pathname)
                             else:
                                 executabletargets.append(pathname)
                                 if self._args.verbose >= 3:
-                                    print("auto found an executable source: " + pathname)
+                                    print(
+                                        "Found an executable source: " +
+                                        pathname)
                             break
-                        if any( marker in line for marker in self._testmarkers ):
+                        if any(
+                                marker in line for marker in self._args.testmarkers):
                             testtargets.append(pathname)
                             if self._args.verbose >= 3:
-                                print("auto found a test: " + pathname)
+                                print("Found a test: " + pathname)
                             break
-        return executabletargets,testtargets
+        return executabletargets, testtargets
+
 
 def main(argv=None):
     if argv is None:
@@ -95,7 +120,8 @@ def main(argv=None):
 
     # Figure out what style classes are available and add them to the command
     # line options
-    styles = [st[:-5].lower() for st in dict(globals()) if st.endswith('Style')]
+    styles = [st[:-5].lower()
+              for st in dict(globals()) if st.endswith('Style')]
     cap.add(
         '--style',
         choices=styles,
@@ -107,7 +133,7 @@ def main(argv=None):
 
     styleclass = globals()[args.style.title() + 'Style']
     styleobj = styleclass()
-    executabletargets,testtargets = findtargets()
+    executabletargets, testtargets = findtargets()
     styleobj(executabletargets, testtargets)
 
     return 0
