@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import os
 import subprocess
 
@@ -20,10 +23,11 @@ def _find_git_root(directory):
     """ Internal function to find the git root but cache it against the given directory """
     original_cwd = os.getcwd()
     os.chdir(directory)
+    gitroot = None
     try:
         # Redirect stderr to stdout (which is captured) rather than
         # have it spew over the console
-        git_root = subprocess.check_output(
+        gitroot = subprocess.check_output(
             ["git", "rev-parse", "--show-toplevel"],
             stderr=subprocess.STDOUT,
             universal_newlines=True).strip('\n')
@@ -35,12 +39,12 @@ def _find_git_root(directory):
 
         while (trialgitroot != "/"):
             if (os.path.exists(trialgitroot + "/.git")):
-                git_root = trialgitroot
+                gitroot = trialgitroot
                 break
             trialgitroot = os.path.dirname(trialgitroot)
     finally:
         os.chdir(original_cwd)
-    return git_root
+    return gitroot
 
 
 @memoize
