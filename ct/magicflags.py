@@ -186,4 +186,5 @@ def main(argv=None):
         headerdeps.process(fname)
         styleobject(realpath, magicparser.parse(realpath))
 
+    print()
     return 0
