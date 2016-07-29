@@ -1,8 +1,12 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import sys
 import subprocess
 import re
 import configargparse
 from io import open
+from ct.diskcache import diskcache
 from ct.memoize import memoize
 import ct.utils
 import ct.git_utils
@@ -68,10 +72,13 @@ class MagicFlagsBase:
     def __call__(self, filename):
         return self.parse(filename)
 
-    @memoize
-    def parse(self, filename):
+    def _parse(self, filename):
+        #if filename != ct.wrappedos.realpath(filename):
+        #    raise ValueError("Must pass realpath to MagicFlags::parse")
+
         if self._args.verbose >= 4:
             print("Parsing magic flags for " + filename)
+
         text = self.readfile(filename)
         flagsforfilename = {}
 
@@ -103,6 +110,9 @@ class DirectMagicFlags(MagicFlagsBase):
 
         return text
 
+    @diskcache('directmagic', magic_mode=True)
+    def parse(self, filename):
+        return self._parse(filename)
 
 class CppMagicFlags(MagicFlagsBase):
 
@@ -116,6 +126,10 @@ class CppMagicFlags(MagicFlagsBase):
         return self.preprocessor.process(realpath=filename,
                                          extraargs='-C -E',
                                          redirect_stderr_to_stdout=True)
+
+    @diskcache('cppmagic', magic_mode=True)
+    def parse(self, filename):
+        return self._parse(filename)
 
 
 class NullStyle(ct.git_utils.NameAdjuster):
@@ -133,10 +147,13 @@ class PrettyStyle(ct.git_utils.NameAdjuster):
 
     def __call__(self, realpath, magicflags):
         sys.stdout.write("\n{}".format(self.adjust(realpath)))
-        for key in magicflags:
-            sys.stdout.write("\n\t{}:".format(key))
-            for flag in magicflags[key]:
-                sys.stdout.write(" {}".format(flag))
+        try:
+            for key in magicflags:
+                sys.stdout.write("\n\t{}:".format(key))
+                for flag in magicflags[key]:
+                    sys.stdout.write(" {}".format(flag))
+        except TypeError:
+            sys.stdout.write("\n\tNone")
 
 def main(argv=None):
     cap = configargparse.getArgumentParser()
