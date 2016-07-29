@@ -183,6 +183,7 @@ def main(argv=None):
 
     for fname in args.filename:
         realpath = ct.wrappedos.realpath(fname)
+        headerdeps.process(fname)
         styleobject(realpath, magicparser.parse(realpath))
 
     return 0
