@@ -119,6 +119,7 @@ class Cake:
         cap.add(
             "-j",
             "--parallel",
+            "--jobs",
             "--CAKE_PARALLEL",
             dest='parallel',
             type=int,
