@@ -20,6 +20,16 @@ def add_arguments(cap):
         action='append',
         help='String that identifies a file as being an test source.  e.g., "unit_test.hpp"')
 
+    # Figure out what style classes are available and add them to the command
+    # line options
+    styles = [st[:-5].lower()
+              for st in dict(globals()) if st.endswith('Style')]
+    cap.add(
+        '--style',
+        choices=styles,
+        default='indent',
+        help="Output formatting style")
+
 
 class NullStyle(object):
 
@@ -112,16 +122,6 @@ class FindTargets(object):
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     ct.findtargets.add_arguments(cap)
-
-    # Figure out what style classes are available and add them to the command
-    # line options
-    styles = [st[:-5].lower()
-              for st in dict(globals()) if st.endswith('Style')]
-    cap.add(
-        '--style',
-        choices=styles,
-        default='indent',
-        help="Output formatting style")
 
     args = ct.utils.parseargs(cap, argv)
     findtargets = FindTargets(args)

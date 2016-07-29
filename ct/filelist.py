@@ -52,22 +52,32 @@ def check_filename(filename):
             " from the config file.\n".format(filename))
         exit(1)
 
+
 class Filelist(object):
 
-    def __init__(self, args, hunter):
+    def __init__(self, args, hunter, style=None):
         self.args = args
         self._hunter = hunter
 
+        if style is None:
+            style = self.args.style
+        styleclass = globals()[style.title() + 'Style']
+        kwargs = ct.utils.extractinitargs(self.args, styleclass)
+        self.styleobject = styleclass(**kwargs)
+
     @staticmethod
     def add_arguments(cap):
-        cap.add(
-            "filename",
-            help='File(s) to follow dependencies from.',
-            nargs='+')
+        # Don't re-add filename if it is already in the configargparse
+        if not any('filename' in action.dest for action in cap._actions):
+            cap.add(
+                "filename",
+                help='File(s) to follow dependencies from.',
+                nargs='+')
 
         # Figure out what output style classes are available and add them to the
         # command line options
-        styles = [st[:-5].lower() for st in dict(globals()) if st.endswith('Style')]
+        styles = [st[:-5].lower()
+                  for st in dict(globals()) if st.endswith('Style')]
         cap.add(
             '--style',
             choices=styles,
@@ -90,10 +100,6 @@ class Filelist(object):
         ct.hunter.add_arguments(cap)
 
     def process(self):
-        styleclass = globals()[self.args.style.title() + 'Style']
-        kwargs = ct.utils.extractinitargs(self.args, styleclass)
-        styleobject = styleclass(**kwargs)
-
         filterclass = globals()[self.args.filter.title() + 'PassFilter']
         filterobject = filterclass()
 
@@ -113,11 +119,12 @@ class Filelist(object):
                     filteredfiles.remove(realpath)
                 except KeyError:
                     pass
-                print(styleobject.adjust(realpath))
-                styleobject(sorted(filteredfiles))
+                print(self.styleobject.adjust(realpath))
+                self.styleobject(sorted(filteredfiles))
 
         if self.args.merge:
-            styleobject(sorted(mergedfiles))
+            self.styleobject(sorted(mergedfiles))
+
 
 def main(argv=None):
     cap = configargparse.getArgumentParser()

@@ -174,7 +174,7 @@ class ExeLinkRuleCreator(LinkRuleCreator):
 
 class MakefileCreator:
 
-    """ Create a Makefile based on the filename, --static and --dynamic 
+    """ Create a Makefile based on the filename, --static and --dynamic
         command line options.
     """
 
@@ -202,7 +202,10 @@ class MakefileCreator:
         #ct.utils.add_output_directory_arguments(parser, variant)
         ct.utils.Namer.add_arguments(cap)
         ct.hunter.add_arguments(cap)
-        cap.add("--makefilename", default="Makefile")
+        cap.add(
+            "--makefilename",
+            default="Makefile",
+            help="Output filename for the Makefile")
 
     @staticmethod
     def _create_all_rule(prerequisites):

@@ -15,10 +15,25 @@ import ct.makefile
 import ct.filelist
 import ct.findtargets
 
+
 class Cake:
 
     def __init__(self, args):
         self.args = args
+        self.namer = None
+        self.headerdeps = None
+        self.magicflags = None
+        self.hunter = None
+
+    def _createctobjs(self):
+        """ Has to be separate because --auto fiddles with the args """
+        self.namer = ct.utils.Namer(self.args)
+        self.headerdeps = ct.headerdeps.create(self.args)
+        self.magicflags = ct.magicflags.create(self.args, self.headerdeps)
+        self.hunter = ct.hunter.Hunter(
+            self.args,
+            self.headerdeps,
+            self.magicflags)
 
     @staticmethod
     def _cpus():
@@ -76,12 +91,14 @@ class Cake:
             destname='ldflags',
             extrahelp='Synonym for setting LDFLAGS.')
 
-        ct.utils.add_boolean_argument(
-            parser=cap,
-            name="file-list",
+        cap.add(
+            "--file-list",
+            "--filelist",
             dest='filelist',
-            default=False,
+            action='store_true',
             help="Print list of referenced files.")
+        ct.filelist.Filelist.add_arguments(cap)  # To get the style arguments
+
         cap.add(
             "--begintests",
             dest='tests',
@@ -102,6 +119,7 @@ class Cake:
         cap.add(
             "-j",
             "--parallel",
+            "--CAKE_PARALLEL",
             dest='parallel',
             type=int,
             default=2 *
@@ -109,49 +127,28 @@ class Cake:
             help="Sets the number of CPUs to use in parallel for a build.  Defaults to 2 * all cpus.")
 
     def _callfilelist(self):
-        # The extra arguments were deliberately left off before due to conflicts.
-        # Add them on now.
-        cap = configargparse.getArgumentParser()
-        ct.filelist.Filelist.add_arguments(cap)
-        args = ct.utils.parseargs(cap)
-        filelist = ct.filelist.Filelist(args)
+        filelist = ct.filelist.Filelist(self.args, self.hunter, style='flat')
         filelist.process()
 
     def _callmakefile(self):
-        if self.args.auto:
-            findtargets = ct.findtargets.FindTargets(self.args)
-            executabletargets, testtargets = findtargets()
-            self.args.filename += executabletargets
-            if testtargets:
-                if not self.args.tests:
-                    self.args.tests = []
-                self.args.tests += testtargets
-
-            # Since we've fiddled with the args, 
-            # run the common substitutions again
-            # Primarily, this fixes the --includes for the git root of the targets
-            ct.utils.commonsubstitutions(self.args)
-
-        namer = ct.utils.Namer(self.args)
-        headerdeps = ct.headerdeps.create(self.args)
-        magicflags = ct.magicflags.create(self.args, headerdeps)
-        hunter = ct.hunter.Hunter(self.args, headerdeps, magicflags)
-        makefile_creator = ct.makefile.MakefileCreator(self.args, hunter)
+        makefile_creator = ct.makefile.MakefileCreator(self.args, self.hunter)
         makefilename = makefile_creator.create()
-        movedmakefile = os.path.join(namer.executable_dir(), makefilename)
-        ct.wrappedos.makedirs(namer.executable_dir())
+        movedmakefile = os.path.join(self.namer.executable_dir(), makefilename)
+        ct.wrappedos.makedirs(self.namer.executable_dir())
         shutil.move(makefilename, movedmakefile)
         cmd = ['make', '-j', str(self.args.parallel), '-f', movedmakefile]
+        if self.args.verbose >= 2:
+            print(" ".join(cmd))
         subprocess.check_call(cmd, universal_newlines=True)
 
         # Copy the executables into the "bin" dir (as per cake)
         # Unless the user has changed the bindir in which case assume
         # that they know what they are doing
-        outputdir = namer.topbindir()
+        outputdir = self.namer.topbindir()
 
-        filelist = os.listdir(namer.executable_dir())
+        filelist = os.listdir(self.namer.executable_dir())
         for ff in filelist:
-            filename = os.path.join(namer.executable_dir(), ff)
+            filename = os.path.join(self.namer.executable_dir(), ff)
             if ct.utils.isexecutable(filename):
                 shutil.copy2(filename, outputdir)
 
@@ -180,6 +177,28 @@ class Cake:
         if self.args.appendldflags:
             self.args.LDFLAGS += " " + self.args.appendldflags
 
+        if self.args.auto:
+            findtargets = ct.findtargets.FindTargets(self.args)
+            executabletargets, testtargets = findtargets()
+            self.args.filename += executabletargets
+            if testtargets:
+                if not self.args.tests:
+                    self.args.tests = []
+                self.args.tests += testtargets
+
+            if self.args.verbose >= 2:
+                #styleclass = globals()['ct.findtargets.'+ self.args.style.title() + 'Style']
+                #styleobj = styleclass()
+                styleobj = ct.findtargets.IndentStyle()
+                styleobj(executabletargets, testtargets)
+
+            # Since we've fiddled with the args,
+            # run the common substitutions again
+            # Primarily, this fixes the --includes for the git root of the
+            # targets
+            ct.utils.commonsubstitutions(self.args)
+
+        self._createctobjs()
         if self.args.filelist:
             self._callfilelist()
         else:
