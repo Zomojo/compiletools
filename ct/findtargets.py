@@ -37,6 +37,10 @@ class NullStyle(object):
         print(executabletargets)
         print(testtargets)
 
+class FlatStyle(object):
+
+    def __call__(self, executabletargets, testtargets):
+        print(" ".join(executabletargets+testtargets))
 
 class IndentStyle(object):
 
