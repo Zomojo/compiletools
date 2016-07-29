@@ -123,9 +123,20 @@ class Cake:
             "--CAKE_PARALLEL",
             dest='parallel',
             type=int,
-            default=2 *
-            Cake._cpus(),
+            default=2*Cake._cpus(),
             help="Sets the number of CPUs to use in parallel for a build.  Defaults to 2 * all cpus.")
+
+        ct.utils.add_boolean_argument(
+            parser=cap,
+            name="preprocess",
+            default=False,
+            help="Set both --magic=cpp and --headerdeps=cpp. Defaults to false because it is slower.")
+
+        cap.add(
+            "--CAKE_PREPROCESS",
+            dest="preprocess",
+            default=False,
+            help="Deprecated. Synonym for preprocess")
 
     def _callfilelist(self):
         filelist = ct.filelist.Filelist(self.args, self.hunter, style='flat')
@@ -177,6 +188,10 @@ class Cake:
             self.args.CXXFLAGS += " " + self.args.appendcxxflags
         if self.args.appendldflags:
             self.args.LDFLAGS += " " + self.args.appendldflags
+
+        if self.args.preprocess:
+            self.args.magic = 'cpp'
+            self.args.headerdeps = 'cpp'
 
         if self.args.auto:
             findtargets = ct.findtargets.FindTargets(self.args)
