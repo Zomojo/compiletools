@@ -438,6 +438,7 @@ def parseargs(cap, argv=None):
 
 def verbose_print_args(cap, args):
     if args.verbose >= 3:
+        print(" ".join(["Using variant =", args.variant]))
         cap.print_values()
     if args.verbose >= 2:
         print(args)

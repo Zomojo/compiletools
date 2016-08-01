@@ -43,7 +43,8 @@ class TestConfigArgParse(unittest.TestCase):
             prog='UnitTest',
             description='unit testing',
             formatter_class=configargparse.DefaultsRawFormatter,
-            default_config_files=non_existent_config_files)
+            default_config_files=non_existent_config_files,
+            args_for_setting_config_path=["-c","--config"])
 
         cap.add(
             "--variant",

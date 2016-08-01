@@ -10,11 +10,6 @@ import ct.headerdeps
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     cap.add(
-        "-c",
-        "--config",
-        is_config_file=True,
-        help="Manually specify the config file path if you want to override the variant default")
-    cap.add(
         "filename",
         help='File to use in "$CPP $CPPFLAGS -MM filename"',
         nargs='+')

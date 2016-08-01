@@ -33,12 +33,8 @@ class TestFindTargetsModule(unittest.TestCase):
             description='Find the source files that are executable targets and tests',
             formatter_class=configargparse.DefaultsRawFormatter,
             default_config_files=config_files,
+            args_for_setting_config_path=["-c","--config"],
             ignore_unknown_config_file_keys=True)
-        cap.add(
-            "-c",
-            "--config",
-            is_config_file=True,
-            help="Manually specify the config file path if you want to override the variant default")
         ct.findtargets.add_arguments(cap)
         args = ct.utils.parseargs(cap, argv=['-vvv'])
         findtargets = ct.findtargets.FindTargets(args)
