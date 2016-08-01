@@ -3,14 +3,13 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import shutil
-
-import appdirs
+import ct.dirnamer
 
 """ Remove the cache used by the ct-* programs. """
 
 
 def main():
-    cachedir = appdirs.user_cache_dir(appname='ct')
+    cachedir = ct.dirnamer.user_cache_dir(appname='ct')
     shutil.rmtree(cachedir)
 
 

@@ -7,8 +7,7 @@ try:
 except ImportError:
     import pickle
 
-import appdirs
-
+import ct.dirnamer
 from ct.memoize import memoize_false
 import ct.wrappedos
 
@@ -46,7 +45,7 @@ class diskcache:
         self.cache_identifier = cache_identifier
         self.deps_mode = deps_mode
         self.magic_mode = magic_mode
-        self.cachedir = appdirs.user_cache_dir(appname='ct')
+        self.cachedir = ct.dirnamer.user_cache_dir(appname='ct')
         ct.wrappedos.makedirs(self.cachedir)
 
         # Keep a copy of the cachefile in memory to reduce disk IO

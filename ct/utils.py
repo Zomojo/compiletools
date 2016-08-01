@@ -7,9 +7,9 @@ import subprocess
 import sys
 import inspect
 import zlib
-import appdirs
 import configargparse
 
+import ct.dirnamer
 import ct.git_utils as git_utils
 import ct.wrappedos
 from ct.memoize import memoize
@@ -152,9 +152,9 @@ def default_config_directories(
 
     # These variables are settable to assist writing tests
     if user_config_dir is None:
-        user_config_dir = appdirs.user_config_dir(appname='ct')
+        user_config_dir = ct.dirnamer.user_config_dir(appname='ct')
     if system_config_dir is None:
-        system_config_dir = appdirs.site_config_dir(appname='ct')
+        system_config_dir = ct.dirnamer.site_config_dir(appname='ct')
     if exedir is None:
         exedir = ct.wrappedos.dirname(ct.wrappedos.realpath(sys.argv[0]))
 

@@ -38,6 +38,7 @@ When you are doing performance testing there are 3 caches you need to be aware o
                 rm -rf ~/.cache/ct
             Note that it obeys the XDG variables.  Alter XDG_CACHE_HOME if you need to move the cache.
             ct-cache-clean will correctly remove the cache as specified by the XDG_CACHE_HOME
+            It is possible to override the above by specifying the CTCACHE environment variable.
 
 #
 # Gotchas
