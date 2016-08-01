@@ -15,15 +15,16 @@ try:
 except NameError:
     from importlib import reload
 
+import ct.dirnamer
 import ct.headerdeps
 import ct.unittesthelper as uth
 
 
-def _reload_headerdeps(xdg_cache_home):
-    """ Set the XDG_CACHE_HOME environment variable to xdg_cache_home
+def _reload_headerdeps(cache_home):
+    """ Set the CTCACHE environment variable to cache_home
         and reload the ct.hunter module
     """
-    os.environ['XDG_CACHE_HOME'] = xdg_cache_home
+    os.environ['CTCACHE'] = cache_home
     reload(ct.headerdeps)
 
 
@@ -99,11 +100,8 @@ class TestHeaderDepsModule(unittest.TestCase):
         """
         if extraargs is None:
             extraargs = []
-        try:
-            origcache = os.environ['XDG_CACHE_HOME']
-        except KeyError:
-            origcache = os.path.expanduser('~/.cache')
 
+        origcache = ct.dirnamer.user_cache_dir()
         tempdir = tempfile.mkdtemp()
         samplesdir = uth.samplesdir()
         relativepaths = [
@@ -133,9 +131,6 @@ class TestHeaderDepsModule(unittest.TestCase):
         shutil.rmtree(tempdir)
         _reload_headerdeps(origcache)
 
-    @unittest.skipUnless(
-        sys.platform.startswith("linux"),
-        "test_direct_and_cpp_generate_same_results relies on XDG_CACHE_HOME")
     def test_direct_and_cpp_generate_same_results_ex(self):
         self._direct_and_cpp_generate_same_results_ex()
 

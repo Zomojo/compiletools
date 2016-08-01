@@ -31,11 +31,11 @@ def callprocess(headerobj, filenames):
     return result
 
 
-def _reload_hunter(xdg_cache_home):
-    """ Set the XDG_CACHE_HOME environment variable to xdg_cache_home
+def _reload_hunter(cache_home):
+    """ Set the CTCACHE environment variable to cache_home
         and reload the ct.hunter module
     """
-    os.environ['XDG_CACHE_HOME'] = xdg_cache_home
+    os.environ['CTCACHE'] = cache_home
     reload(ct.hunter)
 
 
@@ -122,11 +122,7 @@ class TestHunterModule(unittest.TestCase):
             return result
 
     def test_hunter_is_not_order_dependent(self):
-        try:
-            origcache = os.environ['XDG_CACHE_HOME']
-        except KeyError:
-            origcache = os.path.expanduser('~/.cache')
-
+        origcache = ct.dirnamer.user_cache_dir('ct')
         tempdir = tempfile.mkdtemp()
         _reload_hunter(tempdir)
 
