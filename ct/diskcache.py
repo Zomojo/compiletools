@@ -9,6 +9,7 @@ except ImportError:
 
 import ct.dirnamer
 from ct.memoize import memoize_false
+from ct.memoize import memoize
 import ct.wrappedos
 
 
@@ -168,6 +169,17 @@ class diskcache:
                     self._refresh_cache(dep, depcachefile, func, *args)
 
     def __call__(self, func):
+        try:            
+            if os.environ['CTCACHE'] == 'None':
+                @functools.wraps(func)
+                @memoize
+                def memcacher(*args):
+                    return func(*args)
+
+                return memcacher
+        except KeyError:
+            pass
+
         @functools.wraps(func)
         def diskcacher(*args):
             """ The function that diskcache wraps must have a single

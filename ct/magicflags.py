@@ -79,6 +79,13 @@ class MagicFlagsBase:
         if self._args.verbose >= 4:
             print("Parsing magic flags for " + filename)
 
+        # diskcache assumes that headerdeps _always_ exist
+        # before the magic flags are called.
+        # When used in the "usual" fashion this is true.
+        # However, it is possible to call directly so we must
+        # ensure that the headerdeps exist manually.
+        self._headerdeps.process(filename)
+
         text = self.readfile(filename)
         flagsforfilename = {}
 
@@ -183,7 +190,6 @@ def main(argv=None):
 
     for fname in args.filename:
         realpath = ct.wrappedos.realpath(fname)
-        headerdeps.process(fname)
         styleobject(realpath, magicparser.parse(realpath))
 
     print()
