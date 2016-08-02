@@ -89,7 +89,7 @@ class Filelist(object):
         cap.add(
             '--filter',
             choices=passfilters,
-            default='All',
+            default='all',
             help="What type of files are allowed in the output")
 
         ct.utils.add_boolean_argument(
