@@ -8,7 +8,7 @@ user_data_dir = appdirs.user_data_dir
 user_config_dir = appdirs.user_config_dir
 site_config_dir = appdirs.site_config_dir
 
-def user_cache_dir(appname=None, appauthor=None, version=None, opinion=True):
+def user_cache_dir(appname='ct', appauthor=None, version=None, opinion=True):
     try:
         cachedir = os.environ['CTCACHE']
     except KeyError:
