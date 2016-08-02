@@ -3,14 +3,29 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import shutil
+import argparse
+import os
 import ct.dirnamer
 
 """ Remove the cache used by the ct-* programs. """
 
 
 def main():
+    parser = argparse.ArgumentParser(description='Remove the ct cache')
+    parser.add_argument(
+        "-v",
+        "--verbose",
+        help="Output verbosity. Add more v's to make it more verbose",
+        action="count",
+        default=0)
+    args = parser.parse_args() 
+
     cachedir = ct.dirnamer.user_cache_dir(appname='ct')
-    shutil.rmtree(cachedir)
+    if args.verbose >= 1:
+        print(" ".join(["Removing cache directory =", cachedir]))
+
+    if os.path.isdir(cachedir):
+        shutil.rmtree(cachedir)
 
 
 if __name__ == '__main__':
