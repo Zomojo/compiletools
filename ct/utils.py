@@ -179,9 +179,7 @@ def config_files_from_variant(variant=None, argv=None, exedir=None):
     configs = [ cfg for cfg in variantconfigs + defaultconfigs if ct.wrappedos.isfile(cfg) ]
     return configs
 
-
-def add_common_arguments(cap):
-    """ Insert common arguments into the configargparse object """
+def add_base_arguments(cap):
     # Even though the variant is actually sucked out of the command line by
     # parsing the sys.argv directly, we put it into the configargparse to get
     # the help.
@@ -196,6 +194,10 @@ def add_common_arguments(cap):
         help="Output verbosity. Add more v's to make it more verbose",
         action="count",
         default=0)
+
+def add_common_arguments(cap):
+    """ Insert common arguments into the configargparse object """
+    add_base_arguments(cap)
     cap.add(
         "--ID",
         help="Compiler identification string.  The same string as CMake uses.",

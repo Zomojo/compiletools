@@ -14,7 +14,7 @@ import ct.hunter
 import ct.makefile
 import ct.filelist
 import ct.findtargets
-
+import ct.jobs
 
 class Cake:
 
@@ -35,15 +35,6 @@ class Cake:
             self.headerdeps,
             self.magicflags)
 
-    @staticmethod
-    def _cpus():
-        with open("/proc/cpuinfo") as ff:
-            proclines = [
-                line for line in ff.readlines() if line.startswith("processor")]
-        if 0 == len(proclines):
-            return 1
-        else:
-            return len(proclines)
 
     @staticmethod
     def _add_prepend_append_argument(cap, name, destname=None, extrahelp=None):
@@ -80,6 +71,7 @@ class Cake:
     @staticmethod
     def add_arguments(cap):
         ct.makefile.MakefileCreator.add_arguments(cap)
+        ct.jobs.add_arguments(cap)
 
         Cake._add_prepend_append_argument(cap, 'cppflags')
         Cake._add_prepend_append_argument(cap, 'cflags')
@@ -115,16 +107,6 @@ class Cake:
             default=False,
             help="Search the filesystem from the current working directory to find all the C/C++ files with main functions and unit tests")
         ct.findtargets.add_arguments(cap)
-
-        cap.add(
-            "-j",
-            "--parallel",
-            "--jobs",
-            "--CAKE_PARALLEL",
-            dest='parallel',
-            type=int,
-            default=2*Cake._cpus(),
-            help="Sets the number of CPUs to use in parallel for a build.  Defaults to 2 * all cpus.")
 
         ct.utils.add_boolean_argument(
             parser=cap,
