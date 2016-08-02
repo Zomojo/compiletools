@@ -3,11 +3,10 @@ set -euo pipefail
 
 startsource=$1
 shift
-source=$(ct-filelist --filter=Source --style Flat "$startsource"|tr '\n' ' ')
+source=$(ct-filelist --filter=source --style flat "$startsource"|tr '\n' ' ')
 ct-create-makefile --dynamic "$startsource" ${source} "$@"
 
-cpu_count=$(cat /proc/cpuinfo |grep processor | wc -l)
-make -j$((2*cpu_count)) -f Makefile*
+make -j$(ct-jobs)
 
 # These are the headers that have to be included
 #headers=$(ct-headertree --style Flat "$1" | tr '\n' ' ')

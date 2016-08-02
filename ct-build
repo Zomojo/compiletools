@@ -6,8 +6,7 @@ cmd="ct-create-makefile ${all} $@"
 echo $cmd
 eval $cmd
 
-cpu_count=$(cat /proc/cpuinfo |grep processor | wc -l)
-make -j$((2*cpu_count)) 
+make -j$(ct-jobs) 
 
 
 
