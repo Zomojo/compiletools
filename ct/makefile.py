@@ -216,12 +216,11 @@ class MakefileCreator:
             phony=True)
 
     def _create_mkdir_rule(self, alloutputs):
-        outputdirs = [ct.wrappedos.dirname(output) for output in alloutputs]
+        outputdirs = {ct.wrappedos.dirname(output) for output in alloutputs}
         recipe = " ".join(
             ["mkdir -p"] +
-            outputdirs +
-            list(
-                self.object_directories))
+            list(outputdirs) +
+            list(self.object_directories))
         return Rule(
             target="mkdir_output",
             prerequisites="",
