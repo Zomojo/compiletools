@@ -233,7 +233,9 @@ class MakefileCreator:
 
         # Clean will only remove empty directories
         # Use realclean if you want force directories to be removed.
-        rmcopiedexes = " ".join(["find", self.namer.executable_dir(), '-type f -executable -delete 2>/dev/null'])
+        rmcopiedexes = " ".join(["find",
+                                 self.namer.executable_dir(),
+                                 '-type f -executable -delete 2>/dev/null'])
         rmtargetsandobjects = " ".join(
             ["rm -f"] +
             list(alloutputs) +
@@ -280,11 +282,12 @@ class MakefileCreator:
         testprefix = ""
         if self.args.TESTPREFIX:
             testprefix = self.args.TESTPREFIX
-                
+
         rules = set()
 
         # Create the PHONY that will run all the tests
-        prerequisites = " ".join([".".join([self.namer.executable_pathname(tt), "result"]) for tt in alltestsources])
+        prerequisites = " ".join(
+            [".".join([self.namer.executable_pathname(tt), "result"]) for tt in alltestsources])
         runtestsrule = Rule(
             target="runtests",
             prerequisites=prerequisites,
@@ -433,7 +436,8 @@ class MakefileCreator:
                 filename)
 
         deplist = self.hunter.header_dependencies(filename)
-        prerequisites = ['mkdir_output',filename] + sorted([str(dep) for dep in deplist])
+        prerequisites = ['mkdir_output', filename] + \
+            sorted([str(dep) for dep in deplist])
 
         self.object_directories.add(self.namer.object_dir(filename))
         obj_name = self.namer.object_pathname(filename)
