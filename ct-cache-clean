@@ -20,7 +20,7 @@ def main():
         default=0)
     args = parser.parse_args() 
 
-    cachedir = ct.dirnamer.user_cache_dir(appname='ct')
+    cachedir = ct.dirnamer.user_cache_dir(args=args)
     if args.verbose >= 1:
         print(" ".join(["Removing cache directory =", cachedir]))
 

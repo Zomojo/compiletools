@@ -15,19 +15,4 @@ if __name__ == '__main__':
         action="count",
         default=0)
     args = parser.parse_args() 
-
-    try:            
-        cachedir = os.environ['CTCACHE']
-        if cachedir == 'None':
-            if args.verbose > 0:
-                print("Environment variable CTCACHE is None.  Disk caching is disabled.")
-        else:
-            if args.verbose > 0:
-                print("".join(["Environment variable CTCACHE is ", cachedir, ". Using this as the cache directory."]))
-
-    except KeyError:
-        if args.verbose > 0:
-            print("Environment variable CTCACHE doesn't exist.  Falling back to python-appdirs (which on linux wraps XDG variables)")
-        cachedir = ct.dirnamer.user_cache_dir()
-
-    print(cachedir)
+    print(ct.dirnamer.user_cache_dir(args=args))
