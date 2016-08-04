@@ -119,6 +119,12 @@ class Cake:
             dest="preprocess",
             default=False,
             help="Deprecated. Synonym for preprocess")
+        
+        cap.add(
+            "-o",
+            "--output",
+            default=None,
+            help="When there is only a single build product, rename it to this name.")
 
     def _callfilelist(self):
         filelist = ct.filelist.Filelist(self.args, self.hunter, style='flat')
@@ -136,15 +142,22 @@ class Cake:
         subprocess.check_call(cmd, universal_newlines=True)
 
         # Copy the executables into the "bin" dir (as per cake)
-        # Unless the user has changed the bindir in which case assume
-        # that they know what they are doing
-        outputdir = self.namer.topbindir()
-
-        filelist = os.listdir(self.namer.executable_dir())
-        for ff in filelist:
-            filename = os.path.join(self.namer.executable_dir(), ff)
-            if ct.utils.isexecutable(filename):
-                shutil.copy2(filename, outputdir)
+        # Unless the user has changed the bindir (or set --output)
+        # in which case assume that they know what they are doing
+        if self.args.output:
+            if self.args.filename:
+                shutil.copy2(self.namer.executable_pathname(self.args.filename[0]), self.args.output)
+            if self.args.static:
+                shutil.copy2(self.namer.staticlibrary_pathname(self.args.static[0]), self.args.output)
+            if self.args.dynamic:
+                shutil.copy2(self.namer.dynamiclibrary_pathname(self.args.dynamic[0]), self.args.output)
+        else:
+            outputdir = self.namer.topbindir()
+            filelist = os.listdir(self.namer.executable_dir())
+            for ff in filelist:
+                filename = os.path.join(self.namer.executable_dir(), ff)
+                if ct.utils.isexecutable(filename):
+                        shutil.copy2(filename, outputdir)
 
     def process(self):
         """ Transform the arguments into suitable versions for ct-* tools
