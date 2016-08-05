@@ -207,11 +207,22 @@ class MakefileCreator:
             default="Makefile",
             help="Output filename for the Makefile")
 
-    @staticmethod
-    def _create_all_rule(prerequisites):
+    def _create_all_rule(self):
         """ Create the rule that in depends on all build products """
+        prerequisites = ['build']
+        if self.args.tests:
+            prerequisites.append('runtests')
+
         return Rule(
             target="all",
+            prerequisites=" ".join(prerequisites),
+            phony=True)
+
+    @staticmethod
+    def _create_build_rule(prerequisites):
+        """ Create the rule that in depends on all build products """
+        return Rule(
+            target="build",
             prerequisites=" ".join(prerequisites),
             phony=True)
 
@@ -313,62 +324,56 @@ class MakefileCreator:
                 recipe=recipe))
         return rules
 
-    def _gather_outputs(self):
+    def _gather_build_outputs(self):
         """ Gathers together object files and other outputs """
-        alloutputs = set()
+        buildoutputs = set()
 
         if self.args.static:
             staticlibrarypathname = self.namer.staticlibrary_pathname(
                 ct.wrappedos.realpath(self.args.static[0]))
-            alloutputs.add(staticlibrarypathname)
+            buildoutputs.add(staticlibrarypathname)
 
         if self.args.dynamic:
             dynamiclibrarypathname = self.namer.dynamiclibrary_pathname(
                 ct.wrappedos.realpath(self.args.dynamic[0]))
-            alloutputs.add(dynamiclibrarypathname)
+            buildoutputs.add(dynamiclibrarypathname)
 
         if self.args.filename:
             allexes = {
                 self.namer.executable_pathname(
                     ct.wrappedos.realpath(source)) for source in self.args.filename}
-            alloutputs |= allexes
+            buildoutputs |= allexes
 
         if self.args.tests:
             alltestsexes = {
                 self.namer.executable_pathname(
                     ct.wrappedos.realpath(source)) for source in self.args.tests}
-            alloutputs |= alltestsexes
+            buildoutputs |= alltestsexes
 
-            alltestresults = {
-                ".".join([exename, "result"]) for exename in alltestsexes}
-            alloutputs |= alltestresults
+        return buildoutputs
 
-        return alloutputs
-
-    def _gather_prerequisites(self, alloutputs):
-        allprerequisites = []
+    def _gather_build_prerequisites(self, alloutputs):
+        prerequisites = []
 
         if self.args.static:
-            allprerequisites.append("cp_static_library")
+            prerequisites.append("cp_static_library")
 
         if self.args.dynamic:
-            allprerequisites.append("cp_dynamic_library")
+            prerequisites.append("cp_dynamic_library")
 
         if self.args.filename or self.args.tests:
-            allprerequisites.append("cp_executables")
+            prerequisites.append("cp_executables")
 
-        if self.args.tests:
-            allprerequisites.append("runtests")
-
-        allprerequisites.extend(alloutputs)
-        return allprerequisites
+        prerequisites.extend(alloutputs)
+        return prerequisites
 
     def create(self):
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
-        alloutputs = self._gather_outputs()
-        allprerequisites = self._gather_prerequisites(alloutputs)
-        self.rules.add(self._create_all_rule(allprerequisites))
+        buildoutputs = self._gather_build_outputs()
+        buildprerequisites = self._gather_build_prerequisites(buildoutputs)
+        self.rules.add(self._create_all_rule())
+        self.rules.add(self._create_build_rule(buildprerequisites))
 
         realpath_sources = []
         if self.args.filename:
@@ -421,8 +426,8 @@ class MakefileCreator:
                 exe_static_dynamic='DynamicLibrary',
                 libraryname=libraryname)
 
-        self.rules.add(self._create_mkdir_rule(alloutputs))
-        self.rules |= self._create_clean_rules(alloutputs)
+        self.rules.add(self._create_mkdir_rule(buildoutputs))
+        self.rules |= self._create_clean_rules(buildoutputs)
 
         self.write(self.args.makefilename)
         return self.args.makefilename

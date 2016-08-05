@@ -143,9 +143,17 @@ class Cake:
         cmd = ['make', '-j', str(self.args.parallel), '-f', movedmakefile]
         if self.args.clean:
             cmd.append('realclean')
+        else:
+            cmd.append('build')
         if self.args.verbose >= 2:
             print(" ".join(cmd))
         subprocess.check_call(cmd, universal_newlines=True)
+
+        if self.args.tests and not self.args.clean:
+            cmd = ['make', '-f', movedmakefile, 'runtests']
+            if self.args.verbose >= 2:
+                print(" ".join(cmd))
+            subprocess.check_call(cmd, universal_newlines=True)
 
         if self.args.clean:
             # Remove the extra executables we copied
@@ -181,6 +189,10 @@ class Cake:
                     filename = os.path.join(self.namer.executable_dir(), ff)
                     if ct.utils.isexecutable(filename):
                             shutil.copy2(filename, outputdir)
+                if self.args.static:
+                    filename = self.namer.staticlibrary_pathname(self.args.static[0])
+                    shutil.copy2(filename, outputdir)
+
 
     def process(self):
         """ Transform the arguments into suitable versions for ct-* tools
@@ -207,9 +219,18 @@ class Cake:
         if self.args.appendldflags:
             self.args.LDFLAGS += " " + self.args.appendldflags
 
+        # Cake used preprocess to mean both magic flag preprocess and headerdeps preprocess
         if self.args.preprocess:
             self.args.magic = 'cpp'
             self.args.headerdeps = 'cpp'
+        
+        # If the user specified only a single file to be turned into a library, guess that
+        # they mean for ct-cake to chase down all the implied files.
+        self._createctobjs()
+        if self.args.static and len(self.args.static) == 1:
+            self.args.static.extend(self.hunter.required_source_files(self.args.static[0]))
+        if self.args.dynamic and len(self.args.dynamic) == 1:
+            self.args.dynamic.extend(self.hunter.required_source_files(self.args.dynamic[0]))
 
         if self.args.auto:
             findtargets = ct.findtargets.FindTargets(self.args)
@@ -226,13 +247,13 @@ class Cake:
                 styleobj = ct.findtargets.IndentStyle()
                 styleobj(executabletargets, testtargets)
 
-            # Since we've fiddled with the args,
-            # run the common substitutions again
-            # Primarily, this fixes the --includes for the git root of the
-            # targets
-            ct.utils.commonsubstitutions(self.args)
-
+        # Since we've fiddled with the args,
+        # run the common substitutions again
+        # Primarily, this fixes the --includes for the git root of the
+        # targets. And recreate the ct objects
+        ct.utils.commonsubstitutions(self.args)
         self._createctobjs()
+
         if self.args.filelist:
             self._callfilelist()
         else:
