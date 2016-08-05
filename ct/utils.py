@@ -6,6 +6,7 @@ import os
 import subprocess
 import sys
 import inspect
+import ast
 import zlib
 import configargparse
 
@@ -101,8 +102,22 @@ def add_boolean_argument(parser, name, dest=None, default=False, help=None):
         help=bool_help)
     group.add_argument('--no-' + name, dest=dest, action='store_false')
 
+def extract_item_from_ct_conf(key, exedir=None):
+    cfgdirs = default_config_directories(exedir=exedir)
+    for cfgdir in cfgdirs:
+        cfgpath = os.path.join(cfgdir,'ct.conf')
+        if os.path.isfile(cfgpath):
+            fileparser = configargparse.ConfigFileParser()
+            with open(cfgpath) as cfg:
+                items = fileparser.parse(cfg)
+                try:
+                    return items[key]
+                except KeyError:
+                    continue
 
-def extract_variant_from_argv(argv=None):
+    return None
+
+def extract_variant_from_argv(argv=None, exedir=None):
     """ The variant argument is parsed directly from the command line arguments
         so that it can be used to specify the default config for configargparse.
     """
@@ -111,7 +126,16 @@ def extract_variant_from_argv(argv=None):
 
     # Parse the command line, extract the variant the user wants, then use
     # that as the default config file for configargparse
-    variant = "debug"
+    variantaliases = extract_item_from_ct_conf(key='variantaliases', exedir=exedir)
+    if variantaliases is None:
+        variantaliases = {}
+    else:
+        variantaliases = ast.literal_eval(variantaliases)
+
+    variant = extract_item_from_ct_conf(key='variant', exedir=exedir)
+    if variant is None:
+        variant = "debug"
+
     for arg in argv:
         try:
             if "--variant=" in arg:
@@ -121,8 +145,11 @@ def extract_variant_from_argv(argv=None):
                 variant = argv[variant_index + 1]
         except ValueError:
             pass
-
-    return variant
+    
+    try:
+        return variantaliases[variant]
+    except KeyError:
+        return variant
 
 
 def variant_with_hash(args, argv=None, variant=None):
@@ -183,7 +210,7 @@ def config_files_from_variant(variant=None, argv=None, exedir=None):
     configs = [ cfg for cfg in variantconfigs + defaultconfigs if ct.wrappedos.isfile(cfg) ]
     return configs
 
-def add_base_arguments(cap):
+def add_base_arguments(cap, argv=None, exedir=None):
     # Even though the variant is actually sucked out of the command line by
     # parsing the sys.argv directly, we put it into the configargparse to get
     # the help.
@@ -191,7 +218,7 @@ def add_base_arguments(cap):
         "--variant",
         help="Specifies which variant of the config should be used. "
              "Use the config name without the .conf",
-        default="debug")
+        default=extract_variant_from_argv(argv=argv, exedir=exedir))
     cap.add(
         "-v",
         "--verbose",
@@ -199,9 +226,9 @@ def add_base_arguments(cap):
         action="count",
         default=0)
 
-def add_common_arguments(cap):
+def add_common_arguments(cap, argv=None, exedir=None):
     """ Insert common arguments into the configargparse object """
-    add_base_arguments(cap)
+    add_base_arguments(cap, argv=argv, exedir=exedir)
     cap.add(
         "--ID",
         help="Compiler identification string.  The same string as CMake uses.",

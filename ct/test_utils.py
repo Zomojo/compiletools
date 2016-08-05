@@ -95,6 +95,19 @@ class TestVariant(unittest.TestCase):
         vwh3 = utils.variant_with_hash(args3, argv=argv3)
         self.assertEqual(vwh1, vwh3)
 
+    def test_extract_variant_from_ct_conf(self):
+        # Due to the search paths, this should not find any default variant
+        variant = utils.extract_item_from_ct_conf(key='variant')
+        self.assertEqual(None, variant)
+
+        # Now it should find the one in the git repo ct.conf.d/ct.conf
+        variant = utils.extract_item_from_ct_conf(key='variant', exedir=uth.cakedir())
+        self.assertEqual("debug", variant)
+
+    def test_extract_variant_from_blank_argv(self):
+        variant = utils.extract_variant_from_argv(exedir=uth.cakedir())
+        self.assertEqual("gcc.debug", variant)
+
 class TestNamer(unittest.TestCase):
 
     @unittest.skipUnless(int(sys.version[0]) < 3, "The hardcoded hash value is only valid on python 2")

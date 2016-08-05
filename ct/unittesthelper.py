@@ -16,6 +16,8 @@ def delete_existing_parsers():
 def ctdir():
     return os.path.dirname(os.path.realpath(__file__))
 
+def cakedir():
+    return os.path.realpath(os.path.join(ctdir(), ".."))
 
 def samplesdir():
     return os.path.realpath(os.path.join(ctdir(), "../samples"))
