@@ -66,6 +66,34 @@ class TestImpliedSource(unittest.TestCase):
                 relativefilename))
         self.assertEqual(expected, result)
 
+class TestVariant(unittest.TestCase):
+    def test_extract_variant(self):
+       self.assertEqual("abc",utils.extract_variant_from_argv("--variant=abc".split())) 
+       self.assertEqual("abc",utils.extract_variant_from_argv("--variant abc".split())) 
+       self.assertEqual("abc.123",utils.extract_variant_from_argv("-a -b -c --blah --variant=abc.123 -a -b -c --blah".split())) 
+       self.assertEqual("abc.123",utils.extract_variant_from_argv("-a -b -c --blah --variant abc.123 -a -b -c --blah".split())) 
+
+    def test_variant_with_hash(self):
+        cap = configargparse.getArgumentParser()
+        argv1 = "--variant=debug".split()
+        args1 = utils.parseargs(cap,argv1)
+
+        # Make a second, different, but logically equivalent argv
+        argv2 = "--no-shorten --variant=debug".split()
+        args2 = utils.parseargs(cap,argv2)
+        self.assertEqual(args1,args2)
+
+        # And a third ...
+        argv3 = []
+        args3 = utils.parseargs(cap,argv3)
+        self.assertEqual(args1,args3)
+
+        vwh1 = utils.variant_with_hash(args1, argv=argv1)
+        vwh2 = utils.variant_with_hash(args2, argv=argv2)
+        self.assertEqual(vwh1, vwh2)
+
+        vwh3 = utils.variant_with_hash(args3, argv=argv3)
+        self.assertEqual(vwh1, vwh3)
 
 class TestNamer(unittest.TestCase):
 
@@ -81,7 +109,7 @@ class TestNamer(unittest.TestCase):
             exename,
             os.path.join(
                 os.getcwd(),
-                'bin/debug.b4755355/home/user/code/my'))
+                'bin/debug.c9005649/home/user/code/my'))
 
 
 class TestOrderedSet(unittest.TestCase):

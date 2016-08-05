@@ -134,9 +134,13 @@ def variant_with_hash(args, argv=None, variant=None):
     if not variant:
         variant = extract_variant_from_argv(argv)
 
+    # Only hash the bits of args that could change the build products
+    unimportantkeys  = ['clean', 'auto', 'filelist', 'output', 'prepend', 'append']
+    kwargs = {attr:value for attr, value in args.__dict__.iteritems() if attr not in unimportantkeys }
+
     # The & <magicnumber> at the end is so that python2/3 give the same result
     return "%s.%08x" % (
-        variant, (zlib.adler32(str(args).encode('utf-8')) & 0xffffffff))
+        variant, (zlib.adler32(str(kwargs).encode('utf-8')) & 0xffffffff))
 
 
 def default_config_directories(
