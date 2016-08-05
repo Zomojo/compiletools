@@ -121,9 +121,13 @@ class Cake:
             help="Deprecated. Synonym for preprocess")
         
         cap.add(
+            "--clean",
+            action='store_true',
+            help="Agressively cleanup.")
+
+        cap.add(
             "-o",
             "--output",
-            default=None,
             help="When there is only a single build product, rename it to this name.")
 
     def _callfilelist(self):
@@ -135,29 +139,48 @@ class Cake:
         makefilename = makefile_creator.create()
         movedmakefile = os.path.join(self.namer.executable_dir(), makefilename)
         ct.wrappedos.makedirs(self.namer.executable_dir())
-        shutil.move(makefilename, movedmakefile)
+        shutil.move(makefilename, movedmakefile)        
         cmd = ['make', '-j', str(self.args.parallel), '-f', movedmakefile]
+        if self.args.clean:
+            cmd.append('realclean')
         if self.args.verbose >= 2:
             print(" ".join(cmd))
         subprocess.check_call(cmd, universal_newlines=True)
 
-        # Copy the executables into the "bin" dir (as per cake)
-        # Unless the user has changed the bindir (or set --output)
-        # in which case assume that they know what they are doing
-        if self.args.output:
-            if self.args.filename:
-                shutil.copy2(self.namer.executable_pathname(self.args.filename[0]), self.args.output)
-            if self.args.static:
-                shutil.copy2(self.namer.staticlibrary_pathname(self.args.static[0]), self.args.output)
-            if self.args.dynamic:
-                shutil.copy2(self.namer.dynamiclibrary_pathname(self.args.dynamic[0]), self.args.output)
+        if self.args.clean:
+            # Remove the extra executables we copied
+            if self.args.output:
+                try:
+                    os.remove(self.args.output)
+                except OSError:
+                    pass
+            else:
+                outputdir = self.namer.topbindir()
+                filelist = os.listdir(outputdir)
+                for ff in filelist:
+                    filename = os.path.join(outputdir, ff)
+                    try:
+                        os.remove(filename)
+                    except OSError:
+                        pass
         else:
-            outputdir = self.namer.topbindir()
-            filelist = os.listdir(self.namer.executable_dir())
-            for ff in filelist:
-                filename = os.path.join(self.namer.executable_dir(), ff)
-                if ct.utils.isexecutable(filename):
-                        shutil.copy2(filename, outputdir)
+            # Copy the executables into the "bin" dir (as per cake)
+            # Unless the user has changed the bindir (or set --output)
+            # in which case assume that they know what they are doing
+            if self.args.output:
+                if self.args.filename:
+                    shutil.copy2(self.namer.executable_pathname(self.args.filename[0]), self.args.output)
+                if self.args.static:
+                    shutil.copy2(self.namer.staticlibrary_pathname(self.args.static[0]), self.args.output)
+                if self.args.dynamic:
+                    shutil.copy2(self.namer.dynamiclibrary_pathname(self.args.dynamic[0]), self.args.output)
+            else:
+                outputdir = self.namer.topbindir()
+                filelist = os.listdir(self.namer.executable_dir())
+                for ff in filelist:
+                    filename = os.path.join(self.namer.executable_dir(), ff)
+                    if ct.utils.isexecutable(filename):
+                            shutil.copy2(filename, outputdir)
 
     def process(self):
         """ Transform the arguments into suitable versions for ct-* tools
