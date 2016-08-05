@@ -47,7 +47,8 @@ class diskcache:
         self.deps_mode = deps_mode
         self.magic_mode = magic_mode
         self.cachedir = ct.dirnamer.user_cache_dir(appname='ct')
-        ct.wrappedos.makedirs(self.cachedir)
+        if self.cachedir != 'None':
+            ct.wrappedos.makedirs(self.cachedir)
 
         # Keep a copy of the cachefile in memory to reduce disk IO
         self._memcache = {}
