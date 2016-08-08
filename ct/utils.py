@@ -102,10 +102,11 @@ def add_boolean_argument(parser, name, dest=None, default=False, help=None):
         help=bool_help)
     group.add_argument('--no-' + name, dest=dest, action='store_false')
 
+
 def extract_item_from_ct_conf(key, exedir=None):
     cfgdirs = default_config_directories(exedir=exedir)
     for cfgdir in cfgdirs:
-        cfgpath = os.path.join(cfgdir,'ct.conf')
+        cfgpath = os.path.join(cfgdir, 'ct.conf')
         if os.path.isfile(cfgpath):
             fileparser = configargparse.ConfigFileParser()
             with open(cfgpath) as cfg:
@@ -117,6 +118,7 @@ def extract_item_from_ct_conf(key, exedir=None):
 
     return None
 
+
 def extract_variant_from_argv(argv=None, exedir=None):
     """ The variant argument is parsed directly from the command line arguments
         so that it can be used to specify the default config for configargparse.
@@ -126,7 +128,9 @@ def extract_variant_from_argv(argv=None, exedir=None):
 
     # Parse the command line, extract the variant the user wants, then use
     # that as the default config file for configargparse
-    variantaliases = extract_item_from_ct_conf(key='variantaliases', exedir=exedir)
+    variantaliases = extract_item_from_ct_conf(
+        key='variantaliases',
+        exedir=exedir)
     if variantaliases is None:
         variantaliases = {}
     else:
@@ -145,7 +149,7 @@ def extract_variant_from_argv(argv=None, exedir=None):
                 variant = argv[variant_index + 1]
         except ValueError:
             pass
-    
+
     try:
         return variantaliases[variant]
     except KeyError:
@@ -162,8 +166,23 @@ def variant_with_hash(args, argv=None, variant=None):
         variant = extract_variant_from_argv(argv)
 
     # Only hash the bits of args that could change the build products
-    unimportantkeys  = ['clean', 'auto', 'filelist', 'output', 'prepend', 'append']
-    kwargs = {attr:value for attr, value in args.__dict__.iteritems() if attr not in unimportantkeys }
+    unimportantkeys = [
+        'clean',
+        'auto',
+        'filelist',
+        'output',
+        'prepend',
+        'append',
+        'parallel',
+        'makefilename',
+        'filter',
+        'merge',
+        'headerdeps',
+        'shorten',
+        'style']
+    kwargs = {attr: value 
+             for attr,value in args.__dict__.iteritems() 
+             if attr not in unimportantkeys}
 
     # The & <magicnumber> at the end is so that python2/3 give the same result
     return "%s.%08x" % (
@@ -189,7 +208,7 @@ def default_config_directories(
     if exedir is None:
         exedir = ct.wrappedos.dirname(ct.wrappedos.realpath(sys.argv[0]))
 
-    executable_config_dir = os.path.join(exedir,"ct.conf.d")
+    executable_config_dir = os.path.join(exedir, "ct.conf.d")
 
     return [user_config_dir, system_config_dir, executable_config_dir]
 
@@ -205,10 +224,13 @@ def config_files_from_variant(variant=None, argv=None, exedir=None):
             defaultdir,
             "ct.conf") for defaultdir in default_config_directories(
             exedir=exedir)]
-    
+
     # Only return the configs that exist
-    configs = [ cfg for cfg in variantconfigs + defaultconfigs if ct.wrappedos.isfile(cfg) ]
+    configs = [
+        cfg for cfg in variantconfigs +
+        defaultconfigs if ct.wrappedos.isfile(cfg)]
     return configs
+
 
 def add_base_arguments(cap, argv=None, exedir=None):
     # Even though the variant is actually sucked out of the command line by
@@ -225,6 +247,7 @@ def add_base_arguments(cap, argv=None, exedir=None):
         help="Output verbosity. Add more v's to make it more verbose",
         action="count",
         default=0)
+
 
 def add_common_arguments(cap, argv=None, exedir=None):
     """ Insert common arguments into the configargparse object """
