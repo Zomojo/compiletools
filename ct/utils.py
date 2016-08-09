@@ -9,6 +9,7 @@ import inspect
 import ast
 import zlib
 import configargparse
+import setuptools_scm
 
 import ct.dirnamer
 import ct.git_utils as git_utils
@@ -247,7 +248,10 @@ def add_base_arguments(cap, argv=None, exedir=None):
         help="Output verbosity. Add more v's to make it more verbose",
         action="count",
         default=0)
-
+    cap.add(
+        "--version",
+        action="version",
+        version=setuptools_scm.get_version(root='..',relative_to=__file__))
     cap.add(
         "-?",
         action='help')
