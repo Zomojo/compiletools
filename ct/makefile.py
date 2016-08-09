@@ -10,6 +10,7 @@ import configargparse
 
 import ct.utils
 import ct.wrappedos
+import ct.apptools
 import ct.headerdeps
 import ct.magicflags
 import ct.hunter
@@ -190,17 +191,17 @@ class MakefileCreator:
         # so we use an OrderedSet
         self.rules = ct.utils.OrderedSet()
 
-        self.namer = ct.utils.Namer(args)
+        self.namer = ct.namer.Namer(args)
         self.hunter = hunter
 
     @staticmethod
     def add_arguments(cap):
-        ct.utils.add_target_arguments(cap)
-        ct.utils.add_link_arguments(cap)
+        ct.apptools.add_target_arguments(cap)
+        ct.apptools.add_link_arguments(cap)
         # Don't add the output directory arguments
         # The Namer will do it and get the hash correct
         #ct.utils.add_output_directory_arguments(parser, variant)
-        ct.utils.Namer.add_arguments(cap)
+        ct.namer.Namer.add_arguments(cap)
         ct.hunter.add_arguments(cap)
         cap.add(
             "--makefilename",
@@ -525,7 +526,7 @@ def main(argv=None):
     cap = configargparse.getArgumentParser()
     MakefileCreator.add_arguments(cap)
     ct.hunter.add_arguments(cap)
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     headerdeps = ct.headerdeps.create(args)
     magicflags = ct.magicflags.create(args, headerdeps)
     hunter = ct.hunter.Hunter(args, headerdeps, magicflags)

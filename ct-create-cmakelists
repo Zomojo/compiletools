@@ -21,7 +21,7 @@ class CMakefileCreator:
 
     def __init__(self, args):
         self.args = args
-        self.namer = ct.utils.Namer(args)
+        self.namer = ct.namer.Namer(args)
         headerdeps = ct.headerdeps.create(args)
         magicflags = ct.magicflags.create(args, headerdeps)
         self.hunter = ct.hunter.Hunter(args, headerdeps, magicflags)
@@ -33,7 +33,7 @@ class CMakefileCreator:
         # Don't add the output directory arguments
         # The Namer will do it and get the hash correct
         #ct.utils.add_output_directory_arguments(cap, variant)
-        ct.utils.Namer.add_arguments(cap)
+        ct.namer.Namer.add_arguments(cap)
         ct.hunter.add_arguments(cap)
 
     def create(self):
@@ -89,8 +89,8 @@ class CMakefileCreator:
 def main(argv=None):
     if argv is None:
         argv = sys.argv
-    variant = ct.utils.extract_variant_from_argv(argv)
-    config_files = ct.utils.config_files_from_variant()
+    variant = ct.configutils.extract_variant_from_argv(argv)
+    config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a CMakefile.txt that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.',
         formatter_class=configargparse.DefaultsRawFormatter,
@@ -99,7 +99,7 @@ def main(argv=None):
         ignore_unknown_config_file_keys=True)
 
     CMakefileCreator.add_arguments(cap)
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     cmakefile_creator = CMakefileCreator(args)
     cmakefile_creator.create()
 

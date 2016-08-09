@@ -6,11 +6,11 @@ import os
 from io import open
 import configargparse
 import ct.utils
-
+import ct.namer
 
 def add_arguments(cap):
     """ Add the command line arguments that the HeaderDeps classes require """
-    ct.utils.Namer.add_arguments(cap)
+    ct.namer.Namer.add_arguments(cap)
     cap.add(
         "--exemarkers",
         action='append',
@@ -82,15 +82,18 @@ class FindTargets(object):
     def __init__(self, args):
         self._args = args
 
-    def __call__(self):
+    def __call__(self, path=None):
         """ Do the file system search and
             return the tuple ([executabletargets], [testtargets])
         """
+        if path is None:
+            path = "."
         executabletargets = []
         testtargets = []
-        namer = ct.utils.Namer(self._args)
+        namer = ct.namer.Namer(self._args)
         bindir = namer.topbindir()
-        for root, dirs, files in os.walk('.'):
+        print(os.getcwd())
+        for root, dirs, files in os.walk(path):
             if bindir in root or self._args.objdir in root:
                 continue
             for filename in files:
@@ -99,8 +102,8 @@ class FindTargets(object):
                     continue
                 with open(pathname, encoding='utf-8', errors='ignore') as ff:
                     for line in ff:
-                        if any(
-                                marker in line for marker in self._args.exemarkers):
+                        if any(marker in line 
+                               for marker in self._args.exemarkers):
                             # A file starting with test....cpp will be interpreted
                             # As a test even though it satisfied the exemarker
                             if filename.startswith('test'):
@@ -114,8 +117,8 @@ class FindTargets(object):
                                         "Found an executable source: " +
                                         pathname)
                             break
-                        if any(
-                                marker in line for marker in self._args.testmarkers):
+                        if any(marker in line 
+                               for marker in self._args.testmarkers):
                             testtargets.append(pathname)
                             if self._args.verbose >= 3:
                                 print("Found a test: " + pathname)
@@ -127,7 +130,7 @@ def main(argv=None):
     cap = configargparse.getArgumentParser()
     ct.findtargets.add_arguments(cap)
 
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     findtargets = FindTargets(args)
 
     styleclass = globals()[args.style.title() + 'Style']

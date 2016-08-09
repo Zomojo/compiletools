@@ -22,7 +22,7 @@ class TestHeaderDepsModule(unittest.TestCase):
         cap = configargparse.getArgumentParser()
         ct.headerdeps.add_arguments(cap)
         ct.magicflags.add_arguments(cap)
-        args = ct.utils.parseargs(cap, argv)
+        args = ct.apptools.parseargs(cap, argv)
         headerdeps = ct.headerdeps.create(args)
         return ct.magicflags.create(args, headerdeps)
 

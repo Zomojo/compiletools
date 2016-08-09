@@ -23,8 +23,8 @@ class FlatStyle(ct.git_utils.NameAdjuster):
 
     """ Print a newline delimited list of header files """
 
-    def __init__(self, tree_, strip_git_root=True):
-        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
+    def __init__(self, tree_, args):
+        ct.git_utils.NameAdjuster.__init__(self, args)
         tree.depth_first_traverse(
             node=tree_,
             pre_traverse_function=self.print_wrapper)
@@ -38,8 +38,8 @@ class DepthStyle(ct.git_utils.NameAdjuster):
 
     """ Print the include tree with some sort of indicator of depth """
 
-    def __init__(self, tree_, strip_git_root=True, indicator="--"):
-        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
+    def __init__(self, tree_, args, indicator="--"):
+        ct.git_utils.NameAdjuster.__init__(self, args)
         self.indicator = indicator
         tree.depth_first_traverse(
             node=tree_,
@@ -54,8 +54,8 @@ class DotStyle(ct.git_utils.NameAdjuster):
 
     """ Print the include tree in graphviz dot format. """
 
-    def __init__(self, tree_, strip_git_root=True):
-        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
+    def __init__(self, tree_, args):
+        ct.git_utils.NameAdjuster.__init__(self, args)
         for key in tree_:
             # TODO: Take care of the case where there are multiple top level
             # nodes
@@ -96,9 +96,9 @@ class TreeStyle(ct.git_utils.NameAdjuster):
     #       should be command line settable so that you only get what
     #       you want
 
-    def __init__(self, tree_, strip_git_root=True, verbose=0):
-        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
-        self.verbose = verbose
+    def __init__(self, tree_, args ):
+        ct.git_utils.NameAdjuster.__init__(self, args)
+        self.verbose = args.verbose
 
         # The various max_* variables are used to figure out the number of
         # digits to leave space for
@@ -244,7 +244,7 @@ def main(argv=None):
         help="Output formatting style")
 
     ct.headerdeps.add_arguments(cap)
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     ht = ct.headerdeps.DirectHeaderDeps(args)
 
     if not ct.wrappedos.isfile(args.filename[0]):
@@ -256,19 +256,18 @@ def main(argv=None):
     # Create the headertree then print it in the appropriate style
     inctree = ht.generatetree(args.filename[0])
     styleclass = globals()[args.style.title() + 'Style']
-    kwargs = ct.utils.extractinitargs(args, styleclass)
 
     # Construct an instance of the style class which will print the header
     # tree as a side effect
     try:
-        styleobject = styleclass(inctree, **kwargs)
+        styleobject = styleclass(inctree, args)
     except IOError:
         pass
 
     return 0
 
 if __name__ == '__main__':
-    config_files = ct.utils.config_files_from_variant()
+    config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a tree of header dependencies starting at a given C/C++ file. ',
         formatter_class=configargparse.DefaultsRawFormatter,

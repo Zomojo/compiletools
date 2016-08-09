@@ -27,7 +27,7 @@ class Cake:
 
     def _createctobjs(self):
         """ Has to be separate because --auto fiddles with the args """
-        self.namer = ct.utils.Namer(self.args)
+        self.namer = ct.namer.Namer(self.args)
         self.headerdeps = ct.headerdeps.create(self.args)
         self.magicflags = ct.magicflags.create(self.args, self.headerdeps)
         self.hunter = ct.hunter.Hunter(
@@ -263,7 +263,7 @@ class Cake:
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     Cake.add_arguments(cap)
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     cake = Cake(args)
     cake.process()
 

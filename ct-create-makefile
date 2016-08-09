@@ -5,7 +5,7 @@ from __future__ import unicode_literals
 import sys
 
 import configargparse
-import ct.utils
+import ct.configutils
 import ct.makefile
 
 
@@ -14,8 +14,8 @@ if __name__ == '__main__':
 	# that links against libget_numbers
 	# ct-create-makefile test_library.cpp --static get_numbers.cpp get_double.cpp get_int.cpp 
 	
-    variant = ct.utils.extract_variant_from_argv()
-    config_files = ct.utils.config_files_from_variant()
+    variant = ct.configutils.extract_variant_from_argv()
+    config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a Makefile that will compile the given source file into an '
                     'executable (or library). Each given file is assumed to be compiled '

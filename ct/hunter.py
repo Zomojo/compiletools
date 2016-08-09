@@ -18,7 +18,7 @@ import ct.magicflags
 
 def add_arguments(cap):
     """ Add the command line arguments that the Hunter classes require """
-    ct.utils.add_common_arguments(cap)
+    ct.apptools.add_common_arguments(cap)
     ct.headerdeps.add_arguments(cap)
     ct.magicflags.add_arguments(cap)
 

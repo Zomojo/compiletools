@@ -2,7 +2,7 @@ import sys
 import argparse
 import fnmatch
 import os
-import ct.utils
+import ct.configutils
 
 
 def find_possible_variants(
@@ -11,7 +11,7 @@ def find_possible_variants(
         exedir=None):
     output = [
         "From highest to lowest priority configuration directories, the possible variants are: "]
-    for cfg_dir in ct.utils.default_config_directories(
+    for cfg_dir in ct.configutils.default_config_directories(
             user_config_dir=user_config_dir,
             system_config_dir=system_config_dir,
             exedir=exedir):

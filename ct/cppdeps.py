@@ -16,7 +16,7 @@ def main(argv=None):
 
     # This will add the common arguments as a side effect
     ct.headerdeps.add_arguments(cap)
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     hh = ct.headerdeps.CppHeaderDeps(args)
 
     if not ct.wrappedos.isfile(args.filename[0]):

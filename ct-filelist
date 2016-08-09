@@ -8,7 +8,7 @@ import ct.utils
 import ct.filelist
 
 if __name__ == '__main__':
-    config_files = ct.utils.config_files_from_variant()
+    config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Determine header and source dependencies of a C/C++ file by following headers and implied source files.',
         formatter_class=configargparse.DefaultsRawFormatter,

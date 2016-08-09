@@ -10,7 +10,7 @@ from pprint import pprint
 
 from ct.memoize import memoize
 import ct.wrappedos
-import ct.utils
+import ct.apptools
 import ct.tree as tree
 import ct.preprocessor
 from ct.diskcache import diskcache
@@ -28,7 +28,7 @@ def create(args):
 
 def add_arguments(cap):
     """ Add the command line arguments that the HeaderDeps classes require """
-    ct.utils.add_common_arguments(cap)
+    ct.apptools.add_common_arguments(cap)
     alldepscls = [st[:-10].lower()
                   for st in dict(globals()) if st.endswith('HeaderDeps')]
     cap.add(

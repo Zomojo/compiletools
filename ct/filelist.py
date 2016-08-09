@@ -62,8 +62,7 @@ class Filelist(object):
         if style is None:
             style = self.args.style
         styleclass = globals()[style.title() + 'Style']
-        kwargs = ct.utils.extractinitargs(self.args, styleclass)
-        self.styleobject = styleclass(**kwargs)
+        self.styleobject = styleclass(args)
 
     @staticmethod
     def add_arguments(cap):
@@ -129,7 +128,7 @@ class Filelist(object):
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     Filelist.add_arguments(cap)
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     headerdeps = ct.headerdeps.create(args)
     magicflags = ct.magicflags.create(args, headerdeps)
     hunter = ct.hunter.Hunter(args, headerdeps, magicflags)

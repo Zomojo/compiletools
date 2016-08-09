@@ -15,7 +15,7 @@ class PreProcessor(object):
 
     @staticmethod
     def add_arguments(cap):
-        ct.utils.add_common_arguments(cap)
+        ct.apptools.add_common_arguments(cap)
 
     def process(self, realpath, extraargs, redirect_stderr_to_stdout=False):
         cmd = self.args.CPP.split() + self.args.CPPFLAGS.split() + \

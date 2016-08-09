@@ -10,12 +10,12 @@ import ct.cake
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     ct.cake.Cake.add_arguments(cap)
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     print()
     return 0
 
 if __name__ == '__main__':
-    config_files = ct.utils.config_files_from_variant()
+    config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Helper tool for examining how config files, command line arguments and environment variables are combined.  Write output to file with -w.  Use -vvv for verbose output.',
         formatter_class=configargparse.DefaultsRawFormatter,

@@ -66,65 +66,6 @@ class TestImpliedSource(unittest.TestCase):
                 relativefilename))
         self.assertEqual(expected, result)
 
-class TestVariant(unittest.TestCase):
-    def test_extract_variant(self):
-       self.assertEqual("abc",utils.extract_variant_from_argv("--variant=abc".split())) 
-       self.assertEqual("abc",utils.extract_variant_from_argv("--variant abc".split())) 
-       self.assertEqual("abc.123",utils.extract_variant_from_argv("-a -b -c --blah --variant=abc.123 -a -b -c --blah".split())) 
-       self.assertEqual("abc.123",utils.extract_variant_from_argv("-a -b -c --blah --variant abc.123 -a -b -c --blah".split())) 
-
-    def test_variant_with_hash(self):
-        cap = configargparse.getArgumentParser()
-        argv1 = "--variant=debug".split()
-        args1 = utils.parseargs(cap,argv1)
-
-        # Make a second, different, but logically equivalent argv
-        argv2 = "--no-shorten --variant=debug".split()
-        args2 = utils.parseargs(cap,argv2)
-        self.assertEqual(args1,args2)
-
-        # And a third ...
-        argv3 = []
-        args3 = utils.parseargs(cap,argv3)
-        self.assertEqual(args1,args3)
-
-        vwh1 = utils.variant_with_hash(args1, argv=argv1)
-        vwh2 = utils.variant_with_hash(args2, argv=argv2)
-        self.assertEqual(vwh1, vwh2)
-
-        vwh3 = utils.variant_with_hash(args3, argv=argv3)
-        self.assertEqual(vwh1, vwh3)
-
-    def test_extract_variant_from_ct_conf(self):
-        # Due to the search paths, this should not find any default variant
-        variant = utils.extract_item_from_ct_conf(key='variant')
-        self.assertEqual(None, variant)
-
-        # Now it should find the one in the git repo ct.conf.d/ct.conf
-        variant = utils.extract_item_from_ct_conf(key='variant', exedir=uth.cakedir())
-        self.assertEqual("debug", variant)
-
-    def test_extract_variant_from_blank_argv(self):
-        variant = utils.extract_variant_from_argv(exedir=uth.cakedir())
-        self.assertEqual("gcc.debug", variant)
-
-class TestNamer(unittest.TestCase):
-
-    @unittest.skipUnless(int(sys.version[0]) < 3, "The hardcoded hash value is only valid on python 2")
-    def test_executable_pathname(self):
-        cap = configargparse.getArgumentParser()
-        argv = ['--no-git-root']
-        utils.Namer.add_arguments(cap=cap)
-        args = utils.parseargs(cap, argv)
-        namer = utils.Namer(args)
-        exename = namer.executable_pathname('/home/user/code/my.cpp')
-        self.assertEqual(
-            exename,
-            os.path.join(
-                os.getcwd(),
-                'bin/debug.c9005649/home/user/code/my'))
-
-
 class TestOrderedSet(unittest.TestCase):
 
     def test_initialization(self):

@@ -5,7 +5,7 @@ import os
 import subprocess
 
 from ct.memoize import memoize
-
+import ct.utils
 
 def find_git_root(filename=None):
     """ Return the absolute path of .git for the given filename """
@@ -57,11 +57,20 @@ class NameAdjuster(object):
 
     """ Conditionally remove the git root from a given filename """
 
-    def __init__(self, strip_git_root):
-        self.strip_git_root = strip_git_root
+    def __init__(self, args):
+        self._args = args
+
+    @staticmethod
+    def add_arguments(cap):
+        ct.utils.add_boolean_argument(
+            cap,
+            "shorten",
+            'strip_git_root',
+            default=False,
+            help="Strip the git root from the filenames")
 
     def adjust(self, name):
-        if self.strip_git_root:
+        if self._args.strip_git_root:
             return strip_git_root(name)
         else:
             return name

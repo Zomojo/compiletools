@@ -25,7 +25,7 @@ def create(args, headerdeps):
 
 def add_arguments(cap):
     """ Add the command line arguments that the MagicFlags classes require """
-    ct.utils.add_common_arguments(cap)
+    ct.apptools.add_common_arguments(cap)
     ct.preprocessor.PreProcessor.add_arguments(cap)
     alldepscls = [st[:-10].lower()
                   for st in dict(globals()) if st.endswith('MagicFlags')]
@@ -141,16 +141,16 @@ class CppMagicFlags(MagicFlagsBase):
 
 class NullStyle(ct.git_utils.NameAdjuster):
 
-    def __init__(self, strip_git_root=True):
-        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
+    def __init__(self, args): 
+        ct.git_utils.NameAdjuster.__init__(self, args)
 
     def __call__(self, realpath, magicflags):
         print("{}: {}".format(self.adjust(realpath), str(magicflags)))
 
 class PrettyStyle(ct.git_utils.NameAdjuster):
 
-    def __init__(self, strip_git_root=True):
-        ct.git_utils.NameAdjuster.__init__(self, strip_git_root)
+    def __init__(self, args):
+        ct.git_utils.NameAdjuster.__init__(self, args)
 
     def __call__(self, realpath, magicflags):
         sys.stdout.write("\n{}".format(self.adjust(realpath)))
@@ -181,12 +181,12 @@ def main(argv=None):
         default='pretty',
         help="Output formatting style")
 
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     headerdeps = ct.headerdeps.create(args)
     magicparser = create(args, headerdeps)
 
     styleclass = globals()[args.style.title() + 'Style']
-    styleobject = styleclass(args.strip_git_root)
+    styleobject = styleclass(args)
 
     for fname in args.filename:
         realpath = ct.wrappedos.realpath(fname)

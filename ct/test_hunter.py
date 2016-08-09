@@ -55,7 +55,7 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
 
     cap = configargparse.getArgumentParser()
     ct.headerdeps.add_arguments(cap)
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     headerdeps = ct.headerdeps.create(args)
 
     return cachename, callprocess(headerobj, realpaths)
@@ -75,7 +75,7 @@ class TestHunterModule(unittest.TestCase):
             uth.ctdir()]
         cap = configargparse.getArgumentParser()
         ct.hunter.add_arguments(cap)
-        args = ct.utils.parseargs(cap, argv)
+        args = ct.apptools.parseargs(cap, argv)
         headerdeps = ct.headerdeps.create(args)
         magicflags = ct.magicflags.create(args, headerdeps)
         hntr = ct.hunter.Hunter(args, headerdeps, magicflags)
@@ -106,7 +106,7 @@ class TestHunterModule(unittest.TestCase):
             uth.ctdir()] + bulkpaths
         cap = configargparse.getArgumentParser()
         ct.hunter.add_arguments(cap)
-        args = ct.utils.parseargs(cap, argv)
+        args = ct.apptools.parseargs(cap, argv)
         headerdeps = ct.headerdeps.create(args)
         magicflags = ct.magicflags.create(args, headerdeps)
         hntr = ct.hunter.Hunter(args, headerdeps, magicflags)

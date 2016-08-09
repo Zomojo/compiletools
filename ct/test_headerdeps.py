@@ -52,7 +52,7 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
 
     cap = configargparse.getArgumentParser()
     ct.headerdeps.add_arguments(cap)
-    args = ct.utils.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv)
     headerdeps = ct.headerdeps.create(args)
 
     return cachename, _callprocess(headerdeps, realpaths)
@@ -62,43 +62,47 @@ class TestHeaderDepsModule(unittest.TestCase):
 
     def setUp(self):
         uth.delete_existing_parsers()
-        config_files = ct.utils.config_files_from_variant(variant='debug', exedir=os.path.join(uth.ctdir(),".."))
+        config_files = ct.configutils.config_files_from_variant(variant='debug', exedir=os.path.join(uth.ctdir(),".."))
         cap = configargparse.getArgumentParser(
             description='Configargparser in test code',
             formatter_class=configargparse.DefaultsRawFormatter,
             default_config_files=config_files,
             args_for_setting_config_path=["-c","--config"],
             ignore_unknown_config_file_keys=True)
-        ct.utils.add_common_arguments(cap)
+        ct.apptools.add_common_arguments(cap)
 
     def _direct_cpp_tester(self, filename, extraargs=None):
         """ For a given filename call HeaderTree.process() and HeaderDependencies.process """
         if extraargs is None:
             extraargs = []
         realpath = ct.wrappedos.realpath(filename)
-        argv = ["-vvvv"] + extraargs
-
+        argv = extraargs
+        
+        # Turn off diskcaching so that we can't just read up a prior result
+        origcache = ct.dirnamer.user_cache_dir()
+        _reload_headerdeps('None')
         cap = configargparse.getArgumentParser()
         ct.headerdeps.add_arguments(cap)
         argvdirect = argv + ['--headerdeps=direct']
-        argsdirect = ct.utils.parseargs(cap, argvdirect)
+        argsdirect = ct.apptools.parseargs(cap, argvdirect)
 
         argvcpp = argv + ['--headerdeps', 'cpp']
-        argscpp = ct.utils.parseargs(cap, argvcpp)
+        argscpp = ct.apptools.parseargs(cap, argvcpp)
 
         hdirect = ct.headerdeps.create(argsdirect)
         hcpp = ct.headerdeps.create(argscpp)
         hdirectresult = hdirect.process(realpath)
         hcppresult = hcpp.process(realpath)
         self.assertSetEqual(hdirectresult, hcppresult)
+        _reload_headerdeps(origcache)
 
     def test_direct_and_cpp_generate_same_results(self):
         filenames = [
-            'samples/factory/test_factory.cpp',
-            'samples/numbers/test_direct_include.cpp',
-            'samples/dottypaths/dottypaths.cpp']
+            'factory/test_factory.cpp',
+            'numbers/test_direct_include.cpp',
+            'dottypaths/dottypaths.cpp']
         for filename in filenames:
-            self._direct_cpp_tester(filename)
+            self._direct_cpp_tester(os.path.join(uth.samplesdir(),filename))
 
     def _direct_and_cpp_generate_same_results_ex(self, extraargs=None):
         """ Test that HeaderTree and HeaderDependencies give the same results.

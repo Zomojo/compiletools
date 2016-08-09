@@ -7,8 +7,8 @@ import ct.findtargets
 
 
 if __name__ == '__main__':
-    variant = ct.utils.extract_variant_from_argv()
-    config_files = ct.utils.config_files_from_variant()
+    variant = ct.configutils.extract_variant_from_argv()
+    config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Find the source files that are executable targets and tests',
         formatter_class=configargparse.DefaultsRawFormatter,
