@@ -248,6 +248,9 @@ def add_base_arguments(cap, argv=None, exedir=None):
         action="count",
         default=0)
 
+    cap.add(
+        "-?",
+        action='help')
 
 def add_common_arguments(cap, argv=None, exedir=None):
     """ Insert common arguments into the configargparse object """
