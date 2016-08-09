@@ -2,12 +2,12 @@
 compiletools
 ============
 
--------------------------------------------------------
-C/C++ build tool that requires almost no configuration.
--------------------------------------------------------
+--------------------------------------------------------
+C/C++ build tools that requires almost no configuration.
+--------------------------------------------------------
 
 :Author: geoff@zomojo.com
-:Date:   2016-08-08
+:Date:   2016-08-09
 :Copyright: Copyright (C) 2011-2016 Zomojo Pty Ltd
 :Version: 4.0.0
 :Manual section: 1
@@ -26,6 +26,9 @@ configuration. For example, to build a C or C++ program, type
 
 which will try to determine the correct source files to generate executables
 from and also determine the tests to build and run.
+
+A variant is a configuration file that specifies various configurable settings
+like the compiler and compiler flags. Common variants are "debug" and "release".
 
 Other notable tools are 
 
