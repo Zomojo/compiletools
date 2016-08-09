@@ -15,23 +15,22 @@ class TestFindTargetsModule(unittest.TestCase):
     def setUp(self):
         uth.delete_existing_parsers()
 
-    @unittest.skip("REMOVE THIS SKIP.  JUST WHILE REFACTORING")
     def test_samples(self):
-        expectedexes = {
-            './samples/simple/helloworld_c.c',
-            './samples/simple/helloworld_cpp.cpp',
-            './samples/dottypaths/dottypaths.cpp',
-            './samples/lotsofmagic/lotsofmagic.cpp'}
-        expectedtests = {
-            './samples/cross_platform/test_source.cpp',
-            './samples/factory/test_factory.cpp',
-            './samples/numbers/test_direct_include.cpp',
-            './samples/numbers/test_library.cpp',
-            './samples/simple/test_cflags.c'}
+        relativeexpectedexes = {
+            'simple/helloworld_c.c',
+            'simple/helloworld_cpp.cpp',
+            'dottypaths/dottypaths.cpp',
+            'lotsofmagic/lotsofmagic.cpp'}
+        relativeexpectedtests = {
+            'cross_platform/test_source.cpp',
+            'factory/test_factory.cpp',
+            'numbers/test_direct_include.cpp',
+            'numbers/test_library.cpp',
+            'simple/test_cflags.c'}
 
+        expectedexes = { os.path.realpath(os.path.join(uth.samplesdir(),exe)) for exe in relativeexpectedexes }
+        expectedtests = { os.path.realpath(os.path.join(uth.samplesdir(),tt)) for tt in relativeexpectedtests }
         config_files = ct.configutils.config_files_from_variant(exedir=uth.cakedir())
-        print("Using config_files=")
-        print(config_files)
         cap = configargparse.getArgumentParser(
             description='TestFindTargetsModule',
             formatter_class=configargparse.DefaultsRawFormatter,
