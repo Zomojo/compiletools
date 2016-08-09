@@ -27,8 +27,6 @@ class TestListVariants(unittest.TestCase):
             user_config_dir=ucd,
             system_config_dir=scd,
             exedir='/usr/bin')
-        print(expected_output)
-        print(output)
         self.assertEqual(expected_output, output)
 
     def tearDown(self):

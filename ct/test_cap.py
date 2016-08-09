@@ -17,7 +17,6 @@ def add_to_parser_in_func(recursion_depth=0):
             help="Output verbosity. Add more v's to make it more verbose",
             action="count",
             default=0)
-        print(cap.format_values())
         parsed_args = cap.parse_known_args(args=["-v"])
 
         # Note that is_config_file is False

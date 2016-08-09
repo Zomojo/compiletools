@@ -14,12 +14,12 @@ class TestCPPDeps(unittest.TestCase):
     def setUp(self):
         uth.delete_existing_parsers()
 
+    # This test needs to run in buffered mode. 
+    #You can set buffer through unit2 command line flag -b, --buffer 
+    # or in unittest.main options.
+    @unittest.skipIf(not hasattr(sys.stdout, "getvalue"), "Skipping test since not in buffer mode")
     def test_cppdeps(self):
         ct.cppdeps.main(['samples/numbers/test_direct_include.cpp'])
-        if not hasattr(sys.stdout, "getvalue"):
-            self.fail(
-                "need to run in buffered mode. You can set buffer through unit2 command line flag -b, --buffer or in unittest.main options. The opposite is achieved through nosetest flag --nocapture.")
-        # because stdout is an StringIO instance
         output = sys.stdout.getvalue().strip().split()
         expected_output = [
             "/data/home/geoff/Cake/samples/numbers/get_double.hpp",
