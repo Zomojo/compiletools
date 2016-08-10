@@ -7,9 +7,13 @@ import configargparse
 import ct.utils
 import ct.cake
 
+
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     ct.cake.Cake.add_arguments(cap)
+    if argv is None:
+        # Output of stdout is done via increasing the verbosity
+        argv = sys.argv + ['-vvv']
     args = ct.apptools.parseargs(cap, argv)
     print()
     return 0
@@ -17,10 +21,16 @@ def main(argv=None):
 if __name__ == '__main__':
     config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
-        description='Helper tool for examining how config files, command line arguments and environment variables are combined.  Write output to file with -w.  Use -vvv for verbose output.',
+        description='Helper tool for examining how config files, command line '
+                    'arguments and environment variables are combined. '
+                    'Write the config to file with -w.',
         formatter_class=configargparse.DefaultsRawFormatter,
         default_config_files=config_files,
-        args_for_setting_config_path=["-c","--config"],
+        args_for_setting_config_path=[
+            "-c",
+            "--config"],
         ignore_unknown_config_file_keys=True,
-        args_for_writing_out_config_file=["-w", "--write-out-config-file"])
+        args_for_writing_out_config_file=[
+            "-w",
+            "--write-out-config-file"])
     sys.exit(main())
