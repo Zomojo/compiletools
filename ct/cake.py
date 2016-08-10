@@ -8,6 +8,7 @@ import os
 from io import open
 import shutil
 import ct.utils
+import ct.apptools
 import ct.headerdeps
 import ct.magicflags
 import ct.hunter
@@ -251,7 +252,7 @@ class Cake:
         # run the common substitutions again
         # Primarily, this fixes the --includes for the git root of the
         # targets. And recreate the ct objects
-        ct.utils.commonsubstitutions(self.args)
+        ct.apptools.commonsubstitutions(self.args)
         self._createctobjs()
 
         if self.args.filelist:
