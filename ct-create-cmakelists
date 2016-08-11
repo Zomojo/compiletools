@@ -89,7 +89,7 @@ class CMakefileCreator:
 def main(argv=None):
     if argv is None:
         argv = sys.argv
-    variant = ct.configutils.extract_variant_from_argv(argv)
+    variant = ct.configutils.extract_variant(argv)
     config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a CMakefile.txt that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.',

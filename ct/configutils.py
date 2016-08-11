@@ -5,33 +5,71 @@ import ast
 import appdirs
 import configargparse
 import ct.wrappedos
-import ct.dirnamer
-
-def extract_item_from_ct_conf(key, exedir=None):
-    cfgdirs = default_config_directories(exedir=exedir)
-    for cfgdir in cfgdirs:
-        cfgpath = os.path.join(cfgdir, 'ct.conf')
-        if os.path.isfile(cfgpath):
-            fileparser = configargparse.ConfigFileParser()
-            with open(cfgpath) as cfg:
-                items = fileparser.parse(cfg)
-                try:
-                    return items[key]
-                except KeyError:
-                    continue
-
-    return None
 
 
-def extract_variant_from_argv(argv=None, exedir=None):
-    """ The variant argument is parsed directly from the command line arguments
-        so that it can be used to specify the default config for configargparse.
+def extract_value_from_argv(key, argv=None, default=None):
+    """ Extract the value for the given key from the argv.
+        Return the given default if no key was identified
     """
     if argv is None:
         argv = sys.argv
 
-    # Parse the command line, extract the variant the user wants, then use
-    # that as the default config file for configargparse
+    value = default
+
+    for arg in argv:
+        try:
+            keywithhyphens = "".join(['--', key, '='])
+            if keywithhyphens in arg:
+                value = arg.split('=')[1]
+            else:
+                keywithhyphens = "".join(['--', key])
+                if keywithhyphens in arg:
+                    index = argv.index(keywithhyphens)
+                    value = argv[index + 1]
+        except ValueError:
+            pass
+    return value
+
+
+def extract_item_from_ct_conf(
+        key,
+        user_config_dir=None,
+        system_config_dir=None,
+        exedir=None,
+        default=None,
+        verbose=0):
+    """ Extract the value for the given key from the ct.conf files.
+        Return the given default if no key was identified
+    """
+    fileparser = configargparse.ConfigFileParser()
+    for cfgpath in defaultconfigs(user_config_dir=user_config_dir,
+                                  system_config_dir=system_config_dir,
+                                  exedir=exedir):
+        with open(cfgpath) as cfg:
+            items = fileparser.parse(cfg)
+            try:
+                value = items[key]
+                if verbose > 0:
+                    print(" ".join([cfgpath, 'contains', key, '=', value]))
+                return value
+            except KeyError:
+                continue
+
+    return default
+
+
+def extract_variant(argv=None, exedir=None):
+    """ The variant argument is parsed directly from the command line arguments
+        so that it can be used to specify the default config for configargparse.
+        Remember that the hierarchy of values is
+        command line > environment variables > config file values > defaults
+    """
+    if argv is None:
+        argv = sys.argv
+
+    # Parse the command line, et al, extract the variant the user wants,
+    # then use that as the default config file for configargparse.
+    # Be careful to make use of the variant aliaes defined in the ct.conf files
     variantaliases = extract_item_from_ct_conf(
         key='variantaliases',
         exedir=exedir)
@@ -40,19 +78,19 @@ def extract_variant_from_argv(argv=None, exedir=None):
     else:
         variantaliases = ast.literal_eval(variantaliases)
 
-    variant = extract_item_from_ct_conf(key='variant', exedir=exedir)
-    if variant is None:
-        variant = "debug"
-
-    for arg in argv:
-        try:
-            if "--variant=" in arg:
-                variant = arg.split('=')[1]
-            elif "--variant" in arg:
-                variant_index = argv.index("--variant")
-                variant = argv[variant_index + 1]
-        except ValueError:
-            pass
+    variant = "debug"
+    variant = extract_item_from_ct_conf(
+        key='variant',
+        exedir=exedir,
+        default=variant)
+    try:
+        variant = os.environ['variant']
+    except:
+        pass
+    variant = extract_value_from_argv(
+        key='variant',
+        argv=argv,
+        default=variant)
 
     try:
         return variantaliases[variant]
@@ -67,7 +105,7 @@ def variant_with_hash(args, argv=None, variant=None, exedir=None):
         Choose adler32 for speed
     """
     if not variant:
-        variant = extract_variant_from_argv(argv,exedir)
+        variant = extract_variant(argv, exedir)
 
     # Only hash the bits of args that could change the build products
     unimportantkeys = [
@@ -83,10 +121,11 @@ def variant_with_hash(args, argv=None, variant=None, exedir=None):
         'merge',
         'headerdeps',
         'shorten',
-        'style']
-    kwargs = {attr: value 
-             for attr,value in args.__dict__.iteritems() 
-             if attr not in unimportantkeys}
+        'style',
+        'CTCACHE']
+    kwargs = {attr: value
+              for attr, value in args.__dict__.iteritems()
+              if attr not in unimportantkeys}
     # The & <magicnumber> at the end is so that python2/3 give the same result
     return "%s.%08x" % (
         variant, (zlib.adler32(str(kwargs).encode('utf-8')) & 0xffffffff))
@@ -100,14 +139,14 @@ def default_config_directories(
     # 1) same path as exe,
     # 2) system config (XDG compliant.  /etc/xdg/ct)
     # 3) user config   (XDG compliant. ~/.config/ct)
-    # 4) given on the command line
-    # 5) environment variables
+    # 4) environment variables
+    # 5) given on the command line
 
     # These variables are settable to assist writing tests
     if user_config_dir is None:
-        user_config_dir = ct.dirnamer.user_config_dir(appname='ct')
+        user_config_dir = appdirs.user_config_dir(appname='ct')
     if system_config_dir is None:
-        system_config_dir = ct.dirnamer.site_config_dir(appname='ct')
+        system_config_dir = appdirs.site_config_dir(appname='ct')
     if exedir is None:
         exedir = ct.wrappedos.dirname(ct.wrappedos.realpath(sys.argv[0]))
 
@@ -116,20 +155,45 @@ def default_config_directories(
     return [user_config_dir, system_config_dir, executable_config_dir]
 
 
-def config_files_from_variant(variant=None, argv=None, exedir=None):
-    if variant is None:
-        variant = extract_variant_from_argv(argv,exedir=exedir)
-    variantconfigs = [
-        os.path.join(defaultdir, variant)
-        + ".conf" for defaultdir in default_config_directories(exedir=exedir)]
-    defaultconfigs = [
+def defaultconfigs(
+        user_config_dir=None,
+        system_config_dir=None,
+        exedir=None):
+    ctconfs = [
         os.path.join(
             defaultdir,
-            "ct.conf") for defaultdir in default_config_directories(
+            'ct.conf') for defaultdir in default_config_directories(
+            user_config_dir=user_config_dir,
+            system_config_dir=system_config_dir,
+            exedir=exedir)]
+
+    # Only return the configs that exist
+    configs = [cfg for cfg in ctconfs if ct.wrappedos.isfile(cfg)]
+    return configs
+
+
+def config_files_from_variant(
+        variant=None,
+        argv=None,
+        user_config_dir=None,
+        system_config_dir=None,
+        exedir=None):
+    if variant is None:
+        variant = extract_variant(argv, exedir=exedir)
+    variantconfigs = [
+        os.path.join(
+            defaultdir,
+            variant) +
+        ".conf" for defaultdir in default_config_directories(
+            user_config_dir=user_config_dir,
+            system_config_dir=system_config_dir,
             exedir=exedir)]
 
     # Only return the configs that exist
     configs = [
         cfg for cfg in variantconfigs +
-        defaultconfigs if ct.wrappedos.isfile(cfg)]
+        defaultconfigs(
+            user_config_dir=user_config_dir,
+            system_config_dir=system_config_dir,
+            exedir=exedir) if ct.wrappedos.isfile(cfg)]
     return configs

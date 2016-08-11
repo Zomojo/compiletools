@@ -171,12 +171,13 @@ class diskcache:
 
     def __call__(self, func):
         try:            
-            if os.environ['CTCACHE'] == 'None':
+            if ct.dirnamer.user_cache_dir() == 'None':
                 @functools.wraps(func)
                 @memoize
                 def memcacher(*args):
                     return func(*args)
 
+                # Return for __call__
                 return memcacher
         except KeyError:
             pass

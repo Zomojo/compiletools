@@ -14,7 +14,7 @@ if __name__ == '__main__':
 	# that links against libget_numbers
 	# ct-create-makefile test_library.cpp --static get_numbers.cpp get_double.cpp get_int.cpp 
 	
-    variant = ct.configutils.extract_variant_from_argv()
+    variant = ct.configutils.extract_variant()
     config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Create a Makefile that will compile the given source file into an '

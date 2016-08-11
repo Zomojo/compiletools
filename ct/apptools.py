@@ -8,6 +8,7 @@ import setuptools_scm
 import ct.git_utils
 import ct.configutils
 import ct.utils
+import ct.dirnamer
 
 def add_base_arguments(cap, argv=None, exedir=None):
     # Even though the variant is actually sucked out of the command line by
@@ -17,7 +18,7 @@ def add_base_arguments(cap, argv=None, exedir=None):
         "--variant",
         help="Specifies which variant of the config should be used. "
              "Use the config name without the .conf",
-        default=ct.configutils.extract_variant_from_argv(argv=argv, exedir=exedir))
+        default=ct.configutils.extract_variant(argv=argv, exedir=exedir))
     cap.add(
         "-v",
         "--verbose",
@@ -30,11 +31,13 @@ def add_base_arguments(cap, argv=None, exedir=None):
         version=setuptools_scm.get_version(root='..',relative_to=__file__))
     cap.add(
         "-?",
-        action='help')
+        action='help',
+        help='Help')
 
 def add_common_arguments(cap, argv=None, exedir=None):
     """ Insert common arguments into the configargparse object """
     add_base_arguments(cap, argv=argv, exedir=exedir)
+    ct.dirnamer.add_arguments(cap)
     cap.add(
         "--ID",
         help="Compiler identification string.  The same string as CMake uses.",

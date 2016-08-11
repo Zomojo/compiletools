@@ -39,7 +39,7 @@ class TestFindTargetsModule(unittest.TestCase):
             ignore_unknown_config_file_keys=True)
         ct.findtargets.add_arguments(cap)
         args = ct.apptools.parseargs(cap, argv=['--shorten'])
-        findtargets = ct.findtargets.FindTargets(args)
+        findtargets = ct.findtargets.FindTargets(args,exedir=uth.cakedir())
         executabletargets, testtargets = findtargets(path=uth.cakedir())
         self.assertSetEqual(expectedexes, set(executabletargets))
         self.assertSetEqual(expectedtests, set(testtargets))

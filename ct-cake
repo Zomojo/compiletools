@@ -9,7 +9,7 @@ import ct.cake
 
 
 if __name__ == '__main__':
-    variant = ct.configutils.extract_variant_from_argv()
+    variant = ct.configutils.extract_variant()
     config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='A convenience tool to aid migration from cake to the ct-* tools',

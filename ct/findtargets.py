@@ -79,8 +79,9 @@ class FindTargets(object):
         all the C/C++ files with main functions and unit tests.
     """
 
-    def __init__(self, args):
+    def __init__(self, args, argv=None, variant=None, exedir=None):
         self._args = args
+        self.namer = ct.namer.Namer(self._args, argv=argv, variant=variant, exedir=exedir)
 
     def __call__(self, path=None):
         """ Do the file system search and
@@ -90,9 +91,7 @@ class FindTargets(object):
             path = "."
         executabletargets = []
         testtargets = []
-        namer = ct.namer.Namer(self._args)
-        bindir = namer.topbindir()
-        print(os.getcwd())
+        bindir = self.namer.topbindir()
         for root, dirs, files in os.walk(path):
             if bindir in root or self._args.objdir in root:
                 continue

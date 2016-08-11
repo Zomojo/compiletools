@@ -7,7 +7,7 @@ import ct.magicflags
 
 
 if __name__ == '__main__':
-    variant = ct.configutils.extract_variant_from_argv()
+    variant = ct.configutils.extract_variant()
     config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description='Parse a file and show the magicflags it exports',

@@ -8,6 +8,7 @@ import ct.dirnamer
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Determine the currently used ct cache')
+    ct.dirnamer.add_arguments(parser)
     parser.add_argument(
         "-v",
         "--verbose",
