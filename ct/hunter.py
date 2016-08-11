@@ -29,13 +29,13 @@ class Hunter(object):
         other required source files, other required compile/link flags.
     """
 
-    def __init__(self, args, headerdeps, magicflags):
+    def __init__(self, args, headerdeps, magicparser):
         self.args = args
         self.headerdeps = headerdeps
-        self.magicflags = magicflags
+        self.magicparser = magicparser
 
     def _extractSOURCE(self, realpath):
-        sources = self.magicflags.parse(realpath).get('SOURCE', set())
+        sources = self.magicparser.parse(realpath).get('SOURCE', set())
         cwd = ct.wrappedos.dirname(realpath)
         ess = {ct.wrappedos.realpath(os.path.join(cwd, es)) for es in sources}
         if self.args.verbose >= 2 and ess:
@@ -121,7 +121,7 @@ class Hunter(object):
         return self._required_files_impl(ct.wrappedos.realpath(filename))
 
     def magicflags(self, filename):
-        return self.magicflags.parse(filename)
+        return self.magicparser.parse(filename)
 
     def header_dependencies(self, source_filename):
         if self.args.verbose >= 8:

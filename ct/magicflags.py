@@ -73,9 +73,6 @@ class MagicFlagsBase:
         return self.parse(filename)
 
     def _parse(self, filename):
-        #if filename != ct.wrappedos.realpath(filename):
-        #    raise ValueError("Must pass realpath to MagicFlags::parse")
-
         if self._args.verbose >= 4:
             print("Parsing magic flags for " + filename)
 

@@ -24,8 +24,8 @@ class CMakefileCreator:
         self.args = args
         self.namer = ct.namer.Namer(args)
         headerdeps = ct.headerdeps.create(args)
-        magicflags = ct.magicflags.create(args, headerdeps)
-        self.hunter = ct.hunter.Hunter(args, headerdeps, magicflags)
+        magicparser = ct.magicflags.create(args, headerdeps)
+        self.hunter = ct.hunter.Hunter(args, headerdeps, magicparser)
 
     @staticmethod
     def add_arguments(cap):

@@ -130,8 +130,8 @@ def main(argv=None):
     Filelist.add_arguments(cap)
     args = ct.apptools.parseargs(cap, argv)
     headerdeps = ct.headerdeps.create(args)
-    magicflags = ct.magicflags.create(args, headerdeps)
-    hunter = ct.hunter.Hunter(args, headerdeps, magicflags)
+    magicparser = ct.magicflags.create(args, headerdeps)
+    hunter = ct.hunter.Hunter(args, headerdeps, magicparser)
     filelist = Filelist(args, hunter)
     filelist.process()
 

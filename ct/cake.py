@@ -23,18 +23,18 @@ class Cake:
         self.args = args
         self.namer = None
         self.headerdeps = None
-        self.magicflags = None
+        self.magicparser = None
         self.hunter = None
 
     def _createctobjs(self):
         """ Has to be separate because --auto fiddles with the args """
         self.namer = ct.namer.Namer(self.args)
         self.headerdeps = ct.headerdeps.create(self.args)
-        self.magicflags = ct.magicflags.create(self.args, self.headerdeps)
+        self.magicparser = ct.magicflags.create(self.args, self.headerdeps)
         self.hunter = ct.hunter.Hunter(
             self.args,
             self.headerdeps,
-            self.magicflags)
+            self.magicparser)
 
 
     @staticmethod

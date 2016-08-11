@@ -528,8 +528,8 @@ def main(argv=None):
     ct.hunter.add_arguments(cap)
     args = ct.apptools.parseargs(cap, argv)
     headerdeps = ct.headerdeps.create(args)
-    magicflags = ct.magicflags.create(args, headerdeps)
-    hunter = ct.hunter.Hunter(args, headerdeps, magicflags)
+    magicparser = ct.magicflags.create(args, headerdeps)
+    hunter = ct.hunter.Hunter(args, headerdeps, magicparser)
     makefile_creator = MakefileCreator(args, hunter)
     makefile_creator.create()
     return 0

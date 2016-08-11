@@ -77,8 +77,8 @@ class TestHunterModule(unittest.TestCase):
         ct.hunter.add_arguments(cap)
         args = ct.apptools.parseargs(cap, argv)
         headerdeps = ct.headerdeps.create(args)
-        magicflags = ct.magicflags.create(args, headerdeps)
-        hntr = ct.hunter.Hunter(args, headerdeps, magicflags)
+        magicparser = ct.magicflags.create(args, headerdeps)
+        hntr = ct.hunter.Hunter(args, headerdeps, magicparser)
 
         relativepath = 'factory/widget_factory.hpp'
         realpath = os.path.join(uth.samplesdir(), relativepath)
@@ -108,8 +108,8 @@ class TestHunterModule(unittest.TestCase):
         ct.hunter.add_arguments(cap)
         args = ct.apptools.parseargs(cap, argv)
         headerdeps = ct.headerdeps.create(args)
-        magicflags = ct.magicflags.create(args, headerdeps)
-        hntr = ct.hunter.Hunter(args, headerdeps, magicflags)
+        magicparser = ct.magicflags.create(args, headerdeps)
+        hntr = ct.hunter.Hunter(args, headerdeps, magicparser)
 
         realpath = os.path.join(samplesdir, 'dottypaths/dottypaths.cpp')
         if precall:

@@ -20,7 +20,8 @@ class TestFindTargetsModule(unittest.TestCase):
             'simple/helloworld_c.c',
             'simple/helloworld_cpp.cpp',
             'dottypaths/dottypaths.cpp',
-            'lotsofmagic/lotsofmagic.cpp'}
+            'lotsofmagic/lotsofmagic.cpp',
+            'magicsourceinheader/main.cpp'}
         relativeexpectedtests = {
             'cross_platform/test_source.cpp',
             'factory/test_factory.cpp',
