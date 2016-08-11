@@ -16,6 +16,7 @@ class Namer(object):
 
     def __init__(self, args, argv=None, variant=None, exedir=None):
         self.args = args
+        self._project = ct.git_utils.Project(args)
 
         # If the user didn't explicitly tell us what bindir to use the
         # generate a unique one for the args
@@ -42,11 +43,7 @@ class Namer(object):
             defaultdir must be either self.args.objdir or self.args.bindir
         """
         if sourcefilename:
-            try:
-                project_pathname = ct.git_utils.strip_git_root(sourcefilename)
-            except OSError:
-                project_pathname = ct.utils.removemount(sourcefilename)
-
+            project_pathname = self._project.pathname(sourcefilename)
             relative = os.path.join(
                 defaultdir,
                 ct.wrappedos.dirname(project_pathname))

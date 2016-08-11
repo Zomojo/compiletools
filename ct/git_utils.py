@@ -48,9 +48,21 @@ def _find_git_root(directory):
 
 
 @memoize
-def strip_git_root(filename):
+def _strip_git_root(filename):
     size = len(find_git_root(filename)) + 1
     return filename[size:]
+
+
+class Project(object):
+    def __init__(self, args):
+        self._args = args
+
+    def pathname(self, filename):        
+        """ Return the project part of the given filename """
+        if self._args.git_root:
+            return _strip_git_root(filename)
+        else:
+            return ct.utils.removemount(filename)
 
 
 class NameAdjuster(object):
@@ -71,6 +83,6 @@ class NameAdjuster(object):
 
     def adjust(self, name):
         if self._args.strip_git_root:
-            return strip_git_root(name)
+            return _strip_git_root(name)
         else:
             return name
