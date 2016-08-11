@@ -138,9 +138,8 @@ class TreeStyle(ct.git_utils.NameAdjuster):
             pass
         last = self.counter.pop()
         self.counter[-1] += last + 1
-        name = key
-        if self.strip_git_root:
-            name = git_utils.strip_git_root(key)
+        name = self.adjust(key)
+
         self.max_cumulative = max(self.max_cumulative, self.counter[-1])
         self.max_self = max(self.max_self, len(value))
         self.max_duplicates = max(self.max_duplicates, self.duplicates[key])
