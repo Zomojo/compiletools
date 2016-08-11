@@ -8,11 +8,12 @@ from io import open
 
 import configargparse
 
-import ct.utils
+import ct.apptools
 import ct.wrappedos
 import ct.headerdeps
 import ct.magicflags
 import ct.hunter
+import ct.namer
 
 
 class CMakefileCreator:
@@ -28,8 +29,8 @@ class CMakefileCreator:
 
     @staticmethod
     def add_arguments(cap):
-        ct.utils.add_target_arguments(cap)
-        ct.utils.add_link_arguments(cap)
+        ct.apptools.add_target_arguments(cap)
+        ct.apptools.add_link_arguments(cap)
         # Don't add the output directory arguments
         # The Namer will do it and get the hash correct
         #ct.utils.add_output_directory_arguments(cap, variant)

@@ -58,7 +58,7 @@ def extract_item_from_ct_conf(
     return default
 
 
-def extract_variant(argv=None, exedir=None):
+def extract_variant(argv=None, exedir=None, verbose=0):
     """ The variant argument is parsed directly from the command line arguments
         so that it can be used to specify the default config for configargparse.
         Remember that the hierarchy of values is
@@ -72,7 +72,8 @@ def extract_variant(argv=None, exedir=None):
     # Be careful to make use of the variant aliaes defined in the ct.conf files
     variantaliases = extract_item_from_ct_conf(
         key='variantaliases',
-        exedir=exedir)
+        exedir=exedir,
+        verbose=verbose)
     if variantaliases is None:
         variantaliases = {}
     else:
@@ -82,7 +83,8 @@ def extract_variant(argv=None, exedir=None):
     variant = extract_item_from_ct_conf(
         key='variant',
         exedir=exedir,
-        default=variant)
+        default=variant,
+        verbose=verbose)
     try:
         variant = os.environ['variant']
     except:
@@ -105,7 +107,7 @@ def variant_with_hash(args, argv=None, variant=None, exedir=None):
         Choose adler32 for speed
     """
     if not variant:
-        variant = extract_variant(argv, exedir)
+        variant = extract_variant(argv, exedir=exedir, verbose=args.verbose)
 
     # Only hash the bits of args that could change the build products
     unimportantkeys = [

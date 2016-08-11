@@ -14,7 +14,7 @@ import ct.apptools
 import ct.headerdeps
 import ct.magicflags
 import ct.hunter
-
+import ct.namer
 
 class Rule:
 
