@@ -16,6 +16,7 @@ from ct.memoize import memoize
 import ct.headerdeps
 import ct.magicflags
 
+
 def add_arguments(cap):
     """ Add the command line arguments that the Hunter classes require """
     ct.apptools.add_common_arguments(cap)
@@ -65,7 +66,7 @@ class Hunter(object):
         todo |= self.headerdeps.process(realpath)
 
         # One of the magic flags is SOURCE.  If that was present, add to the
-        # file list.  WARNING:  Only use //#SOURCE= in a cpp file.
+        # file list.
         todo |= self._extractSOURCE(realpath)
 
         # The header deps and magic flags have been parsed at this point so it

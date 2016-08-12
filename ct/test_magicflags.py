@@ -31,7 +31,7 @@ class TestHeaderDepsModule(unittest.TestCase):
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
         magicparser = self._createmagicparser()
-        #magicparser._headerdeps.process(realpath)
+        # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             magicparser.parse(realpath).get('CFLAGS'),
             {'-std=gnu99'})
@@ -40,18 +40,18 @@ class TestHeaderDepsModule(unittest.TestCase):
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser()        
-        #magicparser._headerdeps.process(realpath)
+        magicparser = self._createmagicparser()
+        # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             magicparser.parse(realpath).get('SOURCE'),
             {'cross_platform_lin.cpp', 'cross_platform_win.cpp'})
-        
+
     def test_SOURCE_cpp(self):
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(['--magic','cpp'])        
-        #magicparser._headerdeps.process(realpath)
+        magicparser = self._createmagicparser(['--magic', 'cpp'])
+        # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             magicparser.parse(realpath).get('SOURCE'),
             {'cross_platform_lin.cpp'})
@@ -60,9 +60,26 @@ class TestHeaderDepsModule(unittest.TestCase):
         relativepath = 'lotsofmagic/lotsofmagic.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(['--magic','cpp'])        
+        magicparser = self._createmagicparser(['--magic', 'cpp'])
 
-        expected = {'LDFLAGS': {'-lm'}, 'F1': {'1'}, 'LINKFLAGS': {'-lpcap'}, 'F2': {'2'}, 'F3': {'3'}}
+        expected = {
+            'LDFLAGS': {'-lm'},
+            'F1': {'1'},
+            'LINKFLAGS': {'-lpcap'},
+            'F2': {'2'},
+            'F3': {'3'}}
+        self.assertEqual(magicparser.parse(realpath), expected)
+
+    def test_SOURCE_in_header(self):
+        relativepath = 'magicsourceinheader/main.cpp'
+        samplesdir = uth.samplesdir()
+        realpath = os.path.join(samplesdir, relativepath)
+        magicparser = self._createmagicparser(['--magic', 'cpp'])
+        expected = {
+            'LDFLAGS': set(
+                ['-lm']),
+            'SOURCE': set(
+                [samplesdir+'/magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp'])}
         self.assertEqual(magicparser.parse(realpath), expected)
 
     def tearDown(self):

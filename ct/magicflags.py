@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys
+import os
 import subprocess
 import re
 import configargparse
@@ -88,6 +89,20 @@ class MagicFlagsBase:
 
         for match in self.magicpattern.finditer(text):
             magic, flag = match.groups()
+
+            # If the magic was SOURCE then fix up the path
+            if magic == 'SOURCE':
+                # Find the include before the //#SOURCE=
+                result = re.search(
+                    '#.*?"(\S*?)"[^"]*?//#SOURCE\s*=\s*' +
+                    flag,
+                    text)
+                # Now adjust the flag to include the full path
+                flag = os.path.join(
+                    ct.wrappedos.dirname(
+                        result.group(1)),
+                    flag)
+
             flagsforfilename.setdefault(magic, set()).add(flag)
             if self._args.verbose >= 5:
                 print(
@@ -110,6 +125,11 @@ class DirectMagicFlags(MagicFlagsBase):
         text = ""
         for filename in headers | {filename}:
             with open(filename, encoding='utf-8', errors='ignore') as ff:
+                # To match the output of the C Pre Processor we insert
+                # the filename before the text
+                text += '# "'
+                text += filename
+                text += '"\n'
                 text += ff.read(4096)
 
         return text
@@ -117,6 +137,7 @@ class DirectMagicFlags(MagicFlagsBase):
     @diskcache('directmagic', magic_mode=True)
     def parse(self, filename):
         return self._parse(filename)
+
 
 class CppMagicFlags(MagicFlagsBase):
 
@@ -138,11 +159,12 @@ class CppMagicFlags(MagicFlagsBase):
 
 class NullStyle(ct.git_utils.NameAdjuster):
 
-    def __init__(self, args): 
+    def __init__(self, args):
         ct.git_utils.NameAdjuster.__init__(self, args)
 
     def __call__(self, realpath, magicflags):
         print("{}: {}".format(self.adjust(realpath), str(magicflags)))
+
 
 class PrettyStyle(ct.git_utils.NameAdjuster):
 
@@ -158,6 +180,7 @@ class PrettyStyle(ct.git_utils.NameAdjuster):
                     sys.stdout.write(" {}".format(flag))
         except TypeError:
             sys.stdout.write("\n\tNone")
+
 
 def main(argv=None):
     cap = configargparse.getArgumentParser()
