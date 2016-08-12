@@ -30,10 +30,16 @@ setup(
     ],
     keywords='c++ make development',
     packages=find_packages(),
+    include_package_data=True,
+    exclude_package_data={
+        '': [
+            'debian',
+            '.gitignore']},
     install_requires=[
         'configargparse',
         'appdirs',
         'docutils'],
     test_suite="ct",
     scripts=[
-        ff for ff in os.listdir('.') if ff.startswith('ct-')])
+        ff for ff in os.listdir('.') if ff.startswith('ct-')],
+)
