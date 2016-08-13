@@ -44,7 +44,7 @@ class TestMagicFlagsModule(unittest.TestCase):
     def _createmagicparser(self, extraargs=None, cache_home='None'):
         if not extraargs:
             extraargs = []
-        argv = extraargs + ['-vvvvvvvvv']
+        argv = extraargs
         _reload_ct(cache_home)
         cap = configargparse.getArgumentParser()
         ct.apptools.add_common_arguments(cap,exedir=uth.cakedir())
@@ -80,7 +80,7 @@ class TestMagicFlagsModule(unittest.TestCase):
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(['--magic', 'cpp', '-vvvvvvvvvv'])
+        magicparser = self._createmagicparser(['--magic', 'cpp'])
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             magicparser.parse(realpath).get('SOURCE'),
