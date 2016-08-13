@@ -24,9 +24,9 @@ def create(args, headerdeps):
     return magicobject
 
 
-def add_arguments(cap):
+def add_arguments(cap,exedir=None):
     """ Add the command line arguments that the MagicFlags classes require """
-    ct.apptools.add_common_arguments(cap)
+    ct.apptools.add_common_arguments(cap,exedir=exedir)
     ct.preprocessor.PreProcessor.add_arguments(cap)
     alldepscls = [st[:-10].lower()
                   for st in dict(globals()) if st.endswith('MagicFlags')]
@@ -94,19 +94,23 @@ class MagicFlagsBase:
             if magic == 'SOURCE':
                 # Find the include before the //#SOURCE=
                 result = re.search(
-                    '#.*?"(\S*?)"[^"]*?//#SOURCE\s*=\s*' +
+                    '# \d.* "(/\S*?)".*?//#SOURCE\s*=\s*' +
                     flag,
-                    text)
+                    text,
+                    re.DOTALL)
                 # Now adjust the flag to include the full path
-                flag = os.path.join(
+                newflag = os.path.join(
                     ct.wrappedos.dirname(
                         result.group(1)),
                     flag)
+                if self._args.verbose >= 9:
+                    print(' '.join(['Adjusting source magicflag from flag=',flag,'to',newflag]))
+                flag = newflag
 
             flagsforfilename.setdefault(magic, set()).add(flag)
             if self._args.verbose >= 5:
                 print(
-                    "Using magic flag {0}={1} for source = {2}".format(
+                    "Using magic flag {0}={1} extracted from {2}".format(
                         magic,
                         flag,
                         filename))
@@ -124,11 +128,13 @@ class DirectMagicFlags(MagicFlagsBase):
         headers = self._headerdeps.process(filename)
         text = ""
         for filename in headers | {filename}:
+            if self._args.verbose >= 9:
+                print('DirectMagicFlags::readfile is inserting # ' + filename)
             with open(filename, encoding='utf-8', errors='ignore') as ff:
                 # To match the output of the C Pre Processor we insert
                 # the filename before the text
-                text += '# "'
-                text += filename
+                text += '# 1 "'
+                text += ct.wrappedos.realpath(filename)
                 text += '"\n'
                 text += ff.read(4096)
 

@@ -20,11 +20,12 @@ import ct.headerdeps
 import ct.unittesthelper as uth
 
 
-def _reload_headerdeps(cache_home):
+def _reload_ct(cache_home):
     """ Set the CTCACHE environment variable to cache_home
         and reload the ct.hunter module
     """
     os.environ['CTCACHE'] = cache_home
+    reload(ct.dirnamer)
     reload(ct.headerdeps)
 
 
@@ -48,7 +49,7 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
         '--include',
         uth.ctdir()] + extraargs
     cachename = os.path.join(tempdir, name)
-    _reload_headerdeps(cachename)
+    _reload_ct(cachename)
 
     cap = configargparse.getArgumentParser()
     ct.headerdeps.add_arguments(cap)
@@ -80,7 +81,7 @@ class TestHeaderDepsModule(unittest.TestCase):
         
         # Turn off diskcaching so that we can't just read up a prior result
         origcache = ct.dirnamer.user_cache_dir()
-        _reload_headerdeps('None')
+        _reload_ct('None')
         cap = configargparse.getArgumentParser()
         ct.headerdeps.add_arguments(cap)
         argvdirect = argv + ['--headerdeps=direct']
@@ -94,7 +95,7 @@ class TestHeaderDepsModule(unittest.TestCase):
         hdirectresult = hdirect.process(realpath)
         hcppresult = hcpp.process(realpath)
         self.assertSetEqual(hdirectresult, hcppresult)
-        _reload_headerdeps(origcache)
+        _reload_ct(origcache)
 
     def test_direct_and_cpp_generate_same_results(self):
         filenames = [
@@ -140,7 +141,7 @@ class TestHeaderDepsModule(unittest.TestCase):
 
         # Cleanup
         shutil.rmtree(tempdir)
-        _reload_headerdeps(origcache)
+        _reload_ct(origcache)
 
     def test_direct_and_cpp_generate_same_results_ex(self):
         self._direct_and_cpp_generate_same_results_ex()

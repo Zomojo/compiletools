@@ -31,34 +31,14 @@ def callprocess(headerobj, filenames):
     return result
 
 
-def _reload_hunter(cache_home):
+def _reload_ct(cache_home):
     """ Set the CTCACHE environment variable to cache_home
-        and reload the ct.hunter module
+        and reload the ct.* modules
     """
     os.environ['CTCACHE'] = cache_home
+    reload(ct.headerdeps)
+    reload(ct.magicflags)
     reload(ct.hunter)
-
-
-def _generatecache(tempdir, name, realpaths, extraargs=None):
-    if extraargs is None:
-        extraargs = []
-    argv = [
-        '--headerdeps',
-        name,
-        '--variant',
-        'debug',
-        '--CPPFLAGS=-std=c++1z',
-        '--include',
-        uth.ctdir()] + extraargs + realpaths
-    cachename = os.path.join(tempdir, name)
-    _reload_hunter(cachename)
-
-    cap = configargparse.getArgumentParser()
-    ct.headerdeps.add_arguments(cap)
-    args = ct.apptools.parseargs(cap, argv)
-    headerdeps = ct.headerdeps.create(args)
-
-    return cachename, callprocess(headerobj, realpaths)
 
 
 class TestHunterModule(unittest.TestCase):
@@ -67,6 +47,10 @@ class TestHunterModule(unittest.TestCase):
         uth.delete_existing_parsers()
 
     def test_hunter_follows_source_files_from_header(self):
+        origcache = ct.dirnamer.user_cache_dir('ct')
+        tempdir = tempfile.mkdtemp()
+        _reload_ct(tempdir)
+
         argv = [
             '--variant',
             'debug',
@@ -86,6 +70,10 @@ class TestHunterModule(unittest.TestCase):
         filesfromsource = hntr.required_source_files(
             ct.utils.implied_source(realpath))
         self.assertSetEqual(filesfromheader, filesfromsource)
+
+        # Cleanup
+        shutil.rmtree(tempdir)
+        _reload_ct(origcache)
 
     @staticmethod
     def _hunter_is_not_order_dependent(precall):
@@ -124,7 +112,7 @@ class TestHunterModule(unittest.TestCase):
     def test_hunter_is_not_order_dependent(self):
         origcache = ct.dirnamer.user_cache_dir('ct')
         tempdir = tempfile.mkdtemp()
-        _reload_hunter(tempdir)
+        _reload_ct(tempdir)
 
         result2 = self._hunter_is_not_order_dependent(True)
         result1 = self._hunter_is_not_order_dependent(False)
@@ -137,7 +125,7 @@ class TestHunterModule(unittest.TestCase):
 
         # Cleanup
         shutil.rmtree(tempdir)
-        _reload_hunter(origcache)
+        _reload_ct(origcache)
 
     def tearDown(self):
         uth.delete_existing_parsers()

@@ -5,23 +5,52 @@ import os
 import unittest
 import configargparse
 
+try:
+    # This call to reload is simply to test
+    # that reload is in the current namespace
+    reload(unittest)
+except NameError:
+    from importlib import reload
+
 import ct.unittesthelper as uth
+import ct.dirnamer
+import ct.apptools
 import ct.headerdeps
 import ct.magicflags
 
+def _reload_ct(cache_home):
+    """ Set the CTCACHE environment variable to cache_home
+        and reload the ct.* modules
+    """
+    os.environ['CTCACHE'] = cache_home
+    reload(ct.dirnamer)
+    reload(ct.apptools)
+    reload(ct.headerdeps)
+    reload(ct.magicflags)
 
-class TestHeaderDepsModule(unittest.TestCase):
+
+class TestMagicFlagsModule(unittest.TestCase):
 
     def setUp(self):
         uth.delete_existing_parsers()
+        config_files = ct.configutils.config_files_from_variant(exedir=uth.cakedir())
+        cap = configargparse.getArgumentParser(
+            description='TestMagicFlagsModule',
+            formatter_class=configargparse.DefaultsRawFormatter,
+            default_config_files=config_files,
+            args_for_setting_config_path=["-c","--config"],
+            ignore_unknown_config_file_keys=True)
 
-    def _createmagicparser(self, extraargs=None):
+    def _createmagicparser(self, extraargs=None, cache_home='None'):
         if not extraargs:
             extraargs = []
-        argv = extraargs
+        argv = extraargs + ['-vvvvvvvvv']
+        _reload_ct(cache_home)
         cap = configargparse.getArgumentParser()
+        ct.apptools.add_common_arguments(cap,exedir=uth.cakedir())
+        ct.dirnamer.add_arguments(cap)
         ct.headerdeps.add_arguments(cap)
-        ct.magicflags.add_arguments(cap)
+        ct.magicflags.add_arguments(cap, exedir=uth.cakedir())
         args = ct.apptools.parseargs(cap, argv)
         headerdeps = ct.headerdeps.create(args)
         return ct.magicflags.create(args, headerdeps)
@@ -44,17 +73,18 @@ class TestHeaderDepsModule(unittest.TestCase):
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             magicparser.parse(realpath).get('SOURCE'),
-            {'cross_platform_lin.cpp', 'cross_platform_win.cpp'})
+            {os.path.join(samplesdir,'cross_platform/cross_platform_lin.cpp'), 
+             os.path.join(samplesdir,'cross_platform/cross_platform_win.cpp')})
 
     def test_SOURCE_cpp(self):
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(['--magic', 'cpp'])
+        magicparser = self._createmagicparser(['--magic', 'cpp', '-vvvvvvvvvv'])
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             magicparser.parse(realpath).get('SOURCE'),
-            {'cross_platform_lin.cpp'})
+            {os.path.join(samplesdir,'cross_platform/cross_platform_lin.cpp')})
 
     def test_lotsofmagic(self):
         relativepath = 'lotsofmagic/lotsofmagic.cpp'
@@ -79,7 +109,7 @@ class TestHeaderDepsModule(unittest.TestCase):
             'LDFLAGS': set(
                 ['-lm']),
             'SOURCE': set(
-                [samplesdir+'/magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp'])}
+                [os.path.join(samplesdir,'magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp')])}
         self.assertEqual(magicparser.parse(realpath), expected)
 
     def tearDown(self):

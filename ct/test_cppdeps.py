@@ -5,9 +5,23 @@ import os
 import sys
 import unittest
 
+try:
+    # This call to reload is simply to test
+    # that reload is in the current namespace
+    reload(unittest)
+except NameError:
+    from importlib import reload
+
 import ct.cppdeps
 import ct.unittesthelper as uth
 
+def _reload_ct(cache_home):
+    """ Set the CTCACHE environment variable to cache_home
+        and reload the ct.* modules
+    """
+    os.environ['CTCACHE'] = cache_home
+    reload(ct.headerdeps)
+    reload(ct.cppdeps)
 
 class TestCPPDeps(unittest.TestCase):
 
@@ -19,6 +33,7 @@ class TestCPPDeps(unittest.TestCase):
     # or in unittest.main options.
     @unittest.skipIf(not hasattr(sys.stdout, "getvalue"), "Skipping test since not in buffer mode")
     def test_cppdeps(self):
+        _reload_ct('/dev/shm/test.ct.cppdeps')
         ct.cppdeps.main(['samples/numbers/test_direct_include.cpp'])
         output = sys.stdout.getvalue().strip().split()
         expected_output = [
