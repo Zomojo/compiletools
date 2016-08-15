@@ -9,6 +9,10 @@ here = os.path.abspath(os.path.dirname(__file__))
 with io.open(os.path.join(here, 'README.rst'), encoding='utf-8') as ff:
     long_description = ff.read()
 
+# Figure out the config files to install
+data_files = [('ct.conf.d', [os.path.join('ct.conf.d', ff)
+                             for ff in os.listdir('ct.conf.d')])]
+
 setup(
     name='compiletools',
     version=__version__,
@@ -28,11 +32,7 @@ setup(
     ],
     keywords='c++ make development',
     packages=find_packages(),
-    include_package_data=True,
-    exclude_package_data={
-        '': [
-            'debian',
-            '.gitignore']},
+    data_files=data_files,
     install_requires=[
         'configargparse',
         'appdirs',
@@ -42,4 +42,4 @@ setup(
         ff for ff in os.listdir('.') if ff.startswith('ct-')],
     download_url='https://github.com/Zomojo/compiletools/archive/compiletools-' +
     __version__ +
-    '.tar.gz')
+                 '.tar.gz')
