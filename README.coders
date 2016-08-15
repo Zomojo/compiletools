@@ -63,4 +63,4 @@ bumpversion minor
 or 
 bumpversion major
 
-git push 
+git push --tags
