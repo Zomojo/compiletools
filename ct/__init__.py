@@ -2,3 +2,4 @@
     for tracing header dependencies and gathering together of files 
     to create an executable or library.
 """
+from version import __version__

@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 import os
 import io
+from ct.version import __version__
 
 here = os.path.abspath(os.path.dirname(__file__))
 
@@ -10,10 +11,7 @@ with io.open(os.path.join(here, 'README.rst'), encoding='utf-8') as ff:
 
 setup(
     name='compiletools',
-    use_scm_version=True,
-    setup_requires=[
-        'setuptools_scm',
-        'setuptools_scm_git_archive'],
+    version=__version__,
     description='Tools to make compiling C/C++ projects easy',
     long_description=long_description,
     url='http://zomojo.github.io/compiletools/',
