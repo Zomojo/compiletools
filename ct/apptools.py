@@ -3,8 +3,8 @@ from __future__ import unicode_literals
 
 import os
 import subprocess
-import setuptools_scm
 
+from ct.version import __version__
 import ct.git_utils
 import ct.configutils
 import ct.utils
@@ -28,7 +28,7 @@ def add_base_arguments(cap, argv=None, exedir=None):
     cap.add(
         "--version",
         action="version",
-        version=setuptools_scm.get_version(root='..',relative_to=__file__))
+        version=__version__)
     cap.add(
         "-?",
         action='help',
