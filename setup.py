@@ -1,6 +1,7 @@
 from setuptools import setup, find_packages
 import os
 import io
+import appdirs
 from ct.version import __version__
 
 here = os.path.abspath(os.path.dirname(__file__))
@@ -10,8 +11,9 @@ with io.open(os.path.join(here, 'README.rst'), encoding='utf-8') as ff:
     long_description = ff.read()
 
 # Figure out the config files to install
-data_files = [('ct.conf.d', [os.path.join('ct.conf.d', ff)
-                             for ff in os.listdir('ct.conf.d')])]
+data_files = [(appdirs.site_config_dir('ct'), 
+                  [os.path.join('ct.conf.d', ff)
+                      for ff in os.listdir('ct.conf.d')])]
 
 setup(
     name='compiletools',
@@ -41,5 +43,4 @@ setup(
     scripts=[
         ff for ff in os.listdir('.') if ff.startswith('ct-')],
     download_url='https://github.com/Zomojo/compiletools/archive/compiletools-' +
-    __version__ +
-                 '.tar.gz')
+        __version__ + '.tar.gz')

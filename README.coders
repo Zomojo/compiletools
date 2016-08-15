@@ -63,21 +63,25 @@ bumpversion minor
 or 
 bumpversion major
 
-git push --follow-tags
+git push
+git push --tags
 
 # Based off https://wiki.python.org/moin/TestPyPI
 # Note: Using python setup register is not recommended anymore
 # https://packaging.python.org/distributing/#uploading-your-project-to-pypi
-# Note: You have to register at pypi and pypitest separately
-twine register dist/compiletools-4.0.6.tar.gz -r pypitest
-twine upload dist/compiletools-4.0.6.tar.gz  -r pypitest
+# Note: You have to create user accounts at pypi and pypitest separately
+# You probably wont need to do the twine register since the project already is registered
+python setup.py sdist
+twine register dist/compiletools-*.tar.gz -r pypitest
+twine upload dist/*  -r pypitest
 
 # Test all is well
 pip install -i https://testpypi.python.org/pypi compiletools
+pip uninstall compiletools
 
 # Rinse and repeat with the live PyPI
-twine register dist/compiletools-4.0.6.tar.gz -r pypi 
-twine upload dist/compiletools-4.0.6.tar.gz  -r pypi 
+twine register dist/compiletools-*.tar.gz -r pypi 
+twine upload dist/*  -r pypi 
 pip install compiletools
 
 
