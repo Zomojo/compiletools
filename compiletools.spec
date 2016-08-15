@@ -1,20 +1,19 @@
 %global owner Zomojo
 %global srcname compiletools
 %global sum C++ build tools that requires almost no configuration.
-%global version_base 4.0.4
+%global version_base 4.0.8
 %global version_release 1
 
 Summary: %sum
 Name: python-%{srcname}
 Version: %{version_base}
 Release: %{version_release}%{?org_tag}%{?dist}
-Source: %{name}-%{version}.tgz
-Source0: https://github.com/%{owner}/%{srcname}/archive/%{srcname}-%{version_base}-%{version_release}.tar.gz
+Source0: https://github.com/%{owner}/%{srcname}/archive/v%{version_base}.tar.gz
 License: GPL3
 Group: System/Libraries
 Buildroot: %_tmppath/%{name}-%{version}
 BuildArch: noarch
-BuildRequires: python-setuptools python-docutils python2-devel python3-devel
+BuildRequires: python-setuptools python-docutils python-appdirs python2-devel python3-devel
 Obsoletes: cake
 
 %description
