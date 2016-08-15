@@ -41,5 +41,5 @@ setup(
     test_suite="ct",
     scripts=[
         ff for ff in os.listdir('.') if ff.startswith('ct-')],
-    download_url='https://github.com/Zomojo/compiletools/archive/compiletools-' +
+    download_url='https://github.com/Zomojo/compiletools/archive/v' + 
         __version__ + '.tar.gz')
