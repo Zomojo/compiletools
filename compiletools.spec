@@ -41,7 +41,7 @@ Summary:        %{sum}
 %build
 ./create-documentation
 %py2_build
-%py3_build
+#%py3_build
 
 %files
 %defattr(-,root,root)
@@ -55,7 +55,6 @@ mkdir -p %{buildroot}%{_bindir}
 mkdir -p %{buildroot}%{_sysconfdir}/xdg/ct/
 mkdir -p %{buildroot}%{_mandir}/man1/
 
-install -m 0644 -t %{buildroot}%{_sysconfdir}/ct/ ct.conf.d/*
 install -m 0644 -t %{buildroot}%{_mandir}/man1/ *.1
 
 # Note that the py2 setup.py will overwrite the py3 in /usr/bin
