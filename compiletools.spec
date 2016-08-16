@@ -27,60 +27,58 @@ Summary:        %{sum}
 %description -n python2-%{srcname}
 %sum
 
-#%package -n python3-%{srcname}
-#Requires: python3-configargparse python3-appdirs 
-#Summary:        %{sum}
-#%{?python_provide:%python_provide python3-%{srcname}}
+%package -n python3-%{srcname}
+Requires: python3-configargparse python3-appdirs 
+Summary:        %{sum}
+%{?python_provide:%python_provide python3-%{srcname}}
 
-#%description -n python3-%{srcname}
-#%sum
+%description -n python3-%{srcname}
+%sum
 
 %prep
 %autosetup -n %{srcname}-%{version}
 
 %build
 ./create-documentation
+%py3_build
 %py2_build
-#%py3_build
-
-%files
-%defattr(-,root,root)
-%attr(0755,-,-)%{_bindir}/ct-*
-%config(noreplace)%attr(0644,-,-)%{_sysconfdir}/ct
-%attr(0644,-,-)%{_mandir}/man1/*.1.gz
 
 
 %install
 mkdir -p %{buildroot}%{_bindir}
 mkdir -p %{buildroot}%{_sysconfdir}/xdg/ct/
 mkdir -p %{buildroot}%{_mandir}/man1/
+mkdir -p %{buildroot}%{_datadir}/licenses/python-%{srcname}/
 
 install -m 0644 -t %{buildroot}%{_mandir}/man1/ *.1
+install -m 0644 -t %{buildroot}%{_datadir}/licenses/python-%{srcname}/ LICENSE.txt
 
 # Note that the py2 setup.py will overwrite the py3 in /usr/bin
-#%py3_install
-#%py2_install
+%py3_install
+%py2_install
 # --root $RPM_BUILD_ROOT makes the package install with a single, expanded
 # directory in %{python2_sitelib} and a separate egginfo directory.
 %{__python2} setup.py install --skip-build --root $RPM_BUILD_ROOT 
 
 %check
-#%{__python3} setup.py test
+%{__python3} setup.py test
 %{__python2} setup.py test
 
 # Note that there is no %%files section for the unversioned python module if we are building for several python runtimes
 %files -n python2-%{srcname}
-%license LICENCE.txt
+%license LICENSE.txt
 %doc README.rst
 %{python2_sitelib}/*
 %{_bindir}/ct-*
 %{_mandir}/man1/*.1.gz
+%{_sysconfdir}/xdg/ct
 
-#%files -n python3-%{srcname}
-#%license LICENCE.txt
-#%doc README.rst
-#%{python3_sitelib}/*
-#%{_bindir}/ct-*
-#%{_mandir}/man1/*.1.gz
+%files -n python3-%{srcname}
+%license LICENCE.txt
+%doc README.rst
+%{python3_sitelib}/*
+%{_bindir}/ct-*
+%{_mandir}/man1/*.1.gz
+%{_sysconfdir}/xdg/ct
 
 %changelog
