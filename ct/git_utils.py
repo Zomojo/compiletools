@@ -23,7 +23,9 @@ def _find_git_root(directory):
     """ Internal function to find the git root but cache it against the given directory """
     original_cwd = os.getcwd()
     os.chdir(directory)
-    gitroot = None
+
+    # Define the git root of a project that isn't under version control to be be cwd
+    gitroot = original_cwd
     try:
         # Redirect stderr to stdout (which is captured) rather than
         # have it spew over the console

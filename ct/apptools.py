@@ -197,20 +197,17 @@ def _extend_includes_using_git_root(args):
 
 def _add_include_paths_to_flags(args):
     """ Add all the include paths to all three compile flags """
-    if args.include:
-        for path in args.include:
-            if path is None:
-                raise ValueError(
-                    "Parsing the args.include and path is unexpectedly None")
+    for path in args.include:
+        if path is not None:
             args.CPPFLAGS += " -I " + path
             args.CFLAGS += " -I " + path
             args.CXXFLAGS += " -I " + path
-        if args.verbose >= 3:
-            print(
-                "Extra include paths have been appended to the *FLAG variables:")
-            print("\tCPPFLAGS=" + args.CPPFLAGS)
-            print("\tCFLAGS=" + args.CFLAGS)
-            print("\tCXXFLAGS=" + args.CXXFLAGS)
+    if args.verbose >= 3 and len(args.include) > 0:
+        print(
+            "Extra include paths have been appended to the *FLAG variables:")
+        print("\tCPPFLAGS=" + args.CPPFLAGS)
+        print("\tCFLAGS=" + args.CFLAGS)
+        print("\tCXXFLAGS=" + args.CXXFLAGS)
 
 
 def _set_project_version(args):
