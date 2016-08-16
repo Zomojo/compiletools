@@ -69,7 +69,8 @@ class diskcache:
             we can manually prepopulate it.
         """
         if cachefile not in self._memcache:
-            self._memcache[cachefile] = pickle.load(open(cachefile, mode='rb'))
+            with open(cachefile, mode='rb') as cf:
+                self._memcache[cachefile] = pickle.load(cf)
 
         return self._memcache[cachefile]
 
