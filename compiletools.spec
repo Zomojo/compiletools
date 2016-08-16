@@ -13,7 +13,7 @@ License: GPL3
 Group: System/Libraries
 Buildroot: %_tmppath/%{name}-%{version}
 BuildArch: noarch
-BuildRequires: python-setuptools python-docutils python-appdirs python2-devel python3-devel
+BuildRequires: python-setuptools python-docutils python2-configargparse python3-configargparse python-appdirs python3-appdirs python2-devel python3-devel
 Obsoletes: cake
 
 %description
