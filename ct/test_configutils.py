@@ -49,11 +49,8 @@ class TestVariant(unittest.TestCase):
         self.assertEqual(vwh1, vwh3)
 
     def test_extract_variant_from_ct_conf(self):
-        # Due to the search paths, this should not find any default variant
-        variant = ct.configutils.extract_item_from_ct_conf(key='variant',exedir=uth.samplesdir())
-        self.assertEqual(None, variant)
-
-        # Now it should find the one in the git repo ct.conf.d/ct.conf
+        # Should find the one in the git repo ct.conf.d/ct.conf
+        # Unless there is a system one to be found
         variant = ct.configutils.extract_item_from_ct_conf(key='variant', exedir=uth.cakedir())
         self.assertEqual("debug", variant)
 
