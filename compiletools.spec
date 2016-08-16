@@ -16,6 +16,7 @@ BuildArch: noarch
 Url: http://zomojo.github.io/compiletools/
 BuildRequires: python-setuptools python-docutils python2-configargparse python-appdirs python2-devel 
 Obsoletes: cake
+Provides: cake
 Requires: python2-configargparse python-appdirs python-%{srcname}
 
 %description
@@ -41,6 +42,11 @@ install -m 0644 -t %{buildroot}%{_datadir}/licenses/python-%{srcname}/ LICENSE.t
 # directory in %{python2_sitelib} and a separate egginfo directory.
 python setup.py install --single-version-externally-managed --root=$RPM_BUILD_ROOT --record=INSTALLED_FILES
 
+# Make cake point to ct-cake
+pushd %{buildroot}%{_bindir}/
+ln -s ct-cake cake
+popd
+
 %check
 %{__python3} setup.py test
 %{__python2} setup.py test
@@ -56,5 +62,6 @@ rm -rf %{buildroot}
 %{_sysconfdir}/xdg/ct
 %{python_sitelib}/*
 %{_bindir}/ct-*
+%{_bindir}/cake
 
 %changelog
