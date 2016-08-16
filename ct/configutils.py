@@ -126,7 +126,7 @@ def variant_with_hash(args, argv=None, variant=None, exedir=None):
         'style',
         'CTCACHE']
     kwargs = {attr: value
-              for attr, value in args.__dict__.iteritems()
+              for attr, value in args.__dict__.items()
               if attr not in unimportantkeys}
     # The & <magicnumber> at the end is so that python2/3 give the same result
     return "%s.%08x" % (
