@@ -20,7 +20,7 @@ Obsoletes: cake
 %sum
 
 %package -n python2-%{srcname}
-Requires: python2-configargparse python-appdirs 
+Requires: python2-configargparse python-appdirs python-%{srcname}
 Summary:        %{sum}
 %{?python_provide:%python_provide python2-%{srcname}}
 
@@ -28,7 +28,7 @@ Summary:        %{sum}
 %sum
 
 %package -n python3-%{srcname}
-Requires: python3-configargparse python3-appdirs 
+Requires: python3-configargparse python3-appdirs python-%{srcname}
 Summary:        %{sum}
 %{?python_provide:%python_provide python3-%{srcname}}
 
@@ -54,31 +54,29 @@ install -m 0644 -t %{buildroot}%{_mandir}/man1/ *.1
 install -m 0644 -t %{buildroot}%{_datadir}/licenses/python-%{srcname}/ LICENSE.txt
 
 # Note that the py2 setup.py will overwrite the py3 in /usr/bin
-%py3_install
-%py2_install
+#%py3_install
+#%py2_install
 # --root $RPM_BUILD_ROOT makes the package install with a single, expanded
 # directory in %{python2_sitelib} and a separate egginfo directory.
+%{__python3} setup.py install --skip-build --root $RPM_BUILD_ROOT 
 %{__python2} setup.py install --skip-build --root $RPM_BUILD_ROOT 
 
 %check
 %{__python3} setup.py test
 %{__python2} setup.py test
 
-# Note that there is no %%files section for the unversioned python module if we are building for several python runtimes
-%files -n python2-%{srcname}
+%files
 %license LICENSE.txt
 %doc README.rst
-%{python2_sitelib}/*
-%{_bindir}/ct-*
 %{_mandir}/man1/*.1.gz
 %{_sysconfdir}/xdg/ct
 
-%files -n python3-%{srcname}
-%license LICENCE.txt
-%doc README.rst
-%{python3_sitelib}/*
+# Note that there is no %%files section for the unversioned python module if we are building for several python runtimes
+%files -n python2-%{srcname}
+%{python2_sitelib}/*
 %{_bindir}/ct-*
-%{_mandir}/man1/*.1.gz
-%{_sysconfdir}/xdg/ct
+
+%files -n python3-%{srcname}
+%{python3_sitelib}/*
 
 %changelog
