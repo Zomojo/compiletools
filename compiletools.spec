@@ -48,8 +48,7 @@ ln -s ct-cake cake
 popd
 
 %check
-%{__python3} setup.py test
-%{__python2} setup.py test
+python setup.py test
 
 %clean
 rm -rf %{buildroot}
