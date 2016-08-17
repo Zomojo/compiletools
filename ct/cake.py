@@ -141,7 +141,10 @@ class Cake:
         movedmakefile = os.path.join(self.namer.executable_dir(), makefilename)
         ct.wrappedos.makedirs(self.namer.executable_dir())
         shutil.move(makefilename, movedmakefile)        
-        cmd = ['make', '-j', str(self.args.parallel), '-f', movedmakefile]
+        cmd = ['make']
+        if self.args.verbose < 2:
+            cmd.append('-s')
+        cmd.extend(['-j', str(self.args.parallel), '-f', movedmakefile])
         if self.args.clean:
             cmd.append('realclean')
         else:
@@ -151,7 +154,10 @@ class Cake:
         subprocess.check_call(cmd, universal_newlines=True)
 
         if self.args.tests and not self.args.clean:
-            cmd = ['make', '-f', movedmakefile, 'runtests']
+            cmd = ['make']
+            if self.args.verbose < 2:
+                cmd.append('-s')
+            cmd.extend(['-f', movedmakefile, 'runtests'])
             if self.args.verbose >= 2:
                 print(" ".join(cmd))
             subprocess.check_call(cmd, universal_newlines=True)
@@ -177,6 +183,8 @@ class Cake:
             # Unless the user has changed the bindir (or set --output)
             # in which case assume that they know what they are doing
             if self.args.output:
+                if self.args.verbose >= 1:
+                    print(" ".join(["... Copying target to", self.args.output]))
                 if self.args.filename:
                     shutil.copy2(self.namer.executable_pathname(self.args.filename[0]), self.args.output)
                 if self.args.static:
@@ -189,9 +197,13 @@ class Cake:
                 for ff in filelist:
                     filename = os.path.join(self.namer.executable_dir(), ff)
                     if ct.utils.isexecutable(filename):
-                            shutil.copy2(filename, outputdir)
+                        if self.args.verbose >= 1:
+                            print("".join(["... Copying target to ", outputdir, ff]))
+                        shutil.copy2(filename, outputdir)
                 if self.args.static:
                     filename = self.namer.staticlibrary_pathname(self.args.static[0])
+                    if self.args.verbose >= 1:
+                        print("".join(["... Copying target to ", outputdir, '/', filename]))
                     shutil.copy2(filename, outputdir)
 
 
