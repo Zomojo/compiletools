@@ -10,7 +10,7 @@ int get_int(void);
 double get_double(void);
 
 //#LDFLAGS=-lget_numbers
-//#CXXFLAGS = -std=c++1z
+//#CXXFLAGS = -std=c++11
 int main(int argc, char* argv[] )
 {
     std::cout << get_int() << " " << get_double() << std::endl;

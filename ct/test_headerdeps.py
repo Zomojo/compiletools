@@ -45,7 +45,7 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
         name,
         '--variant',
         'debug',
-        '--CPPFLAGS=-std=c++1z',
+        '--CPPFLAGS=-std=c++11',
         '--include',
         uth.ctdir()] + extraargs
     cachename = os.path.join(tempdir, name)

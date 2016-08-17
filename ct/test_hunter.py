@@ -54,7 +54,7 @@ class TestHunterModule(unittest.TestCase):
         argv = [
             '--variant',
             'debug',
-            '--CPPFLAGS=-std=c++1z',
+            '--CPPFLAGS=-std=c++11',
             '--include',
             uth.ctdir()]
         cap = configargparse.getArgumentParser()
@@ -89,7 +89,7 @@ class TestHunterModule(unittest.TestCase):
         argv = [
             '--variant',
             'debug',
-            '--CPPFLAGS=-std=c++1z',
+            '--CPPFLAGS=-std=c++11',
             '--include',
             uth.ctdir()] + bulkpaths
         cap = configargparse.getArgumentParser()
