@@ -277,7 +277,12 @@ def main(argv=None):
     cap = configargparse.getArgumentParser()
     Cake.add_arguments(cap)
     args = ct.apptools.parseargs(cap, argv)
-    cake = Cake(args)
-    cake.process()
-
+    try:
+        cake = Cake(args)
+        cake.process()
+    except:
+        if args.verbose < 1:
+            return 1
+        else:
+            raise
     return 0
