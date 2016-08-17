@@ -33,7 +33,7 @@ class TestNamer(unittest.TestCase):
             exename,
             os.path.join(
                 os.getcwd(),
-                'bin/gcc.debug.2ac66029/home/user/code/my'))
+                'bin/gcc.debug.a4fa5f97/home/user/code/my'))
         
     def tearDown(self):
         uth.delete_existing_parsers()
