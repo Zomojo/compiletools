@@ -47,12 +47,8 @@ pushd %{buildroot}%{_bindir}/
 ln -s ct-cake cake
 popd
 
-%check
-python setup.py test
-
 %clean
 rm -rf %{buildroot}
-
 
 %files
 %license LICENSE.txt
