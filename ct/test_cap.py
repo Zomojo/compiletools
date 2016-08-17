@@ -41,7 +41,7 @@ class TestConfigArgParse(unittest.TestCase):
         cap = configargparse.getArgumentParser(
             prog='UnitTest',
             description='unit testing',
-            formatter_class=configargparse.DefaultsRawFormatter,
+            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
             default_config_files=non_existent_config_files,
             args_for_setting_config_path=["-c","--config"])
 

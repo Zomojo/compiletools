@@ -36,7 +36,7 @@ class TestMagicFlagsModule(unittest.TestCase):
         config_files = ct.configutils.config_files_from_variant(exedir=uth.cakedir())
         cap = configargparse.getArgumentParser(
             description='TestMagicFlagsModule',
-            formatter_class=configargparse.DefaultsRawFormatter,
+            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
             default_config_files=config_files,
             args_for_setting_config_path=["-c","--config"],
             ignore_unknown_config_file_keys=True)

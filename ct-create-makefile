@@ -20,7 +20,7 @@ if __name__ == '__main__':
         description='Create a Makefile that will compile the given source file into an '
                     'executable (or library). Each given file is assumed to be compiled '
                     'into a separate executable and/or library.',
-        formatter_class=configargparse.DefaultsRawFormatter,
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
         default_config_files=config_files,
         args_for_setting_config_path=["-c","--config"],
         ignore_unknown_config_file_keys=True)
