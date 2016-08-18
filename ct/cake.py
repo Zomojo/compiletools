@@ -281,7 +281,7 @@ def main(argv=None):
         cake = Cake(args)
         cake.process()
     except:
-        if args.verbose < 1:
+        if args.verbose < 2:
             return 1
         else:
             raise
