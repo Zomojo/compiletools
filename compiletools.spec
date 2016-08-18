@@ -17,7 +17,7 @@ Url: http://zomojo.github.io/compiletools/
 BuildRequires: python-setuptools python-docutils python2-configargparse python-appdirs python2-devel 
 Obsoletes: cake
 Provides: cake
-Requires: python2-configargparse python-appdirs python-%{srcname}
+Requires: python-setuptools python2-configargparse python-appdirs python-%{srcname}
 
 %description
 %sum
