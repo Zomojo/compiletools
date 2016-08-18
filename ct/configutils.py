@@ -49,7 +49,7 @@ def extract_item_from_ct_conf(
             items = fileparser.parse(cfg)
             try:
                 value = items[key]
-                if verbose > 0:
+                if verbose >= 2:
                     print(" ".join([cfgpath, 'contains', key, '=', value]))
                 return value
             except KeyError:
@@ -58,7 +58,12 @@ def extract_item_from_ct_conf(
     return default
 
 
-def extract_variant(argv=None, exedir=None, verbose=0):
+def extract_variant(
+        argv=None, 
+        user_config_dir=None,
+        system_config_dir=None,
+        exedir=None, 
+        verbose=0):
     """ The variant argument is parsed directly from the command line arguments
         so that it can be used to specify the default config for configargparse.
         Remember that the hierarchy of values is
@@ -72,6 +77,8 @@ def extract_variant(argv=None, exedir=None, verbose=0):
     # Be careful to make use of the variant aliaes defined in the ct.conf files
     variantaliases = extract_item_from_ct_conf(
         key='variantaliases',
+        user_config_dir=user_config_dir,
+        system_config_dir=system_config_dir,
         exedir=exedir,
         verbose=verbose)
     if variantaliases is None:
@@ -82,6 +89,8 @@ def extract_variant(argv=None, exedir=None, verbose=0):
     variant = "debug"
     variant = extract_item_from_ct_conf(
         key='variant',
+        user_config_dir=user_config_dir,
+        system_config_dir=system_config_dir,
         exedir=exedir,
         default=variant,
         verbose=verbose)
@@ -100,18 +109,31 @@ def extract_variant(argv=None, exedir=None, verbose=0):
         return variant
 
 
-def variant_with_hash(args, argv=None, variant=None, exedir=None):
+def variant_with_hash(
+        args, 
+        argv=None, 
+        variant=None, 
+        user_config_dir=None,
+        system_config_dir=None,
+        exedir=None):
     """ Note that the argv can override the options in the config file.
         If we want to keep the differently specified flags separate then
         some hash of the argv must be added onto the config file name.
         Choose adler32 for speed
     """
     if not variant:
-        variant = extract_variant(argv, exedir=exedir, verbose=args.verbose)
+        variant = extract_variant(
+            argv,
+            user_config_dir=user_config_dir,
+            system_config_dir=system_config_dir,
+            exedir=exedir, 
+            verbose=args.verbose)
 
     # Only hash the bits of args that could change the build products
     unimportantkeys = [
         'clean',
+        'verbose',
+        'quiet',
         'auto',
         'filelist',
         'output',

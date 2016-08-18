@@ -310,9 +310,10 @@ class MakefileCreator:
             exename = self.namer.executable_pathname(tt)
             testresult = ".".join([exename, "result"])
 
-            recipe = " ".join(["@echo ... ",
-                               exename,
-                               ";rm -f",
+            recipe = ""
+            if self.args.verbose >= 1:
+                recipe += " ".join(["@echo ...", exename, ";"])
+            recipe += " ".join(["rm -f",
                                testresult,
                                "&&",
                                testprefix,
@@ -451,12 +452,18 @@ class MakefileCreator:
         magicflags = self.hunter.magicflags(filename)
         if ct.wrappedos.isc(filename):
             magic_c_flags = magicflags.get('CFLAGS', [])
-            recipe = " ".join([self.args.CC, self.args.CFLAGS]
+            recipe = ""
+            if self.args.verbose >= 1:
+                recipe += " ".join(["@echo ...", filename, ";"])
+            recipe += " ".join([self.args.CC, self.args.CFLAGS]
                               + list(magic_c_flags)
                               + ["-c", "-o", obj_name, filename])
         else:
             magic_cxx_flags = magicflags.get('CXXFLAGS', [])
-            recipe = " ".join([self.args.CXX, self.args.CXXFLAGS]
+            recipe = ""
+            if self.args.verbose >= 1:
+                recipe += " ".join(["@echo ...", filename, ";"])
+            recipe += " ".join([self.args.CXX, self.args.CXXFLAGS]
                               + list(magic_cxx_flags)
                               + ["-c", "-o", obj_name, filename])
 

@@ -76,7 +76,7 @@ class NameAdjuster(object):
 
     @staticmethod
     def add_arguments(cap):
-        ct.utils.add_boolean_argument(
+        ct.utils.add_flag_argument(
             cap,
             "shorten",
             'strip_git_root',

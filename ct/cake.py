@@ -102,7 +102,7 @@ class Cake:
             action='store_true',
             help="Ignored. For backwards compatibility only.")
 
-        ct.utils.add_boolean_argument(
+        ct.utils.add_flag_argument(
             parser=cap,
             name="auto",
             default=False,
@@ -149,7 +149,7 @@ class Cake:
             cmd.append('realclean')
         else:
             cmd.append('build')
-        if self.args.verbose >= 2:
+        if self.args.verbose >= 1:
             print(" ".join(cmd))
         subprocess.check_call(cmd, universal_newlines=True)
 
@@ -183,8 +183,7 @@ class Cake:
             # Unless the user has changed the bindir (or set --output)
             # in which case assume that they know what they are doing
             if self.args.output:
-                if self.args.verbose >= 1:
-                    print(" ".join(["... Copying target to", self.args.output]))
+                print(self.args.output)
                 if self.args.filename:
                     shutil.copy2(self.namer.executable_pathname(self.args.filename[0]), self.args.output)
                 if self.args.static:
@@ -197,13 +196,11 @@ class Cake:
                 for ff in filelist:
                     filename = os.path.join(self.namer.executable_dir(), ff)
                     if ct.utils.isexecutable(filename):
-                        if self.args.verbose >= 1:
-                            print("".join(["... Copying target to ", outputdir, ff]))
+                        print("".join([outputdir, ff]))
                         shutil.copy2(filename, outputdir)
                 if self.args.static:
                     filename = self.namer.staticlibrary_pathname(self.args.static[0])
-                    if self.args.verbose >= 1:
-                        print("".join(["... Copying target to ", outputdir, '/', filename]))
+                    print("".join([outputdir, '/', filename]))
                     shutil.copy2(filename, outputdir)
 
 
@@ -276,6 +273,9 @@ class Cake:
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     Cake.add_arguments(cap)
+    if argv is None:
+        # Output of stdout is done via increasing the verbosity
+        sys.argv.append('-v')
     args = ct.apptools.parseargs(cap, argv)
     try:
         cake = Cake(args)

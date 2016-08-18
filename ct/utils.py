@@ -93,6 +93,22 @@ def add_boolean_argument(parser, name, dest=None, default=False, help=None):
         help=bool_help)
     group.add_argument('--no-' + name, dest=dest, action='store_false')
 
+def add_flag_argument(parser, name, dest=None, default=False, help=None):
+    """ Add a flag argument to an ArgumentParser instance.
+        Either the --flag is present or the --no-flag is present.
+        No trying to convert boolean values like the add_boolean_argument
+    """
+    if not dest:
+        dest = name
+    group = parser.add_mutually_exclusive_group()
+    bool_help = help + " Use --no-" + name + " to turn the feature off."
+    group.add_argument(
+        '--' + name,
+        dest=dest,
+        default=default,
+        action='store_true',
+        help=bool_help)
+    group.add_argument('--no-' + name, dest=dest, action='store_false')
 
 def removemount(absolutepath):
     """ Remove the '/' on unix and (TODO) 'C:\' on Windows """

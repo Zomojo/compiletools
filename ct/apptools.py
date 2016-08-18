@@ -10,6 +10,7 @@ import ct.configutils
 import ct.utils
 import ct.dirnamer
 
+
 def add_base_arguments(cap, argv=None, exedir=None):
     # Even though the variant is actually sucked out of the command line by
     # parsing the sys.argv directly, we put it into the configargparse to get
@@ -26,6 +27,12 @@ def add_base_arguments(cap, argv=None, exedir=None):
         action="count",
         default=0)
     cap.add(
+        "-q",
+        "--quiet",
+        help="Decrement verbosity. Useful in apps where the default verbosity > 0.",
+        action="count",
+        default=0)
+    cap.add(
         "--version",
         action="version",
         version=__version__)
@@ -33,6 +40,7 @@ def add_base_arguments(cap, argv=None, exedir=None):
         "-?",
         action='help',
         help='Help')
+
 
 def add_common_arguments(cap, argv=None, exedir=None):
     """ Insert common arguments into the configargparse object """
@@ -60,7 +68,7 @@ def add_common_arguments(cap, argv=None, exedir=None):
         "--CFLAGS",
         help="C compiler flags",
         default="-fPIC -g -Wall")
-    ct.utils.add_boolean_argument(
+    ct.utils.add_flag_argument(
         parser=cap,
         name="git-root",
         dest="git_root",
@@ -72,6 +80,7 @@ def add_common_arguments(cap, argv=None, exedir=None):
         nargs='*',
         default=[])
     ct.git_utils.NameAdjuster.add_arguments(cap)
+
 
 def add_link_arguments(cap):
     """ Insert the link arguments into the configargparse singleton """
@@ -256,6 +265,8 @@ def commonsubstitutions(args):
     """ If certain arguments have not been specified but others have
         then there are some obvious substitutions to make
     """
+    args.verbose -= args.quiet
+
     _substitute_CXX_for_missing(args)
     _extend_includes_using_git_root(args)
     _add_include_paths_to_flags(args)
@@ -268,9 +279,11 @@ def parseargs(cap, argv=None):
     verbose_print_args(cap, args)
     return args
 
+
 def terminalcolumns():
     """ How many columns in the text terminal """
     return int(subprocess.check_output(['stty', 'size']).split()[1])
+
 
 def verbose_print_args(cap, args):
     if args.verbose >= 3:
@@ -283,7 +296,7 @@ def verbose_print_args(cap, args):
         for attr in args.__dict__.keys():
             if len(attr) > maxattrlen:
                 maxattrlen = len(attr)
-        fmt = "".join(["{0:",str(maxattrlen+1),"}: {1}"])
+        fmt = "".join(["{0:", str(maxattrlen + 1), "}: {1}"])
         rightcolbegin = maxattrlen + 3
         maxcols = terminalcolumns()
         rightcolsize = maxcols - rightcolbegin
@@ -301,8 +314,7 @@ def verbose_print_args(cap, args):
                 print(fmt.format(attr, strvalue))
             else:
                 # values are too long to fit.  Split them on spaces
-                valuesplit = strvalue.split(' ', valuelen%rightcolsize)
+                valuesplit = strvalue.split(' ', valuelen % rightcolsize)
                 print(fmt.format(attr, valuesplit[0]))
-                for kk in range(1,len(valuesplit)):
-                    print(fmt.format("",valuesplit[kk]))
-
+                for kk in range(1, len(valuesplit)):
+                    print(fmt.format("", valuesplit[kk]))
