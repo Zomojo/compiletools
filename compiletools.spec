@@ -36,7 +36,6 @@ mkdir -p %{buildroot}%{_mandir}/man1/
 mkdir -p %{buildroot}%{_datadir}/licenses/python-%{srcname}/
 
 install -m 0644 -t %{buildroot}%{_mandir}/man1/ *.1
-install -m 0644 -t %{buildroot}%{_datadir}/licenses/python-%{srcname}/ LICENSE.txt
 
 # --root $RPM_BUILD_ROOT makes the package install with a single, expanded
 # directory in %{python2_sitelib} and a separate egginfo directory.
@@ -51,6 +50,7 @@ popd
 rm -rf %{buildroot}
 
 %files
+%{!?_licensedir:%global license %%doc}
 %license LICENSE.txt
 %doc README.rst
 %{_mandir}/man1/*.1.gz
