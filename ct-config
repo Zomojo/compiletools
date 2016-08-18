@@ -13,7 +13,7 @@ def main(argv=None):
     ct.cake.Cake.add_arguments(cap)
     if argv is None:
         # Output of stdout is done via increasing the verbosity
-        argv = sys.argv + ['-vvv']
+        sys.argv.append('-vvv')
     args = ct.apptools.parseargs(cap, argv)
     print()
     return 0
