@@ -47,10 +47,10 @@ class TestMagicFlagsModule(unittest.TestCase):
         argv = extraargs
         _reload_ct(cache_home)
         cap = configargparse.getArgumentParser()
-        ct.apptools.add_common_arguments(cap,exedir=uth.cakedir())
+        ct.apptools.add_common_arguments(cap,variant="gcc.debug")
         ct.dirnamer.add_arguments(cap)
         ct.headerdeps.add_arguments(cap)
-        ct.magicflags.add_arguments(cap, exedir=uth.cakedir())
+        ct.magicflags.add_arguments(cap, variant="gcc.debug")
         args = ct.apptools.parseargs(cap, argv)
         headerdeps = ct.headerdeps.create(args)
         return ct.magicflags.create(args, headerdeps)

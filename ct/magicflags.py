@@ -24,9 +24,9 @@ def create(args, headerdeps):
     return magicobject
 
 
-def add_arguments(cap,exedir=None):
+def add_arguments(cap,variant=None):
     """ Add the command line arguments that the MagicFlags classes require """
-    ct.apptools.add_common_arguments(cap,exedir=exedir)
+    ct.apptools.add_common_arguments(cap, variant=variant)
     ct.preprocessor.PreProcessor.add_arguments(cap)
     alldepscls = [st[:-10].lower()
                   for st in dict(globals()) if st.endswith('MagicFlags')]

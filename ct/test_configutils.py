@@ -46,7 +46,7 @@ class TestVariant(unittest.TestCase):
         ct.apptools.add_common_arguments(
             cap=cap,
             argv=argv1,
-            exedir=uth.cakedir())
+            variant="gcc.debug")
         args1 = ct.apptools.parseargs(cap, argv1)
 
         # Make a second, different, but logically equivalent argv

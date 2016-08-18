@@ -27,8 +27,8 @@ class Namer(object):
             self.args.objdir = "".join(["bin/", vwh, "/obj"])
 
     @staticmethod
-    def add_arguments(cap, argv=None, exedir=None):
-        ct.apptools.add_common_arguments(cap, argv=argv, exedir=exedir)
+    def add_arguments(cap, argv=None, variant=None):
+        ct.apptools.add_common_arguments(cap, argv=argv, variant=variant)
         ct.apptools.add_output_directory_arguments(cap, 'default')
 
     def topbindir(self):

@@ -11,15 +11,17 @@ import ct.utils
 import ct.dirnamer
 
 
-def add_base_arguments(cap, argv=None, exedir=None):
+def add_base_arguments(cap, argv=None, variant=None):
     # Even though the variant is actually sucked out of the command line by
     # parsing the sys.argv directly, we put it into the configargparse to get
     # the help.
+    if variant is None:
+        variant = ct.configutils.extract_variant(argv=argv)
     cap.add(
         "--variant",
         help="Specifies which variant of the config should be used. "
              "Use the config name without the .conf",
-        default=ct.configutils.extract_variant(argv=argv, exedir=exedir))
+        default=variant)
     cap.add(
         "-v",
         "--verbose",
@@ -42,9 +44,9 @@ def add_base_arguments(cap, argv=None, exedir=None):
         help='Help')
 
 
-def add_common_arguments(cap, argv=None, exedir=None):
+def add_common_arguments(cap, argv=None, variant=None):
     """ Insert common arguments into the configargparse object """
-    add_base_arguments(cap, argv=argv, exedir=exedir)
+    add_base_arguments(cap, argv=argv, variant=variant)
     ct.dirnamer.add_arguments(cap)
     cap.add(
         "--ID",

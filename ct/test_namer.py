@@ -19,8 +19,8 @@ class TestNamer(unittest.TestCase):
     @unittest.skipUnless(
         int(sys.version[0]) < 3, "The hardcoded hash value is only valid on python 2")
     def test_executable_pathname(self):
-        config_files = ct.configutils.config_files_from_variant(
-            exedir=uth.cakedir())
+        config_dir = os.path.join(uth.cakedir(),'ct.conf.d')
+        config_files = [os.path.join(config_dir,'gcc.debug.conf')]
         cap = configargparse.getArgumentParser(
             description='TestNamer',
             formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
@@ -31,8 +31,8 @@ class TestNamer(unittest.TestCase):
         ct.apptools.add_common_arguments(
             cap=cap,
             argv=argv,
-            exedir=uth.cakedir())
-        ct.namer.Namer.add_arguments(cap=cap, argv=argv, exedir=uth.cakedir())
+            variant="gcc.debug")
+        ct.namer.Namer.add_arguments(cap=cap, argv=argv, variant="gcc.debug")
         args = ct.apptools.parseargs(cap, argv)
         namer = ct.namer.Namer(args, argv=argv, variant="gcc.debug")
         exename = namer.executable_pathname('/home/user/code/my.cpp')
@@ -40,7 +40,7 @@ class TestNamer(unittest.TestCase):
             exename,
             os.path.join(
                 os.getcwd(),
-                'bin/gcc.debug.15787f50/home/user/code/my'))
+                'bin/gcc.debug.8af35d4d/home/user/code/my'))
 
     def tearDown(self):
         uth.delete_existing_parsers()
