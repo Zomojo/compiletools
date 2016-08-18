@@ -280,8 +280,9 @@ def main(argv=None):
     try:
         cake = Cake(args)
         cake.process()
-    except:
+    except IOError as ioe:
         if args.verbose < 2:
+            print(" ".join(["Error processing", ioe.filename, ". Does it exist?"]))
             return 1
         else:
             raise
