@@ -23,7 +23,7 @@ Requires: python-setuptools python2-configargparse python-appdirs python-%{srcna
 %sum
 
 %prep
-%autosetup -n %{srcname}-%{version}
+%autosetup -p0 -n %{srcname}-%{version}
 
 %build
 ./create-documentation
