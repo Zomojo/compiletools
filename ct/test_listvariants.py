@@ -12,21 +12,30 @@ class TestListVariants(unittest.TestCase):
 
     def test_none_found(self):
         # These values are deliberately chosen so that we can know that
-        # no config files will be found
+        # no config files will be found except those in the git repo
         ucd = "/home/dummy/.config/ct"
         scd = "/usr/lib"
+        ecd = uth.cakedir()
         expected_output = [
-            'From highest to lowest priority configuration directories, the possible variants are: ',
+            'Variant aliases are:',
+            "{'debug':'gcc.debug', 'release':'gcc.release'}",
+            '\nFrom highest to lowest priority configuration directories, the possible variants are: ',
             '/home/dummy/.config/ct',
             '\tNone found',
             '/usr/lib',
             '\tNone found',
-            '/usr/bin/ct.conf.d',
-            '\tNone found']
+            '/data/home/geoff/compiletools/ct.conf.d',
+            '\tgcc61.debug',
+            '\tclang.debug',
+            '\tclang.release',
+            '\tgcc61.release',
+            '\tct',
+            '\tgcc.debug',
+            '\tgcc.release']
         output = ct.listvariants.find_possible_variants(
             user_config_dir=ucd,
             system_config_dir=scd,
-            exedir='/usr/bin')
+            exedir=ecd, verbose=9)
         self.assertEqual(expected_output, output)
 
     def tearDown(self):

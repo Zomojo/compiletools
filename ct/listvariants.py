@@ -8,13 +8,23 @@ import ct.configutils
 def find_possible_variants(
         user_config_dir=None,
         system_config_dir=None,
-        exedir=None):
-    output = [
-        "From highest to lowest priority configuration directories, the possible variants are: "]
+        exedir=None,
+        verbose=0):
+    output = ["Variant aliases are:"]
+    output.append(
+        ct.configutils.extract_item_from_ct_conf(
+            key='variantaliases',
+            user_config_dir=user_config_dir,
+            system_config_dir=system_config_dir,
+            exedir=exedir,
+            verbose=verbose))
+    output.append(
+        "\nFrom highest to lowest priority configuration directories, the possible variants are: ")
     for cfg_dir in ct.configutils.default_config_directories(
             user_config_dir=user_config_dir,
             system_config_dir=system_config_dir,
-            exedir=exedir):
+            exedir=exedir,
+            verbose=verbose):
         output.append(cfg_dir)
         cfgs = []
         try:

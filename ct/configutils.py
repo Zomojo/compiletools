@@ -59,10 +59,10 @@ def extract_item_from_ct_conf(
 
 
 def extract_variant(
-        argv=None, 
+        argv=None,
         user_config_dir=None,
         system_config_dir=None,
-        exedir=None, 
+        exedir=None,
         verbose=0):
     """ The variant argument is parsed directly from the command line arguments
         so that it can be used to specify the default config for configargparse.
@@ -110,9 +110,9 @@ def extract_variant(
 
 
 def variant_with_hash(
-        args, 
-        argv=None, 
-        variant=None, 
+        args,
+        argv=None,
+        variant=None,
         user_config_dir=None,
         system_config_dir=None,
         exedir=None):
@@ -126,7 +126,7 @@ def variant_with_hash(
             argv,
             user_config_dir=user_config_dir,
             system_config_dir=system_config_dir,
-            exedir=exedir, 
+            exedir=exedir,
             verbose=args.verbose)
 
     # Only hash the bits of args that could change the build products
@@ -158,7 +158,8 @@ def variant_with_hash(
 def default_config_directories(
         user_config_dir=None,
         system_config_dir=None,
-        exedir=None):
+        exedir=None,
+        verbose=0):
     # Use configuration in the order (lowest to highest priority)
     # 1) same path as exe,
     # 2) system config (XDG compliant.  /etc/xdg/ct)
@@ -175,24 +176,31 @@ def default_config_directories(
         exedir = ct.wrappedos.dirname(ct.wrappedos.realpath(sys.argv[0]))
 
     executable_config_dir = os.path.join(exedir, "ct.conf.d")
+    results = [user_config_dir, system_config_dir, executable_config_dir]
+    if verbose >= 9:
+        print(" ".join(["Default config directories"] + results))
 
-    return [user_config_dir, system_config_dir, executable_config_dir]
+    return results
 
 
 def defaultconfigs(
         user_config_dir=None,
         system_config_dir=None,
-        exedir=None):
+        exedir=None,
+        verbose=0):
     ctconfs = [
         os.path.join(
             defaultdir,
             'ct.conf') for defaultdir in default_config_directories(
             user_config_dir=user_config_dir,
             system_config_dir=system_config_dir,
-            exedir=exedir)]
+            exedir=exedir,
+            verbose=verbose)]
 
     # Only return the configs that exist
     configs = [cfg for cfg in ctconfs if ct.wrappedos.isfile(cfg)]
+    if verbose >= 8:
+        print(" ".join(["Default configs are "] + configs))
     return configs
 
 
