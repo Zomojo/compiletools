@@ -1,3 +1,6 @@
+from __future__ import print_function
+from __future__ import unicode_literals
+
 import sys
 import argparse
 import fnmatch
@@ -37,6 +40,6 @@ def find_possible_variants(
         if not cfgs:
             output.append("\tNone found")
         else:
-            output.extend(cfgs)
-
+            output.extend(sorted(cfgs))
+    print(output)
     return output

@@ -1,6 +1,7 @@
 from __future__ import unicode_literals
 from __future__ import print_function
 import unittest
+import os
 import ct.unittesthelper as uth
 import ct.listvariants
 
@@ -24,14 +25,14 @@ class TestListVariants(unittest.TestCase):
             '\tNone found',
             '/usr/lib',
             '\tNone found',
-            '/data/home/geoff/compiletools/ct.conf.d',
-            '\tgcc61.debug',
+            os.path.join(uth.cakedir(), 'ct.conf.d'),
             '\tclang.debug',
             '\tclang.release',
-            '\tgcc61.release',
             '\tct',
             '\tgcc.debug',
-            '\tgcc.release']
+            '\tgcc.release',
+            '\tgcc61.debug',
+            '\tgcc61.release']
         output = ct.listvariants.find_possible_variants(
             user_config_dir=ucd,
             system_config_dir=scd,
