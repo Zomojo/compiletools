@@ -193,11 +193,13 @@ class Cake:
             else:
                 outputdir = self.namer.topbindir()
                 filelist = os.listdir(self.namer.executable_dir())
+                tests = [self.namer.executable_name(ff) for ff in self.args.tests]
                 for ff in filelist:
-                    filename = os.path.join(self.namer.executable_dir(), ff)
-                    if ct.utils.isexecutable(filename):
-                        print("".join([outputdir, ff]))
-                        shutil.copy2(filename, outputdir)
+                    if ff not in tests:
+                        filename = os.path.join(self.namer.executable_dir(), ff)
+                        if ct.utils.isexecutable(filename):
+                            print("".join([outputdir, ff]))
+                            shutil.copy2(filename, outputdir)
                 if self.args.static:
                     filename = self.namer.staticlibrary_pathname(self.args.static[0])
                     print("".join([outputdir, '/', filename]))
