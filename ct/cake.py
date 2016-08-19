@@ -296,4 +296,11 @@ def main(argv=None):
             return 1
         else:
             raise
+    except Exception as err:
+        if args.verbose < 2:
+            print(err.message)
+            return 1
+        else:
+            raise
+
     return 0
