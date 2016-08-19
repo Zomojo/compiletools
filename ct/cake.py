@@ -282,6 +282,11 @@ def main(argv=None):
         # Output of stdout is done via increasing the verbosity
         sys.argv.append('-v')
     args = ct.apptools.parseargs(cap, argv)
+
+    if not any([args.filename, args.static, args.dynamic]):
+        print('Nothing for cake to do.  Did you mean cake --auto? Use cake --help for help.')
+        return 0
+
     try:
         cake = Cake(args)
         cake.process()
