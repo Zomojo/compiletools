@@ -193,9 +193,12 @@ class Cake:
             else:
                 outputdir = self.namer.topbindir()
                 filelist = os.listdir(self.namer.executable_dir())
-                tests = [self.namer.executable_name(ff) for ff in self.args.tests]
+                if self.args.tests:
+                    tests = [self.namer.executable_name(ff) for ff in self.args.tests]
+                else:
+                    tests = None
                 for ff in filelist:
-                    if ff not in tests:
+                    if not tests or ff not in tests:
                         filename = os.path.join(self.namer.executable_dir(), ff)
                         if ct.utils.isexecutable(filename):
                             print("".join([outputdir, ff]))
