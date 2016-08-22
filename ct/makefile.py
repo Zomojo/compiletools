@@ -381,7 +381,7 @@ class MakefileCreator:
             for exe in allexes: 
                 self.rules.add(self._create_cp_rule(exe))
 
-            self.rules |= self._create_makefile_rules_for_sources(
+            self.rules |= self._create_link_rules_for_sources(
                 realpath_sources,
                 exe_static_dynamic='Exe')
 
@@ -394,7 +394,7 @@ class MakefileCreator:
             self.rules.add(self._create_cp_rule(libraryname))
             realpath_static = {
                 ct.wrappedos.realpath(filename) for filename in self.args.static}
-            self.rules |= self._create_makefile_rules_for_sources(
+            self.rules |= self._create_link_rules_for_sources(
                 realpath_static,
                 exe_static_dynamic='StaticLibrary',
                 libraryname=libraryname)
@@ -405,10 +405,17 @@ class MakefileCreator:
             self.rules.add(self._create_cp_rule(libraryname))
             realpath_dynamic = {
                 ct.wrappedos.realpath(filename) for filename in self.args.dynamic}
-            self.rules |= self._create_makefile_rules_for_sources(
+            self.rules |= self._create_link_rules_for_sources(
                 realpath_dynamic,
                 exe_static_dynamic='DynamicLibrary',
                 libraryname=libraryname)
+
+        if self.args.filename or self.args.tests:
+            self.rules |= self._create_compile_rules_for_sources(realpath_sources)
+        if self.args.static and realpath_static:
+            self.rules |= self._create_compile_rules_for_sources(realpath_static)
+        if self.args.dynamic and realpath_dynamic:
+            self.rules |= self._create_compile_rules_for_sources(realpath_dynamic)
 
         self.rules |= self._create_clean_rules(buildoutputs)
 
@@ -417,6 +424,9 @@ class MakefileCreator:
 
     def _create_compile_rule_for_source(self, filename):
         """ For a given source file return the compile rule required for the Makefile """
+        if self.args.verbose >=9:
+            print("MakefileCreator::_create_compile_rule_for_source" + filename)
+
         if ct.utils.isheader(filename):
             sys.stderr.write(
                 "Error.  Trying to create a compile rule for a header file: ",
@@ -430,19 +440,16 @@ class MakefileCreator:
         self.objects.add(obj_name)
 
         magicflags = self.hunter.magicflags(filename)
+        recipe = ""
+        if self.args.verbose >= 1:
+            recipe = " ".join(["@echo ...", filename, ";"])
         if ct.wrappedos.isc(filename):
             magic_c_flags = magicflags.get('CFLAGS', [])
-            recipe = ""
-            if self.args.verbose >= 1:
-                recipe = ["@echo ...", filename, ";"]
             recipe += " ".join(["mkdir -p", ct.wrappedos.dirname(obj_name),";", self.args.CC, self.args.CFLAGS]
                               + list(magic_c_flags)
                               + ["-c", "-o", obj_name, filename])
         else:
             magic_cxx_flags = magicflags.get('CXXFLAGS', [])
-            recipe = ""
-            if self.args.verbose >= 1:
-                recipe += " ".join(["@echo ...", filename, ";"])
             recipe += " ".join(["mkdir -p", ct.wrappedos.dirname(obj_name),";", self.args.CXX, self.args.CXXFLAGS]
                               + list(magic_cxx_flags)
                               + ["-c", "-o", obj_name, filename])
@@ -454,13 +461,13 @@ class MakefileCreator:
                     prerequisites=" ".join(prerequisites),
                     recipe=recipe)
 
-    def _create_makefile_rules_for_sources(
+    def _create_link_rules_for_sources(
             self,
             sources,
             exe_static_dynamic,
             libraryname=None):
         """ For all the given source files return the set of rules required
-            for the Makefile that will turn the source files into executables.
+            for the Makefile that will _link_ the source files into executables.
         """
 
         # The set of rules needed to turn the source file into an executable
@@ -480,6 +487,17 @@ class MakefileCreator:
         rules_for_source |= linkrulecreatorobject(
             libraryname=libraryname,
             sources=sources)
+
+        return rules_for_source
+
+    def _create_compile_rules_for_sources(self, sources):
+        """ For all the given source files return the set of rules required
+            for the Makefile that will compil the source files into object files.
+        """
+
+        # The set of rules needed to turn the source file into an executable
+        # (or library as appropriate)
+        rules_for_source = ct.utils.OrderedSet()
 
         # Output all the compile rules
         for source in sources:
