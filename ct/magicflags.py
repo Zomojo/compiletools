@@ -124,7 +124,7 @@ class DirectMagicFlags(MagicFlagsBase):
         """ Read the first chunk of the file and all the headers it includes """
         # reading and handling as one string is slightly faster than
         # handling a list of strings.
-        # Only read first 2k for speed
+        # Only read the top part of the files for speed
         headers = self._headerdeps.process(filename)
         text = ""
         for filename in headers | {filename}:
