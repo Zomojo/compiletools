@@ -205,7 +205,7 @@ class Cake:
                             shutil.copy2(filename, outputdir)
                 if self.args.static:
                     filename = self.namer.staticlibrary_pathname(self.args.static[0])
-                    print("".join([outputdir, '/', filename]))
+                    print(os.path.join(outputdir, self.namer.staticlibrary_name(self.args.static[0])))
                     shutil.copy2(filename, outputdir)
 
 
