@@ -41,5 +41,4 @@ def find_possible_variants(
             output.append("\tNone found")
         else:
             output.extend(sorted(cfgs))
-    print(output)
     return output
