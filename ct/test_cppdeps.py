@@ -4,6 +4,7 @@ from __future__ import unicode_literals
 import os
 import sys
 import unittest
+import shutil
 
 try:
     # This call to reload is simply to test
@@ -33,7 +34,8 @@ class TestCPPDeps(unittest.TestCase):
     # or in unittest.main options.
     @unittest.skipIf(not hasattr(sys.stdout, "getvalue"), "Skipping test since not in buffer mode")
     def test_cppdeps(self):
-        _reload_ct('/dev/shm/test.ct.cppdeps')
+        tempdir = '/dev/shm/test.ct.cppdeps'
+        _reload_ct(tempdir)
         ct.cppdeps.main(['samples/numbers/test_direct_include.cpp'])
         output = sys.stdout.getvalue().strip().split()
         expected_output = [
@@ -41,6 +43,7 @@ class TestCPPDeps(unittest.TestCase):
             "/data/home/geoff/Cake/samples/numbers/get_int.hpp",
             "/data/home/geoff/Cake/samples/numbers/get_numbers.hpp"]
         self.assertEquals(expected_output.sort(), output.sort())
+        shutil.rmtree(tempdir)
 
     def tearDown(self):
         uth.delete_existing_parsers()
