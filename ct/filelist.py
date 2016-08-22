@@ -2,6 +2,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys
+import os
 import configargparse
 
 import ct.utils
@@ -72,6 +73,19 @@ class Filelist(object):
                 "filename",
                 help='File(s) to follow dependencies from.',
                 nargs='+')
+        cap.add(
+            '--extrafile',
+            help='Extra files to directly add to the filelist',
+            nargs='*')
+        cap.add(
+            '--extradir',
+            help='Extra directories to add all files from to the filelist',
+            nargs='*')
+        cap.add(
+            '--extrafilelist',
+            help='Read the given files to find a list of extra files to add to the filelist',
+            nargs='*')
+
 
         # Figure out what output style classes are available and add them to the
         # command line options
@@ -91,7 +105,7 @@ class Filelist(object):
             default='all',
             help="What type of files are allowed in the output")
 
-        ct.utils.add_boolean_argument(
+        ct.utils.add_flag_argument(
             cap,
             'merge',
             default=True,
@@ -102,7 +116,27 @@ class Filelist(object):
         filterclass = globals()[self.args.filter.title() + 'PassFilter']
         filterobject = filterclass()
 
+        extras = set(self.args.filename)
+        if self.args.extrafile:
+            extras |= {ef for ef in self.args.extrafile}
+        if self.args.extradir:
+            for ed in self.args.extradir:
+                extras |= {os.path.join(ed,ff) for ff in os.listdir(ed) if ct.wrappedos.isfile(os.path.join(ed,ff))}
+        if self.args.extrafilelist:
+            for fname in self.args.extrafilelist:
+                with open(fname) as ff:
+                    extras |= {line.strip() for line in ff.readlines()}
+
         mergedfiles = set()
+        if self.args.merge:
+            filteredfiles = filterobject({ct.wrappedos.realpath(fname) for fname in extras})
+            mergedfiles |= filteredfiles
+        else:
+            for fname in extras:
+                realpath = ct.wrappedos.realpath(fname)
+                print(self.styleobject.adjust(realpath))
+
+            
         for filename in self.args.filename:
             check_filename(filename)
             realpath = ct.wrappedos.realpath(filename)
