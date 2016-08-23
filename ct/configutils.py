@@ -148,8 +148,6 @@ def variant_with_hash(
         'auto',
         'filelist',
         'output',
-        'prepend',
-        'append',
         'parallel',
         'makefilename',
         'filter',
@@ -157,6 +155,8 @@ def variant_with_hash(
         'headerdeps',
         'shorten',
         'style',
+        'projectversion',
+        'projectversioncmd',
         'CTCACHE']
     kwargs = {attr: value
               for attr, value in args.__dict__.items()
