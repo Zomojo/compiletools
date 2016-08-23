@@ -7,7 +7,7 @@ import configargparse
 import ct.wrappedos
 
 
-def extract_value_from_argv(key, argv=None, default=None):
+def extract_value_from_argv(key, argv=None, default=None, verbose=0):
     """ Extract the value for the given key from the argv.
         Return the given default if no key was identified
     """
@@ -28,6 +28,12 @@ def extract_value_from_argv(key, argv=None, default=None):
                     value = argv[index + 1]
         except ValueError:
             pass
+    
+    if verbose >= 4: 
+        msg = 'argv extraction: ' + key + ' '
+        if value:
+            msg += str(value)
+        print(msg) 
     return value
 
 
@@ -104,9 +110,14 @@ def extract_variant(
         default=variant)
 
     try:
-        return variantaliases[variant]
+        result = variantaliases[variant]
     except KeyError:
-        return variant
+        result = variant
+    
+    if verbose >= 4:
+        print("Extract variant: " + result)
+
+    return result
 
 
 def variant_with_hash(

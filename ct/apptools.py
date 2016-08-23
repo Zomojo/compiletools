@@ -17,6 +17,7 @@ def add_base_arguments(cap, argv=None, variant=None):
     # the help.
     if variant is None:
         variant = ct.configutils.extract_variant(argv=argv)
+
     cap.add(
         "--variant",
         help="Specifies which variant of the config should be used. "
@@ -268,6 +269,10 @@ def commonsubstitutions(args):
         then there are some obvious substitutions to make
     """
     args.verbose -= args.quiet
+
+    # Fix the variant for any variant aliases
+    # Taking the easy way out and just reparsing
+    args.variant = ct.configutils.extract_variant()
 
     _substitute_CXX_for_missing(args)
     _extend_includes_using_git_root(args)
