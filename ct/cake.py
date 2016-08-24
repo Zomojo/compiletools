@@ -283,7 +283,7 @@ def main(argv=None):
         sys.argv.append('-v')
     args = ct.apptools.parseargs(cap, argv)
 
-    if not any([args.filename, args.static, args.dynamic, args.auto]):
+    if not any([args.filename, args.static, args.dynamic, args.tests, args.auto]):
         print('Nothing for cake to do.  Did you mean cake --auto? Use cake --help for help.')
         return 0
 
