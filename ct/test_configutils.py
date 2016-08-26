@@ -27,11 +27,17 @@ class TestVariant(unittest.TestCase):
         self.assertEqual(
             "abc.123",
             ct.configutils.extract_variant(
-                "-a -b -c --blah --variant=abc.123 -a -b -c --blah".split()))
+                "-a -b -x --blah --variant=abc.123 -a -b -z --blah".split()))
         self.assertEqual(
             "abc.123",
             ct.configutils.extract_variant(
-                "-a -b -c --blah --variant abc.123 -a -b -c --blah".split()))
+                "-a -b -x --blah --variant abc.123 -a -b -cz--blah".split()))
+
+        # Note the -c overrides the --variant
+        self.assertEqual(
+            "blah",
+            ct.configutils.extract_variant(
+                "-a -b -c blah.conf --variant abc.123 -a -b -cz--blah".split()))
 
     def test_variant_with_hash(self):
         config_files = ct.configutils.config_files_from_variant(

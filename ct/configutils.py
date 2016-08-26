@@ -16,19 +16,21 @@ def extract_value_from_argv(key, argv=None, default=None, verbose=0):
 
     value = default
 
-    for arg in argv:
-        try:
-            keywithhyphens = "".join(['--', key, '='])
-            if keywithhyphens in arg:
-                value = arg.split('=')[1]
-            else:
-                keywithhyphens = "".join(['--', key])
+    hyphens = ('-','--')
+    for hh in hyphens:
+        for arg in argv:
+            try:
+                keywithhyphens = "".join([hh, key, '='])
                 if keywithhyphens in arg:
-                    index = argv.index(keywithhyphens)
-                    value = argv[index + 1]
-        except ValueError:
-            pass
-    
+                    value = arg.split('=')[1]
+                else:
+                    keywithhyphens = "".join([hh, key])
+                    if keywithhyphens in arg:
+                        index = argv.index(keywithhyphens)
+                        value = argv[index + 1]
+            except ValueError:
+                pass
+        
     if verbose >= 4: 
         msg = 'argv extraction: ' + key + ' '
         if value:
@@ -63,6 +65,31 @@ def extract_item_from_ct_conf(
 
     return default
 
+def removedotconf(config):
+    if config[-5:] == '.conf':
+        return config[:-5]
+    else:
+        return config
+
+def impliedvariant(argv):
+    """ If the user specified a config directly then we imply the variant name """
+    config = None
+    config = extract_value_from_argv(
+        key='config',
+        argv=argv,
+        default=None)
+
+    if not config:
+        config = extract_value_from_argv(
+            key='c',
+            argv=argv,
+            default=None)
+
+    if config:
+        return removedotconf(os.path.basename(config))
+    else:
+        return None
+
 
 def extract_variant(
         argv=None,
@@ -77,6 +104,11 @@ def extract_variant(
     """
     if argv is None:
         argv = sys.argv
+
+    # If the user specified a config directly then we imply the variant name
+    implied = impliedvariant(argv)
+    if implied:
+        return implied
 
     # Parse the command line, et al, extract the variant the user wants,
     # then use that as the default config file for configargparse.
