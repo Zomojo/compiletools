@@ -189,7 +189,9 @@ def variant_with_hash(
         'style',
         'projectversion',
         'projectversioncmd',
-        'CTCACHE']
+        'CTCACHE',
+        'variant',
+        'config_file']
     kwargs = {attr: value
               for attr, value in args.__dict__.items()
               if attr not in unimportantkeys}
