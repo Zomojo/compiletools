@@ -63,7 +63,7 @@ class TestHeaderDepsModule(unittest.TestCase):
 
     def setUp(self):
         uth.delete_existing_parsers()
-        config_files = ct.configutils.config_files_from_variant(variant='debug', exedir=os.path.join(uth.ctdir(),".."))
+        config_files = ct.configutils.config_files_from_variant(variant='gcc.debug', exedir=uth.cakedir())
         cap = configargparse.getArgumentParser(
             description='Configargparser in test code',
             formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
