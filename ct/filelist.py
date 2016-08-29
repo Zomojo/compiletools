@@ -8,6 +8,7 @@ import configargparse
 import ct.utils
 import ct.git_utils
 import ct.wrappedos
+import ct.apptools
 from ct.hunter import Hunter
 
 
@@ -67,12 +68,7 @@ class Filelist(object):
 
     @staticmethod
     def add_arguments(cap):
-        # Don't re-add filename if it is already in the configargparse
-        if not any('filename' in action.dest for action in cap._actions):
-            cap.add(
-                "filename",
-                help='File(s) to follow dependencies from.',
-                nargs='+')
+        ct.apptools.add_target_arguments(cap)
         cap.add(
             '--extrafile',
             help='Extra files to directly add to the filelist',
@@ -85,7 +81,6 @@ class Filelist(object):
             '--extrafilelist',
             help='Read the given files to find a list of extra files to add to the filelist',
             nargs='*')
-
 
         # Figure out what output style classes are available and add them to the
         # command line options
@@ -115,29 +110,52 @@ class Filelist(object):
     def process(self):
         filterclass = globals()[self.args.filter.title() + 'PassFilter']
         filterobject = filterclass()
+        extras = set()
 
-        extras = set(self.args.filename)
+        # Add all the command line specified extras
         if self.args.extrafile:
             extras |= {ef for ef in self.args.extrafile}
         if self.args.extradir:
             for ed in self.args.extradir:
-                extras |= {os.path.join(ed,ff) for ff in os.listdir(ed) if ct.wrappedos.isfile(os.path.join(ed,ff))}
+                extras |= {
+                    os.path.join(
+                        ed,
+                        ff) for ff in os.listdir(ed) if ct.wrappedos.isfile(
+                        os.path.join(
+                            ed,
+                            ff))}
         if self.args.extrafilelist:
             for fname in self.args.extrafilelist:
                 with open(fname) as ff:
                     extras |= {line.strip() for line in ff.readlines()}
 
+        # Add all the files in the same directory as test files
+        if self.args.tests:
+            for testfile in self.args.tests:
+                testdir = ct.wrappedos.dirname(ct.wrappedos.realpath(testfile))
+                extras |= {fileintestdir for fileintestdir in os.listdir(
+                    testdir) if ct.wrappedos.isfile(fileintestdir)}
+
         mergedfiles = set()
         if self.args.merge:
-            filteredfiles = filterobject({ct.wrappedos.realpath(fname) for fname in extras})
+            filteredfiles = filterobject(
+                {ct.wrappedos.realpath(fname) for fname in extras})
             mergedfiles |= filteredfiles
         else:
             for fname in extras:
                 realpath = ct.wrappedos.realpath(fname)
                 print(self.styleobject.adjust(realpath))
 
-            
-        for filename in self.args.filename:
+        followable = set()
+        lists = [
+            self.args.filename,
+            self.args.static,
+            self.args.dynamic,
+            self.args.tests]
+        for ll in lists:
+            if ll:
+                followable |= set(ll)
+        for filename in followable:
             check_filename(filename)
             realpath = ct.wrappedos.realpath(filename)
             files = self._hunter.required_files(realpath)

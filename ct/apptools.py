@@ -128,6 +128,12 @@ def add_target_arguments(cap):
         "--tests",
         nargs='*',
         help="File(s) to compile to a test and then execute")
+
+def add_target_arguments_ex(cap):
+    """ Add the target arguments and the extra arguments that augment 
+        the target arguments 
+    """
+    add_target_arguments(cap)
     cap.add(
         "--TESTPREFIX",
         help='Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"')
