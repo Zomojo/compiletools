@@ -33,8 +33,9 @@ def _find_git_root(directory):
             ["git", "rev-parse", "--show-toplevel"],
             stderr=subprocess.STDOUT,
             universal_newlines=True).strip('\n')
-    except subprocess.CalledProcessError:
-        # An exception means we aren't in a real git repository.
+    except (subprocess.CalledProcessError, OSError) as err:
+        # A CalledProcessError exception means we aren't in a real git repository.
+        # An OSError probably means git isn't installed on this machine.
         # But are we in a fake git repository? (i.e., there exists a dummy .git
         # file)
         trialgitroot = directory
