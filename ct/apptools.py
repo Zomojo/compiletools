@@ -112,10 +112,12 @@ def add_target_arguments(cap):
     """ Insert the arguments that control what targets get created
         into the configargparse singleton.
     """
-    cap.add(
-        "filename",
-        nargs="*",
-        help="File(s) to compile to an executable(s)")
+    # Don't re-add filename if it is already in the configargparsea
+    if not any('filename' in action.dest for action in cap._actions):
+        cap.add(
+            "filename",
+            nargs="*",
+            help="File(s) to compile to an executable(s)")
     cap.add(
         "--dynamic",
         nargs='*',
