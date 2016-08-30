@@ -52,6 +52,7 @@ class Cake:
                          name.upper()]),
                 dest="".join(["prepend",
                               destname.lower()]),
+                action="append",
                 help=" ".join(["prepend".title(),
                                "the given text to the",
                                name.upper(),
@@ -63,6 +64,7 @@ class Cake:
                          name.upper()]),
                 dest="".join(["append",
                               destname.lower()]),
+                action="append",
                 help=" ".join(["append".title(),
                                "the given text to the",
                                name.upper(),
@@ -226,13 +228,13 @@ class Cake:
             self.args.LDFLAGS = " ".join(
                 [self.args.prependldflags, self.args.LDFLAGS])
         if self.args.appendcppflags:
-            self.args.CPPFLAGS += " " + self.args.appendcppflags
+            self.args.CPPFLAGS += " " + " ".join(self.args.appendcppflags)
         if self.args.appendcflags:
-            self.args.CFLAGS += " " + self.args.appendcflags
+            self.args.CFLAGS += " " + " ".join(self.args.appendcflags)
         if self.args.appendcxxflags:
-            self.args.CXXFLAGS += " " + self.args.appendcxxflags
+            self.args.CPPFLAGS += " " + " ".join(self.args.appendcxxflags)
         if self.args.appendldflags:
-            self.args.LDFLAGS += " " + self.args.appendldflags
+            self.args.LDFLAGS += " " + " ".join(self.args.appendldflags)
 
         # Cake used preprocess to mean both magic flag preprocess and headerdeps preprocess
         if self.args.preprocess:
