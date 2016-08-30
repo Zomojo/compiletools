@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import signal
 import sys
 import configargparse
 import subprocess
@@ -276,7 +277,9 @@ class Cake:
         else:
             self._callmakefile()
 
-
+def signal_handler(signal, frame):
+    sys.exit(0)
+        
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     Cake.add_arguments(cap)
@@ -289,6 +292,9 @@ def main(argv=None):
         print('Nothing for cake to do.  Did you mean cake --auto? Use cake --help for help.')
         return 0
 
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGPIPE, signal_handler)
+    
     try:
         cake = Cake(args)
         cake.process()
