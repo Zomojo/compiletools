@@ -1,6 +1,7 @@
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import sys
 import os
 import subprocess
 
@@ -242,10 +243,18 @@ def _set_project_version(args):
             universal_newlines=True).strip('\n')
         if args.verbose >= 4:
             print("Used projectversioncmd to set projectversion")
-    except AttributeError:
+    except (subprocess.CalledProcessError, OSError) as err:        
+            sys.stderr.write(" ".join(["Could not use projectversioncmd =",
+                                      args.projectversioncmd,
+                                      "to set projectversion.\n"]))
+            if args.verbose <= 2:
+                sys.stderr.write(str(err)+"\n")
+                sys.exit(1)
+            else:
+                raise
+    except AttributeError:        
         if args.verbose >= 6:
-            print(
-                "Could not use projectversioncmd to set projectversion. Will use either existing projectversion or the zero version.")
+            print("Could not use projectversioncmd to set projectversion. Will use either existing projectversion or the zero version.")
 
     try:
         if not args.projectversion:
