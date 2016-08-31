@@ -233,7 +233,7 @@ class Cake:
         if self.args.appendcflags:
             self.args.CFLAGS += " " + " ".join(self.args.appendcflags)
         if self.args.appendcxxflags:
-            self.args.CPPFLAGS += " " + " ".join(self.args.appendcxxflags)
+            self.args.CXXFLAGS += " " + " ".join(self.args.appendcxxflags)
         if self.args.appendldflags:
             self.args.LDFLAGS += " " + " ".join(self.args.appendldflags)
 
