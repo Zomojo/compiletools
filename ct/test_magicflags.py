@@ -69,7 +69,7 @@ class TestMagicFlagsModule(unittest.TestCase):
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser()
+        magicparser = self._createmagicparser(['--magic', 'direct'])
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             magicparser.parse(realpath).get('SOURCE'),
