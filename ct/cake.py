@@ -285,6 +285,7 @@ def main(argv=None):
     Cake.add_arguments(cap)
     if argv is None:
         # Output of stdout is done via increasing the verbosity
+        # Developers seem to be "default happy" when verbosity defaults to 1
         sys.argv.append('-v')
     args = ct.apptools.parseargs(cap, argv)
 
