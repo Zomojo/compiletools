@@ -29,6 +29,9 @@ Requires: python-setuptools python2-configargparse python-appdirs python-%{srcna
 ./create-documentation
 python setup.py build
 
+%check
+python setup.py test
+
 %install
 mkdir -p %{buildroot}%{_bindir}
 mkdir -p %{buildroot}%{_sysconfdir}/xdg/ct/
