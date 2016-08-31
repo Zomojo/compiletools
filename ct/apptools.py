@@ -297,7 +297,11 @@ def parseargs(cap, argv=None):
 
 def terminalcolumns():
     """ How many columns in the text terminal """
-    return int(subprocess.check_output(['stty', 'size']).split()[1])
+    try:
+        columns = int(subprocess.check_output(['stty', 'size']).split()[1])
+    except subprocess.CalledProcessError:
+        columns = 80
+    return columns
 
 
 def verbose_print_args(cap, args):
