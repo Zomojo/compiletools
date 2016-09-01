@@ -240,7 +240,7 @@ def _set_project_version(args):
     try:
         args.projectversion = subprocess.check_output(
             args.projectversioncmd.split(),
-            universal_newlines=True).strip('\n')
+            universal_newlines=True).strip('\n').split()[0]
         if args.verbose >= 4:
             print("Used projectversioncmd to set projectversion")
     except (subprocess.CalledProcessError, OSError) as err:        
