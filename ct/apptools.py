@@ -11,7 +11,6 @@ import ct.configutils
 import ct.utils
 import ct.dirnamer
 
-
 def add_base_arguments(cap, argv=None, variant=None):
     # Even though the variant is actually sucked out of the command line by
     # parsing the sys.argv directly, we put it into the configargparse to get
@@ -281,6 +280,37 @@ def _set_project_version(args):
             print("No projectversion specified for the args.")
 
 
+def _tier_one_substitutions(args):
+    """ Do some early substitutions that can potentially cause 
+        downstream substitutions.
+    """
+    if hasattr(args, 'prependcppflags') and args.prependcppflags:
+        args.CPPFLAGS = " ".join(
+            [args.prependcppflags, args.CPPFLAGS])
+    if hasattr(args, 'prependcflags') and args.prependcflags:
+        args.CFLAGS = " ".join(
+            [args.prependcflags, args.CFLAGS])
+    if hasattr(args, 'prependcxxflags') and args.prependcxxflags:
+        args.CXXFLAGS = " ".join(
+            [args.prependcxxflags, args.CXXFLAGS])
+    if hasattr(args, 'prependldflags') and args.prependldflags:
+        args.LDFLAGS = " ".join(
+            [args.prependldflags, args.LDFLAGS])
+    if hasattr(args, 'appendcppflags') and args.appendcppflags:
+        args.CPPFLAGS += " " + " ".join(args.appendcppflags)
+    if hasattr(args, 'appendcflags') and args.appendcflags:
+        args.CFLAGS += " " + " ".join(args.appendcflags)
+    if hasattr(args, 'appendcxxflags') and args.appendcxxflags:
+        args.CXXFLAGS += " " + " ".join(args.appendcxxflags)
+    if hasattr(args, 'appendldflags') and args.appendldflags:
+        args.LDFLAGS += " " + " ".join(args.appendldflags)
+
+    # Cake used preprocess to mean both magic flag preprocess and headerdeps preprocess
+    if hasattr(args, 'preprocess') and args.preprocess:
+        args.magic = 'cpp'
+        args.headerdeps = 'cpp'
+    
+
 def commonsubstitutions(args):
     """ If certain arguments have not been specified but others have
         then there are some obvious substitutions to make
@@ -291,6 +321,7 @@ def commonsubstitutions(args):
     # Taking the easy way out and just reparsing
     args.variant = ct.configutils.extract_variant()
 
+    _tier_one_substitutions(args)
     _substitute_CXX_for_missing(args)
     _extend_includes_using_git_root(args)
     _add_include_paths_to_flags(args)

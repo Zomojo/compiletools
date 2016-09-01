@@ -218,31 +218,6 @@ class Cake:
         """ Transform the arguments into suitable versions for ct-* tools
             and call the appropriate tool.
         """
-        if self.args.prependcppflags:
-            self.args.CPPFLAGS = " ".join(
-                [self.args.prependcppflags, self.args.CPPFLAGS])
-        if self.args.prependcflags:
-            self.args.CFLAGS = " ".join(
-                [self.args.prependcflags, self.args.CFLAGS])
-        if self.args.prependcxxflags:
-            self.args.CXXFLAGS = " ".join(
-                [self.args.prependcxxflags, self.args.CXXFLAGS])
-        if self.args.prependldflags:
-            self.args.LDFLAGS = " ".join(
-                [self.args.prependldflags, self.args.LDFLAGS])
-        if self.args.appendcppflags:
-            self.args.CPPFLAGS += " " + " ".join(self.args.appendcppflags)
-        if self.args.appendcflags:
-            self.args.CFLAGS += " " + " ".join(self.args.appendcflags)
-        if self.args.appendcxxflags:
-            self.args.CXXFLAGS += " " + " ".join(self.args.appendcxxflags)
-        if self.args.appendldflags:
-            self.args.LDFLAGS += " " + " ".join(self.args.appendldflags)
-
-        # Cake used preprocess to mean both magic flag preprocess and headerdeps preprocess
-        if self.args.preprocess:
-            self.args.magic = 'cpp'
-            self.args.headerdeps = 'cpp'
         
         # If the user specified only a single file to be turned into a library, guess that
         # they mean for ct-cake to chase down all the implied files.
