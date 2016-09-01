@@ -331,7 +331,11 @@ def commonsubstitutions(args):
 def parseargs(cap, argv=None):
     args = cap.parse_args(args=argv)
     commonsubstitutions(args)
-    verbose_print_args(cap, args)
+    if args.verbose >= 3:
+        print(" ".join(["Using variant =", args.variant]))
+        cap.print_values()
+    if args.verbose >= 2:
+        verbose_print_args(args)
     return args
 
 
@@ -344,36 +348,32 @@ def terminalcolumns():
     return columns
 
 
-def verbose_print_args(cap, args):
-    if args.verbose >= 3:
-        print(" ".join(["Using variant =", args.variant]))
-        cap.print_values()
-    if args.verbose >= 2:
-        # Print the args in two columns Attr: Value
-        print("\n\nFinal aggregated variables for build:")
-        maxattrlen = 0
-        for attr in args.__dict__.keys():
-            if len(attr) > maxattrlen:
-                maxattrlen = len(attr)
-        fmt = "".join(["{0:", str(maxattrlen + 1), "}: {1}"])
-        rightcolbegin = maxattrlen + 3
-        maxcols = terminalcolumns()
-        rightcolsize = maxcols - rightcolbegin
-        if maxcols <= rightcolbegin:
-            print("Verbose print of args aborted due to small terminal size!")
-            return
+def verbose_print_args(args):
+    # Print the args in two columns Attr: Value
+    print("\n\nFinal aggregated variables for build:")
+    maxattrlen = 0
+    for attr in args.__dict__.keys():
+        if len(attr) > maxattrlen:
+            maxattrlen = len(attr)
+    fmt = "".join(["{0:", str(maxattrlen + 1), "}: {1}"])
+    rightcolbegin = maxattrlen + 3
+    maxcols = terminalcolumns()
+    rightcolsize = maxcols - rightcolbegin
+    if maxcols <= rightcolbegin:
+        print("Verbose print of args aborted due to small terminal size!")
+        return
 
-        for attr, value in sorted(args.__dict__.items()):
-            if value is None:
-                print(fmt.format(attr, ""))
-                continue
-            strvalue = str(value)
-            valuelen = len(strvalue)
-            if rightcolbegin + valuelen < maxcols:
-                print(fmt.format(attr, strvalue))
-            else:
-                # values are too long to fit.  Split them on spaces
-                valuesplit = strvalue.split(' ', valuelen % rightcolsize)
-                print(fmt.format(attr, valuesplit[0]))
-                for kk in range(1, len(valuesplit)):
-                    print(fmt.format("", valuesplit[kk]))
+    for attr, value in sorted(args.__dict__.items()):
+        if value is None:
+            print(fmt.format(attr, ""))
+            continue
+        strvalue = str(value)
+        valuelen = len(strvalue)
+        if rightcolbegin + valuelen < maxcols:
+            print(fmt.format(attr, strvalue))
+        else:
+            # values are too long to fit.  Split them on spaces
+            valuesplit = strvalue.split(' ', valuelen % rightcolsize)
+            print(fmt.format(attr, valuesplit[0]))
+            for kk in range(1, len(valuesplit)):
+                print(fmt.format("", valuesplit[kk]))
