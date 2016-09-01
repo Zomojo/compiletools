@@ -219,9 +219,12 @@ def _add_include_paths_to_flags(args):
     """ Add all the include paths to all three compile flags """
     for path in args.include:
         if path is not None:
-            args.CPPFLAGS += " -I " + path
-            args.CFLAGS += " -I " + path
-            args.CXXFLAGS += " -I " + path
+            if path not in args.CPPFLAGS:
+                args.CPPFLAGS += " -I " + path
+            if path not in args.CFLAGS:
+                args.CFLAGS += " -I " + path
+            if path not in args.CXXFLAGS:
+                args.CXXFLAGS += " -I " + path
     if args.verbose >= 3 and len(args.include) > 0:
         print(
             "Extra include paths have been appended to the *FLAG variables:")
@@ -262,12 +265,15 @@ def _set_project_version(args):
             if args.verbose >= 5:
                 print("Set projectversion to the zero version")
 
-        args.CPPFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
-            args.projectversion + '\\"'
-        args.CFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
-            args.projectversion + '\\"'
-        args.CXXFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
-            args.projectversion + '\\"'
+        if '-DCAKE_PROJECT_VERSION' not in args.CPPFLAGS:
+            args.CPPFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
+                args.projectversion + '\\"'
+        if '-DCAKE_PROJECT_VERSION' not in args.CFLAGS:
+            args.CFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
+                args.projectversion + '\\"'
+        if '-DCAKE_PROJECT_VERSION' not in args.CXXFLAGS:
+            args.CXXFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
+                args.projectversion + '\\"'
 
         if args.verbose >= 3:
             print(
