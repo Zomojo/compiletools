@@ -20,6 +20,12 @@ def add_arguments(cap):
         action='append',
         help='String that identifies a file as being an test source.  e.g., "unit_test.hpp"')
 
+    ct.utils.add_flag_argument(
+        parser=cap,
+        name="auto",
+        default=False,
+        help="Search the filesystem from the current working directory to find all the C/C++ files with main functions and unit tests")
+
     # Figure out what style classes are available and add them to the command
     # line options
     styles = [st[:-5].lower()
@@ -82,6 +88,20 @@ class FindTargets(object):
     def __init__(self, args, argv=None, variant=None, exedir=None):
         self._args = args
         self.namer = ct.namer.Namer(self._args, argv=argv, variant=variant, exedir=exedir)
+
+    def process(self, args, path=None):
+        """ Put the output of __call__ into the args """
+        executabletargets, testtargets = self(path)
+        args.filename += executabletargets
+        if testtargets:
+            if not args.tests:
+                args.tests = []
+            args.tests += testtargets
+
+        if args.verbose >= 2:
+            styleobj = ct.findtargets.IndentStyle()
+            styleobj(executabletargets, testtargets)
+
 
     def __call__(self, path=None):
         """ Do the file system search and

@@ -105,11 +105,6 @@ class Cake:
             action='store_true',
             help="Ignored. For backwards compatibility only.")
 
-        ct.utils.add_flag_argument(
-            parser=cap,
-            name="auto",
-            default=False,
-            help="Search the filesystem from the current working directory to find all the C/C++ files with main functions and unit tests")
         ct.findtargets.add_arguments(cap)
 
         ct.utils.add_boolean_argument(
@@ -229,18 +224,7 @@ class Cake:
 
         if self.args.auto:
             findtargets = ct.findtargets.FindTargets(self.args)
-            executabletargets, testtargets = findtargets()
-            self.args.filename += executabletargets
-            if testtargets:
-                if not self.args.tests:
-                    self.args.tests = []
-                self.args.tests += testtargets
-
-            if self.args.verbose >= 2:
-                #styleclass = globals()['ct.findtargets.'+ self.args.style.title() + 'Style']
-                #styleobj = styleclass()
-                styleobj = ct.findtargets.IndentStyle()
-                styleobj(executabletargets, testtargets)
+            findtargets.process(self.args)
 
         # Since we've fiddled with the args,
         # run the common substitutions again
