@@ -145,8 +145,10 @@ class Cake:
         ct.wrappedos.makedirs(self.namer.executable_dir())
         shutil.move(makefilename, movedmakefile)        
         cmd = ['make']
-        if self.args.verbose < 2:
+        if self.args.verbose <= 1:
             cmd.append('-s')
+        if self.args.verbose >= 3:
+            cmd.append('--trace')
         cmd.extend(['-j', str(self.args.parallel), '-f', movedmakefile])
         if self.args.clean:
             cmd.append('realclean')
