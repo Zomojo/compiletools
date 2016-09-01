@@ -279,31 +279,36 @@ def _set_project_version(args):
         if args.verbose >= 3:
             print("No projectversion specified for the args.")
 
-
-def _tier_one_substitutions(args):
-    """ Do some early substitutions that can potentially cause 
-        downstream substitutions.
+def _do_xxpend(args, name):
+    """ For example, if name is CPPFLAGS, take the 
+        args.prependcppflags and prepend them to args.CPPFLAGS.
+        Similarly for append.
     """
-    if hasattr(args, 'prependcppflags') and args.prependcppflags:
-        args.CPPFLAGS = " ".join(
-            [args.prependcppflags, args.CPPFLAGS])
-    if hasattr(args, 'prependcflags') and args.prependcflags:
-        args.CFLAGS = " ".join(
-            [args.prependcflags, args.CFLAGS])
-    if hasattr(args, 'prependcxxflags') and args.prependcxxflags:
-        args.CXXFLAGS = " ".join(
-            [args.prependcxxflags, args.CXXFLAGS])
-    if hasattr(args, 'prependldflags') and args.prependldflags:
-        args.LDFLAGS = " ".join(
-            [args.prependldflags, args.LDFLAGS])
-    if hasattr(args, 'appendcppflags') and args.appendcppflags:
-        args.CPPFLAGS += " " + " ".join(args.appendcppflags)
-    if hasattr(args, 'appendcflags') and args.appendcflags:
-        args.CFLAGS += " " + " ".join(args.appendcflags)
-    if hasattr(args, 'appendcxxflags') and args.appendcxxflags:
-        args.CXXFLAGS += " " + " ".join(args.appendcxxflags)
-    if hasattr(args, 'appendldflags') and args.appendldflags:
-        args.LDFLAGS += " " + " ".join(args.appendldflags)
+    xxlist=('prepend','append')
+    for xx in xxlist:
+        xxpendname = ''.join([xx,name.lower()])
+        if hasattr(args, xxpendname):
+            xxpendattr = getattr(args, xxpendname)
+            attr = getattr(args, name)
+            if xxpendattr:
+                extra = []
+                for flag in xxpendattr:
+                    if flag not in attr:
+                        extra.append(flag)
+                if xx == 'prepend':
+                    attr = " ".join(extra + [attr])
+                else:
+                    attr = " ".join([attr] + extra)
+            setattr(args, name, attr) 
+
+def _tier_one_modifications(args):
+    """ Do some early modifications that can potentially cause 
+        downstream modifications.
+    """
+    _substitute_CXX_for_missing(args)
+    flaglist = ('CPPFLAGS', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS')
+    for flag in flaglist:
+        _do_xxpend(args, flag)
 
     # Cake used preprocess to mean both magic flag preprocess and headerdeps preprocess
     if hasattr(args, 'preprocess') and args.preprocess:
@@ -321,8 +326,7 @@ def commonsubstitutions(args):
     # Taking the easy way out and just reparsing
     args.variant = ct.configutils.extract_variant()
 
-    _tier_one_substitutions(args)
-    _substitute_CXX_for_missing(args)
+    _tier_one_modifications(args)
     _extend_includes_using_git_root(args)
     _add_include_paths_to_flags(args)
     _set_project_version(args)
