@@ -142,7 +142,7 @@ class Cake:
         cmd = ['make']
         if self.args.verbose <= 1:
             cmd.append('-s')
-        if self.args.verbose >= 3:
+        if self.args.verbose >= 4:
             cmd.append('--trace')
         cmd.extend(['-j', str(self.args.parallel), '-f', movedmakefile])
         if self.args.clean:
