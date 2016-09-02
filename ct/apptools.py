@@ -235,10 +235,13 @@ def _add_include_paths_to_flags(args):
 
 def _set_project_version(args):
     """ C/C++ source code can rely on the CAKE_PROJECT_VERSION macro being set.
-        Preferentially execute projectversioncmd to determine projectversion.
-        Otherwise, fall back to any given projectversion.
+        If the user specified a projectversion then use that.
+        Otherwise execute projectversioncmd to determine projectversion.
         In the completely unspecified case, use the zero version.
     """
+    if hasattr(args,'projectversion') and args.projectversion:
+        return
+
     try:
         args.projectversion = subprocess.check_output(
             args.projectversioncmd.split(),
