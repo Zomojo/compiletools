@@ -2,7 +2,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import configargparse
-import ct.utils
+import ct.apptools
 
 def _cpus():
     with open("/proc/cpuinfo") as ff:
@@ -21,16 +21,16 @@ def add_arguments(cap):
         "--parallel",
         dest='parallel',
         type=int,
-        default=2*_cpus(),
+        default=_cpus()-1,
         help="Sets the number of CPUs to use in parallel for a build.  Defaults to 2 * all cpus.")
         
 
 def main(argv=None):
     cap = configargparse.getArgumentParser()
-    ct.utils.add_base_arguments(cap)
+    ct.apptools.add_base_arguments(cap)
     add_arguments(cap)
     args = cap.parse_args(args=argv)
-    ct.utils.verbose_print_args(cap, args)
+    ct.apptools.verbose_print_args(args)
     print(args.parallel)
 
     return 0

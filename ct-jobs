@@ -4,7 +4,7 @@ from __future__ import unicode_literals
 
 import sys
 import configargparse
-import ct.utils
+import ct.configutils
 import ct.jobs
 
 
