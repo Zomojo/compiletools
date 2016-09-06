@@ -18,6 +18,7 @@ import ct.filelist
 import ct.findtargets
 import ct.jobs
 
+
 class Cake:
 
     def __init__(self, args):
@@ -36,7 +37,6 @@ class Cake:
             self.args,
             self.headerdeps,
             self.magicparser)
-
 
     @staticmethod
     def _add_prepend_append_argument(cap, name, destname=None, extrahelp=None):
@@ -118,7 +118,7 @@ class Cake:
             dest="preprocess",
             default=False,
             help="Deprecated. Synonym for preprocess")
-        
+
         cap.add(
             "--clean",
             action='store_true',
@@ -133,12 +133,60 @@ class Cake:
         filelist = ct.filelist.Filelist(self.args, self.hunter, style='flat')
         filelist.process()
 
+    def _copyexes(self):
+        # Copy the executables into the "bin" dir (as per cake)
+        # Unless the user has changed the bindir (or set --output)
+        # in which case assume that they know what they are doing
+        if self.args.output:
+            print(self.args.output)
+            if self.args.filename:
+                shutil.copy2(
+                    self.namer.executable_pathname(
+                        self.args.filename[0]),
+                    self.args.output)
+            if self.args.static:
+                shutil.copy2(
+                    self.namer.staticlibrary_pathname(
+                        self.args.static[0]),
+                    self.args.output)
+            if self.args.dynamic:
+                shutil.copy2(
+                    self.namer.dynamiclibrary_pathname(
+                        self.args.dynamic[0]),
+                    self.args.output)
+        else:
+            outputdir = self.namer.topbindir()
+            filelist = os.listdir(self.namer.executable_dir())
+            if self.args.tests:
+                tests = [self.namer.executable_name(
+                    ff) for ff in self.args.tests]
+            else:
+                tests = None
+            for ff in filelist:
+                if not tests or ff not in tests:
+                    filename = os.path.join(
+                        self.namer.executable_dir(), ff)
+                    if ct.utils.isexecutable(filename) and ct.wrappedos.realpath(
+                            filename) != ct.wrappedos.realpath(os.path.join(outputdir, ff)):
+                        print("".join([outputdir, ff]))
+                        shutil.copy2(filename, outputdir)
+
+            if self.args.static:
+                pathname = self.namer.staticlibrary_pathname(
+                    self.args.static[0])
+                filename = self.namer.staticlibrary_name(
+                    self.args.static[0])
+                if ct.wrappedos.realpath(filename) != ct.wrapped.realpath(
+                        os.path.join(outputdir, filename)):
+                    print(os.path.join(outputdir, ))
+                    shutil.copy2(pathname, outputdir)
+
     def _callmakefile(self):
         makefile_creator = ct.makefile.MakefileCreator(self.args, self.hunter)
         makefilename = makefile_creator.create()
         movedmakefile = os.path.join(self.namer.executable_dir(), makefilename)
         ct.wrappedos.makedirs(self.namer.executable_dir())
-        shutil.move(makefilename, movedmakefile)        
+        shutil.move(makefilename, movedmakefile)
         cmd = ['make']
         if self.args.verbose <= 1:
             cmd.append('-s')
@@ -179,48 +227,24 @@ class Cake:
                     except OSError:
                         pass
         else:
-            # Copy the executables into the "bin" dir (as per cake)
-            # Unless the user has changed the bindir (or set --output)
-            # in which case assume that they know what they are doing
-            if self.args.output:
-                print(self.args.output)
-                if self.args.filename:
-                    shutil.copy2(self.namer.executable_pathname(self.args.filename[0]), self.args.output)
-                if self.args.static:
-                    shutil.copy2(self.namer.staticlibrary_pathname(self.args.static[0]), self.args.output)
-                if self.args.dynamic:
-                    shutil.copy2(self.namer.dynamiclibrary_pathname(self.args.dynamic[0]), self.args.output)
-            else:
-                outputdir = self.namer.topbindir()
-                filelist = os.listdir(self.namer.executable_dir())
-                if self.args.tests:
-                    tests = [self.namer.executable_name(ff) for ff in self.args.tests]
-                else:
-                    tests = None
-                for ff in filelist:
-                    if not tests or ff not in tests:
-                        filename = os.path.join(self.namer.executable_dir(), ff)
-                        if ct.utils.isexecutable(filename):
-                            print("".join([outputdir, ff]))
-                            shutil.copy2(filename, outputdir)
-                if self.args.static:
-                    filename = self.namer.staticlibrary_pathname(self.args.static[0])
-                    print(os.path.join(outputdir, self.namer.staticlibrary_name(self.args.static[0])))
-                    shutil.copy2(filename, outputdir)
-
+            self._copyexes()
 
     def process(self):
         """ Transform the arguments into suitable versions for ct-* tools
             and call the appropriate tool.
         """
-        
+
         # If the user specified only a single file to be turned into a library, guess that
         # they mean for ct-cake to chase down all the implied files.
         self._createctobjs()
         if self.args.static and len(self.args.static) == 1:
-            self.args.static.extend(self.hunter.required_source_files(self.args.static[0]))
+            self.args.static.extend(
+                self.hunter.required_source_files(
+                    self.args.static[0]))
         if self.args.dynamic and len(self.args.dynamic) == 1:
-            self.args.dynamic.extend(self.hunter.required_source_files(self.args.dynamic[0]))
+            self.args.dynamic.extend(
+                self.hunter.required_source_files(
+                    self.args.dynamic[0]))
 
         if self.args.auto:
             findtargets = ct.findtargets.FindTargets(self.args)
@@ -238,9 +262,11 @@ class Cake:
         else:
             self._callmakefile()
 
+
 def signal_handler(signal, frame):
     sys.exit(0)
-        
+
+
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     Cake.add_arguments(cap)
@@ -250,19 +276,25 @@ def main(argv=None):
         sys.argv.append('-v')
     args = ct.apptools.parseargs(cap, argv)
 
-    if not any([args.filename, args.static, args.dynamic, args.tests, args.auto]):
-        print('Nothing for cake to do.  Did you mean cake --auto? Use cake --help for help.')
+    if not any([args.filename,
+                args.static,
+                args.dynamic,
+                args.tests,
+                args.auto]):
+        print(
+            'Nothing for cake to do.  Did you mean cake --auto? Use cake --help for help.')
         return 0
 
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGPIPE, signal_handler)
-    
+
     try:
         cake = Cake(args)
         cake.process()
     except IOError as ioe:
         if args.verbose < 2:
-            print(" ".join(["Error processing", ioe.filename, ". Does it exist?"]))
+            print(
+                " ".join(["Error processing", ioe.filename, ". Does it exist?"]))
             return 1
         else:
             raise
