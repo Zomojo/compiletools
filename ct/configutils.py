@@ -179,28 +179,14 @@ def variant_with_hash(
             verbose=args.verbose)
 
     # Only hash the bits of args that could change the build products
-    unimportantkeys = [
-        'clean',
-        'verbose',
-        'quiet',
-        'auto',
-        'filelist',
-        'output',
-        'parallel',
-        'makefilename',
-        'filter',
-        'merge',
-        'headerdeps',
-        'shorten',
-        'style',
-        'projectversion',
-        'projectversioncmd',
-        'CTCACHE',
-        'variant',
-        'config_file']
+    importantkeys = [
+        'CPPFLAGS',
+        'CFLAGS',
+        'CXXFLAGS',
+        'LDFLAGS']
     kwargs = {attr: value
               for attr, value in args.__dict__.items()
-              if attr not in unimportantkeys}
+              if attr in importantkeys}
     # The & <magicnumber> at the end is so that python2/3 give the same result
     return "%s.%08x" % (
         variant, (zlib.adler32(str(kwargs).encode('utf-8')) & 0xffffffff))

@@ -21,8 +21,13 @@ class Namer(object):
         # If the user didn't explicitly tell us what bindir to use the
         # generate a unique one for the args
         if self.args.bindir == 'bin/default':
-            Namer._using_variant_with_hash_bindir = True
-            vwh = ct.configutils.variant_with_hash(args, argv=argv, variant=variant, exedir=exedir)
+            # Uncomment these to use a hash as part of the variant directory name
+            #Namer._using_variant_with_hash_bindir = True
+            #vwh = ct.configutils.variant_with_hash(args, argv=argv, variant=variant, exedir=exedir)
+            if variant is None:
+                vwh = args.variant
+            else:
+                vwh = variant
             self.args.bindir = "".join(["bin/", vwh])
             self.args.objdir = "".join(["bin/", vwh, "/obj"])
 
