@@ -237,25 +237,31 @@ class Cake:
         # If the user specified only a single file to be turned into a library, guess that
         # they mean for ct-cake to chase down all the implied files.
         self._createctobjs()
+        recreateobjs = False
         if self.args.static and len(self.args.static) == 1:
             self.args.static.extend(
                 self.hunter.required_source_files(
                     self.args.static[0]))
+            recreateobjs = True
+
         if self.args.dynamic and len(self.args.dynamic) == 1:
             self.args.dynamic.extend(
                 self.hunter.required_source_files(
                     self.args.dynamic[0]))
+            recreateobjs = True
 
         if self.args.auto:
             findtargets = ct.findtargets.FindTargets(self.args)
             findtargets.process(self.args)
+            recreateobjs = True
 
-        # Since we've fiddled with the args,
-        # run the common substitutions again
-        # Primarily, this fixes the --includes for the git root of the
-        # targets. And recreate the ct objects
-        ct.apptools.commonsubstitutions(self.args)
-        self._createctobjs()
+        if recreateobjs:
+            # Since we've fiddled with the args,
+            # run the common substitutions again
+            # Primarily, this fixes the --includes for the git root of the
+            # targets. And recreate the ct objects
+            ct.apptools.commonsubstitutions(self.args)
+            self._createctobjs()
 
         if self.args.filelist:
             self._callfilelist()
