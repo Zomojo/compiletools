@@ -340,6 +340,15 @@ def commonsubstitutions(args):
     _add_include_paths_to_flags(args)
     _set_project_version(args)
 
+    try:
+        args.bindir = unsupplied_replacement(args.bindir, os.path.join("bin",args.variant), args.verbose, "bindir")
+    except AttributeError:
+        pass
+
+    try:
+        args.objdir = unsupplied_replacement(args.objdir, os.path.join(args.bindir,"obj"), args.verbose, "objdir")
+    except AttributeError:
+        pass
 
 def parseargs(cap, argv=None):
     args = cap.parse_args(args=argv)

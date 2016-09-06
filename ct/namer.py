@@ -11,34 +11,20 @@ class Namer(object):
     """ From a source filename, calculate related names
         like executable name, object name, etc.
     """
-    # The first Namer may change this.  All others need to be able to read it.
-    _using_variant_with_hash_bindir = False
-
     def __init__(self, args, argv=None, variant=None, exedir=None):
         self.args = args
         self._project = ct.git_utils.Project(args)
 
-        # If the user didn't explicitly tell us what bindir to use the
-        # generate a unique one for the args
-        if self.args.bindir == 'bin/default':
-            # Uncomment these to use a hash as part of the variant directory name
-            #Namer._using_variant_with_hash_bindir = True
-            #vwh = ct.configutils.variant_with_hash(args, argv=argv, variant=variant, exedir=exedir)
-            if variant is None:
-                vwh = args.variant
-            else:
-                vwh = variant
-            self.args.bindir = "".join(["bin/", vwh])
-            self.args.objdir = "".join(["bin/", vwh, "/obj"])
-
     @staticmethod
     def add_arguments(cap, argv=None, variant=None):
         ct.apptools.add_common_arguments(cap, argv=argv, variant=variant)
-        ct.apptools.add_output_directory_arguments(cap, 'default')
-
+        if variant is None:
+            variant = 'unsupplied'
+        ct.apptools.add_output_directory_arguments(cap, variant=variant)
+    
     def topbindir(self):
         """ What is the topmost part of the bin directory """
-        if self._using_variant_with_hash_bindir:
+        if "bin" in self.args.bindir:
             return "bin/"
         else:
             return self.args.bindir

@@ -39,54 +39,6 @@ class TestVariant(unittest.TestCase):
             ct.configutils.extract_variant(
                 "-a -b -c blah.conf --variant abc.123 -a -b -cz--blah".split()))
 
-    def test_variant_with_hash(self):
-        config_files = ct.configutils.config_files_from_variant(
-            exedir=uth.cakedir())
-        cap = configargparse.getArgumentParser(
-            description='TestNamer',
-            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-            default_config_files=config_files,
-            args_for_setting_config_path=["-c", "--config"],
-            ignore_unknown_config_file_keys=True)
-        argv1 = "--variant=gcc.debug".split()
-        ct.apptools.add_common_arguments(
-            cap=cap,
-            argv=argv1,
-            variant="gcc.debug")
-        args1 = ct.apptools.parseargs(cap, argv1)
-
-        # Make a second, different, but logically equivalent argv
-        argv2 = "--no-shorten --variant=gcc.debug".split()
-        args2 = ct.apptools.parseargs(cap, argv2)
-        self.assertEqual(args1, args2)
-
-        # And a third ...
-        argv3 = []
-        args3 = ct.apptools.parseargs(cap, argv3)
-        self.assertEqual(args1, args3)
-
-        vwh1 = ct.configutils.variant_with_hash(
-            args1,
-            argv=argv1,
-            user_config_dir='/var',
-            system_config_dir='/var',
-            exedir=uth.cakedir())
-        vwh2 = ct.configutils.variant_with_hash(
-            args2,
-            argv=argv2,
-            user_config_dir='/var',
-            system_config_dir='/var',
-            exedir=uth.cakedir())
-        self.assertEqual(vwh1, vwh2)
-
-        vwh3 = ct.configutils.variant_with_hash(
-            args3,
-            argv=argv3,
-            user_config_dir='/var',
-            system_config_dir='/var',
-            exedir=uth.cakedir())
-        self.assertEqual(vwh1, vwh3)
-
     def test_extract_variant_from_ct_conf(self):
         # Should find the one in the git repo ct.conf.d/ct.conf
         # Unless there is a system one to be found

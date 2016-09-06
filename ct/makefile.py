@@ -205,8 +205,7 @@ class MakefileCreator:
     def add_arguments(cap):
         ct.apptools.add_target_arguments_ex(cap)
         ct.apptools.add_link_arguments(cap)
-        # Don't add the output directory arguments
-        # The Namer will do it and get the hash correct
+        # Don't add the output directory arguments. Namer will do it.
         #ct.utils.add_output_directory_arguments(parser, variant)
         ct.namer.Namer.add_arguments(cap)
         ct.hunter.add_arguments(cap)

@@ -1,6 +1,5 @@
 import sys
 import os
-import zlib
 import ast
 import appdirs
 import configargparse
@@ -156,40 +155,6 @@ def extract_variant(
         print("Extract variant: " + result)
 
     return result
-
-
-def variant_with_hash(
-        args,
-        argv=None,
-        variant=None,
-        user_config_dir=None,
-        system_config_dir=None,
-        exedir=None):
-    """ Note that the argv can override the options in the config file.
-        If we want to keep the differently specified flags separate then
-        some hash of the argv must be added onto the config file name.
-        Choose adler32 for speed
-    """
-    if not variant:
-        variant = extract_variant(
-            argv,
-            user_config_dir=user_config_dir,
-            system_config_dir=system_config_dir,
-            exedir=exedir,
-            verbose=args.verbose)
-
-    # Only hash the bits of args that could change the build products
-    importantkeys = [
-        'CPPFLAGS',
-        'CFLAGS',
-        'CXXFLAGS',
-        'LDFLAGS']
-    kwargs = {attr: value
-              for attr, value in args.__dict__.items()
-              if attr in importantkeys}
-    # The & <magicnumber> at the end is so that python2/3 give the same result
-    return "%s.%08x" % (
-        variant, (zlib.adler32(str(kwargs).encode('utf-8')) & 0xffffffff))
 
 
 def default_config_directories(
