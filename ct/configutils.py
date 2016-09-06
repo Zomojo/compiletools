@@ -49,9 +49,9 @@ def extract_item_from_ct_conf(
         Return the given default if no key was identified
     """
     fileparser = configargparse.ConfigFileParser()
-    for cfgpath in defaultconfigs(user_config_dir=user_config_dir,
+    for cfgpath in reversed(defaultconfigs(user_config_dir=user_config_dir,
                                   system_config_dir=system_config_dir,
-                                  exedir=exedir):
+                                  exedir=exedir)):
         with open(cfgpath) as cfg:
             items = fileparser.parse(cfg)
             try:
@@ -102,6 +102,7 @@ def extract_variant(
         verbose=0):
     """ The variant argument is parsed directly from the command line arguments
         so that it can be used to specify the default config for configargparse.
+        The ct.conf files are also checked.
         Remember that the hierarchy of values is
         command line > environment variables > config file values > defaults
         If the user specified a config directly (rather than a variant) then
@@ -113,6 +114,8 @@ def extract_variant(
     # If the user specified a config directly then we imply the variant name
     implied = impliedvariant(argv)
     if implied:
+        if verbose >= 1:
+            print("Using implied variant from directly specified config")
         return implied
 
     # Parse the command line, et al, extract the variant the user wants,
@@ -193,11 +196,11 @@ def defaultconfigs(
     ctconfs = [
         os.path.join(
             defaultdir,
-            'ct.conf') for defaultdir in default_config_directories(
+            'ct.conf') for defaultdir in reversed(default_config_directories(
             user_config_dir=user_config_dir,
             system_config_dir=system_config_dir,
             exedir=exedir,
-            verbose=verbose)]
+            verbose=verbose))]
 
     # Only return the configs that exist
     configs = [cfg for cfg in ctconfs if ct.wrappedos.isfile(cfg)]
@@ -211,26 +214,39 @@ def config_files_from_variant(
         argv=None,
         user_config_dir=None,
         system_config_dir=None,
-        exedir=None):
+        exedir=None,
+        verbose=0):
     if variant is None:
-        variant = extract_variant(argv, exedir=exedir)
-    variantconfigs = []
+        variant = extract_variant(
+                      argv,
+                      user_config_dir=user_config_dir,
+                      system_config_dir=system_config_dir,
+                      exedir=exedir,
+                      verbose=verbose)
+    
+    # Start with the default ct.conf files
+    variantconfigs = defaultconfigs(
+                         user_config_dir=user_config_dir,
+                         system_config_dir=system_config_dir,
+                         exedir=exedir,
+                         verbose=verbose)
 
     # If a config file was specified directly then use that
     argvconfig = extractconfig(argv)
     if argvconfig:
         variantconfigs.append(argvconfig)
-
-    # Otherwise look for a file called variant or variant.conf
-    for ext in ("",".conf"):
-        variantconfigs += [
-            os.path.join(
-                defaultdir,
-                variant) +
-            ext for defaultdir in default_config_directories(
-                user_config_dir=user_config_dir,
-                system_config_dir=system_config_dir,
-                exedir=exedir)]
+    else:
+        # Otherwise look for a file called variant or variant.conf
+        for ext in ("",".conf"):
+            variantconfigs += [
+                os.path.join(
+                    defaultdir,
+                    variant) +
+                ext for defaultdir in default_config_directories(
+                    user_config_dir=user_config_dir,
+                    system_config_dir=system_config_dir,
+                    exedir=exedir,
+                    verbose=verbose)]
 
     # Check that a config file exists for the specified variant
     if not any([ct.wrappedos.isfile(cfg) for cfg in variantconfigs]):
@@ -239,10 +255,8 @@ def config_files_from_variant(
         sys.exit(1)        
 
     # Only return the configs that exist
-    configs = [
-        cfg for cfg in variantconfigs +
-        defaultconfigs(
-            user_config_dir=user_config_dir,
-            system_config_dir=system_config_dir,
-            exedir=exedir) if ct.wrappedos.isfile(cfg)]
+    configs = [cfg for cfg in variantconfigs if ct.wrappedos.isfile(cfg)]
+    if verbose >= 1:
+        print("Using config files = ")
+        print(configs)
     return configs

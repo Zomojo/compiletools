@@ -156,7 +156,7 @@ def unsupplied_replacement(variable, default_variable, verbose, variable_str):
     replacement = variable
     if "unsupplied" in variable:
         replacement = default_variable
-        if verbose >= 3:
+        if verbose >= 4:            
             print(" ".join([variable_str,
                             "was unsupplied. Changed to use ",
                             default_variable]))
@@ -225,7 +225,8 @@ def _add_include_paths_to_flags(args):
                 args.CFLAGS += " -I " + path
             if path not in args.CXXFLAGS:
                 args.CXXFLAGS += " -I " + path
-    if args.verbose >= 3 and len(args.include) > 0:
+
+    if args.verbose >= 4 and len(args.include) > 0:
         print(
             "Extra include paths have been appended to the *FLAG variables:")
         print("\tCPPFLAGS=" + args.CPPFLAGS)
@@ -278,7 +279,7 @@ def _set_project_version(args):
             args.CXXFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
                 args.projectversion + '\\"'
 
-        if args.verbose >= 3:
+        if args.verbose >= 4:
             print(
                 "*FLAG variables have been modified with the project version:")
             print("\tCPPFLAGS=" + args.CPPFLAGS)

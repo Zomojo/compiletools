@@ -41,9 +41,10 @@ class TestVariant(unittest.TestCase):
 
     def test_extract_variant_from_ct_conf(self):
         # Should find the one in the git repo ct.conf.d/ct.conf
-        # Unless there is a system one to be found
         variant = ct.configutils.extract_item_from_ct_conf(
             key='variant',
+            user_config_dir='/var',
+            system_config_dir='/var',
             exedir=uth.cakedir())
         self.assertEqual("debug", variant)
 
