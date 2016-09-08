@@ -30,6 +30,13 @@ from and also determine the tests to build and run.
 A variant is a configuration file that specifies various configurable settings
 like the compiler and compiler flags. Common variants are "debug" and "release".
 
+Options are parsed using python-configargparse.  This means they can be passed
+in on the command line, as environment variables or in config files.
+Command-line values override environment variables which override config file 
+values which override defaults. Note that the environment variables are 
+captilized. That is, a command line option of --magic=cpp is the equivalent of 
+an environment variable MAGIC=cpp.
+
 Other notable tools are 
 
 * ct-headertree: provides information about structure of the include files
