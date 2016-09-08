@@ -9,6 +9,13 @@ python:
 install:
       - pip install -q -e .
 
+addons:
+    apt:
+        sources:
+            - ubuntu-toolchain-r-test
+        packages:
+            - g++-5
+
 # command to run tests
 script:
       - nosetests
