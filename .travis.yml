@@ -5,17 +5,19 @@ python:
     - "3.3"
     - "3.4"
 
-# command to install dependencies      
-install:
-      - pip install -q -e .
-
 addons:
     apt:
         sources:
             - ubuntu-toolchain-r-test
         packages:
             - g++-5
+            - gcc-5
+
+# command to install dependencies      
+install:
+    - pip install -q -e .
+    - export CXX="g++-5" CC="gcc-5" LD="g++-5" CXXFLAGS="-std=c++11"
 
 # command to run tests
 script:
-      - nosetests
+    - nosetests
