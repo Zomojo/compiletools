@@ -26,6 +26,7 @@ class TestListVariants(unittest.TestCase):
             '/usr/lib',
             '\tNone found',
             os.path.join(uth.cakedir(), 'ct.conf.d'),
+            '\tblank',
             '\tclang.debug',
             '\tclang.release',
             '\tct',
