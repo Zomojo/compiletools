@@ -5,11 +5,15 @@ import sys
 import os
 import subprocess
 
+# Only used for the verbose print.
+import configargparse
+
 from ct.version import __version__
 import ct.git_utils
 import ct.configutils
 import ct.utils
 import ct.dirnamer
+
 
 def add_base_arguments(cap, argv=None, variant=None):
     # Even though the variant is actually sucked out of the command line by
@@ -326,7 +330,7 @@ def _tier_one_modifications(args):
         args.headerdeps = 'cpp'
     
 
-def commonsubstitutions(args):
+def _commonsubstitutions(args):
     """ If certain arguments have not been specified but others have
         then there are some obvious substitutions to make
     """
@@ -342,23 +346,44 @@ def commonsubstitutions(args):
     _set_project_version(args)
 
     try:
+        # If the user didn't explicitly supply a bindir then modify the bindir to use the variant name
         args.bindir = unsupplied_replacement(args.bindir, os.path.join("bin",args.variant), args.verbose, "bindir")
     except AttributeError:
         pass
 
     try:
+        # Same idea as the bindir modification
         args.objdir = unsupplied_replacement(args.objdir, os.path.join(args.bindir,"obj"), args.verbose, "objdir")
     except AttributeError:
         pass
 
-def parseargs(cap, argv=None):
+# List to store the callback functions for parse args
+_substitutioncallbacks = [_commonsubstitutions]
+
+def registercallback(callback):
+    """ Use this to register a function to be called back during the 
+        substitutions call (usually during parseargs).
+        The callback function will later be given "args" as its argument.
+    """
+    _substitutioncallbacks.append(callback)
+
+def substitutions(args, verbose=None):
+    if verbose is None:
+        verbose = args.verbose
+
+    for func in _substitutioncallbacks:
+        func(args)
+
+    if verbose >= 2:
+        verboseprintconfig(args)
+
+def parseargs(cap, argv=None, verbose=None):
     args = cap.parse_args(args=argv)
-    commonsubstitutions(args)
-    if args.verbose >= 3:
-        print(" ".join(["Using variant =", args.variant]))
-        cap.print_values()
-    if args.verbose >= 2:
-        verbose_print_args(args)
+
+    if verbose is None:
+        verbose = args.verbose
+
+    substitutions(args, verbose)
     return args
 
 
@@ -370,6 +395,14 @@ def terminalcolumns():
         columns = 80
     return columns
 
+def verboseprintconfig(args):
+    if args.verbose >= 3:
+        print(" ".join(["Using variant =", args.variant]))
+        cap = configargparse.getArgumentParser()
+        cap.print_values()
+
+    if args.verbose >= 2:
+        verbose_print_args(args)
 
 def verbose_print_args(args):
     # Print the args in two columns Attr: Value
