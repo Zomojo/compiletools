@@ -214,6 +214,31 @@ class MakefileCreator:
             default="Makefile",
             help="Output filename for the Makefile")
 
+    def _uptodate(self, outputs):
+        """ Is the Makefile up to date? I.e., Check if the modification time
+            of the Makefile is greater than the modification times of all the
+            source and header files.  
+            'outputs' should be the return value of _gather_build_outputs()
+        """
+        try:
+            makefilemtime = ct.wrappedos.getmtime(self.args.makefilename)
+        except OSError:
+            # If the Makefile doesn't exist then we aren't up to date
+            return False
+
+        for output in outputs:
+            filelist = self.hunter.required_files(output)
+            for ff in filelist:
+                if ct.wrappedos.getmtime(ff) > makefilemtime:
+                    if self.args.verbose > 7:
+                        print("mtime for {} is newer than mtime for the Makefile", ct.wrappedos.getmtime(ff)) 
+                    return False
+        
+        if self.args.verbose > 9:
+            print("Makefile is up to date.  Not recreating.")
+
+        return True
+
     def _create_all_rule(self):
         """ Create the rule that in depends on all build products """
         prerequisites = ['build']
@@ -362,6 +387,10 @@ class MakefileCreator:
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
         buildoutputs = self._gather_build_outputs()
+        if self._uptodate(buildoutputs):
+            return
+        
+        ct.wrappedos.makedirs(self.namer.executable_dir())        
         self.rules.add(self._create_all_rule())
         self.rules.add(self._create_build_rule(buildoutputs))
 
