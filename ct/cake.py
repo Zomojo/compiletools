@@ -27,6 +27,16 @@ class Cake:
         self.headerdeps = None
         self.magicparser = None
         self.hunter = None
+        ct.apptools.registercallback(Cake._hide_makefilename)
+
+    @staticmethod
+    def _hide_makefilename(args):
+        """ Change the args.makefilename to hide the Makefile in the executable_dir() 
+            This is a callback function for the ct.apptools.substitutions.
+        """
+        namer = ct.namer.Namer(args)
+        movedmakefile = os.path.join(namer.executable_dir(), args.makefilename)
+        args.makefilename = movedmakefile
 
     def _createctobjs(self):
         """ Has to be separate because --auto fiddles with the args """
@@ -73,7 +83,7 @@ class Cake:
                                extrahelp]))
 
     @staticmethod
-    def add_arguments(cap):
+    def add_arguments(cap):        
         ct.makefile.MakefileCreator.add_arguments(cap)
         ct.jobs.add_arguments(cap)
 
@@ -184,15 +194,13 @@ class Cake:
     def _callmakefile(self):
         makefile_creator = ct.makefile.MakefileCreator(self.args, self.hunter)
         makefilename = makefile_creator.create()
-        movedmakefile = os.path.join(self.namer.executable_dir(), makefilename)
         ct.wrappedos.makedirs(self.namer.executable_dir())
-        shutil.move(makefilename, movedmakefile)
         cmd = ['make']
         if self.args.verbose <= 1:
             cmd.append('-s')
         if self.args.verbose >= 4:
             cmd.append('--trace')
-        cmd.extend(['-j', str(self.args.parallel), '-f', movedmakefile])
+        cmd.extend(['-j', str(self.args.parallel), '-f', self.args.makefilename])
         if self.args.clean:
             cmd.append('realclean')
         else:
@@ -205,7 +213,7 @@ class Cake:
             cmd = ['make']
             if self.args.verbose < 2:
                 cmd.append('-s')
-            cmd.extend(['-f', movedmakefile, 'runtests'])
+            cmd.extend(['-f', self.args.makefilename, 'runtests'])
             if self.args.verbose >= 2:
                 print(" ".join(cmd))
             subprocess.check_call(cmd, universal_newlines=True)
@@ -233,7 +241,6 @@ class Cake:
         """ Transform the arguments into suitable versions for ct-* tools
             and call the appropriate tool.
         """
-
         # If the user specified only a single file to be turned into a library, guess that
         # they mean for ct-cake to chase down all the implied files.
         self._createctobjs()
@@ -257,11 +264,13 @@ class Cake:
 
         if recreateobjs:
             # Since we've fiddled with the args,
-            # run the common substitutions again
+            # run the substitutions again
             # Primarily, this fixes the --includes for the git root of the
             # targets. And recreate the ct objects
-            ct.apptools.commonsubstitutions(self.args)
+            ct.apptools.substitutions(self.args, verbose=0)
             self._createctobjs()
+
+        ct.apptools.verboseprintconfig(self.args)
 
         if self.args.filelist:
             self._callfilelist()
@@ -280,7 +289,7 @@ def main(argv=None):
         # Output of stdout is done via increasing the verbosity
         # Developers seem to be "default happy" when verbosity defaults to 1
         sys.argv.append('-v')
-    args = ct.apptools.parseargs(cap, argv)
+    args = ct.apptools.parseargs(cap, argv, verbose=0)
 
     if not any([args.filename,
                 args.static,
