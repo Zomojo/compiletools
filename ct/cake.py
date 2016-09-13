@@ -27,7 +27,6 @@ class Cake:
         self.headerdeps = None
         self.magicparser = None
         self.hunter = None
-        ct.apptools.registercallback(Cake._hide_makefilename)
 
     @staticmethod
     def _hide_makefilename(args):
@@ -35,8 +34,18 @@ class Cake:
             This is a callback function for the ct.apptools.substitutions.
         """
         namer = ct.namer.Namer(args)
-        movedmakefile = os.path.join(namer.executable_dir(), args.makefilename)
-        args.makefilename = movedmakefile
+        if namer.executable_dir() not in args.makefilename:
+            movedmakefile = os.path.join(namer.executable_dir(), args.makefilename)
+            if args.verbose > 4:
+                print("Makefile location is being altered.  New location is {}".format(movedmakefile))
+            args.makefilename = movedmakefile
+    
+    @staticmethod
+    def registercallback():
+        """ Must be called before object creation so that the args parse 
+            correctly
+        """
+        ct.apptools.registercallback(Cake._hide_makefilename)
 
     def _createctobjs(self):
         """ Has to be separate because --auto fiddles with the args """
@@ -285,6 +294,8 @@ def signal_handler(signal, frame):
 def main(argv=None):
     cap = configargparse.getArgumentParser()
     Cake.add_arguments(cap)
+    Cake.registercallback()
+
     if argv is None:
         # Output of stdout is done via increasing the verbosity
         # Developers seem to be "default happy" when verbosity defaults to 1
