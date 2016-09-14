@@ -9,7 +9,7 @@ import ct.listvariants
 class TestListVariants(unittest.TestCase):
 
     def setUp(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
     def test_none_found(self):
         # These values are deliberately chosen so that we can know that
@@ -44,7 +44,7 @@ class TestListVariants(unittest.TestCase):
         self.assertEqual(expected_output, output)
 
     def tearDown(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
 if __name__ == '__main__':
     unittest.main()

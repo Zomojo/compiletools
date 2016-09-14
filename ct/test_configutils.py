@@ -13,7 +13,7 @@ import ct.apptools
 class TestVariant(unittest.TestCase):
 
     def setUp(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
     def test_extract_variant(self):
         self.assertEqual(
@@ -58,7 +58,7 @@ class TestVariant(unittest.TestCase):
         self.assertEqual("gcc.debug", variant)
 
     def tearDown(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
 if __name__ == '__main__':
     unittest.main()

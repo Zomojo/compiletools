@@ -27,7 +27,7 @@ def _reload_ct(cache_home):
 class TestCPPDeps(unittest.TestCase):
 
     def setUp(self):
-        uth.delete_existing_parsers()
+        uth.reset()        
 
     # This test needs to run in buffered mode. 
     #You can set buffer through unit2 command line flag -b, --buffer 
@@ -36,6 +36,7 @@ class TestCPPDeps(unittest.TestCase):
     def test_cppdeps(self):
         tempdir = '/dev/shm/test.ct.cppdeps'
         _reload_ct(tempdir)
+        uth.reset()
         ct.cppdeps.main(['samples/numbers/test_direct_include.cpp'])
         output = sys.stdout.getvalue().strip().split()
         expected_output = [
@@ -46,7 +47,7 @@ class TestCPPDeps(unittest.TestCase):
         shutil.rmtree(tempdir)
 
     def tearDown(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
 
 if __name__ == '__main__':

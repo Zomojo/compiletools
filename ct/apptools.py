@@ -360,6 +360,11 @@ def _commonsubstitutions(args):
 # List to store the callback functions for parse args
 _substitutioncallbacks = [_commonsubstitutions]
 
+def resetcallbacks():
+    """ Useful in tests to clear out the substitution callbacks """
+    global _substitutioncallbacks
+    _substitutioncallbacks = [_commonsubstitutions]
+
 def registercallback(callback):
     """ Use this to register a function to be called back during the 
         substitutions call (usually during parseargs).

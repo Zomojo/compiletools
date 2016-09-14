@@ -214,11 +214,10 @@ class MakefileCreator:
             default="Makefile",
             help="Output filename for the Makefile")
 
-    def _uptodate(self, outputs):
+    def _uptodate(self):
         """ Is the Makefile up to date? I.e., Check if the modification time
             of the Makefile is greater than the modification times of all the
             source and header files.  
-            'outputs' should be the return value of _gather_build_outputs()
         """
         try:
             makefilemtime = ct.wrappedos.getmtime(self.args.makefilename)
@@ -226,8 +225,8 @@ class MakefileCreator:
             # If the Makefile doesn't exist then we aren't up to date
             return False
 
-        for output in outputs:
-            filelist = self.hunter.required_files(output)
+        for sf in self._gather_root_sources():
+            filelist = self.hunter.required_files(sf)
             for ff in filelist:
                 if ct.wrappedos.getmtime(ff) > makefilemtime:
                     if self.args.verbose > 7:
@@ -302,6 +301,9 @@ class MakefileCreator:
 
     def _create_cp_rule(self, output):
         """ Given the original output, copy it to the executable_dir() """
+        if self.namer.executable_dir() == ct.wrappedos.dirname(output):
+            return None
+
         return Rule(
             target=os.path.join(self.namer.executable_dir(), os.path.basename(output)),
             prerequisites=output,
@@ -347,6 +349,22 @@ class MakefileCreator:
                 recipe=recipe))
         return rules
 
+    def _gather_root_sources(self):
+        """ Gather all the source files listed on the command line 
+            into one uber set 
+        """
+        sources = set()
+        if self.args.static:
+            sources.update(self.args.static)
+        if self.args.dynamic:
+            sources.update(self.args.dynamic)
+        if self.args.filename:
+            sources.update(self.args.filename)
+        if self.args.tests:
+            sources.update(self.args.tests)
+
+        return sources
+
     def _gather_build_outputs(self):
         """ Gathers together object files and other outputs """
         buildoutputs = set()
@@ -384,14 +402,14 @@ class MakefileCreator:
 
 
     def create(self):
+        if self._uptodate():
+            return
+
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
-        buildoutputs = self._gather_build_outputs()
-        if self._uptodate(buildoutputs):
-            return
-        
         ct.wrappedos.makedirs(self.namer.executable_dir())        
         self.rules.add(self._create_all_rule())
+        buildoutputs = self._gather_build_outputs()
         self.rules.add(self._create_build_rule(buildoutputs))
 
         realpath_sources = []
@@ -406,8 +424,10 @@ class MakefileCreator:
         if self.args.filename or self.args.tests:
             allexes = {
                 self.namer.executable_pathname(source) for source in realpath_sources}
-            for exe in allexes: 
-                self.rules.add(self._create_cp_rule(exe))
+            for exe in allexes:
+                cprule = self._create_cp_rule(exe) 
+                if cprule:
+                    self.rules.add(cprule)
 
             self.rules |= self._create_link_rules_for_sources(
                 realpath_sources,
@@ -419,7 +439,9 @@ class MakefileCreator:
         if self.args.static:
             libraryname = self.namer.staticlibrary_pathname(
                 ct.wrappedos.realpath(self.args.static[0]))
-            self.rules.add(self._create_cp_rule(libraryname))
+            cprule = self._create_cp_rule(libraryname)
+            if cprule:
+                self.rules.add(self._create_cp_rule(libraryname))
             realpath_static = {
                 ct.wrappedos.realpath(filename) for filename in self.args.static}
             self.rules |= self._create_link_rules_for_sources(
@@ -430,7 +452,9 @@ class MakefileCreator:
         if self.args.dynamic:
             libraryname = self.namer.dynamiclibrary_pathname(
                 ct.wrappedos.realpath(self.args.dynamic[0]))
-            self.rules.add(self._create_cp_rule(libraryname))
+            cprule = self._create_cp_rule(libraryname)
+            if cprule:
+                self.rules.add(cprule)
             realpath_dynamic = {
                 ct.wrappedos.realpath(filename) for filename in self.args.dynamic}
             self.rules |= self._create_link_rules_for_sources(

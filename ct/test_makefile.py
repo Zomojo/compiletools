@@ -19,7 +19,7 @@ _moduletmpdir = None
 class TestMakefile(unittest.TestCase):
 
     def setUp(self):
-        uth.delete_existing_parsers()
+        uth.reset()
         global _moduletmpdir
         if not _moduletmpdir:
             _moduletmpdir = tempfile.mkdtemp()
@@ -29,7 +29,7 @@ class TestMakefile(unittest.TestCase):
             pass
 
     def _create_makefile_and_make(self, tempdir):
-        uth.delete_existing_parsers()
+        uth.reset()
         samplesdir = uth.samplesdir()
         origdir = uth.ctdir()
         #origdir = os.getcwd()
@@ -92,7 +92,7 @@ class TestMakefile(unittest.TestCase):
 
     def tearDown(self):
         shutil.rmtree(_moduletmpdir, ignore_errors=True)
-        uth.delete_existing_parsers()
+        uth.reset()
 
 
 def _test_library(static_dynamic):

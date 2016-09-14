@@ -11,7 +11,7 @@ import ct.cake
 
 class TestCake(unittest.TestCase):
     def setUp(self):
-        uth.delete_existing_parsers()
+        uth.reset()
     
     def test_no_git_root(self):
         # Setup
@@ -51,7 +51,7 @@ class TestCake(unittest.TestCase):
         shutil.rmtree(self._tmpdir, ignore_errors=True)
     
     def tearDown(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
 
 if __name__ == '__main__':

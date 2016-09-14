@@ -44,7 +44,7 @@ def _reload_ct(cache_home):
 class TestHunterModule(unittest.TestCase):
 
     def setUp(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
     def test_hunter_follows_source_files_from_header(self):
         origcache = ct.dirnamer.user_cache_dir('ct')
@@ -128,7 +128,7 @@ class TestHunterModule(unittest.TestCase):
         _reload_ct(origcache)
 
     def tearDown(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
 if __name__ == '__main__':
     unittest.main()

@@ -32,7 +32,7 @@ def _reload_ct(cache_home):
 class TestMagicFlagsModule(unittest.TestCase):
 
     def setUp(self):
-        uth.delete_existing_parsers()
+        uth.reset()
         config_files = ct.configutils.config_files_from_variant(exedir=uth.cakedir())
         cap = configargparse.getArgumentParser(
             description='TestMagicFlagsModule',
@@ -113,4 +113,4 @@ class TestMagicFlagsModule(unittest.TestCase):
         self.assertEqual(magicparser.parse(realpath), expected)
 
     def tearDown(self):
-        uth.delete_existing_parsers()
+        uth.reset()

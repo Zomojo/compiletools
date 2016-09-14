@@ -2,7 +2,11 @@ from __future__ import unicode_literals
 from __future__ import print_function
 import configargparse
 import os
+import ct.apptools
 
+def reset():
+    delete_existing_parsers()
+    ct.apptools.resetcallbacks()
 
 def delete_existing_parsers():
     """ The singleton parsers supplied by configargparse

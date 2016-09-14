@@ -14,7 +14,7 @@ import ct.apptools
 class TestNamer(unittest.TestCase):
 
     def setUp(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
     @unittest.skipUnless(
         int(sys.version[0]) < 3, "The hardcoded hash value is only valid on python 2")
@@ -42,7 +42,7 @@ class TestNamer(unittest.TestCase):
                 os.getcwd(),
                 'bin/gcc.debug/home/user/code/my'))
     def tearDown(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
 if __name__ == '__main__':
     unittest.main()

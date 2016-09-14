@@ -62,7 +62,7 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
 class TestHeaderDepsModule(unittest.TestCase):
 
     def setUp(self):
-        uth.delete_existing_parsers()
+        uth.reset()
         config_files = ct.configutils.config_files_from_variant(variant='gcc.debug', exedir=uth.cakedir())
         cap = configargparse.getArgumentParser(
             description='Configargparser in test code',
@@ -147,7 +147,7 @@ class TestHeaderDepsModule(unittest.TestCase):
         self._direct_and_cpp_generate_same_results_ex()
 
     def tearDown(self):
-        uth.delete_existing_parsers()
+        uth.reset()
 
 if __name__ == '__main__':
     unittest.main()
