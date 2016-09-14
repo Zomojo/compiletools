@@ -223,6 +223,8 @@ class MakefileCreator:
             makefilemtime = ct.wrappedos.getmtime(self.args.makefilename)
         except OSError:
             # If the Makefile doesn't exist then we aren't up to date
+            if self.args.verbose > 7:
+                print("Could not determine mtime for {}. Assuming that it doesn't exist.".format(self.args.makefilename))
             return False
 
         for sf in self._gather_root_sources():
@@ -230,7 +232,7 @@ class MakefileCreator:
             for ff in filelist:
                 if ct.wrappedos.getmtime(ff) > makefilemtime:
                     if self.args.verbose > 7:
-                        print("mtime for {} is newer than mtime for the Makefile", ct.wrappedos.getmtime(ff)) 
+                        print("mtime for {} is newer than mtime for the Makefile".format(ct.wrappedos.getmtime(ff))) 
                     return False
         
         if self.args.verbose > 9:
