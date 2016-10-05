@@ -3,7 +3,7 @@
 <head>
   <meta charset='utf-8'>
 
-  <title>cake -- Alternative C++ build system to CMake, SCons and Boost.Build</title>
+  <title>compiletools -- Tools to make compiling C/C++ projects easy </title>
 
   <style type="text/css">
     body p {
@@ -32,55 +32,62 @@
 </head>
 
 <body>
-  <a href="http://github.com/matthewinrandwick/Cake"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
+  <a href="http://github.com/Zomojo/compiletools"><img style="position: absolute; top: 0; right: 0; border: 0;" src="http://s3.amazonaws.com/github/ribbons/forkme_right_darkblue_121621.png" alt="Fork me on GitHub" /></a>
 
   <div id="container">
 
     <div class="download">
-      <a href="http://github.com/matthewinrandwick/Cake/zipball/master">
+      <a href="http://github.com/Zomojo/compiletools/zipball/master">
         <img border="0" width="90" src="http://github.com/images/modules/download/zip.png"></a>
-      <a href="http://github.com/matthewinrandwick/Cake/tarball/master">
+      <a href="http://github.com/Zomojo/compiletools/tarball/master">
         <img border="0" width="90" src="http://github.com/images/modules/download/tar.png"></a>
     </div>
 
-    <h1><a href="http://github.com/matthewinrandwick/Cake">cake</a></h1>
+    <h1><a href="http://github.com/Zomojo/compiletools">compiletools</a></h1>
 
     <div class="description">
-      Build C++ fast, with practically no configuration. Cake spiders the source code
-      to determine what implementation files to build, what libraries to
-      link against and what compiler flags to set. Only build what you need, and
-      throw out your Makefiles.
+    The various ct-* tools exist to build C/C++ executables with almost no
+    configuration. For example, to build a C or C++ program, type
+    <pre>ct-cake --auto</pre>
+    ct-cake will try to determine the correct source files to generate executables
+    from and also determine the tests to build and run. It works by spidering over
+    the source code to determine what implementation files to build, what libraries to
+    link against and what compiler flags to set. Only build what you need, and
+    throw out your Makefiles.
     </div>
         
     
     <h2>Authors</h2>
-<p>Zomojo Pty, Ltd. - Matthew Herrmann (matthewinrandwick@gmail.com)
+<p>Zomojo Pty, Ltd. - Geoff Ericksson (geoff@zomojo.com)
 <br/>
 <br/>      </p>
 
 
     <h2>Download</h2>
     <p>
-      You can download this project in either
-      <a href="http://github.com/matthewinrandwick/Cake/zipball/master">zip</a> or
-      <a href="http://github.com/matthewinrandwick/Cake/tarball/master">tar</a> formats.
+      You can download this project from
+      <a href="https://github.com/Zomojo/compiletools/releases">releases</a>
     </p>
     <p>You can also clone the project with <a href="http://git-scm.com">Git</a>
       by running:
-      <pre>$ git clone git://github.com/matthewinrandwick/Cake</pre>
+      <pre>$ git clone git://github.com/Zomojo/compiletools</pre>
     </p>
-    
+    <p>Or pip install using
+    <pre>pip install compiletools</pre> 
+
+<h2>Dependencies</h2>
+A relatively recent version of python is required.  python 2.7 and above should work.
+If you are running compiletools from a cloned git repo, you will need to install the following python modules: 
+setuptools, configargparse and appdirs. To install these on Fedora run
+<pre>sudo dnf install python-setuptools python-configargparse python-appdirs</pre>
+
 <h2>Getting Started</h2>
 
 <p>
-Cake requires practically no dependencies -- only a recent version of python. To use it, download the source code, then copy the 'cake' binary into your path. The file cake.conf should be edited with your default preferences for building, then copied into /etc/cake.conf .
+The ct-* tools can run from the cloned git repository. Simply edit your PATH variable to include the repo. For example, if you cloned into your home directory then 
+<pre>PATH=~/compiletools:$PATH</pre>
 </p>
 
-<pre>
-    $ cd &lt;unzipped-location&gt;
-    $ sudo cp cake ~/bin/cake
-    $ sudo cp cake.conf /etc/cake.conf
-</pre>
 
 Now, copy this source code into a file called example.cpp:
 
@@ -118,7 +125,7 @@ int main()
 Compile it and run it using this command:
 
 <pre>
-$ cake example.cpp --verbose && ./bin/example
+$ ct-cake example.cpp --verbose && ./bin/example
 ... /home/matthew/Cake/a.cpp (dependencies)
 g++ -MM -MF bin/obj/@home@matthew@Cake@a.cpp.deps.tmp /home/matthew/Cake/a.cpp
 ... /home/matthew/Cake/a.cpp
