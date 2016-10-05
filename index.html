@@ -92,12 +92,10 @@ The ct-* tools can run from the cloned git repository. Simply edit your PATH var
 Now, copy this source code into a file called example.cpp:
 
 <pre>
-//#LINKFLAGS=-pthread
-//#LINKFLAGS=-lrt
-
 #include &lt;stdio.h&gt;
 #include &lt;pthread.h&gt;
 #include &lt;iostream&gt;
+//#LDFLAGS=-pthread -lrt
 
 static void pclock(const char *msg, clockid_t cid)
 {
@@ -112,9 +110,9 @@ static void pclock(const char *msg, clockid_t cid)
 int main()
 {
     clockid_t cid;
-    pthread_t p = pthread_self();
+    pthread_t pt = pthread_self();
         
-    if (pthread_getcpuclockid(pthread_self(), &cid))
+    if (pthread_getcpuclockid(pt, &cid))
         perror("getcpuclockid failed");
         
     pclock("the clock is", cid);
@@ -125,13 +123,7 @@ int main()
 Compile it and run it using this command:
 
 <pre>
-$ ct-cake example.cpp --verbose && ./bin/example
-... /home/matthew/Cake/a.cpp (dependencies)
-g++ -MM -MF bin/obj/@home@matthew@Cake@a.cpp.deps.tmp /home/matthew/Cake/a.cpp
-... /home/matthew/Cake/a.cpp
-g++   -c  /home/matthew/Cake/a.cpp  -o bin/obj/@home@matthew@Cake@a.cpp2-ada8c8d259075148d77687cbef5c475d.o
-... bin/a
-g++ -o bin/a bin/obj/@home@matthew@Cake@a.cpp2-ada8c8d259075148d77687cbef5c475d.o  -pthread -lrt    
+$ ct-cake --auto && ./bin/example
 
 the clock is 0.003
 </pre>
