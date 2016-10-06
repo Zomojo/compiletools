@@ -124,24 +124,40 @@ Compile it and run it using this command:
 
 <pre>
 $ ct-cake --auto && ./bin/example
-
-the clock is 0.003
+</pre>
+which will produce output similar to 
+<pre>
+make -s -j 3 -f /home/geoff/tmp/bin/gcc.debug/Makefile build
+... /home/geoff/tmp/example.cpp
+... /home/geoff/tmp/bin/gcc.debug/example
+bin/example
+the clock is   0.001
 </pre>
 
 <p>
-Cake automatically included the link flags that you annotated in the source code, so it 
-wasn't necessary to supply them at the command-line. The source code and the build settings
-are kept together, so that the build process becomes trivial. Object files are named with
-a combination of the original filename, and the md5sum of the compiler arguments used to
-generate them.</p>
+What occured was ct-cake searched all the files to find a source file containing the word "main".
+It then searched the source file to extract the link flags that are annotated in the source code, so it 
+wasn't necessary to supply them at the command-line. compiletools is based on the principle that 
+the source code and the build settings are kept together.  This will increase the likelihood of 
+keeping the compile flags in sync with the header includes. 
+A Makefile was created that expressed the required build and then make was called. Finally the execuatable
+was executed.
+</p>
 
 
 <h2>Overview</h2>
 
 <p>
-Cake is a C++ build tool that requires almost no configuration. To build
-a C++ program, type "cake filename.cpp". Cake uses the header includes to
-determine what implementation (cpp) files are required.
+The compiletools project provides a variety of tools for building C/C++ projects and for exploring 
+code dependencies. ct-cake is the Swiss army knife of build tools that combines many of the 
+compiletools into one uber-tool. For many C/C++ projects you can compile simply using
+<pre>
+ct-cake --auto
+</pre>
+The --auto flag tells ct-cake to search for files that will be the "main" file.  
+From that set of files, ct-cake then uses the header includes to
+determine what implementation (cpp) files are also required to be built and linked 
+into the final executable/s.
 </p>
 
 <p>
@@ -153,8 +169,7 @@ easy if you don't arbitrarily name things. The main rules are:
 <p>
 
 <ol>
-
-   <li>Cake only builds C and C++. Everything can be done just fine with
+   <li>ct-cake only builds C and C++. Everything can be done just fine with
    other tools, so there's no point reinventing them. Anyway, it's easy to
    embed cake into other toolchains, see the last section.</li>
 
@@ -163,28 +178,29 @@ easy if you don't arbitrarily name things. The main rules are:
    against the spirit of the tool.</li>
 
    <li>The implementation file for point.hpp should be called point.cpp. This
-   is so cake can compile it and recursively hunt down its dependencies.</li>
+   is so ct-cake can compile it and recursively hunt down its dependencies.</li>
 
    <li>If a header or implementation file will not work without being linked
-   with a certain flag, add a //#LINKFLAGS=myflag directly to the source code.</li>
+   with a certain flag, add a //#LDFLAGS=myflag directly to the source code.</li>
 
    <li>Likewise, if a special compiler option is needed, use //#CXXFLAGS=myflag.</li>
 
    <li>Minimise the use of "-I" include flags. They make it hard not only
    for cake to generate dependencies, but also autocomplete tools like Eclipse and
    ctags. You can avoid -I flags by structuring your code in the same way you
-   refer to paths in your source code. Cake allows -I options, but it's not
-   as pretty.
+   refer to paths in your source code. 
    </li>
 
-   <li>Only gcc, and linux, is supported. Other tools could be added now,
-   but it's not what I use.</li>
-
+   <li>Currently only varieties of Linux are actively supported because that's
+   what the compiletools developers have easy access to. That said, it stands
+   a good chance of working on *BSD and macOS. We are interested in receiving
+   patches for other platforms including Windows.
+   </li>
 </ol>
 
 </p>
 <p>
-Cake works off a "pull" philosophy of building, unlike the "push" model
+ct-cake works off a "pull" philosophy of building, unlike the "push" model
 of most build processes. Often, there is the monolithic build script that
 rebuilds everything. Users iterate over changing a file, relinking everything
 and then rerunning their binary. A hierarchy of libraries is built up and
@@ -194,7 +210,7 @@ particularly for C++.
 </p>
 <p>
 
-In cake, you only pull in what is strictly necessary to what you need to run
+With ct-cake, you only pull in what is strictly necessary to what you need to run
 right now. Say, you are testing a particular tool in a large project, with
 a large base of 2000 library files for string handling, sockets, etc. There
 is simply no make file. You might want to create a build.sh for regression
@@ -204,9 +220,12 @@ testing, but it's not essential.
 <p>
 
 The basic workflow is to simply type:
-
 <pre>
-   cake app.cpp && ./bin/app
+ct-cake --auto
+</pre>
+If there are multiple executables that --auto finds and you only want to build one specific one:
+<pre>
+   ct-cake path/to/src/app.cpp
 </pre>
 
 </p>
@@ -245,7 +264,7 @@ directly to the source code. If you have compress.hpp that requires "-lzip"
 on the link line, add the following comment in the first 4K of the header file:
 
 <pre>
-    //#LINKFLAGS=-lzip
+    //#LDFLAGS=-lzip
 </pre>
 
 </p>
@@ -273,7 +292,7 @@ much easier to tweak the compilation locally.
 <h2>Performance</h2>
 
 <p>
-Because cake internally generates a makefile to build the C++ file, cake is
+Because ct-cake internally generates a makefile to build the C++ file, cake is
 about as fast as a handrolled Makefile that uses the same lazily generated
 dependencies. A typical project takes 0.04 seconds to build if nothing is
 out of date, versus 2 seconds for, say, Boost.Build.
@@ -281,45 +300,18 @@ out of date, versus 2 seconds for, say, Boost.Build.
 </p>
 <p>
 
-Cake also eliminates the redundant generation of static archive files that
+ct-cake also eliminates the redundant generation of static archive files that
 a more hierarchical build process would generate as intermediaries, saving
 the cost of running 'ar'.
 
 </p>
 <p>
-Cake doesn't build all cpp files that you have checked out, only those
+Note that ct-cake doesn't build all cpp files that you have checked out, only those
 strictly needed to build your particular binary, so you only pay for what
 you use. This difference alone should see a large improvement on most
 projects, especially for incremental rebuilds.
 
 </p>
-
-
-<h2>Using Cake with Makefiles</h2>
-
-To wrap cake in a Makefile, use dummy input targets that force a rebuild
-every time. Cake is so fast at incremental rebuilds that this is fine,
-it's just like doing a recursive make. This example handles 'make all'
-'make test' 'make clean' etc.
-
-<pre>
-all: FORCE
-        cake test/*.cpp
-
-release: FORCE
-        cake test/*.cpp --variant=release
-
-debug: FORCE
-        cake test/*.cpp --variant=debug
-
-test: FORCE
-        cake --begintests test/*.cpp --endtests
-
-clean: FORCE
-        rm -rf bin
-
-FORCE:
-</pre>
 
 
 <h2>Cake configuration</h2>
