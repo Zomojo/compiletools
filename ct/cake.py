@@ -30,19 +30,21 @@ class Cake:
 
     @staticmethod
     def _hide_makefilename(args):
-        """ Change the args.makefilename to hide the Makefile in the executable_dir() 
+        """ Change the args.makefilename to hide the Makefile in the executable_dir()
             This is a callback function for the ct.apptools.substitutions.
         """
         namer = ct.namer.Namer(args)
         if namer.executable_dir() not in args.makefilename:
-            movedmakefile = os.path.join(namer.executable_dir(), args.makefilename)
+            movedmakefile = os.path.join(
+                namer.executable_dir(), args.makefilename)
             if args.verbose > 4:
-                print("Makefile location is being altered.  New location is {}".format(movedmakefile))
+                print(
+                    "Makefile location is being altered.  New location is {}".format(movedmakefile))
             args.makefilename = movedmakefile
-    
+
     @staticmethod
     def registercallback():
-        """ Must be called before object creation so that the args parse 
+        """ Must be called before object creation so that the args parse
             correctly
         """
         ct.apptools.registercallback(Cake._hide_makefilename)
@@ -92,7 +94,7 @@ class Cake:
                                extrahelp]))
 
     @staticmethod
-    def add_arguments(cap):        
+    def add_arguments(cap):
         ct.makefile.MakefileCreator.add_arguments(cap)
         ct.jobs.add_arguments(cap)
 
@@ -181,12 +183,17 @@ class Cake:
                     ff) for ff in self.args.tests]
             else:
                 tests = None
+            makefilemtime = os.path.getmtime(self.args.makefilename)
             for ff in filelist:
                 if not tests or ff not in tests:
                     filename = os.path.join(
                         self.namer.executable_dir(), ff)
-                    if ct.utils.isexecutable(filename) and ct.wrappedos.realpath(
-                            filename) != ct.wrappedos.realpath(os.path.join(outputdir, ff)):
+                    srcexe = ct.wrappedos.realpath(filename)
+                    destexe = ct.wrappedos.realpath(
+                        os.path.join(outputdir, ff))
+                    # Only copy the files that were created after the Makefile was created
+                    if ct.utils.isexecutable(filename) and srcexe != destexe and os.path.getmtime(
+                            srcexe) > makefilemtime:
                         print("".join([outputdir, ff]))
                         shutil.copy2(filename, outputdir)
 
@@ -209,7 +216,8 @@ class Cake:
             cmd.append('-s')
         if self.args.verbose >= 4:
             cmd.append('--trace')
-        cmd.extend(['-j', str(self.args.parallel), '-f', self.args.makefilename])
+        cmd.extend(['-j', str(self.args.parallel),
+                    '-f', self.args.makefilename])
         if self.args.clean:
             cmd.append('realclean')
         else:
