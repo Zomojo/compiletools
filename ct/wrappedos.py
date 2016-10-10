@@ -1,6 +1,6 @@
 """ Wrap and memoize a variety of os calls """
 import os
-
+import shutil
 from ct.memoize import memoize
 
 
@@ -53,3 +53,10 @@ def makedirs(path):
     except OSError:
         if not os.path.isdir(path):
             raise
+
+def copy(src, dest):
+    """ copy the src to the dest and print any errors """
+    try:
+        shutil.copy2(src, dest)
+    except IOError as err:
+        print("Unable to copy file {}".format(err))

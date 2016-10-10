@@ -161,17 +161,17 @@ class Cake:
         if self.args.output:
             print(self.args.output)
             if self.args.filename:
-                shutil.copy2(
+                ct.wrappedos.copy(
                     self.namer.executable_pathname(
                         self.args.filename[0]),
                     self.args.output)
             if self.args.static:
-                shutil.copy2(
+                ct.wrappedos.copy(
                     self.namer.staticlibrary_pathname(
                         self.args.static[0]),
                     self.args.output)
             if self.args.dynamic:
-                shutil.copy2(
+                ct.wrappedos.copy(
                     self.namer.dynamiclibrary_pathname(
                         self.args.dynamic[0]),
                     self.args.output)
@@ -195,7 +195,7 @@ class Cake:
                     if ct.utils.isexecutable(filename) and srcexe != destexe and os.path.getmtime(
                             srcexe) > makefilemtime:
                         print("".join([outputdir, ff]))
-                        shutil.copy2(filename, outputdir)
+                        ct.wrappedos.copy(filename, outputdir)
 
             if self.args.static:
                 pathname = self.namer.staticlibrary_pathname(
@@ -205,7 +205,7 @@ class Cake:
                 if ct.wrappedos.realpath(filename) != ct.wrapped.realpath(
                         os.path.join(outputdir, filename)):
                     print(os.path.join(outputdir, ))
-                    shutil.copy2(pathname, outputdir)
+                    ct.wrappedos.copy(pathname, outputdir)
 
     def _callmakefile(self):
         makefile_creator = ct.makefile.MakefileCreator(self.args, self.hunter)
