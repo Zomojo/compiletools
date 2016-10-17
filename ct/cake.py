@@ -167,45 +167,38 @@ class Cake:
                     self.args.output)
             if self.args.static:
                 ct.wrappedos.copy(
-                    self.namer.staticlibrary_pathname(
-                        self.args.static[0]),
+                    self.namer.staticlibrary_pathname(),
                     self.args.output)
             if self.args.dynamic:
                 ct.wrappedos.copy(
-                    self.namer.dynamiclibrary_pathname(
-                        self.args.dynamic[0]),
+                    self.namer.dynamiclibrary_pathname(),
                     self.args.output)
         else:
             outputdir = self.namer.topbindir()
-            filelist = os.listdir(self.namer.executable_dir())
-            if self.args.tests:
-                tests = [self.namer.executable_name(
-                    ff) for ff in self.args.tests]
-            else:
-                tests = None
-            makefilemtime = os.path.getmtime(self.args.makefilename)
-            for ff in filelist:
-                if not tests or ff not in tests:
-                    filename = os.path.join(
-                        self.namer.executable_dir(), ff)
-                    srcexe = ct.wrappedos.realpath(filename)
-                    destexe = ct.wrappedos.realpath(
-                        os.path.join(outputdir, ff))
-                    # Only copy the files that were created after the Makefile was created
-                    if ct.utils.isexecutable(filename) and srcexe != destexe and os.path.getmtime(
-                            srcexe) > makefilemtime:
-                        print("".join([outputdir, ff]))
-                        ct.wrappedos.copy(filename, outputdir)
+            filelist = self.namer.all_executable_pathnames()
+            for srcexe in filelist:
+                base = os.path.basename(srcexe)
+                destexe = ct.wrappedos.realpath(
+                    os.path.join(outputdir, base))
+                if ct.utils.isexecutable(srcexe) and srcexe != destexe:
+                    print("".join([outputdir, base]))
+                    ct.wrappedos.copy(srcexe, outputdir)
 
             if self.args.static:
-                pathname = self.namer.staticlibrary_pathname(
-                    self.args.static[0])
-                filename = self.namer.staticlibrary_name(
-                    self.args.static[0])
-                if ct.wrappedos.realpath(filename) != ct.wrapped.realpath(
-                        os.path.join(outputdir, filename)):
-                    print(os.path.join(outputdir, ))
-                    ct.wrappedos.copy(pathname, outputdir)
+                src = self.namer.staticlibrary_pathname()
+                filename = self.namer.staticlibrary_name()
+                dest = ct.wrapped.realpath(os.path.join(outputdir, filename))
+                if src != dest:
+                    print(os.path.join(outputdir, filename))
+                    ct.wrappedos.copy(src, outputdir)
+
+            if self.args.dynamic:
+                src = self.namer.dynamiclibrary_pathname()
+                filename = self.namer.dynamiclibrary_name()
+                dest = ct.wrapped.realpath(os.path.join(outputdir, filename))
+                if src != dest:
+                    print(os.path.join(outputdir, filename))
+                    ct.wrappedos.copy(src, outputdir)
 
     def _callmakefile(self):
         makefile_creator = ct.makefile.MakefileCreator(self.args, self.hunter)

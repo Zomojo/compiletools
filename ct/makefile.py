@@ -387,33 +387,23 @@ class MakefileCreator:
         buildoutputs = set()
 
         if self.args.static:
-            staticlibrarypathname = self.namer.staticlibrary_pathname(
-                ct.wrappedos.realpath(self.args.static[0]))
+            staticlibrarypathname = self.namer.staticlibrary_pathname()
             buildoutputs.add(staticlibrarypathname)
             buildoutputs.add(os.path.join(self.namer.executable_dir(), os.path.basename(staticlibrarypathname))) 
 
         if self.args.dynamic:
-            dynamiclibrarypathname = self.namer.dynamiclibrary_pathname(
-                ct.wrappedos.realpath(self.args.dynamic[0]))
+            dynamiclibrarypathname = self.namer.dynamiclibrary_pathname()
             buildoutputs.add(dynamiclibrarypathname)
             buildoutputs.add(os.path.join(self.namer.executable_dir(), os.path.basename(dynamiclibrarypathname))) 
 
+        buildoutputs |= self.namer.all_executable_pathnames()
         if self.args.filename:
-            allexes = {
-                self.namer.executable_pathname(
-                    ct.wrappedos.realpath(source)) for source in self.args.filename}
-            buildoutputs |= allexes
-            
             allcopiedexes = { os.path.join(self.namer.executable_dir(), 
                                            self.namer.executable_name(source)) 
                               for source in self.args.filename}
             buildoutputs |= allcopiedexes
 
-        if self.args.tests:
-            alltestsexes = {
-                self.namer.executable_pathname(
-                    ct.wrappedos.realpath(source)) for source in self.args.tests}
-            buildoutputs |= alltestsexes
+        buildoutputs |= self.namer.all_test_pathnames()
 
         return buildoutputs
 

@@ -86,26 +86,53 @@ class Namer(object):
                         self.executable_name(sourcefilename)])
 
     @memoize
-    def staticlibrary_name(self, sourcefilename):
+    def staticlibrary_name(self, sourcefilename=None):
+        if sourcefilename is None and self.args.static:
+            sourcefilename = self.args.static[0]
         name = os.path.split(sourcefilename)[1]
         return "lib" + os.path.splitext(name)[0] + ".a"
 
     @memoize
-    def staticlibrary_pathname(self, sourcefilename):
+    def staticlibrary_pathname(self, sourcefilename=None):
         """ Put static libraries in the same directory as executables """
+        if sourcefilename is None and self.args.static:
+            sourcefilename = ct.wrappedos.realpath(self.args.static[0])
         return "".join([self.executable_dir(sourcefilename),
                         "/",
                         self.staticlibrary_name(sourcefilename)])
 
     @memoize
-    def dynamiclibrary_name(self, sourcefilename):
+    def dynamiclibrary_name(self, sourcefilename=None):
+        if sourcefilename is None and self.args.dynamic:
+            sourcefilename = self.args.dynamic[0]
         name = os.path.split(sourcefilename)[1]
         return "lib" + os.path.splitext(name)[0] + ".so"
 
     @memoize
-    def dynamiclibrary_pathname(self, sourcefilename):
+    def dynamiclibrary_pathname(self, sourcefilename=None):
         """ Put dynamic libraries in the same directory as executables """
+        if sourcefilename is None and self.args.dynamic:
+            sourcefilename = ct.wrappedos.realpath(self.args.dynamic[0])
         return "".join([self.executable_dir(sourcefilename),
                         "/",
                         self.dynamiclibrary_name(sourcefilename)])
 
+    def all_executable_pathnames(self):
+        """ Use the filenames from the command line to determine the 
+            executable names.
+        """
+        allexes = set()
+        if self.args.filename:
+            allexes = { self.executable_pathname(ct.wrappedos.realpath(source)) 
+                            for source in self.args.filename}
+        return allexes
+
+    def all_test_pathnames(self):
+        """ Use the test files from the command line to determine the 
+            executable names.
+        """
+        alltests = set() 
+        if self.args.tests:
+            alltestsexes = { self.executable_pathname(ct.wrappedos.realpath(source)) 
+                                for source in self.args.tests}
+        return alltests
