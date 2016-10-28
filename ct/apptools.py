@@ -328,7 +328,27 @@ def _tier_one_modifications(args):
     if hasattr(args, 'preprocess') and args.preprocess:
         args.magic = 'cpp'
         args.headerdeps = 'cpp'
-    
+
+def _strip_quotes(args):
+    """ Sometimes you need to quote options (e.g. ones that start with hypen)
+        This will strip a layer of quotes off.
+    """
+    for name in vars(args):
+        value = getattr(args,name)
+        if value is not None:
+            # Can't just use the for loop directly because that would
+            # try and process every character in a string
+            if hasattr(value, '__iter__'):
+                for element in value:
+                    element = element.strip("'")
+                    element = element.strip('"')
+            else:
+                try:
+                    # Otherwise assume its a string
+                    setattr(args, name, value.strip("'"))
+                    setattr(args, name, value.strip('"'))
+                except:
+                    pass
 
 def _commonsubstitutions(args):
     """ If certain arguments have not been specified but others have
@@ -384,6 +404,7 @@ def substitutions(args, verbose=None):
 
 def parseargs(cap, argv=None, verbose=None):
     args = cap.parse_args(args=argv)
+    _strip_quotes(args)
 
     if verbose is None:
         verbose = args.verbose

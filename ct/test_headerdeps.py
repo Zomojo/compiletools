@@ -36,18 +36,29 @@ def _callprocess(headerobj, filenames):
         result |= headerobj.process(realpath)
     return result
 
+def _create_temp_config(tempdir=None):
+    """ User is responsible for removing the config file when 
+        they are finished 
+    """
+    tf_handle, tf_name = tempfile.mkstemp(suffix=".conf", text=True, dir=tempdir)
+    os.write(tf_handle, 'ID=GNU\n')
+    os.write(tf_handle, 'CC=gcc\n')
+    os.write(tf_handle, 'CXX=g++\n')
+    os.write(tf_handle, 'CPPFLAGS="-std=c++11"\n')
+    return tf_name
+
 
 def _generatecache(tempdir, name, realpaths, extraargs=None):
     if extraargs is None:
         extraargs = []
-    argv = [
-        '--headerdeps',
+    temp_config_name = _create_temp_config(tempdir)
+    
+    argv = [ '--headerdeps',
         name,
-        '--variant',
-        'debug',
-        '--CPPFLAGS=-std=c++11',
         '--include',
-        uth.ctdir()] + extraargs
+        uth.ctdir(),
+        '-c',
+        temp_config_name] + extraargs
     cachename = os.path.join(tempdir, name)
     _reload_ct(cachename)
 
@@ -56,29 +67,28 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
     args = ct.apptools.parseargs(cap, argv)
     headerdeps = ct.headerdeps.create(args)
 
-    return cachename, _callprocess(headerdeps, realpaths)
+    return cachename, temp_config_name, _callprocess(headerdeps, realpaths)
 
 
 class TestHeaderDepsModule(unittest.TestCase):
 
     def setUp(self):
         uth.reset()
-        config_files = ct.configutils.config_files_from_variant(variant='gcc.debug', exedir=uth.cakedir())
         cap = configargparse.getArgumentParser(
             description='Configargparser in test code',
             formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-            default_config_files=config_files,
             args_for_setting_config_path=["-c","--config"],
-            ignore_unknown_config_file_keys=True)
-        ct.apptools.add_common_arguments(cap)
+            ignore_unknown_config_file_keys=False)
+        ct.headerdeps.add_arguments(cap)
 
     def _direct_cpp_tester(self, filename, extraargs=None):
         """ For a given filename call HeaderTree.process() and HeaderDependencies.process """
         if extraargs is None:
             extraargs = []
         realpath = ct.wrappedos.realpath(filename)
-        argv = extraargs
-        
+        temp_config_name = _create_temp_config()
+        argv = ['--config='+temp_config_name] + extraargs
+
         # Turn off diskcaching so that we can't just read up a prior result
         origcache = ct.dirnamer.user_cache_dir()
         _reload_ct('None')
@@ -95,6 +105,7 @@ class TestHeaderDepsModule(unittest.TestCase):
         hdirectresult = hdirect.process(realpath)
         hcppresult = hcpp.process(realpath)
         self.assertSetEqual(hdirectresult, hcppresult)
+        os.unlink(temp_config_name)
         _reload_ct(origcache)
 
     def test_direct_and_cpp_generate_same_results(self):
@@ -125,11 +136,10 @@ class TestHeaderDepsModule(unittest.TestCase):
         realpaths = [os.path.join(samplesdir, filename)
                      for filename in relativepaths]
 
-        directcache, directresults = _generatecache(
-            tempdir, 'direct', realpaths, [
-                '--headerdeps', 'direct'] + extraargs)
-        cppcache, cppresults = _generatecache(
-            tempdir, 'cpp', realpaths, ['--headerdeps', 'cpp'] + extraargs)
+        directcache, config1, directresults = _generatecache(
+            tempdir, 'direct', realpaths, extraargs)
+        cppcache, config2, cppresults = _generatecache(
+            tempdir, 'cpp', realpaths, extraargs)
 
         # Check the returned python sets are the same regardless of methodology
         # used to create
@@ -140,6 +150,8 @@ class TestHeaderDepsModule(unittest.TestCase):
         self.assertEqual(len(comparator.diff_files), 0)
 
         # Cleanup
+        os.unlink(config1)
+        os.unlink(config2)
         shutil.rmtree(tempdir)
         _reload_ct(origcache)
 

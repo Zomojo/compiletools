@@ -40,21 +40,34 @@ def _reload_ct(cache_home):
     reload(ct.magicflags)
     reload(ct.hunter)
 
+def _create_temp_config():
+    """ User is responsible for removing the config file when 
+        they are finished 
+    """
+    tf_handle, tf_name = tempfile.mkstemp(suffix=".conf", text=True)
+    os.write(tf_handle,"CPPFLAGS='-std=c++11'")
+    os.write(tf_handle,'\n')
+    return tf_name
 
 class TestHunterModule(unittest.TestCase):
 
     def setUp(self):
         uth.reset()
+        cap = configargparse.getArgumentParser(
+            description='Configargparser in test code',
+            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+            args_for_setting_config_path=["-c","--config"],
+            ignore_unknown_config_file_keys=False)
 
     def test_hunter_follows_source_files_from_header(self):
         origcache = ct.dirnamer.user_cache_dir('ct')
         tempdir = tempfile.mkdtemp()
         _reload_ct(tempdir)
-
+        
+        temp_config = _create_temp_config()
         argv = [
-            '--variant',
-            'debug',
-            '--CPPFLAGS=-std=c++11',
+            '-c',
+            temp_config,
             '--include',
             uth.ctdir()]
         cap = configargparse.getArgumentParser()
@@ -72,6 +85,7 @@ class TestHunterModule(unittest.TestCase):
         self.assertSetEqual(filesfromheader, filesfromsource)
 
         # Cleanup
+        os.unlink(temp_config)
         shutil.rmtree(tempdir)
         _reload_ct(origcache)
 
@@ -86,10 +100,10 @@ class TestHunterModule(unittest.TestCase):
             'simple/test_cflags.c']
         bulkpaths = [os.path.join(samplesdir, filename)
                      for filename in relativepaths]
+        temp_config = _create_temp_config()
         argv = [
-            '--variant',
-            'debug',
-            '--CPPFLAGS=-std=c++11',
+            '--config',
+            temp_config,
             '--include',
             uth.ctdir()] + bulkpaths
         cap = configargparse.getArgumentParser()
@@ -98,6 +112,7 @@ class TestHunterModule(unittest.TestCase):
         headerdeps = ct.headerdeps.create(args)
         magicparser = ct.magicflags.create(args, headerdeps)
         hntr = ct.hunter.Hunter(args, headerdeps, magicparser)
+        os.unlink(temp_config)
 
         realpath = os.path.join(samplesdir, 'dottypaths/dottypaths.cpp')
         if precall:
