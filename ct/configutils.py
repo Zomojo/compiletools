@@ -2,7 +2,13 @@ import sys
 import os
 import ast
 import appdirs
-import configargparse
+
+# Work around an incompatibility between configargparse 0.10 and 0.11
+try:
+    from configargparse import DefaultConfigFileParser as CfgFileParser
+except:
+    from configargparse import ConfigFileParser as CfgFileParser
+
 import ct.wrappedos
 
 
@@ -48,7 +54,7 @@ def extract_item_from_ct_conf(
     """ Extract the value for the given key from the ct.conf files.
         Return the given default if no key was identified
     """
-    fileparser = configargparse.ConfigFileParser()
+    fileparser = CfgFileParser()
     for cfgpath in reversed(defaultconfigs(user_config_dir=user_config_dir,
                                   system_config_dir=system_config_dir,
                                   exedir=exedir)):
