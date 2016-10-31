@@ -8,6 +8,8 @@ import tempfile
 import unittest
 import filecmp
 import configargparse
+import ct.unittesthelper
+
 try:
     # This call to reload is simply to test
     # that reload is in the current namespace
@@ -36,22 +38,11 @@ def _callprocess(headerobj, filenames):
         result |= headerobj.process(realpath)
     return result
 
-def _create_temp_config(tempdir=None):
-    """ User is responsible for removing the config file when 
-        they are finished 
-    """
-    tf_handle, tf_name = tempfile.mkstemp(suffix=".conf", text=True, dir=tempdir)
-    os.write(tf_handle, b'ID=GNU\n')
-    os.write(tf_handle, b'CC=gcc\n')
-    os.write(tf_handle, b'CXX=g++\n')
-    os.write(tf_handle, b'CPPFLAGS="-std=c++11"\n')
-    return tf_name
-
 
 def _generatecache(tempdir, name, realpaths, extraargs=None):
     if extraargs is None:
         extraargs = []
-    temp_config_name = _create_temp_config(tempdir)
+    temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
     
     argv = [ '--headerdeps',
         name,
@@ -86,7 +77,7 @@ class TestHeaderDepsModule(unittest.TestCase):
         if extraargs is None:
             extraargs = []
         realpath = ct.wrappedos.realpath(filename)
-        temp_config_name = _create_temp_config()
+        temp_config_name = ct.unittesthelper.create_temp_config()
         argv = ['--config='+temp_config_name] + extraargs
 
         # Turn off diskcaching so that we can't just read up a prior result

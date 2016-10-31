@@ -8,6 +8,7 @@ import sys
 import tempfile
 import configargparse
 import unittest
+import ct.unittesthelper
 
 try:
     # This call to reload is simply to test
@@ -40,14 +41,6 @@ def _reload_ct(cache_home):
     reload(ct.magicflags)
     reload(ct.hunter)
 
-def _create_temp_config():
-    """ User is responsible for removing the config file when 
-        they are finished 
-    """
-    tf_handle, tf_name = tempfile.mkstemp(suffix=".conf", text=True)
-    os.write(tf_handle,b"CPPFLAGS='-std=c++11'")
-    os.write(tf_handle,b'\n')
-    return tf_name
 
 class TestHunterModule(unittest.TestCase):
 
@@ -64,7 +57,7 @@ class TestHunterModule(unittest.TestCase):
         tempdir = tempfile.mkdtemp()
         _reload_ct(tempdir)
         
-        temp_config = _create_temp_config()
+        temp_config = ct.unittesthelper.create_temp_config()
         argv = [
             '-c',
             temp_config,
@@ -100,7 +93,7 @@ class TestHunterModule(unittest.TestCase):
             'simple/test_cflags.c']
         bulkpaths = [os.path.join(samplesdir, filename)
                      for filename in relativepaths]
-        temp_config = _create_temp_config()
+        temp_config = ct.unittesthelper.create_temp_config()
         argv = [
             '--config',
             temp_config,
