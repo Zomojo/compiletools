@@ -5,6 +5,7 @@ import unittest
 import os
 import shutil
 import tempfile
+import configargparse
 import ct.unittesthelper as uth
 import ct.cake
 
@@ -12,6 +13,13 @@ import ct.cake
 class TestCake(unittest.TestCase):
     def setUp(self):
         uth.reset()
+        cap = configargparse.getArgumentParser(
+            description='Configargparser in test code',
+            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+            args_for_setting_config_path=["-c","--config"],
+            ignore_unknown_config_file_keys=False)
+    	ct.cake.Cake.add_arguments(cap)
+    	ct.cake.Cake.registercallback()
     
     def test_no_git_root(self):
         # Setup
@@ -31,7 +39,8 @@ class TestCake(unittest.TestCase):
         for ff in realpaths:
             shutil.copy2(ff, self._tmpdir)
 
-        argv = ['--exemarkers=main','--testmarkers=unittest.hpp','--auto','--CXXFLAGS=-std=c++11 -fPIC']
+    	temp_config_name = ct.unittesthelper.create_temp_config(self._tmpdir)
+        argv = ['--exemarkers=main','--testmarkers=unittest.hpp','--auto','--config='+temp_config_name ]
         ct.cake.main(argv)
         
         # Check that an executable got built for each cpp

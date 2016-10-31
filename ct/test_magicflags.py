@@ -3,7 +3,9 @@ from __future__ import unicode_literals
 
 import os
 import unittest
+import shutil
 import configargparse
+import tempfile
 
 try:
     # This call to reload is simply to test
@@ -41,56 +43,81 @@ class TestMagicFlagsModule(unittest.TestCase):
             args_for_setting_config_path=["-c","--config"],
             ignore_unknown_config_file_keys=True)
 
-    def _createmagicparser(self, extraargs=None, cache_home='None'):
+    def _createmagicparser(self, extraargs=None, cache_home='None', tempdir=None):
         if not extraargs:
             extraargs = []
-        argv = extraargs
+    	temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
+        argv = ['--config='+temp_config_name] + extraargs
         _reload_ct(cache_home)
         cap = configargparse.getArgumentParser()
-        ct.apptools.add_common_arguments(cap,variant="gcc.debug")
+        ct.apptools.add_common_arguments(cap)
         ct.dirnamer.add_arguments(cap)
         ct.headerdeps.add_arguments(cap)
-        ct.magicflags.add_arguments(cap, variant="gcc.debug")
+        ct.magicflags.add_arguments(cap)
         args = ct.apptools.parseargs(cap, argv)
         headerdeps = ct.headerdeps.create(args)
         return ct.magicflags.create(args, headerdeps)
 
     def test_parsing_CFLAGS(self):
+        tempdir = tempfile.mkdtemp()
+        try:
+            os.mkdir(tempdir)
+        except OSError:
+            pass
         relativepath = 'simple/test_cflags.c'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser()
+        magicparser = self._createmagicparser(tempdir=tempdir)
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             magicparser.parse(realpath).get('CFLAGS'),
             {'-std=gnu99'})
 
+        shutil.rmtree(tempdir, ignore_errors=True)
+
     def test_SOURCE_direct(self):
+        tempdir = tempfile.mkdtemp()
+        try:
+            os.mkdir(tempdir)
+        except OSError:
+            pass
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(['--magic', 'direct'])
+        magicparser = self._createmagicparser(['--magic', 'direct'],tempdir=tempdir)
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             magicparser.parse(realpath).get('SOURCE'),
             {os.path.join(samplesdir,'cross_platform/cross_platform_lin.cpp'), 
              os.path.join(samplesdir,'cross_platform/cross_platform_win.cpp')})
+        shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_SOURCE_cpp(self):
+        tempdir = tempfile.mkdtemp()
+        try:
+            os.mkdir(tempdir)
+        except OSError:
+            pass
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(['--magic', 'cpp'])
+        magicparser = self._createmagicparser(['--magic', 'cpp'],tempdir=tempdir)
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             magicparser.parse(realpath).get('SOURCE'),
             {os.path.join(samplesdir,'cross_platform/cross_platform_lin.cpp')})
+        shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_lotsofmagic(self):
+        tempdir = tempfile.mkdtemp()
+        try:
+            os.mkdir(tempdir)
+        except OSError:
+            pass
         relativepath = 'lotsofmagic/lotsofmagic.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(['--magic', 'cpp'])
+        magicparser = self._createmagicparser(['--magic', 'cpp'],tempdir=tempdir)
 
         expected = {
             'LDFLAGS': {'-lm'},
@@ -99,18 +126,25 @@ class TestMagicFlagsModule(unittest.TestCase):
             'F2': {'2'},
             'F3': {'3'}}
         self.assertEqual(magicparser.parse(realpath), expected)
+        shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_SOURCE_in_header(self):
+        tempdir = tempfile.mkdtemp()
+        try:
+            os.mkdir(tempdir)
+        except OSError:
+            pass
         relativepath = 'magicsourceinheader/main.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(['--magic', 'cpp'])
+        magicparser = self._createmagicparser(['--magic', 'cpp'],tempdir=tempdir)
         expected = {
             'LDFLAGS': set(
                 ['-lm']),
             'SOURCE': set(
                 [os.path.join(samplesdir,'magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp')])}
         self.assertEqual(magicparser.parse(realpath), expected)
+        shutil.rmtree(tempdir, ignore_errors=True)
 
     def tearDown(self):
         uth.reset()

@@ -19,7 +19,7 @@ import ct.findtargets
 import ct.jobs
 
 
-class Cake:
+class Cake(object):
 
     def __init__(self, args):
         self.args = args

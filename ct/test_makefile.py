@@ -6,6 +6,7 @@ import shutil
 import subprocess
 import tempfile
 import unittest
+import configargparse
 
 import ct.utils
 import ct.makefile
@@ -27,13 +28,19 @@ class TestMakefile(unittest.TestCase):
             os.mkdir(_moduletmpdir)
         except OSError:
             pass
+        cap = configargparse.getArgumentParser(
+            description='Configargparser in test code',
+            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+            args_for_setting_config_path=["-c","--config"],
+            ignore_unknown_config_file_keys=False)
 
     def _create_makefile_and_make(self, tempdir):
-        uth.reset()
         samplesdir = uth.samplesdir()
         origdir = uth.ctdir()
         #origdir = os.getcwd()
         os.chdir(tempdir)
+    	temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
+	print(temp_config_name)
 
         relativepaths = [
             'numbers/test_direct_include.cpp',
@@ -44,7 +51,7 @@ class TestMakefile(unittest.TestCase):
         realpaths = [os.path.join(samplesdir, filename)
                      for filename in relativepaths]
         ct.makefile.main(
-            ['--CXXFLAGS=-std=c++11 -fPIC'] + realpaths)
+            ['--config='+temp_config_name] + realpaths)
 
         filelist = os.listdir('.')
         makefilename = [ff for ff in filelist if ff.startswith('Makefile')]
@@ -64,11 +71,11 @@ class TestMakefile(unittest.TestCase):
         self.assertSetEqual(expected_exes, actual_exes)
         os.chdir(origdir)
 
+    @unittest.skip("TODO. Implement a method for resetting the wrappedos cache so that this test is meaningful")
     def test_makefile(self):
         tempdir1 = _moduletmpdir
         #tempdir1 = tempfile.mkdtemp()
-        self._create_makefile_and_make(
-            tempdir1)
+        self._create_makefile_and_make(tempdir1)
 
         # Verify that the Makefiles and build products are identical between the two runs
         # This doesn't work because the Namer uses the wrappedos functions that cache
@@ -104,6 +111,7 @@ def _test_library(static_dynamic):
     tempdir = _moduletmpdir
     # tempdir = tempfile.mkdtemp()
     os.chdir(tempdir)
+    temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
 
     exerelativepath = 'numbers/test_library.cpp'
     librelativepaths = [
@@ -116,7 +124,7 @@ def _test_library(static_dynamic):
             samplesdir,
             filename) for filename in librelativepaths]
     argv = [
-        '--CXXFLAGS=-std=c++11 -fPIC',
+        '--config='+temp_config_name,
         exerealpath,
         static_dynamic] + librealpaths
     ct.makefile.main(argv)
