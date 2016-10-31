@@ -32,8 +32,8 @@ def create_temp_config(tempdir=None):
         they are finished 
     """
     try:
-        CC=bytes(os.environ['CC'])
-        CXX=bytes(os.environ['CXX'])
+        CC=bytes(os.environ['CC'],'utf8')
+        CXX=bytes(os.environ['CXX'],'utf8')
     except KeyError:
         CC=b'gcc'
         CXX=b'g++'
