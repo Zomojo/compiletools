@@ -15,7 +15,7 @@ addons:
 
 # command to install dependencies      
 install:
-    - python setup.py install 
+    - pip install --user -r requirements.txt 
     - export CXX="g++-5" CC="gcc-5" LD="g++-5" CXXFLAGS="\-std=c++11"
 
 # command to run tests
