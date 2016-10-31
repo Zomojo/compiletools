@@ -38,7 +38,6 @@ class PreProcessor(object):
             if self.args.verbose >= 5:
                 print(output)
         except OSError as err:
-            print(
-                " ".join(["Failed to preprocess", filename, " error=", err]), file=sys.stderr)
-            exit()
+            print("Failed to prepreocess {0}  Error={1}".format(realpath,err), file=sys.stderr)
+            raise(err)
         return output
