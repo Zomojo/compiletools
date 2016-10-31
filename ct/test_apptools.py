@@ -16,11 +16,10 @@ class TestFuncs(unittest.TestCase):
 
     def test_strip_quotes(self):
         fns = FakeNamespace()
-        print(str(fns))
         ct.apptools._strip_quotes(fns)
-        print(str(fns))
         self.assertEqual(fns.n1, 'v1_noquotes')
-        self.assertTrue(False)
+        self.assertEqual(fns.n2, 'v2_doublequotes')
+        self.assertEqual(fns.n3, 'v3_singlequotes')
 
 if __name__ == '__main__':
     unittest.main()

@@ -3,9 +3,28 @@ from __future__ import unicode_literals
 
 import collections
 import os
+import sys
 import inspect
 from ct.memoize import memoize
 import ct.wrappedos
+
+
+# Python3 defines __iter__ for str but python2 does not
+PY3 = sys.version_info[0] == 3
+if PY3:
+    def is_nonstr_iter(obj):
+        ''' A python 2/3 compatible method for deciding if the given variable
+            is a non-string iterable
+        '''
+        if isinstance(obj, str):
+            return False
+        return hasattr(obj, '__iter__')
+else:
+    def is_nonstr_iter(obj):
+        ''' A python 2/3 compatible method for deciding if the given variable
+            is a non-string iterable
+        '''
+        return hasattr(obj, '__iter__')
 
 @memoize
 def isheader(filename):
