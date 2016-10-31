@@ -14,12 +14,12 @@ class TestCake(unittest.TestCase):
     def setUp(self):
         uth.reset()
         cap = configargparse.getArgumentParser(
-            description='Configargparser in test code',
-            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-            args_for_setting_config_path=["-c","--config"],
-            ignore_unknown_config_file_keys=False)
-    	ct.cake.Cake.add_arguments(cap)
-    	ct.cake.Cake.registercallback()
+        description='Configargparser in test code',
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+        args_for_setting_config_path=["-c","--config"],
+        ignore_unknown_config_file_keys=False)
+        ct.cake.Cake.add_arguments(cap)
+        ct.cake.Cake.registercallback()
     
     def test_no_git_root(self):
         # Setup
