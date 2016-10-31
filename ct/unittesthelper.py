@@ -2,6 +2,7 @@ from __future__ import unicode_literals
 from __future__ import print_function
 import configargparse
 import os
+from io import open
 import tempfile
 import ct.apptools
 
@@ -32,16 +33,17 @@ def create_temp_config(tempdir=None):
         they are finished 
     """
     try:
-        CC=bytes(os.environ['CC'],'utf8')
-        CXX=bytes(os.environ['CXX'],'utf8')
+        CC=os.environ['CC']
+        CXX=os.environ['CXX']
     except KeyError:
-        CC=b'gcc'
-        CXX=b'g++'
+        CC='gcc'
+        CXX='g++'
         
     tf_handle, tf_name = tempfile.mkstemp(suffix=".conf", text=True, dir=tempdir)
-    os.write(tf_handle, b'ID=GNU\n')
-    os.write(tf_handle, b'CC=' + CC + b'\n')
-    os.write(tf_handle, b'CXX=' + CXX + b'\n')
-    os.write(tf_handle, b'CPPFLAGS="-std=c++11"\n')
+    with open(tf_name,'w') as ff:
+        ff.write('ID=GNU\n')
+        ff.write('CC=' + CC + b'\n')
+        ff.write('CXX=' + CXX + b'\n')
+        ff.write('CPPFLAGS="-std=c++11"\n')
     return tf_name
 
