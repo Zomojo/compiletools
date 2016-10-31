@@ -45,8 +45,8 @@ def _create_temp_config():
         they are finished 
     """
     tf_handle, tf_name = tempfile.mkstemp(suffix=".conf", text=True)
-    os.write(tf_handle,"CPPFLAGS='-std=c++11'")
-    os.write(tf_handle,'\n')
+    os.write(tf_handle,b"CPPFLAGS='-std=c++11'")
+    os.write(tf_handle,b'\n')
     return tf_name
 
 class TestHunterModule(unittest.TestCase):
