@@ -46,7 +46,7 @@ class TestMagicFlagsModule(unittest.TestCase):
     def _createmagicparser(self, extraargs=None, cache_home='None', tempdir=None):
         if not extraargs:
             extraargs = []
-    	temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
+        temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
         argv = ['--config='+temp_config_name] + extraargs
         _reload_ct(cache_home)
         cap = configargparse.getArgumentParser()

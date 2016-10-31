@@ -39,9 +39,7 @@ class TestMakefile(unittest.TestCase):
         origdir = uth.ctdir()
         #origdir = os.getcwd()
         os.chdir(tempdir)
-    	temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
-	print(temp_config_name)
-
+        temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
         relativepaths = [
             'numbers/test_direct_include.cpp',
             'factory/test_factory.cpp',

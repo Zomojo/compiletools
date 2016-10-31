@@ -39,7 +39,7 @@ class TestCake(unittest.TestCase):
         for ff in realpaths:
             shutil.copy2(ff, self._tmpdir)
 
-    	temp_config_name = ct.unittesthelper.create_temp_config(self._tmpdir)
+        temp_config_name = ct.unittesthelper.create_temp_config(self._tmpdir)
         argv = ['--exemarkers=main','--testmarkers=unittest.hpp','--auto','--config='+temp_config_name ]
         ct.cake.main(argv)
         
