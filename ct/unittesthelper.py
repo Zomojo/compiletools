@@ -42,8 +42,8 @@ def create_temp_config(tempdir=None):
     tf_handle, tf_name = tempfile.mkstemp(suffix=".conf", text=True, dir=tempdir)
     with open(tf_name,'w') as ff:
         ff.write('ID=GNU\n')
-        ff.write('CC=' + CC + b'\n')
-        ff.write('CXX=' + CXX + b'\n')
+        ff.write('CC=' + CC + '\n')
+        ff.write('CXX=' + CXX + '\n')
         ff.write('CPPFLAGS="-std=c++11"\n')
     return tf_name
 
