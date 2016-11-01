@@ -1,4 +1,5 @@
-[![Build Status](https://travis-ci.org/Zomojo/compiletools.svg?branch=master)](https://travis-ci.org/Zomojo/compiletools)
+.. image:: https://travis-ci.org/Zomojo/compiletools.svg?branch=master
+    :target: https://travis-ci.org/Zomojo/compiletools
 ============
 compiletools
 ============
