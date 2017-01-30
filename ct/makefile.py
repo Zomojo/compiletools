@@ -103,9 +103,10 @@ class LinkRuleCreator(object):
         recipe = ""
         if self.args.verbose >= 1:
             recipe += " ".join(["@echo ...", outputname, ";"])
-        recipe += " ".join(["mkdir -p", ct.wrappedos.dirname(outputname), ";", linker, "-o", outputname, linkerflags] +
+        recipe += " ".join(["mkdir -p", ct.wrappedos.dirname(outputname), ";", linker, "-o", outputname] +
                            list(object_names) +
-                           list(all_magic_ldflags))
+                           list(all_magic_ldflags) +
+                           [linkerflags])
         return Rule(target=outputname,
                     prerequisites=allprerequisites,
                     recipe=recipe)
