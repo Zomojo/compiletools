@@ -1,5 +1,6 @@
 .. image:: https://travis-ci.org/Zomojo/compiletools.svg?branch=master
     :target: https://travis-ci.org/Zomojo/compiletools
+
 ============
 compiletools
 ============
@@ -38,6 +39,17 @@ Command-line values override environment variables which override config file
 values which override defaults. Note that the environment variables are 
 captilized. That is, a command line option of --magic=cpp is the equivalent of 
 an environment variable MAGIC=cpp.
+
+If the option itself starts with a hypen then configargparse can fail to parse 
+it as you intended. For example, on many platforms, 
+*--append-CXXFLAGS=-march=skylake*
+will fail. To work around this, compiletools postprocesses the options to 
+understand quotes. For example, *--append-CXXFLAGS="-march=skylake"* will work 
+on all platforms.  Note however that many shells (e.g., bash) will strip 
+quotes so you need to escape the quotes or single quote stop the shell preprocessing. 
+For example, 
+*--append-CXXFLAGS=\\"-march=skylake\\"* or 
+*--append-CXXFLAGS='"-march=skylake"'*
 
 Other notable tools are 
 
