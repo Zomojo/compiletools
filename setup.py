@@ -37,7 +37,8 @@ setup(
     data_files=data_files,
     install_requires=[
         'configargparse',
-        'appdirs'],
+        'appdirs',
+        'psutil'],
     test_suite="ct",
     scripts=[
         ff for ff in os.listdir('.') if ff.startswith('ct-')],

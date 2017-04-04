@@ -14,10 +14,10 @@ Group: Development/Libraries
 Buildroot: %_tmppath/%{name}-%{version}
 BuildArch: noarch
 Url: http://zomojo.github.io/compiletools/
-BuildRequires: python-setuptools python-docutils python2-configargparse python-appdirs python2-devel 
+BuildRequires: python-setuptools python-docutils python2-configargparse python-appdirs python2-psutil python2-devel 
 Obsoletes: cake
 Provides: cake
-Requires: python-setuptools python2-configargparse python-appdirs python-%{srcname}
+Requires: python-setuptools python2-configargparse python-appdirs python2-psutil python-%{srcname}
 
 %description
 %sum
