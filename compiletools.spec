@@ -19,7 +19,7 @@ Url: http://zomojo.github.io/compiletools/
 # Can now assume rhel exists
 %if %{rhel} == 7
 BuildRequires: python-setuptools python-docutils python2-configargparse python-appdirs python-psutil python2-devel 
-Requires: python-setuptools python2-configargparse python-appdirs python2-psutil python-%{srcname}
+Requires: python-setuptools python2-configargparse python-appdirs python-psutil python-%{srcname}
 %endif
 %if %{rhel} > 20
 # rhel is defined on Fedora so this will be used
