@@ -14,10 +14,23 @@ Group: Development/Libraries
 Buildroot: %_tmppath/%{name}-%{version}
 BuildArch: noarch
 Url: http://zomojo.github.io/compiletools/
+
+%if 0%{?rhel:1}
+# Can now assume rhel exists
+%if %{rhel} == 7
+BuildRequires: python-setuptools python-docutils python2-configargparse python-appdirs python-psutil python2-devel 
+Requires: python-setuptools python2-configargparse python-appdirs python2-psutil python-%{srcname}
+%endif
+%if %{rhel} > 20
+# rhel is defined on Fedora so this will be used
 BuildRequires: python-setuptools python-docutils python2-configargparse python-appdirs python2-psutil python2-devel 
+Requires: python-setuptools python2-configargparse python-appdirs python2-psutil python-%{srcname}
+%endif
+%endif
+
 Obsoletes: cake
 Provides: cake
-Requires: python-setuptools python2-configargparse python-appdirs python2-psutil python-%{srcname}
+
 
 %description
 %sum
