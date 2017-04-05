@@ -265,4 +265,12 @@ def config_files_from_variant(
     if verbose >= 1:
         print("Using config files = ")
         print(configs)
+
+    # Make sure that if the user specified a variant then that a config file for the variant exists
+    if variant is not None and not any(cfg.endswith(variant+'.conf') for cfg in configs):
+        sys.stderr.write(" ".join(["Could not find a config file for variant =",variant,".  Did you make a typo in the variant?\n"]))
+        if verbose >= 2:
+            sys.stderr.write("\n".join(["Checked for "] + variantconfigs))
+        sys.exit(1)
+
     return configs
