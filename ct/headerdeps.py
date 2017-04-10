@@ -54,7 +54,17 @@ class HeaderDepsBase(object):
     def process(self, filename):
         """ Return the set of dependencies for a given filename """
         realpath = ct.wrappedos.realpath(filename)
-        return self._process_impl(realpath)
+        try:
+            result = self._process_impl(realpath)
+        except IOError:
+            # If there was any error the first time around, an error correcting removal would have occured
+            # So strangely, the best thing to do is simply try again
+            result = None
+
+        if not result:
+            result = self._process_impl(realpath)
+
+        return result
 
 
 class DirectHeaderDeps(HeaderDepsBase):
@@ -185,7 +195,9 @@ class DirectHeaderDeps(HeaderDepsBase):
         self._process_impl_recursive(realpath, results)
         results.remove(realpath)
         return results
-
+    
+    def clear_cache(self):
+        diskcache.clear_cache();
 
 class CppHeaderDeps(HeaderDepsBase):
 

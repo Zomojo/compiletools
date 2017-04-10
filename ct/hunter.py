@@ -121,6 +121,10 @@ class Hunter(object):
             print("Hunter::required_files for " + filename)
         return self._required_files_impl(ct.wrappedos.realpath(filename))
 
+    def clear_cache(self):
+        self.required_source_files.cache.clear()
+        self.required_files.cache.clear()
+
     def magicflags(self, filename):
         return self.magicparser.parse(filename)
 

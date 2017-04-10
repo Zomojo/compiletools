@@ -41,6 +41,9 @@ class diskcache:
     # approach is easier to understand and maintain over the
     # decorator function with decorator argument approach. See
     # http://www.artima.com/weblogs/viewpost.jsp?thread=240845
+        
+    # Keep track of the instances so we can clear the cache
+    _instances = {}
 
     def __init__(self, cache_identifier, deps_mode=False, magic_mode=False):
         self.cache_identifier = cache_identifier
@@ -51,7 +54,8 @@ class diskcache:
             ct.wrappedos.makedirs(self.cachedir)
 
         # Keep a copy of the cachefile in memory to reduce disk IO
-        self._memcache = {}
+        # Call it "cache" to match the memoizer "cache" (for ease of clearing)
+        self.cache = {}
 
     def _cachefile(self, filename):
         """ What cachefile corresponds to the given filename """
@@ -64,32 +68,43 @@ class diskcache:
         """ What deps cachefile corresponds to the given filename """
         return ct.wrappedos.realpath(''.join([self.cachedir, os.sep, filename, '.deps']))
 
-    def _memcached_cachefile(self, cachefile):
+    def cached_cachefile(self, cachefile):
         """ Rather than using @memoize, keep the cache so that 
             we can manually prepopulate it.
         """
-        if cachefile not in self._memcache:
+        if cachefile not in self.cache:
             with open(cachefile, mode='rb') as cf:
-                self._memcache[cachefile] = pickle.load(cf)
+                self.cache[cachefile] = pickle.load(cf)
+                # Verify that each of the files in the pickled disk cache still exists
+                for filename in self.cache[cachefile]:
+                    if not os.path.exists(filename):
+                        # Somehow the diskcache refers to a non-existent file.  Remove the diskcache and alert the user
+                        os.remove(cachefile)
+                        self.cache[cachefile] = None
+                        raise IOError
 
-        return self._memcache[cachefile]
+        return self.cache[cachefile]
 
-    @memoize_false
+    #@memoize_false
     def _any_changes(self, filename, cachefile):
         """ Has this file changed since the cachefile was modified? """
+        # Watch out for the user moving files around on disk.  It happens.
+        if not os.path.exists(filename) or not os.path.exists(cachefile):
+            self.cache[cachefile] = None
+            return True
+
         try:
             # Can't use the memoized getmtime for cachefile because
             # _refresh_cache may update it.
             if ct.wrappedos.getmtime(filename) > os.path.getmtime(cachefile):
                 return True
-                #            else:
-                #                print("diskcache::_any_changes. ", cachefile, " is newer than ",filename)
+
         except OSError:
             return True
 
         return False
 
-    @memoize_false
+    #@memoize_false
     def _recursive_any_changes(self, filename, cachefile, originalcachefile=None):
         """ Has this file (or any [recursive] dependency) changed? """
 
@@ -107,13 +122,13 @@ class diskcache:
         # we know that the cachefile exists.  So we can open
         # it and find out what dependencies also need to be
         # checked
-        for dep in self._memcached_cachefile(cachefile):
+        for dep in self.cached_cachefile(cachefile):
             if self._recursive_any_changes(dep, self._cachefile(dep), cachefile):
                 return True
         else:
             return False
 
-    @memoize_false
+    #@memoize_false
     def _magic_mode_any_changes(self, filename, cachefile):
         """ An alternate way to decide if there are any changes
             that make it time to refresh the cache
@@ -123,7 +138,7 @@ class diskcache:
             return True
 
         deps_cachefile = self._deps_cachefile(filename)
-        for dep in self._memcached_cachefile(deps_cachefile):
+        for dep in self.cached_cachefile(deps_cachefile):
             # Note that cachefile is the cachefile corresponding to
             # filename that came in the function the argument
             # not the dep we are currently processing
@@ -131,6 +146,15 @@ class diskcache:
                 return True
         else:
             return False
+
+    @staticmethod
+    def clear_cache():
+        for func, obj in diskcache._instances.items():
+            obj.cache.clear()
+            #obj._any_changes.cache.clear()
+            #obj._recursive_any_changes.cache = set()
+            #obj._magic_mode_any_changes.cache = set() 
+            #obj.memcacher.cache = {}
 
     def _refresh_cache(self, filename, cachefile, func, *args):
         """ If there are changes to the file
@@ -143,7 +167,7 @@ class diskcache:
         if not ct.wrappedos.isfile(filename):
             try:
                 os.remove(cachefile)
-                self._memcache[cachefile] = None
+                self.cache[cachefile] = None
             except OSError:
                 pass
             return
@@ -157,13 +181,13 @@ class diskcache:
             ct.wrappedos.makedirs(ct.wrappedos.dirname(cachefile))
             with open(cachefile, mode='wb') as cf:
                 pickle.dump(result, cf)
-            self._memcache[cachefile] = result
+            self.cache[cachefile] = result
         else:
             # Prepopulate the in memory cache
-            dummy = self._memcached_cachefile(cachefile)
+            dummy = self.cached_cachefile(cachefile)
 
         if self.deps_mode:
-            for dep in self._memcached_cachefile(cachefile):
+            for dep in self.cached_cachefile(cachefile):
                 # Due to the recursive nature of this function
                 # you have to recheck if there are any changes.
                 depcachefile = self._cachefile(dep)
@@ -176,6 +200,7 @@ class diskcache:
                 @functools.wraps(func)
                 @memoize
                 def memcacher(*args):
+                    diskcache._instances[func] = self
                     return func(*args)
 
                 # Return for __call__
@@ -190,9 +215,13 @@ class diskcache:
                 we call getmtime on that realpath. *args is used
                 to accomodate the "self" if we are caching a member function
             """
+            diskcache._instances[func] = self
             filename = args[-1]
             cachefile = self._cachefile(filename)
-
+            if not os.path.exists(cachefile):
+                self.cache[cachefile] = None
+                self._refresh_cache(filename, cachefile, func, *args)
+                
             if not self.deps_mode and not self.magic_mode and self._any_changes(
                     filename,
                     cachefile):
@@ -208,7 +237,7 @@ class diskcache:
                     cachefile):
                 self._refresh_cache(filename, cachefile, func, *args)
 
-            return self._memcached_cachefile(cachefile)
+            return self.cached_cachefile(cachefile)
 
         # Return for __call__
         return diskcacher

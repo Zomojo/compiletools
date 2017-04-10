@@ -60,3 +60,11 @@ def copy(src, dest):
         shutil.copy2(src, dest)
     except IOError as err:
         print("Unable to copy file {}".format(err))
+
+
+def clear_cache():
+    getmtime.cache.clear()
+    isfile.cache.clear()
+    isdir.cache.clear()
+    realpath.cache.clear()
+    dirname.cache.clear()

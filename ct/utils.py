@@ -68,6 +68,11 @@ def impliedheader(filename):
     else:
         return None
 
+def clear_cache():
+    isheader.cache.clear()
+    issource.cache.clear()
+    implied_source.cache.clear()
+    impliedheader.cache.clear()
 
 def extractinitargs(args, classname):
     """ Extract the arguments that classname.__init__ needs out of args """

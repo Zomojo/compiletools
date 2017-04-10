@@ -159,7 +159,8 @@ class Cake(object):
         # Unless the user has changed the bindir (or set --output)
         # in which case assume that they know what they are doing
         if self.args.output:
-            print(self.args.output)
+            if self.args.verbose > 0:
+                print(self.args.output)
             if self.args.filename:
                 ct.wrappedos.copy(
                     self.namer.executable_pathname(
@@ -180,8 +181,9 @@ class Cake(object):
                 base = os.path.basename(srcexe)
                 destexe = ct.wrappedos.realpath(
                     os.path.join(outputdir, base))
-                if ct.utils.isexecutable(srcexe) and srcexe != destexe:
-                    print("".join([outputdir, base]))
+                if ct.utils.isexecutable(srcexe) and srcexe != destexe: 
+                    if self.args.verbose > 0:
+                        print("".join([outputdir, base]))
                     ct.wrappedos.copy(srcexe, outputdir)
 
             if self.args.static:
@@ -189,7 +191,8 @@ class Cake(object):
                 filename = self.namer.staticlibrary_name()
                 dest = ct.wrapped.realpath(os.path.join(outputdir, filename))
                 if src != dest:
-                    print(os.path.join(outputdir, filename))
+                    if self.args.verbose > 0:
+                        print(os.path.join(outputdir, filename))
                     ct.wrappedos.copy(src, outputdir)
 
             if self.args.dynamic:
@@ -197,7 +200,8 @@ class Cake(object):
                 filename = self.namer.dynamiclibrary_name()
                 dest = ct.wrapped.realpath(os.path.join(outputdir, filename))
                 if src != dest:
-                    print(os.path.join(outputdir, filename))
+                    if self.args.verbose > 0:
+                        print(os.path.join(outputdir, filename))
                     ct.wrappedos.copy(src, outputdir)
 
     def _callmakefile(self):
@@ -288,6 +292,13 @@ class Cake(object):
             self._callmakefile()
 
 
+    def clear_cache(self):
+        """ Only useful in test scenarios where you need to reset to a pristine state """
+        ct.wrappedos.clear_cache()
+        self.headerdeps.clear_cache()
+        self.hunter.clear_cache()
+
+
 def signal_handler(signal, frame):
     sys.exit(0)
 
@@ -318,6 +329,8 @@ def main(argv=None):
     try:
         cake = Cake(args)
         cake.process()
+        # For testing purposes, clear out the memcaches for the times when main is called more than once.
+        cake.clear_cache()
     except IOError as ioe:
         if args.verbose < 2:
             print(
@@ -331,5 +344,5 @@ def main(argv=None):
             return 1
         else:
             raise
-
+    
     return 0

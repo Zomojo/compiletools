@@ -29,7 +29,6 @@ class TestCake(unittest.TestCase):
             os.mkdir(self._tmpdir)
         except OSError:
             pass
-        print(self._tmpdir)
         os.chdir(self._tmpdir)
 
         # Copy a known cpp file to a non-git directory and compile using cake
