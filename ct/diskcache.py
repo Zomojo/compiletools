@@ -75,14 +75,15 @@ class diskcache:
         if cachefile not in self.cache:
             with open(cachefile, mode='rb') as cf:
                 self.cache[cachefile] = pickle.load(cf)
-                # Verify that each of the files in the pickled disk cache still exists
-                for filename in self.cache[cachefile]:
-                    if not os.path.exists(filename):
-                        # Somehow the diskcache refers to a non-existent file.  Remove the diskcache and alert the user
-                        os.remove(cachefile)
-                        self.cache[cachefile] = None
-                        diskcache.clear_cache()
-                        raise IOError
+                if self.deps_mode:
+                    # Verify that each of the files in the pickled disk cache still exists
+                    for filename in self.cache[cachefile]:
+                        if not os.path.exists(filename):
+                            # Somehow the diskcache refers to a non-existent file.  Remove the diskcache and alert the user
+                            os.remove(cachefile)
+                            self.cache[cachefile] = None
+                            diskcache.clear_cache()
+                            raise IOError("Diskcache " + cachefile + " refered to nonexistent " + filename)
 
         return self.cache[cachefile]
 
