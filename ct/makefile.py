@@ -585,6 +585,11 @@ class MakefileCreator:
             for rule in self.rules:
                 rule.write(mfile)
 
+    def clear_cache(self):
+        """ Only useful in test scenarios where you need to reset to a pristine state """
+        ct.wrappedos.clear_cache()
+        self.namer.clear_cache()
+        self.hunter.clear_cache()
 
 def main(argv=None):
     cap = configargparse.getArgumentParser()
@@ -596,4 +601,7 @@ def main(argv=None):
     hunter = ct.hunter.Hunter(args, headerdeps, magicparser)
     makefile_creator = MakefileCreator(args, hunter)
     makefile_creator.create()
+
+    # And clean up for the test cases where main is called more than once
+    makefile_creator.clear_cache()
     return 0

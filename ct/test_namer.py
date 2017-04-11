@@ -16,8 +16,6 @@ class TestNamer(unittest.TestCase):
     def setUp(self):
         uth.reset()
 
-    @unittest.skipUnless(
-        int(sys.version[0]) < 3, "The hardcoded hash value is only valid on python 2")
     def test_executable_pathname(self):
         config_dir = os.path.join(uth.cakedir(),'ct.conf.d')
         config_files = [os.path.join(config_dir,'gcc.debug.conf')]

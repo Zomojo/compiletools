@@ -136,3 +136,16 @@ class Namer(object):
             alltestsexes = { self.executable_pathname(ct.wrappedos.realpath(source)) 
                                 for source in self.args.tests}
         return alltests
+
+    def clear_cache(self):
+        self.object_dir.cache.clear()
+        self.object_name.cache.clear()
+        self.object_pathname.cache.clear()
+        self.executable_dir.cache.clear()
+        self.executable_name.cache.clear()
+        self.executable_pathname.cache.clear()
+        self.staticlibrary_name.cache.clear()
+        self.staticlibrary_pathname.cache.clear()
+        self.dynamiclibrary_name.cache.clear()
+        self.dynamiclibrary_pathname.cache.clear()
+

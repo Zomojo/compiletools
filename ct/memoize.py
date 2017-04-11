@@ -20,7 +20,7 @@ def memoize(obj):
 
 def memoize_false(func):
     """ For a function that can only return true or false, memoize the false results """
-    cache = set()
+    cache = func.cache = set()
 
     @functools.wraps(func)
     def memoizer(*args, **kwargs):

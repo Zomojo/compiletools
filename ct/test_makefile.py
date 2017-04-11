@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import tempfile
+import filecmp
 import unittest
 import configargparse
 
@@ -35,9 +36,11 @@ class TestMakefile(unittest.TestCase):
             ignore_unknown_config_file_keys=False)
 
     def _create_makefile_and_make(self, tempdir):
-        samplesdir = uth.samplesdir()
         origdir = uth.ctdir()
-        #origdir = os.getcwd()
+        print("origdir="+origdir)
+        print(tempdir)
+        samplesdir = uth.samplesdir()
+        print("samplesdir="+samplesdir)
         os.chdir(tempdir)
         temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
         relativepaths = [
@@ -62,6 +65,7 @@ class TestMakefile(unittest.TestCase):
             for ff in files:
                 if ct.utils.isexecutable(os.path.join(root, ff)):
                     actual_exes.add(ff)
+                    print(root + " " + ff)
 
         expected_exes = {
             os.path.splitext(
@@ -69,24 +73,22 @@ class TestMakefile(unittest.TestCase):
         self.assertSetEqual(expected_exes, actual_exes)
         os.chdir(origdir)
 
-    @unittest.skip("TODO. Implement a method for resetting the wrappedos cache so that this test is meaningful")
     def test_makefile(self):
-        tempdir1 = _moduletmpdir
-        #tempdir1 = tempfile.mkdtemp()
+        #tempdir1 = _moduletmpdir
+        tempdir1 = tempfile.mkdtemp()
         self._create_makefile_and_make(tempdir1)
 
         # Verify that the Makefiles and build products are identical between the two runs
-        # This doesn't work because the Namer uses the wrappedos functions that cache
-        # results.  The caching then doesn't see the current working directory has
-        # changed. This is only a problem in testland so I'm putting it onto the long term
-        # TODO list rather than fixing it now.
-        #tempdir2 = tempfile.mkdtemp()
-        # self._create_makefile_and_make(samplesdir,tempdir2)
-        #comparator = filecmp.dircmp(tempdir1, tempdir2)
-        #self.assertEqual(len(comparator.diff_files), 0)
+        tempdir2 = tempfile.mkdtemp()
+        self._create_makefile_and_make(tempdir2)
+
+        # Only check the bin directory as the config file has a unique name
+        comparator = filecmp.dircmp(os.path.join(tempdir1,'bin'), os.path.join(tempdir2,'bin'))
+        print(comparator.diff_files)
+        self.assertEqual(len(comparator.diff_files), 0)
 
         # Cleanup
-        shutil.rmtree(tempdir1, ignore_errors=True)
+        #shutil.rmtree(tempdir1, ignore_errors=True)
         # shutil.rmtree(tempdir2)
 
     def test_static_library(self):

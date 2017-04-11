@@ -81,11 +81,12 @@ class diskcache:
                         # Somehow the diskcache refers to a non-existent file.  Remove the diskcache and alert the user
                         os.remove(cachefile)
                         self.cache[cachefile] = None
+                        diskcache.clear_cache()
                         raise IOError
 
         return self.cache[cachefile]
 
-    #@memoize_false
+    @memoize_false
     def _any_changes(self, filename, cachefile):
         """ Has this file changed since the cachefile was modified? """
         # Watch out for the user moving files around on disk.  It happens.
@@ -104,7 +105,7 @@ class diskcache:
 
         return False
 
-    #@memoize_false
+    @memoize_false
     def _recursive_any_changes(self, filename, cachefile, originalcachefile=None):
         """ Has this file (or any [recursive] dependency) changed? """
 
@@ -128,7 +129,7 @@ class diskcache:
         else:
             return False
 
-    #@memoize_false
+    @memoize_false
     def _magic_mode_any_changes(self, filename, cachefile):
         """ An alternate way to decide if there are any changes
             that make it time to refresh the cache
@@ -150,11 +151,14 @@ class diskcache:
     @staticmethod
     def clear_cache():
         for func, obj in diskcache._instances.items():
-            obj.cache.clear()
-            #obj._any_changes.cache.clear()
-            #obj._recursive_any_changes.cache = set()
-            #obj._magic_mode_any_changes.cache = set() 
-            #obj.memcacher.cache = {}
+            try:
+                obj.cache.clear()
+                obj._any_changes.cache.clear()
+                obj._recursive_any_changes.cache.clear()
+                obj._recursive_any_changes.cache.clear()
+                obj._magic_mode_any_changes.cache.clear()
+            except AttributeError:
+                pass
 
     def _refresh_cache(self, filename, cachefile, func, *args):
         """ If there are changes to the file
