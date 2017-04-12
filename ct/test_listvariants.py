@@ -31,11 +31,7 @@ class TestListVariants(unittest.TestCase):
             '\tclang.release',
             '\tct',
             '\tgcc.debug',
-            '\tgcc.release',
-            '\tgcc61.debug',
-            '\tgcc61.release',
-            '\tgcc62.debug',
-            '\tgcc62.release']
+            '\tgcc.release']
 
         output = ct.listvariants.find_possible_variants(
             user_config_dir=ucd,
