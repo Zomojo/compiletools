@@ -8,13 +8,13 @@ addons:
         sources:
             - ubuntu-toolchain-r-test
         packages:
-            - g++-5
-            - gcc-5
+            - g++-6
+            - gcc-6
 
 # command to install dependencies      
 install:
     - pip install -r requirements.txt 
-    - export CXX="g++-5" CC="gcc-5"
+    - export CXX="g++-6" CC="gcc-6"
 
 # command to run tests
 script:
