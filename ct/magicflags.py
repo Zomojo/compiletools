@@ -12,7 +12,7 @@ from ct.memoize import memoize
 import ct.utils
 import ct.git_utils
 import ct.headerdeps
-
+import ct.wrappedos
 
 def create(args, headerdeps):
     """ MagicFlags Factory """
@@ -106,6 +106,9 @@ class MagicFlagsBase:
                 if self._args.verbose >= 9:
                     print(' '.join(['Adjusting source magicflag from flag=',flag,'to',newflag]))
                 flag = newflag
+
+                if not ct.wrappedos.isfile(flag):
+                    raise IOError(filename + " specified SOURCE=" + flag + " but it does not exist")
 
             flagsforfilename.setdefault(magic, set()).add(flag)
             if self._args.verbose >= 5:
