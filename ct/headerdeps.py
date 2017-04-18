@@ -116,7 +116,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         """ Internal use. Create the list of includes for the given file """
         with open(realpath, encoding='utf-8', errors='ignore') as ff:
             # Assume that all includes occur at the top of the file
-            text = ff.read(4096)
+            text = ff.read(8192)
 
         # The pattern is intended to match all include statements
         pat = re.compile(

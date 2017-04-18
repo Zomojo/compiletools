@@ -99,16 +99,16 @@ class MagicFlagsBase:
                     text,
                     re.DOTALL)
                 # Now adjust the flag to include the full path
-                newflag = os.path.join(
+                newflag = ct.wrappedos.realpath(os.path.join(
                     ct.wrappedos.dirname(
                         result.group(1)),
-                    flag)
+                    flag.strip()))
                 if self._args.verbose >= 9:
                     print(' '.join(['Adjusting source magicflag from flag=',flag,'to',newflag]))
                 flag = newflag
 
                 if not ct.wrappedos.isfile(flag):
-                    raise IOError(filename + " specified SOURCE=" + flag + " but it does not exist")
+                    raise IOError(filename + " specified " + magic + "='" + flag + "' but it does not exist")
 
             flagsforfilename.setdefault(magic, set()).add(flag)
             if self._args.verbose >= 5:
@@ -139,7 +139,7 @@ class DirectMagicFlags(MagicFlagsBase):
                 text += '# 1 "'
                 text += ct.wrappedos.realpath(filename)
                 text += '"\n'
-                text += ff.read(4096)
+                text += ff.read(8192)
 
         return text
 
