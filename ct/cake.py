@@ -17,7 +17,7 @@ import ct.makefile
 import ct.filelist
 import ct.findtargets
 import ct.jobs
-
+import ct.wrappedos
 
 class Cake(object):
 
@@ -189,7 +189,7 @@ class Cake(object):
             if self.args.static:
                 src = self.namer.staticlibrary_pathname()
                 filename = self.namer.staticlibrary_name()
-                dest = ct.wrapped.realpath(os.path.join(outputdir, filename))
+                dest = ct.wrappedos.realpath(os.path.join(outputdir, filename))
                 if src != dest:
                     if self.args.verbose > 0:
                         print(os.path.join(outputdir, filename))
@@ -198,7 +198,7 @@ class Cake(object):
             if self.args.dynamic:
                 src = self.namer.dynamiclibrary_pathname()
                 filename = self.namer.dynamiclibrary_name()
-                dest = ct.wrapped.realpath(os.path.join(outputdir, filename))
+                dest = ct.wrappedos.realpath(os.path.join(outputdir, filename))
                 if src != dest:
                     if self.args.verbose > 0:
                         print(os.path.join(outputdir, filename))
