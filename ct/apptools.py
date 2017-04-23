@@ -124,10 +124,12 @@ def add_target_arguments(cap):
             help="File(s) to compile to an executable(s)")
     cap.add(
         "--dynamic",
+        "--dynamic-library",
         nargs='*',
         help="File(s) to compile to a dynamic library")
     cap.add(
         "--static",
+        "--static-library",
         nargs='*',
         help="File(s) to compile to a static library")
     cap.add(
