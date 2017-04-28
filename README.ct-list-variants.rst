@@ -15,7 +15,7 @@ Locates available variants for use by the ct-* applications
 
 SYNOPSIS
 ========
-    ct-list-variants
+ct-list-variants
 
 DESCRIPTION
 ===========
