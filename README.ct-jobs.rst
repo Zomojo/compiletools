@@ -22,13 +22,15 @@ DESCRIPTION
 ct-jobs uses the given variants/configs, command line arguments
 and environment variables to determine how many jobs the user 
 wants to run concurrently. The default is to use the number
-of cores available (which can be restricted using taskset on linux)
+of cores available (which can be restricted using taskset on linux).
 
 EXAMPLES
 ========
 
 ct-jobs
+
 ct-jobs --variant=release
+
 taskset -c 1-3 ct-jobs
 
 SEE ALSO

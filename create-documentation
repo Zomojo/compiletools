@@ -1,3 +1,4 @@
 rst2man README.rst compiletools.1
 rst2man README.ct-config.rst ct-config.1
 rst2man README.ct-list-variants.rst ct-list-variants.1
+rst2man README.ct-jobs.rst ct-jobs.1
