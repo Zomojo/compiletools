@@ -212,7 +212,10 @@ class Cake(object):
         if self.args.verbose <= 1:
             cmd.append('-s')
         if self.args.verbose >= 4:
-            cmd.append('--trace')
+            # --trace first comes in GNU make 4.0
+            make_version = subprocess.check_output(['make','--version'], universal_newlines=True).splitlines()[0].split(' ')[-1]
+            if float(make_version) > 4.0:
+                cmd.append('--trace')
         cmd.extend(['-j', str(self.args.parallel),
                     '-f', self.args.makefilename])
         if self.args.clean:
