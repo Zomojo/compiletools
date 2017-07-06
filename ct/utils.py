@@ -132,7 +132,7 @@ def add_flag_argument(parser, name, dest=None, default=False, help=None):
         default=default,
         action='store_true',
         help=bool_help)
-    group.add_argument('--no-' + name, dest=dest, action='store_false')
+    group.add_argument('--no-' + name, dest=dest, action='store_false', default=not default)
 
 def removemount(absolutepath):
     """ Remove the '/' on unix and (TODO) 'C:\' on Windows """
