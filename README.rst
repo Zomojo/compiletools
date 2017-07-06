@@ -65,6 +65,7 @@ SEE ALSO
 * ct-cache-clean
 * ct-cake
 * ct-cmakelists
+* ct-commandline
 * ct-config
 * ct-cppdeps
 * ct-create-cmakelists
