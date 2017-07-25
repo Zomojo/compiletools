@@ -56,6 +56,33 @@ OPTIONS
 ``compilation args``
     Any of the standard compilation arguments you want to go into the config.
 
+EXAMPLE
+=======
+
+Say that you are cross compiling to a beaglebone. First off you might discover that the following line worked but was rather tedious to type
+
+* ct-cake main.cpp --CXX=arm-linux-gnueabihf-g++ --CPP=arm-linux-gnueabihf-g++  --CC=arm-linux-gnueabihf-g++ --LD=arm-linux-gnueabihf-g++
+
+What you would really prefer to type is 
+
+* ct-cake main.cpp --variant=bb.debug
+* ct-cake main.cpp --variant=bb.release
+
+Which leads you to the question, how do you write the new variant? A variant is just a config file (with extension .conf) so you could simply copy an existing variant config and edit with a text editor. Alternatively, there is an app for that.  The -w option on the ct-config command will write a new config file.
+
+* ct-config --CXX=arm-linux-gnueabihf-g++ --CPP=arm-linux-gnueabihf-g++  --CC=arm-linux-gnueabihf-g++ --LD=arm-linux-gnueabihf-g++ -w ~/.config/ct/bb.debug.conf
+
+Once that has written you should now use your favourite editor to edit ~/.config/ct/bb.debug.conf.  You will probably need to edit the various FLAGS variables.  Most of the other variables can be removed as they will default to the values shown in the file anyway.
+
+Now if almost all you ever do is cross compile to the beaglebone then you might prefer that the "debug" meant "bb.debug" and similarly for release. That is, you really might prefer to type
+
+* ct-cake main.cpp --variant=release   # meaning bb.release
+* ct-cake main.cpp                     # meaning bb.debug
+
+To achieve that you have to edit the ct.conf file in ~/.config/ct/ct.conf (or /etc/xdg/ct/ct.conf if you are doing a systemwide setup) to include the following lines
+
+variant = debug
+variantaliases = {'debug':'bb.debug', 'release':'bb.release'}
 
 SEE ALSO
 ========
