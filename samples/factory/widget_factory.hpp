@@ -3,6 +3,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <functional>
 //#include <iostream>
 
 // Singleton widget factory
