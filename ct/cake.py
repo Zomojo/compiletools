@@ -213,8 +213,8 @@ class Cake(object):
             cmd.append('-s')
         if self.args.verbose >= 4:
             # --trace first comes in GNU make 4.0
-            make_version = subprocess.check_output(['make','--version'], universal_newlines=True).splitlines()[0].split(' ')[-1]
-            if float(make_version) > 4.0:
+            make_version = subprocess.check_output(['make','--version'], universal_newlines=True).splitlines()[0].split(' ')[-1].split('.')[0]
+            if int(make_version) >= 4:
                 cmd.append('--trace')
         cmd.extend(['-j', str(self.args.parallel),
                     '-f', self.args.makefilename])
