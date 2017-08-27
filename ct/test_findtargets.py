@@ -22,6 +22,7 @@ class TestFindTargetsModule(unittest.TestCase):
             'dottypaths/dottypaths.cpp',
             'lotsofmagic/lotsofmagic.cpp',
             'magicsourceinheader/main.cpp',
+            'magicinclude/main.cpp',
             'movingheaders/main.cpp'}
         relativeexpectedtests = {
             'cross_platform/test_source.cpp',

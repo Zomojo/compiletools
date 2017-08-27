@@ -110,6 +110,11 @@ class MagicFlagsBase:
                 if not ct.wrappedos.isfile(flag):
                     raise IOError(filename + " specified " + magic + "='" + flag + "' but it does not exist")
 
+            # If the magic was INCLUDE then modify that into the equivalent CPPFLAGS and CXXFLAGS
+            if magic == 'INCLUDE':
+                flagsforfilename.setdefault('CPPFLAGS',set()).add('-I '+flag)                
+                flagsforfilename.setdefault('CXXFLAGS',set()).add('-I '+flag)                
+
             flagsforfilename.setdefault(magic, set()).add(flag)
             if self._args.verbose >= 5:
                 print(
