@@ -174,6 +174,7 @@ def default_config_directories(
     # Use configuration in the order (lowest to highest priority)
     # 1) same path as exe,
     # 2) system config (XDG compliant.  /etc/xdg/ct)
+    # 2b)   python virtual environment system configs (${python-site-packages}/etc/xdg/ct)
     # 3) user config   (XDG compliant. ~/.config/ct)
     # 4) environment variables
     # 5) given on the command line
@@ -181,13 +182,22 @@ def default_config_directories(
     # These variables are settable to assist writing tests
     if user_config_dir is None:
         user_config_dir = appdirs.user_config_dir(appname='ct')
-    if system_config_dir is None:
-        system_config_dir = appdirs.site_config_dir(appname='ct')
+
+    system_dirs = []
+    if system_config_dir is not None:
+        system_dirs.append(system_config_dir)
+    else:
+        for python_config_dir in sys.path[::-1]:
+            trialpath = os.path.join(python_config_dir, 'etc/xdg/ct')
+            if ct.wrappedos.isdir(trialpath) and trialpath not in system_dirs:
+                system_dirs.append(trialpath)
+        system_dirs.append(appdirs.site_config_dir(appname='ct'))
+
     if exedir is None:
         exedir = ct.wrappedos.dirname(ct.wrappedos.realpath(sys.argv[0]))
 
     executable_config_dir = os.path.join(exedir, "ct.conf.d")
-    results = [user_config_dir, system_config_dir, executable_config_dir]
+    results = [user_config_dir] + system_dirs + [executable_config_dir]
     if verbose >= 9:
         print(" ".join(["Default config directories"] + results))
 
