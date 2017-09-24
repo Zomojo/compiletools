@@ -30,7 +30,7 @@ It should be noted that a variant is simply a config file without the .conf.
 Config files for the ct-* applications are programmatically located using 
 python-appdirs, which on linux is a wrapper around the XDG specification. 
 The default locations are /etc/xdg/ct/ and $HOME/.config/ct/.  
-Configuration is down done using python-configargparse which automatically 
+Configuration is implemented using python-configargparse which automatically 
 handles environment variables, command line arguments, system configs, 
 and user configs.  Also there are two levels of configs.  There is a ct.conf 
 that contains the basic variables that apply no matter what variant 

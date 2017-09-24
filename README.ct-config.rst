@@ -28,7 +28,16 @@ python-appdirs, which on linux is a wrapper around the XDG specification.
 Thus default locations are /etc/xdb/ct/ and $HOME/.config/ct/.  
 Configuration parsing is done using python-configargparse which automatically 
 handles environment variables, command line arguments, system configs
-and user configs.  The ct-* applications are aware of two levels of configs.  
+and user configs.  
+
+Specifically, the config files are searched for in the following 
+locations (from lowest to highest priority):
+* same path as exe,
+* system config (XDG compliant, so usually /etc/xdg/ct)
+* python virtual environment system configs (${python-site-packages}/etc/xdg/ct)
+* user config   (XDG compliant, so usually ~/.config/ct)
+
+The ct-* applications are aware of two levels of configs.  
 There is a base level ct.conf that contains the basic variables that apply no 
 matter what variant (i.e, debug/release/etc) is being built. 
 
@@ -41,6 +50,7 @@ gets opened is "gcc.debug.conf".  If any config value is specified in more
 than one way then the following hierarchy is used
 
 * command line > environment variables > config file values > defaults
+
 
 Write the config to file with -w.
 
