@@ -1,0 +1,61 @@
+A variety of installation methods are possible.  
+
+1) git clone from github and run from repository
+2) pip install (as either user, root or virtualenv)
+3) build an RPM
+4) build a deb (currently unimplemented)
+
+
+1) clone the github repository
+
+git clone git://github.com/Zomojo/compiletools
+
+Add the compiletools directory to your PATH
+export PATH=$PATH:path_to_compiletools_repo
+
+
+2a) pip install as user
+On Ubuntu 16.04
+
+pip install --user compiletools
+
+will install into "~/.local/"  so you need to have "~/.local/bin" in your path to pick up the executables.
+
+
+On Ubuntu 17.04:
+
+pip install compiletools
+
+will install into "~/.local/"  so you need to have "~/.local/bin" in your path to pick up the executables.
+
+
+2b) pip install as root
+On Ubuntu 16.04
+
+sudo pip install compiletools
+
+will install into /usr/local.  By default /usr/local/bin is in your path so no extra work is required.
+
+
+On Ubuntu 17.04:
+
+sudo -H pip install compiletools
+
+will install into /usr/local.  By default /usr/local/bin is in your path so no extra work is required.
+
+
+3) Build an RPM (these instructions were tested on Fedora 26)
+Make sure you have the building tools installed
+
+sudo dnf install python2-docutils rpm-build
+
+Then download a tarball and turn it into the RPM
+
+rpmhome=$(rpm --eval %_topdir)
+pushd "$rpmhome"
+tag="v4.1.43"
+tarball=${tag}.tar.gz
+curl -L "https://github.com/Zomojo/compiletools/archive/${tarball}" -o "SOURCES/${tarball}"
+rpmbuild -tb "SOURCES/${tarball}"
+popd
+dnf install ${rpmhome}/RPMS/noarch/python-compiletools-4.1.43-1.fc26.noarch.rpm
