@@ -9,7 +9,7 @@ Locates available variants for use by the ct-* applications
 :Author: geoff@zomojo.com
 :Date:   2016-08-16
 :Copyright: Copyright (C) 2011-2016 Zomojo Pty Ltd
-:Version: 4.1.44
+:Version: 4.1.45
 :Manual section: 1
 :Manual group: developers
 
