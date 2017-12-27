@@ -23,6 +23,12 @@ def add_arguments(cap):
     ct.headerdeps.add_arguments(cap)
     ct.magicflags.add_arguments(cap)
 
+    ct.utils.add_boolean_argument(
+        parser=cap,
+        name="allow-magic-source-in-header",
+        dest="allow_magic_source_in_header",
+        default=False,
+        help="Set this to true if you want to use the //#SOURCE=foo.cpp magic flag in your header files. Defaults to false because it is significantly slower.")
 
 class Hunter(object):
 
@@ -67,7 +73,8 @@ class Hunter(object):
 
         # One of the magic flags is SOURCE.  If that was present, add to the
         # file list.
-        todo |= self._extractSOURCE(realpath)
+        if self.args.allow_magic_source_in_header or ct.utils.issource(realpath): 
+            todo |= self._extractSOURCE(realpath)
 
         # The header deps and magic flags have been parsed at this point so it
         # is now safe to mark the realpath as processed.
