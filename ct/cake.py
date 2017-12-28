@@ -150,6 +150,13 @@ class Cake(object):
             "--output",
             help="When there is only a single build product, rename it to this name.")
 
+        ct.utils.add_boolean_argument(
+            parser=cap,
+            name="serialise-tests",
+            dest="serialisetests",
+            default=False,
+            help="Force the unit tests to run serially rather than in parallel. Defaults to false because it is slower.")
+
     def _callfilelist(self):
         filelist = ct.filelist.Filelist(self.args, self.hunter, style='flat')
         filelist.process()
@@ -228,6 +235,8 @@ class Cake(object):
 
         if self.args.tests and not self.args.clean:
             cmd = ['make']
+            if not self.args.serialisetests:
+                cmd.extend(['-j', str(self.args.parallel)])
             if self.args.verbose < 2:
                 cmd.append('-s')
             cmd.extend(['-f', self.args.makefilename, 'runtests'])
