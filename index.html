@@ -245,14 +245,17 @@ because its too error-prone to do manually, or with recursive make goodness.
 <h2>How it Works</h2>
 
 <p>
-Cake uses "gcc -MM -MF" to generate the header dependencies for the main.cpp
-file you specify at the command line. For each header file, it looks for
-an underlying implementation (cpp) file with the same name, and adds it to
-the build. Cake also reads the first 4k of each file for special comments
-that indicate needed link and compile flags.  Cake recurses through the
+ct-cake generates the header dependencies for the "main.cpp"
+file you specify at the command line by either examining the "#include" 
+lines in the source code or by executing "gcc -MM -MF". 
+For each header file found in the source file, it looks for
+an underlying implementation (cpp) file with the same name, and adds that 
+implementation file to the build. 
+ct-cake also reads the first 8KB of each file for special comments
+that indicate needed link and compile flags.  Then it recurses through the
 dependencies of the cpp file, and uses this spidering to generate complete
-dependency information for the application. It then lazily generates a
-makefile, and finally calls make.
+dependency information for the application. A Makefile is generated and 
+finally it calls make.
 
 </p>
 
@@ -260,10 +263,10 @@ makefile, and finally calls make.
 
 <p>
 
-Cake works very differently to other build systems, which specify a hierarchy
-of link flags and compile options, because cake ties the compiler flags
+ct-ake works very differently to other build systems, which specify a hierarchy
+of link flags and compile options, because ct-cake ties the compiler flags
 directly to the source code. If you have compress.hpp that requires "-lzip"
-on the link line, add the following comment in the first 4K of the header file:
+on the link line, add the following comment in the first 8KB of the header file:
 
 <pre>
     //#LDFLAGS=-lzip
@@ -319,144 +322,110 @@ projects, especially for incremental rebuilds.
 <h2>Cake configuration</h2>
 
 <p>
-Cake requires <i>almost</i> no configuration. However, it is still
+The compiletools programs require <i>almost</i> no configuration. However, it is still
 useful to have some shortcut build templates such as 'release',
 'profile' etc.
 </p>
 
 <p>
-To configure these, cake looks for the following, in order of increasing precedence:
+Config files for the ct-* applications are programmatically located using 
+python-appdirs, which on linux is a wrapper around the XDG specification. 
+Thus default locations are /etc/xdb/ct/ and $HOME/.config/ct/.  
+Configuration parsing is done using python-configargparse which automatically 
+handles environment variables, command line arguments, system configs
+and user configs.  
 
+Specifically, the config files are searched for in the following 
+locations (from lowest to highest priority):
 <ul>
-    <li>/etc/cake.conf</li>
-    <li>CAKE_* variables</li>
-    <li>command line options to cake</li>
+    <li> same path as exe,</li>
+    <li> system config (XDG compliant, so usually /etc/xdg/ct)</li>
+    <li> python virtual environment system configs (${python-site-packages}/etc/xdg/ct)</li>
+    <li> user config   (XDG compliant, so usually ~/.config/ct)</li>
 </ul>
 
-An example /etc/cake.conf file looks as follows:
+The ct-* applications are aware of two levels of configs.  
+There is a base level ct.conf that contains the basic variables that apply no  
+matter what variant (i.e, debug/release/etc) is being built. 
+
+The second layer of config files are the variant configs that contain the 
+details for the debug/release/etc.  The variant names are simply a config file 
+name but without the .conf. There are also variant aliases to make for less 
+typing. So --variant=debug looks up the variant alias (specified in ct.conf) 
+and notices that "debug" really means "gcc.debug".  So the config file that 
+gets opened is "gcc.debug.conf".  If any config value is specified in more 
+than one way then the following hierarchy is used
 
 <pre>
-CAKE_CC="g++ -I ."
-CAKE_CXXFLAGS="-fPIC -g -Wall"
-CAKE_LINKFLAGS="-fPIC -Wall -Werror"
-CAKE_TESTPREFIX="valgrind --quiet --error-exitcode=1"
-CAKE_POSTPREFIX=""
+    command line > environment variables > config file values > defaults
+</pre>
+
+An example /etc/xdg/ct/ file looks as follows:
+
+<pre>
+ID=GNU
+CC=gcc
+CXX=g++
+LD=g++
+CFLAGS=-fPIC -g -Wall -O3 -DNDEBUG -finline-functions -Wno-inline
+CXXFLAGS=-std=c++11 -fPIC -g -Wall -fdiagnostics-color=auto -O3 -DNDEBUG -finline-functions -Wno-inline
+LDFLAGS=-fPIC -Wall -Werror -Xlinker --build-id
+TESTPREFIX=timeout 300 valgrind --quiet --error-exitcode=1
 </pre>
 
 <p>
-CAKE_CC must be set to a value that can be used to run <tt>gcc -MM -MF</tt> over the
-input source files to generate dependencies. If you have more complex dependencies, you
-will need to configure these per-project, and run cake through a script, which is
-against the spirit of things.
-</p>
-
-<p>
-CAKE_CXXFLAGS lists the flags appended to each compilation job. The value in /etc/cake
+CXXFLAGS lists the flags appended to each compilation job. The value in /etc/xdg/ct/gcc.debug.conf
 is completely overridden by the environment variable, which is completely overridden by
-the command-line argument --CXXFLAGS=. Likewise, CAKE_LINKFLAGS sets the default options used
+the command-line argument --CXXFLAGS=. Likewise, LDFLAGS sets the default options used
 for linking.
 </p>
 
 <p>
-CAKE_TESTPREFIX specifies a command prefix to place in front of unit test runs. This should
+TESTPREFIX specifies a command prefix to place in front of unit test runs. This should
 ideally be a tool like valgrind, gdb or purify that can be configured to execute the app and
 return a non-zero exit code on any failure.
 </p>
 
-<p>
-CAKE_POSTPREFIX specifies a command prefix to place in front of post-build scripts. This could
-be a command that fails after a certain timeout has elapsed, to prevent any locked-up regressions
-from blocking the entire build.
-</p>
 
 <h2>Build variants</h2>
-
-Cake build variants are used by specifying the variant name at the command-line as follows:
-
-<pre>
-    $ cake --variant=release a.cpp && ./bin/a
-</pre>
-
-<p>
-To configure a variant, create environment variables called CAKE_MYVARIANT_CC,
-CAKE_MYVARIANT_CXXFLAGS and CAKE_MYVARIANT_LINKFLAGS. You can also specify them in /etc/cake.
-</p>
-
-<p>
-The new build variant can then be used by using the name in all lowercase:
+A variant is a configuration file that specifies various configurable settings like the compiler 
+and compiler flags. Common variants are "debug" and "release".  
+Build variants are used by specifying the variant name at the command-line as follows:
 
 <pre>
-    $ cake --variant=myvariant a.cpp && ./bin/a
+    $ ct-cake --variant=release a.cpp && ./bin/a
 </pre>
-</p>
-
-This technique is the recommended way to change the meaning of variants such as release, debug
-and profile.
 
 <h2>Unit Tests</h2>
 
 <p>
-Cake integrates with unit tests in a fairly simple (and perhaps simplistic) way.
+ct-cake integrates with unit tests in a fairly simple (and perhaps simplistic) way.
 </p>
 
-Cake allows you to specify multiple build targets on each line,
+ct-cake allows you to specify multiple build targets on each line,
 so the following is valid and useful:
 
 <pre>
-     $ cake utilities/*.cpp    # builds all apps and places them under bin/
+     $ ct-cake utilities/*.cpp    # builds all apps and places them under bin/
 </pre>
 
 Unit tests are executables that are generated, that create an additional
 build step. They must run and return an exit code of 0 as part of the build
-process. To specify that executables are unit tests, put them in a --begintests/
---endtests block:
+process. To specify that executables are unit tests, use the --tests flag.
 
 <pre>
-     $ cake utilities/*.cpp --begintests tests/*.cpp --endtests
+     $ ct-cake utilities/*.cpp --tests tests/*.cpp
 </pre>
 
-If any of the tests fail, the build fails. You can also omit the --endtests for
-faster typing:
-
-<pre>
-     $ cake --begintests tests/*.cpp
-</pre>
-
-If the <tt>CAKE_TESTPREFIX</tt> variable is set, you can automatically check
+If the <tt>TESTPREFIX</tt> variable is set, you can automatically check
 all unit tests with a code purifying tool. For example:
 
 <pre>
-export CAKE_TESTPREFIX="valgrind --quiet --error-exitcode=1"
+export TESTPREFIX="valgrind --quiet --error-exitcode=1"
 </pre>
 
 will cause all unit tests to only pass if they run through valgrind with no
 memory errors.
-
-
-<h2>Post-Build Steps</h2>
-
-<p>
-You may have a number of steps that should be performed after every
-successful build. The post-build tests will only run after every binary has been
-produced, and every unit test has passed. They only run whenever a dependency
-of one of the targets has been touched.
-</p>
-<p>
-Post-build steps are typically shell scripts that test out command-line utilities, 
-or tarball up code so it can be uploaded somewhere, etc. Cake does not try to
-compile them, which is why a different keyword is needed to distinguish them
-from unit tests.
-</p>
-
-Post steps are specified like this:
-
-<pre>
-     $ cake apps/*.cpp --beginpost ./regression-suite.sh ./generate-tarball.sh --endpost
-</pre>
-
-As you might infer from the example, post steps run strictly in the order specified
-on the command-line, so that a tarball is only generated if the regression suite passes.
-
 
 <h2>Putting it all together - a typical build setup</h2>
 
@@ -478,10 +447,7 @@ the build.sh, before cake runs.
 
 set -e
 
-cake apps/*.cpp \
-    --begintests tests/*.cpp --endtests \
-    --beginpost regression/test*.sh --endpost \
-    "$@"
+ct-cake apps/*.cpp --tests tests/*.cpp "$@"
 
 </pre>
 
