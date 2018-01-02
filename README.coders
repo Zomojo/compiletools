@@ -55,6 +55,8 @@ and you are currently testing in python2.  Solution is to remove the ct cache (c
 # Making a release
 #
 
+# Zeroth: Make sure all *.rst files have been added to .bumpversion.cfg
+
 # First increase the version number using bumpversion.
 # The .bumpversion.cfg has been set to tag and commit (but not push)
 bumpversion patch
