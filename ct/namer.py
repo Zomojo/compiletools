@@ -44,21 +44,21 @@ class Namer(object):
 
     @memoize
     def object_dir(self, sourcefilename=None):
-        """ Put objects into a directory structure that starts with the
-            command line objdir but then replicates the project directory
-            structure.  This way we can separate object files that have
-            the same name but different paths.
+        """ This function allows for alternative behaviour to be explore.
+            Previously we tried replicating the source directory structure
+            to keep object files separated.  The mkdir involved slowed 
+            down the build process by about 25%.
         """
-        return self._outputdir(self.args.objdir, sourcefilename)
+        return self.args.objdir
 
     @memoize
     def object_name(self, sourcefilename):
         """ Return the name (not the path) of the object file
             for the given source.
         """
-        name = os.path.split(sourcefilename)[1]
+        directory,name = os.path.split(sourcefilename)
         basename = os.path.splitext(name)[0]
-        return "".join([basename, ".o"])
+        return "".join([directory.replace('/','@@'),'@@',basename, ".o"])
 
     @memoize
     def object_pathname(self, sourcefilename):
@@ -67,12 +67,10 @@ class Namer(object):
 
     @memoize
     def executable_dir(self, sourcefilename=None):
-        """ Put the binaries into a directory structure that starts with the
-            command line bindir but then replicates the project directory
-            structure.  This way we can separate executable files that have
-            the same name but different paths.
+        """ Similar to object_dir, this allows for alternative 
+            behaviour experimentation.
         """
-        return self._outputdir(self.args.bindir, sourcefilename)
+        return self.args.bindir
 
     @memoize
     def executable_name(self, sourcefilename):

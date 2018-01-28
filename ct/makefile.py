@@ -103,7 +103,7 @@ class LinkRuleCreator(object):
         recipe = ""
         if self.args.verbose >= 1:
             recipe += " ".join(["@echo ...", outputname, ";"])
-        recipe += " ".join(["mkdir -p", ct.wrappedos.dirname(outputname), ";", linker, "-o", outputname] +
+        recipe += " ".join([linker, "-o", outputname] +
                            list(object_names) +
                            list(all_magic_ldflags) +
                            [linkerflags])
@@ -481,6 +481,11 @@ class MakefileCreator:
         self.write(self.args.makefilename)
         return self.args.makefilename
 
+    def _create_object_directory(self):
+        return Rule(target='make_object_dir',
+                    prerequisites='',
+                    recipe=' '.join(['mkdir -p',self.args.objdir]))
+
     def _create_compile_rule_for_source(self, filename):
         """ For a given source file return the compile rule required for the Makefile """
         if self.args.verbose >=9:
@@ -492,7 +497,7 @@ class MakefileCreator:
                 filename)
 
         deplist = self.hunter.header_dependencies(filename)
-        prerequisites = [filename] + sorted([str(dep) for dep in deplist])
+        prerequisites = ['make_object_dir',filename] + sorted([str(dep) for dep in deplist])
 
         self.object_directories.add(self.namer.object_dir(filename))
         obj_name = self.namer.object_pathname(filename)
@@ -504,12 +509,12 @@ class MakefileCreator:
             recipe = " ".join(["@echo ...", filename, ";"])
         if ct.wrappedos.isc(filename):
             magic_c_flags = magicflags.get('CFLAGS', [])
-            recipe += " ".join(["mkdir -p", ct.wrappedos.dirname(obj_name),";", self.args.CC, self.args.CFLAGS]
+            recipe += " ".join([self.args.CC, self.args.CFLAGS]
                               + list(magic_c_flags)
                               + ["-c", "-o", obj_name, filename])
         else:
             magic_cxx_flags = magicflags.get('CXXFLAGS', [])
-            recipe += " ".join(["mkdir -p", ct.wrappedos.dirname(obj_name),";", self.args.CXX, self.args.CXXFLAGS]
+            recipe += " ".join([self.args.CXX, self.args.CXXFLAGS]
                               + list(magic_cxx_flags)
                               + ["-c", "-o", obj_name, filename])
 
@@ -551,12 +556,13 @@ class MakefileCreator:
 
     def _create_compile_rules_for_sources(self, sources):
         """ For all the given source files return the set of rules required
-            for the Makefile that will compil the source files into object files.
+            for the Makefile that will compile the source files into object files.
         """
 
         # The set of rules needed to turn the source file into an executable
         # (or library as appropriate)
         rules_for_source = ct.utils.OrderedSet()
+        rules_for_source.add(self._create_object_directory())
 
         # Output all the compile rules
         for source in sources:
