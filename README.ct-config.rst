@@ -39,20 +39,38 @@ locations (from lowest to highest priority):
 
 The ct-* applications are aware of two levels of configs.  
 There is a base level ct.conf that contains the basic variables that apply no 
-matter what variant (i.e, debug/release/etc) is being built. 
+matter what variant (i.e, debug/release/etc) is being built. The default 
+ct.conf defines the following variables: 
+
+* CTCACHE = None
+* variant = debug
+* variantaliases = {'debug':'gcc.debug', 'release':'gcc.release'}
+* exemarkers = [main(,main (,wxIMPLEMENT_APP,g_main_loop_new]
+* testmarkers = unit_test.hpp
 
 The second layer of config files are the variant configs that contain the 
 details for the debug/release/etc.  The variant names are simply a config file 
 name but without the .conf. There are also variant aliases to make for less 
 typing. So --variant=debug looks up the variant alias (specified in ct.conf) 
 and notices that "debug" really means "gcc.debug".  So the config file that 
-gets opened is "gcc.debug.conf".  If any config value is specified in more 
-than one way then the following hierarchy is used
+gets opened is "gcc.debug.conf".  The default gcc.debug.conf defines the 
+following variables:
+
+* ID=GNU
+* CC=gcc
+* CXX=g++
+* LD=g++
+* CFLAGS=-fPIC -g -Wall
+* CXXFLAGS=-std=c++11 -fPIC -g -Wall
+* LDFLAGS=-fPIC -Wall -Werror -Xlinker --build-id
+
+If any config value is specified in more than one way then the following 
+hierarchy is used
 
 * command line > environment variables > config file values > defaults
 
-
-Write the config to file with -w.
+ct-config can be used to create a new config and write the config to file 
+simply by using the ``-w`` flag.
 
 OPTIONS
 =======
@@ -61,7 +79,7 @@ OPTIONS
 --version      Show program's version number and exit
 --help, -h     Show help and exit
 --variant VARIANT  Specifies which variant of the config should be used. Use the config name without the .conf (default: gcc.debug)
---write-out-config-file CONFIG_OUTPUT_PATH, -w CONFIG_OUTPUT_PATH    takes the current command line args and writes them out to a config file at the given path, then exits (default: None)
+--write-out-config-file OUTPUT_PATH, -w OUTPUT_PATH  takes the current command line args and writes them out to a config file at the given path, then exits (default: None)
 
 ``compilation args``
     Any of the standard compilation arguments you want to go into the config.

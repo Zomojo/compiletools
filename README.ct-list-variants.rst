@@ -46,7 +46,9 @@ If any config value is specified in more than one way then
 
 * command line > environment variables > config file values > defaults
 
-
+ct-list-variants shows the variant aliases defined on the system, the various 
+variant configs available, and the ordering in which the configs will be called
+if there is any duplication in configuration filenames.
 
 SEE ALSO
 ========
