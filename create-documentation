@@ -1,3 +1,4 @@
+rst2man README.ct-cake.rst ct-cake.1
 rst2man README.rst compiletools.1
 rst2man README.ct-commandline.rst ct-commandline.1
 rst2man README.ct-config.rst ct-config.1
