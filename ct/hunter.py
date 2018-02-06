@@ -69,7 +69,6 @@ class Hunter(object):
         # Don't try and collapse these lines.
         # We don't want todo as a handle to the headerdeps.process object.
         todo = set()
-        todo |= self.headerdeps.process(realpath)
 
         # One of the magic flags is SOURCE.  If that was present, add to the
         # file list.
@@ -80,9 +79,11 @@ class Hunter(object):
         # is now safe to mark the realpath as processed.
         processed.add(realpath)
 
+        # Note that the implied source file of an actual source file is itself
         implied = ct.utils.implied_source(realpath)
         if implied:
             todo.add(implied)
+            todo |= self.headerdeps.process(implied)
 
         todo -= processed
         while todo:
