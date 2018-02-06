@@ -230,3 +230,6 @@ class CppHeaderDeps(HeaderDepsBase):
         # to get the full path even to files in the current working directory
         return {ct.wrappedos.realpath(x) for x in deplist.split() if x.strip(
             '\\\t\n\r') and x not in [realpath, "/dev/null"]}
+
+    def clear_cache(self):
+        diskcache.clear_cache();
