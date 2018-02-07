@@ -23,7 +23,7 @@ ct-cake is the Swiss army knife of build tools that combines many of the
 compiletools into one uber-tool. For many C/C++ projects you can compile
 simply using
 
-   ``ct-cake --auto``
+    ``ct-cake --auto``
 
 ct-cake will try to determine the correct source files to generate executables
 from and also determine the tests to build and run. It works by spidering over
@@ -69,19 +69,20 @@ particularly for C++.
 With ct-cake, you only pull in what is strictly necessary to what you need to 
 run right now. Say, you are testing a particular tool in a large project, with
 a large base of 2000 library files for string handling, sockets, etc. There
-is simply no make file. You might want to create a build.sh for regression
+is simply no Makefile (This is actually a lie, there is a Makefile under the 
+hood). You might want to create a build.sh for regression
 testing, but it's not essential.
 
 The basic workflow is to simply type:
 
-`` ct-cake --auto ``
+    ``ct-cake --auto``
 
 If there are multiple executables that --auto finds and you only want to build 
 one specific one:
 
-`` ct-cake path/to/src/app.cpp ``
+    ``ct-cake path/to/src/app.cpp``
 
-Only the library cpp files that are needed, directly, or indictly to create
+Only the library cpp files that are needed, directly, or indirectly to create
 ./bin/app are actually compiled. If you don't #include anything that refers
 to a library file, you don't pay for it. Also, only the link options that
 are strictly needed to generate the app are included. Its possible to do in
@@ -94,11 +95,11 @@ How it Works
 
 ct-cake generates the header dependencies for the "main.cpp"
 file you specify at the command line by either examining the "#include" lines in 
-the source code or by executing "gcc -MM -MF".  For each header file found in 
-the source file, it looks for
-an underlying implementation (cpp) file with the same name, and adds that 
-implementation file to the build.  ct-cake also reads the first 8KB of each file 
-for special comments
+the source code (or by executing "gcc -MM -MF" if you use the --preprocess flag).  
+For each header file found in the source file, it looks for
+an underlying implementation (c,cpp,cc,cxx,etc) file with the same name, and 
+adds that implementation file to the build.  ct-cake also reads the first 8KB
+of each file for special comments
 that indicate needed link and compile flags.  Then it recurses through the
 dependencies of the cpp file, and uses this spidering to generate complete
 dependency information for the application. A Makefile is generated and finally 
@@ -131,8 +132,8 @@ Performance
 
 Because ct-cake internally generates a makefile to build the C++ file, cake is
 about as fast as a handrolled Makefile that uses the same lazily generated
-dependencies. One particular example project took 0.04 seconds to build if nothing is
-out of date, versus 2 seconds for, say, Boost.Build.
+dependencies. One particular example project took 0.04 seconds to build if 
+nothing is out of date, versus 2 seconds for, say, Boost.Build.
 
 ct-cake also eliminates the redundant generation of static archive files that
 a more hierarchical build process would generate as intermediaries, saving
@@ -182,29 +183,26 @@ way then the following hierarchy is used
 
 * command line > environment variables > config file values > defaults 
 
-An example /etc/xdg/ct/ file looks as follows: ::
+The example /etc/xdg/ct/gcc.release.conf file looks as follows: ::
 
     ID=GNU
     CC=gcc
     CXX=g++
     LD=g++
     CFLAGS=-fPIC -g -Wall -O3 -DNDEBUG -finline-functions -Wno-inline
-    CXXFLAGS=-std=c++11 -fPIC -g -Wall -fdiagnostics-color=auto -O3 -DNDEBUG -finline-functions -Wno-inline
+    CXXFLAGS=-std=c++11 -fPIC -g -Wall -O3 -DNDEBUG -finline-functions -Wno-inline
     LDFLAGS=-fPIC -Wall -Werror -Xlinker --build-id
     TESTPREFIX=timeout 300 valgrind --quiet --error-exitcode=1
 
 CXXFLAGS lists the flags appended to each compilation job. The value in 
-/etc/xdg/ct/gcc.debug.conf
-is completely overridden by the environment variable, which is completely 
-overridden by
+/etc/xdg/ct/\*.conf
+is overridden by the environment variable, which is in return overridden by
 the command-line argument --CXXFLAGS=. Likewise, LDFLAGS sets the default 
 options used for linking.
 
 TESTPREFIX specifies a command prefix to place in front of unit test runs. This 
-should
-ideally be a tool like valgrind, gdb or purify that can be configured to execute 
-the app and
-return a non-zero exit code on any failure.
+should ideally be a tool like valgrind, gdb or purify that can be configured 
+to execute the app and return a non-zero exit code on any failure.
 
 
 Build variants
@@ -213,7 +211,8 @@ A variant is a configuration file that specifies various configurable settings
 like the compiler and compiler flags. Common variants are "debug" and "release".  
 Build variants are used by specifying the variant name at the command-line as 
 follows: 
-``    $ ct-cake --variant=release a.cpp && ./bin/a ``
+
+    ``$ ct-cake --variant=release a.cpp``
 
 Unit Tests
 ==========
@@ -230,12 +229,12 @@ Unit tests are executables that are generated, that create an additional
 build step. They must run and return an exit code of 0 as part of the build
 process. To specify that executables are unit tests, use the --tests flag.
 
-``$ ct-cake utilities/\*.cpp --tests tests/\*.cpp``
+    ``$ ct-cake utilities/*.cpp --tests tests/*.cpp``
 
 If the *TESTPREFIX* variable is set, you can automatically check
 all unit tests with a code purifying tool. For example:
 
-``export TESTPREFIX="valgrind --quiet --error-exitcode=1"``
+    ``export TESTPREFIX="valgrind --quiet --error-exitcode=1"``
 
 will cause all unit tests to only pass if they run through valgrind with no
 memory errors.
@@ -250,11 +249,12 @@ or add test scripts to the regression directory to improve
 test coverage.
 
 Code generation steps can be added at the beginning of
-the build.sh, before cake runs.::
+the build.sh, before cake runs. ::
 
-    #!/bin/bashbug-64
+    #!/bin/sh
     set -e
-    ct-cake apps/*.cpp --tests tests/*.cpp "$@"
+    python fancypythoncodegenerator.py
+    ct-cake --auto "$@"
 
 
 The special *"$@"* marker is the recommended way
