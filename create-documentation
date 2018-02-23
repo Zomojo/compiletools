@@ -1,4 +1,5 @@
 rst2man README.ct-cache.rst ct-cache.1
+rst2man README.ct-cache-clean.rst ct-cache-clean.1
 rst2man README.ct-cake.rst ct-cake.1
 rst2man README.rst compiletools.1
 rst2man README.ct-commandline.rst ct-commandline.1

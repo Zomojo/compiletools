@@ -43,7 +43,7 @@ locations.
 The default cache is set to None due to python recursion limits that will cause 
 failure on large projects.  Having said that, the author uses 
 ``CTCACHE=/dev/shm/ct`` on all their projects.  Naturally the cache can be 
-specified to be on disk too.
+specified to be on disk too. The cache can be cleared using ``ct-cache-clean``.
 
 EXAMPLES
 ========
@@ -58,4 +58,4 @@ export CTCACHE=/dev/shm/ct; ct-cache
 
 SEE ALSO
 ========
-``compiletools`` (1), ``ct-config`` (1)
+``compiletools`` (1), ``ct-config`` (1), ``ct-cache-clean`` (1)
