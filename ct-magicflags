@@ -10,7 +10,7 @@ if __name__ == '__main__':
     variant = ct.configutils.extract_variant()
     config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
-        description='Parse a file and show the magicflags it exports',
+        description='Parse a file and show the magicflags it exports. ',
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
         auto_env_var_prefix='',
         default_config_files=config_files,

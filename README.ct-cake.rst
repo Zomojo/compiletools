@@ -105,8 +105,8 @@ dependencies of the cpp file, and uses this spidering to generate complete
 dependency information for the application. A Makefile is generated and finally 
 it calls make.
 
-Magic Comments
-==============
+Magic Comments / Magic Flags
+============================
 
 ct-cake works very differently to other build systems, which specify a hierarchy
 of link flags and compile options, because ct-cake ties the compiler flags
