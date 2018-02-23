@@ -40,6 +40,11 @@ applications do their search to determine what the cache location should be.
 See the ``ct-config`` manpage for more information about configuration file
 locations.
 
+The default cache is set to None due to python recursion limits that will cause 
+failure on large projects.  Having said that, the author uses 
+``CTCACHE=/dev/shm/ct`` on all their projects.  Naturally the cache can be 
+specified to be on disk too.
+
 EXAMPLES
 ========
 
