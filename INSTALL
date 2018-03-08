@@ -8,6 +8,9 @@ A variety of installation methods are possible.
 
 1) clone the github repository
 
+Use your system tools (yum, dnf, apt-get, pip) to install the python dependencies: psutil, appdirs, configargparse.
+For example, on recent Fedora use: sudo dnf install python2-setuptools python2-configargparse python2-appdirs python2-psutil
+
 git clone git://github.com/Zomojo/compiletools
 
 Add the compiletools directory to your PATH
@@ -47,7 +50,7 @@ will install into /usr/local.  By default /usr/local/bin is in your path so no e
 3) Build an RPM (these instructions were tested on Fedora 26)
 Make sure you have the building tools installed
 
-sudo dnf install python2-docutils rpm-build
+sudo dnf install rpm-build python2-setuptools python2-docutils python2-configargparse python2-appdirs python2-psutil python2-devel
 
 Then download a tarball and turn it into the RPM
 
