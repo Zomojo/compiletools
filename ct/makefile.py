@@ -18,7 +18,8 @@ import ct.namer
 
 class Rule:
 
-    """ A rule is a target, prerequisites and optionally a recipe
+    """ A rule is a target, prerequisites and optionally a recipe 
+        and optionally any order_only_prerequisites.
         https://www.gnu.org/software/make/manual/html_node/Rule-Introduction.html#Rule-Introduction
         Example: myrule = Rule( target='mytarget'
                               , prerequisites='file1.hpp file2.hpp'
@@ -27,9 +28,10 @@ class Rule:
         Note: it had to be a class rather than a dict so that we could hash it.
     """
 
-    def __init__(self, target, prerequisites, recipe=None, phony=False):
+    def __init__(self, target, prerequisites, order_only_prerequisites=None, recipe=None, phony=False):
         self.target = target
         self.prerequisites = prerequisites
+        self.order_only_prerequisites = order_only_prerequisites
         self.recipe = recipe
         self.phony = phony
 
@@ -50,7 +52,11 @@ class Rule:
         if self.phony:
             makefile.write(" ".join([".PHONY:", self.target, "\n"]))
 
-        makefile.write(self.target + ": " + self.prerequisites + "\n")
+        linetowrite = ''.join([self.target, ": ", self.prerequisites])
+        if self.order_only_prerequisites:
+            linetowrite += ''.join([" | ",self.order_only_prerequisites])
+
+        makefile.write( linetowrite + "\n" ) 
         try:
             makefile.write("\t" + self.recipe + "\n")
         except TypeError:
@@ -482,7 +488,7 @@ class MakefileCreator:
         return self.args.makefilename
 
     def _create_object_directory(self):
-        return Rule(target='make_object_dir',
+        return Rule(target=self.args.objdir,
                     prerequisites='',
                     recipe=' '.join(['mkdir -p',self.args.objdir]))
 
@@ -497,7 +503,7 @@ class MakefileCreator:
                 filename)
 
         deplist = self.hunter.header_dependencies(filename)
-        prerequisites = ['make_object_dir',filename] + sorted([str(dep) for dep in deplist])
+        prerequisites = sorted([str(dep) for dep in deplist])        
 
         self.object_directories.add(self.namer.object_dir(filename))
         obj_name = self.namer.object_pathname(filename)
@@ -521,8 +527,10 @@ class MakefileCreator:
         if self.args.verbose >= 3:
             print("Creating rule for ", obj_name)
 
+        # The order_only_prerequisite is to create the object directory
         return Rule(target=obj_name,
                     prerequisites=" ".join(prerequisites),
+                    order_only_prerequisites=self.args.objdir,
                     recipe=recipe)
 
     def _create_link_rules_for_sources(
