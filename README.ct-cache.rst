@@ -9,7 +9,7 @@ Where is the dependency information used by the ct-* applications stored
 :Author: geoff@zomojo.com
 :Date:   2018-02-21
 :Copyright: Copyright (C) 2011-2018 Zomojo Pty Ltd
-:Version: 4.1.49
+:Version: 4.1.50
 :Manual section: 1
 :Manual group: developers
 
