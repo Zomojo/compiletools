@@ -503,7 +503,7 @@ class MakefileCreator:
                 filename)
 
         deplist = self.hunter.header_dependencies(filename)
-        prerequisites = sorted([str(dep) for dep in deplist])        
+        prerequisites = [filename] + sorted([str(dep) for dep in deplist])        
 
         self.object_directories.add(self.namer.object_dir(filename))
         obj_name = self.namer.object_pathname(filename)
