@@ -97,6 +97,7 @@ def add_link_arguments(cap):
         default="unsupplied_implies_use_CXX")
     cap.add(
         "--LDFLAGS",
+        "--LINKFLAGS",
         help="Linker flags",
         default="unsupplied_implies_use_CXXFLAGS")
 
