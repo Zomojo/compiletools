@@ -36,6 +36,8 @@ locations (from lowest to highest priority):
 * system config (XDG compliant, so usually /etc/xdg/ct)
 * python virtual environment system configs (${python-site-packages}/etc/xdg/ct)
 * user config   (XDG compliant, so usually ~/.config/ct)
+* gitroot
+* current working directory
 
 The ct-* applications are aware of two levels of configs.  
 There is a base level ct.conf that contains the basic variables that apply no 

@@ -10,7 +10,8 @@ except:
     from configargparse import ConfigFileParser as CfgFileParser
 
 import ct.wrappedos
-
+import ct.utils
+import ct.git_utils
 
 def extract_value_from_argv(key, argv=None, default=None, verbose=0):
     """ Extract the value for the given key from the argv.
@@ -176,8 +177,10 @@ def default_config_directories(
     # 2) system config (XDG compliant.  /etc/xdg/ct)
     # 2b)   python virtual environment system configs (${python-site-packages}/etc/xdg/ct)
     # 3) user config   (XDG compliant. ~/.config/ct)
-    # 4) environment variables
-    # 5) given on the command line
+    # 4) gitroot
+    # 5) current working directory
+    # 6) environment variables
+    # 7) given on the command line
 
     # These variables are settable to assist writing tests
     if user_config_dir is None:
@@ -197,9 +200,9 @@ def default_config_directories(
         exedir = ct.wrappedos.dirname(ct.wrappedos.realpath(sys.argv[0]))
 
     executable_config_dir = os.path.join(exedir, "ct.conf.d")
-    results = [user_config_dir] + system_dirs + [executable_config_dir]
+    results = ct.utils.OrderedSet([os.getcwd(), ct.git_utils.find_git_root(), user_config_dir] + system_dirs + [executable_config_dir])
     if verbose >= 9:
-        print(" ".join(["Default config directories"] + results))
+        print(" ".join(["Default config directories"] + list(results)))
 
     return results
 

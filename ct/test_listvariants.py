@@ -21,6 +21,8 @@ class TestListVariants(unittest.TestCase):
             'Variant aliases are:',
             "{'debug':'gcc.debug', 'release':'gcc.release'}",
             '\nFrom highest to lowest priority configuration directories, the possible variants are: ',
+            uth.cakedir(),
+            '\tNone found',
             '/home/dummy/.config/ct',
             '\tNone found',
             '/usr/lib',
