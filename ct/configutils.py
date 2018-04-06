@@ -262,11 +262,11 @@ def config_files_from_variant(
                 os.path.join(
                     defaultdir,
                     variant) +
-                ext for defaultdir in default_config_directories(
+                ext for defaultdir in reversed(default_config_directories(
                     user_config_dir=user_config_dir,
                     system_config_dir=system_config_dir,
                     exedir=exedir,
-                    verbose=verbose)]
+                    verbose=verbose))]
 
     # Check that a config file exists for the specified variant
     if not any([ct.wrappedos.isfile(cfg) for cfg in variantconfigs]):

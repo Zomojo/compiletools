@@ -89,6 +89,32 @@ class TestVariant(unittest.TestCase):
         os.chdir(origdir)
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
+    def test_config_files_from_variant(self):
+        origdir = self._setup_and_chdir_temp_dir()
+        local_ct_conf = ct.unittesthelper.create_temp_ct_conf(self._tmpdir)
+        # Deliberately call the next config gcc.debug.conf to verify that 
+        # the hierarchy of directories is working
+        local_config_name = ct.unittesthelper.create_temp_config(self._tmpdir,'gcc.debug.conf')
+
+        configs = ct.configutils.config_files_from_variant(
+            variant='gcc.debug',
+            argv=None,
+            user_config_dir='/var',
+            system_config_dir='/var',
+            exedir=uth.cakedir(),
+            verbose=0)
+
+        self.assertListEqual([  os.path.join(uth.ctconfdir(),'ct.conf')
+                              , os.path.join(self._tmpdir,'ct.conf')
+                              , os.path.join(uth.ctconfdir(),'gcc.debug.conf')
+                              , os.path.join(self._tmpdir,'gcc.debug.conf')
+                              ]
+                            , configs)
+
+        # Cleanup
+        os.chdir(origdir)
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
     def tearDown(self):
         uth.reset()
 

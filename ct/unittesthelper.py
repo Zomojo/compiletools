@@ -31,7 +31,7 @@ def samplesdir():
 def ctconfdir():
     return os.path.realpath(os.path.join(ctdir(), "../ct.conf.d"))
 
-def create_temp_config(tempdir=None):
+def create_temp_config(tempdir=None, filename=None):
     """ User is responsible for removing the config file when 
         they are finished 
     """
@@ -41,14 +41,17 @@ def create_temp_config(tempdir=None):
     except KeyError:
         CC='gcc'
         CXX='g++'
-        
-    tf_handle, tf_name = tempfile.mkstemp(suffix=".conf", text=True, dir=tempdir)
-    with open(tf_name,'w') as ff:
+       
+    if not filename:
+        tf_handle, filename = tempfile.mkstemp(suffix=".conf", text=True, dir=tempdir)
+
+    with open(filename,'w') as ff:
         ff.write('ID=GNU\n')
         ff.write('CC=' + CC + '\n')
         ff.write('CXX=' + CXX + '\n')
         ff.write('CPPFLAGS="-std=c++11"\n')
-    return tf_name
+
+    return filename
 
 def create_temp_ct_conf(tempdir=None):
     """ User is responsible for removing the config file when 
