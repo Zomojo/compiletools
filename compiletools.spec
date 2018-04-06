@@ -1,7 +1,7 @@
 %global owner Zomojo
 %global srcname compiletools
 %global sum C++ build tools that requires almost no configuration.
-%global version_base 4.1.52
+%global version_base 4.1.53
 %global version_release 1
 
 Summary: %sum
