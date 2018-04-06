@@ -212,6 +212,7 @@ def defaultconfigs(
         system_config_dir=None,
         exedir=None,
         verbose=0):
+    ''' Find the ct.conf files '''
     ctconfs = [
         os.path.join(
             defaultdir,

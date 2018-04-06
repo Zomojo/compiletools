@@ -28,6 +28,9 @@ def cakedir():
 def samplesdir():
     return os.path.realpath(os.path.join(ctdir(), "../samples"))
 
+def ctconfdir():
+    return os.path.realpath(os.path.join(ctdir(), "../ct.conf.d"))
+
 def create_temp_config(tempdir=None):
     """ User is responsible for removing the config file when 
         they are finished 
@@ -46,4 +49,12 @@ def create_temp_config(tempdir=None):
         ff.write('CXX=' + CXX + '\n')
         ff.write('CPPFLAGS="-std=c++11"\n')
     return tf_name
+
+def create_temp_ct_conf(tempdir=None):
+    """ User is responsible for removing the config file when 
+        they are finished 
+    """
+    with open(os.path.join(tempdir,'ct.conf'), 'w') as ff:
+        ff.write('CTCACHE = None')
+        ff.write('variant = dbg')
 

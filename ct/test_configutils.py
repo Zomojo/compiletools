@@ -2,6 +2,9 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys
+import os
+import shutil
+import tempfile
 import unittest
 import configargparse
 
@@ -14,6 +17,7 @@ class TestVariant(unittest.TestCase):
 
     def setUp(self):
         uth.reset()
+        self._tmpdir = None
 
     def test_extract_variant(self):
         self.assertEqual(
@@ -54,8 +58,36 @@ class TestVariant(unittest.TestCase):
             user_config_dir='/var',
             system_config_dir='/var',
             exedir=uth.cakedir(),
-            verbose=3)
+            verbose=0)
         self.assertEqual("gcc.debug", variant)
+
+    def _setup_and_chdir_temp_dir(self):
+        ''' Returns the original working directory so you can chdir back to that at the end '''
+        origdir = os.getcwd()
+        self._tmpdir = tempfile.mkdtemp()
+        try:
+            os.mkdir(self._tmpdir)
+        except OSError:
+            pass
+        os.chdir(self._tmpdir)
+        return origdir
+
+    def test_default_configs(self):
+        origdir = self._setup_and_chdir_temp_dir()
+        local_ct_conf = ct.unittesthelper.create_temp_ct_conf(self._tmpdir)
+        local_config_name = ct.unittesthelper.create_temp_config(self._tmpdir)
+
+        configs = ct.configutils.defaultconfigs(
+            user_config_dir='/var',
+            system_config_dir='/var',
+            exedir=uth.cakedir(),
+            verbose=0)
+
+        self.assertListEqual([os.path.join(uth.ctconfdir(),'ct.conf'), os.path.join(self._tmpdir,'ct.conf')],configs)
+
+        # Cleanup
+        os.chdir(origdir)
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
 
     def tearDown(self):
         uth.reset()
