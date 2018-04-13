@@ -1,0 +1,10 @@
+#!/bin/sh
+
+# Every time a file relevant to this project changes, rebuild.
+# Requires: inotify-tools
+# Example Usage: ct-watch-build --variant=release
+
+while true; do
+    inotifywait -e modify,close_write,move,delete $(ct-cake --file-list --auto) 
+    ct-cake --auto "$@"
+done
