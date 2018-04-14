@@ -44,33 +44,35 @@ class TestMagicInclude(unittest.TestCase):
         self.assertSetEqual(expected_exes, actual_exes)
 
     def test_magicinclude(self):
-        # This test is to ensure that the //#INCLUDE magic flag works
+        # This test is to ensure that the //#INCLUDE magic flag 
+        # works to pick up subdir/important.hpp
+        # and that the --include subdir2 subdir3 
+        # works to pick up subdir2/important2.hpp and subdir3/important3.hpp
+
         # Setup
         self.setUp()
         origdir = os.getcwd()
-        os.mkdir(os.path.join(self._tmpdir, 'subdir'))
 
         # Copy the magicinclude test files to the temp directory and compile
         # using cake
-        relativepaths = [
-            'magicinclude/main.cpp',
-            'magicinclude/subdir/important.hpp']
-        realpaths = [os.path.join(uth.samplesdir(), filename)
-                     for filename in relativepaths]
-        for ff in realpaths:
-            shutil.copy2(ff, self._tmpdir)
+        tmpmagicinclude = os.path.join(self._tmpdir, 'magicinclude')
+        shutil.copytree( os.path.join(uth.samplesdir(), 'magicinclude')
+                       , tmpmagicinclude)
+        os.chdir(tmpmagicinclude)
 
-        os.chdir(self._tmpdir)
-        temp_config_name = ct.unittesthelper.create_temp_config(self._tmpdir)
+        temp_config_name = ct.unittesthelper.create_temp_config(tmpmagicinclude)
         argv = [
             '--exemarkers=main',
             '--testmarkers=unittest.hpp',
             '--quiet',
+            '--include=subdir2',
+            'subdir3',
             '--auto',
             '--config=' +
             temp_config_name]
         ct.cake.main(argv)
 
+        relativepaths = ['magicinclude/main.cpp']
         self._verify_one_exe_per_main(relativepaths)
 
         # Cleanup
