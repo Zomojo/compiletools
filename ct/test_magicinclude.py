@@ -46,7 +46,7 @@ class TestMagicInclude(unittest.TestCase):
     def test_magicinclude(self):
         # This test is to ensure that the //#INCLUDE magic flag 
         # works to pick up subdir/important.hpp
-        # and that the --include subdir2 subdir3 
+        # and that the --include=subdir2 subdir3 
         # works to pick up subdir2/important2.hpp and subdir3/important3.hpp
 
         # Setup
