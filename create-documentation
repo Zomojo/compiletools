@@ -4,6 +4,7 @@ rst2man README.ct-cake.rst ct-cake.1
 rst2man README.rst compiletools.1
 rst2man README.ct-commandline.rst ct-commandline.1
 rst2man README.ct-config.rst ct-config.1
+rst2man README.ct-findtargets.rst ct-findtargets.1
 rst2man README.ct-filelist.rst ct-filelist.1
 rst2man README.ct-gitroot.rst ct-gitroot.1
 rst2man README.ct-jobs.rst ct-jobs.1
