@@ -4,7 +4,7 @@ A variety of installation methods are possible.
 2) pip install (as either user, root or virtualenv)
 3) build an RPM
 4) build a deb (currently unimplemented)
-
+5) Fedora 26 with pypy3 from copr in a virtualenv
 
 1) clone the github repository
 
@@ -62,3 +62,21 @@ curl -L "https://github.com/Zomojo/compiletools/archive/${tarball}" -o "SOURCES/
 rpmbuild -tb "SOURCES/${tarball}"
 popd
 dnf install ${rpmhome}/RPMS/noarch/python-compiletools-4.1.43-1.fc26.noarch.rpm
+
+
+5) Fedora 26 with pypy3 from copr in a virtual env
+
+# Get a python 3.5 version of pypy 
+# compiletools doesn't work with the default python 3.3 version of pypy
+sudo dnf copr enable @python/pypy35
+sudo dnf install pypy3 pypy3-devel
+
+# Create the virtual env
+WORKON_HOME=${HOME}/venvs
+pypy3 -m venv ${WORKON_HOME}/compiletools-pypy
+source ${WORKON_HOME}/compiletools-pypy/bin/activate
+
+# If you are going to work from the git repo then just install the dependencies
+# pip install configargparse appdirs psutil
+# otherwise you can 
+pip install compiletools
