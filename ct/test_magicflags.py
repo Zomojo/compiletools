@@ -19,6 +19,7 @@ import ct.dirnamer
 import ct.apptools
 import ct.headerdeps
 import ct.magicflags
+from ct.utils import OrderedSet
 
 def _reload_ct(cache_home):
     """ Set the CTCACHE environment variable to cache_home
@@ -70,8 +71,8 @@ class TestMagicFlagsModule(unittest.TestCase):
         magicparser = self._createmagicparser(tempdir=tempdir)
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
-            magicparser.parse(realpath).get('CFLAGS'),
-            {'-std=gnu99'})
+            set(magicparser.parse(realpath).get('CFLAGS')),
+            set(['-std=gnu99']))
 
         shutil.rmtree(tempdir, ignore_errors=True)
 
@@ -87,7 +88,7 @@ class TestMagicFlagsModule(unittest.TestCase):
         magicparser = self._createmagicparser(['--magic', 'direct'],tempdir=tempdir)
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
-            magicparser.parse(realpath).get('SOURCE'),
+            set(magicparser.parse(realpath).get('SOURCE')),
             {os.path.join(samplesdir,'cross_platform/cross_platform_lin.cpp'), 
              os.path.join(samplesdir,'cross_platform/cross_platform_win.cpp')})
         shutil.rmtree(tempdir, ignore_errors=True)
@@ -104,7 +105,7 @@ class TestMagicFlagsModule(unittest.TestCase):
         magicparser = self._createmagicparser(['--magic', 'cpp'],tempdir=tempdir)
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
-            magicparser.parse(realpath).get('SOURCE'),
+            set(magicparser.parse(realpath).get('SOURCE')),
             {os.path.join(samplesdir,'cross_platform/cross_platform_lin.cpp')})
         shutil.rmtree(tempdir, ignore_errors=True)
 
@@ -139,9 +140,9 @@ class TestMagicFlagsModule(unittest.TestCase):
         realpath = os.path.join(samplesdir, relativepath)
         magicparser = self._createmagicparser(['--magic', 'cpp'],tempdir=tempdir)
         expected = {
-            'LDFLAGS': set(
+            'LDFLAGS': OrderedSet(
                 ['-lm']),
-            'SOURCE': set(
+            'SOURCE': OrderedSet(
                 [os.path.join(samplesdir,'magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp')])}
         self.assertEqual(magicparser.parse(realpath), expected)
         shutil.rmtree(tempdir, ignore_errors=True)

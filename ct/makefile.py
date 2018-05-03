@@ -98,14 +98,14 @@ class LinkRuleCreator(object):
         allprerequisites += " "
         allprerequisites += " ".join(object_names)
 
-        all_magic_ldflags = set()
+        all_magic_ldflags = ct.utils.OrderedSet()
         if not suppressmagicldflags:
             for source in completesources:
                 magic_flags = self.hunter.magicflags(source)
-                all_magic_ldflags |= magic_flags.get('LDFLAGS', set())
+                all_magic_ldflags |= magic_flags.get('LDFLAGS', ct.utils.OrderedSet())
                 all_magic_ldflags |= magic_flags.get(
                     'LINKFLAGS',
-                    set())  # For backward compatibility with cake
+                    ct.utils.OrderedSet())  # For backward compatibility with cake
         recipe = ""
         if self.args.verbose >= 1:
             recipe += " ".join(["@echo ...", outputname, ";"])
@@ -160,7 +160,7 @@ class ExeLinkRuleCreator(LinkRuleCreator):
             libname = os.path.join(self.namer.executable_dir(), os.path.basename(dynamiclibrarypathname))
             extraprereqs.append(libname)
 
-        linkrules = set()
+        linkrules = ct.utils.OrderedSet()
         for source in sources:
             if self.args.verbose >= 4:
                 print(

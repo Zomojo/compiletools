@@ -47,11 +47,11 @@ class MagicFlagsBase:
 
         This class is a map of filenames
         to the map of all magic flags for that file.
-        Each magic flag has a set of values.
+        Each magic flag has an OrderedSet of values.
         E.g., { '/somepath/libs/base/somefile.hpp':
-                   {'CPPFLAGS':set('-D MYMACRO','-D MACRO2'),
-                    'CXXFLAGS':set('-fsomeoption'),
-                    'LDFLAGS':set('-lsomelib')}}
+                   {'CPPFLAGS':OrderedSet('-D MYMACRO','-D MACRO2'),
+                    'CXXFLAGS':OrderedSet('-fsomeoption'),
+                    'LDFLAGS':OrderedSet('-lsomelib')}}
         This function will extract all the magics flags from the given
         source (and all its included headers).
         source_filename must be an absolute path
@@ -112,10 +112,10 @@ class MagicFlagsBase:
 
             # If the magic was INCLUDE then modify that into the equivalent CPPFLAGS and CXXFLAGS
             if magic == 'INCLUDE':
-                flagsforfilename.setdefault('CPPFLAGS',set()).add('-I '+flag)                
-                flagsforfilename.setdefault('CXXFLAGS',set()).add('-I '+flag)                
+                flagsforfilename.setdefault('CPPFLAGS',ct.utils.OrderedSet()).add('-I '+flag)                
+                flagsforfilename.setdefault('CXXFLAGS',ct.utils.OrderedSet()).add('-I '+flag)                
 
-            flagsforfilename.setdefault(magic, set()).add(flag)
+            flagsforfilename.setdefault(magic, ct.utils.OrderedSet()).add(flag)
             if self._args.verbose >= 5:
                 print(
                     "Using magic flag {0}={1} extracted from {2}".format(
