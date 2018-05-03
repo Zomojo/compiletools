@@ -1,5 +1,6 @@
 #include "get_numbers.hpp"
 #include <iostream>
+//#CXXFLAGS=-std=c++11
 
 int main( int argc, char* argv[] )
 {

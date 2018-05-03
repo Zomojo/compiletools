@@ -5,6 +5,7 @@
 #include <string>
 #include <functional>
 //#include <iostream>
+//#CXXFLAGS=-std=c++11
 
 // Singleton widget factory
 struct widget_factory
