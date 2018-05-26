@@ -5,6 +5,7 @@ import os
 import sys
 import unittest
 import shutil
+import tempfile
 
 try:
     # This call to reload is simply to test
@@ -30,19 +31,19 @@ class TestCPPDeps(unittest.TestCase):
         uth.reset()        
 
     # This test needs to run in buffered mode. 
-    #You can set buffer through unit2 command line flag -b, --buffer 
+    # You can set buffer through unit2 command line flag -b, --buffer 
     # or in unittest.main options.
     @unittest.skipIf(not hasattr(sys.stdout, "getvalue"), "Skipping test since not in buffer mode")
     def test_cppdeps(self):
-        tempdir = '/dev/shm/test.ct.cppdeps'
+        tempdir = tempfile.mkdtemp()
         _reload_ct(tempdir)
         uth.reset()
-        ct.cppdeps.main(['samples/numbers/test_direct_include.cpp'])
+        ct.cppdeps.main([os.path.join(uth.samplesdir(),'numbers/test_direct_include.cpp')])
         output = sys.stdout.getvalue().strip().split()
         expected_output = [
-            "/data/home/geoff/Cake/samples/numbers/get_double.hpp",
-            "/data/home/geoff/Cake/samples/numbers/get_int.hpp",
-            "/data/home/geoff/Cake/samples/numbers/get_numbers.hpp"]
+            os.path.join(uth.samplesdir(),"numbers/get_double.hpp"),
+            os.path.join(uth.samplesdir(),"numbers/get_int.hpp"),
+            os.path.join(uth.samplesdir(),"numbers/get_numbers.hpp")]
         self.assertEquals(expected_output.sort(), output.sort())
         shutil.rmtree(tempdir)
 
@@ -51,4 +52,4 @@ class TestCPPDeps(unittest.TestCase):
 
 
 if __name__ == '__main__':
-    unittest.main()
+    unittest.main(module=__name__, buffer=True)
