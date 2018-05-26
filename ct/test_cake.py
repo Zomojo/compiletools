@@ -44,6 +44,10 @@ class TestCake(unittest.TestCase):
         except OSError:
             pass
         os.chdir(self._tmpdir)
+
+        # Create a ct.conf in the tmpdir
+        ct.unittesthelper.create_temp_ct_conf(self._tmpdir)
+
         return origdir
 
     def test_no_git_root(self):
@@ -75,6 +79,29 @@ class TestCake(unittest.TestCase):
         os.chdir(origdir)
         shutil.rmtree(self._tmpdir, ignore_errors=True)
     
+    def _create_deeper_cpp(self):
+        data = '''
+        #include "deeper.hpp"
+
+        int deeper_func(const int value)
+        {
+            return 42;
+        }
+
+        '''
+
+        with open("deeper.cpp",'w') as output:
+            output.write(data)
+
+    def _create_deeper_hpp(self):
+        data = '''
+        int deeper_func(const int value);
+
+        '''
+
+        with open("deeper.hpp",'w') as output:
+            output.write(data)
+
     def _create_extra_cpp(self):
         extracpp = '''
         #include "extra.hpp"
@@ -98,6 +125,11 @@ class TestCake(unittest.TestCase):
         with open("extra.hpp",'w') as output:
             output.write(extrahpp)
 
+    def _inject_deeper_hpp_into_extra_hpp(self):
+        with open("extra.hpp",'r+') as iofile:
+            data = ['#include "deeper.hpp"'] + iofile.readlines()
+            iofile.writelines(data)
+
     def _create_main_cpp(self):
         # Write main.cpp
         maincpp = '''
@@ -113,24 +145,29 @@ class TestCake(unittest.TestCase):
         with open("main.cpp",'w') as output:
             output.write(maincpp)
 
-    def _create_recompile_test_files(self):
-        ''' Create a simple C++ program containing a main.cpp, extra.hpp and extra.cpp.
-            This will allow us to test that editing any of those files triggers a recompile.
+    def _create_recompile_test_files(self, deeper_is_included=False):
+        ''' Create a simple C++ program containing a main.cpp, extra.hpp, 
+            extra.cpp, and extra.hpp in turn includes deeper.hpp which has an 
+            associated deeper.cpp.
+            This will allow us to test that editing any of those files 
+            triggers a recompile.
         '''
         origdir = self._setup_and_chdir_temp_dir()
 
         self._create_main_cpp()    
         self._create_extra_hpp()    
         self._create_extra_cpp()    
+        self._create_deeper_hpp()    
+        self._create_deeper_cpp()    
 
         # Create a config file to use for the compiling
         self._config_name = ct.unittesthelper.create_temp_config(self._tmpdir)
 
         os.chdir(origdir)
 
-    def _grab_timestamps(self):
-        ''' There are 6 files we want timestamps for.  
-            main.cpp, extra.hpp, extra.cpp, main.o, extra.o 
+    def _grab_timestamps(self, deeper_is_included=False):
+        ''' There are 8 files we want timestamps for.  
+            main.cpp, extra.hpp, extra.cpp, deeper.hpp, deeper.cpp, deeper.o, main.o, extra.o 
             and the executable called "main".
 
             This must be called inside the directory where main.cpp lives.
@@ -145,6 +182,10 @@ class TestCake(unittest.TestCase):
         fnames = [os.path.realpath('main.cpp')
                 , os.path.realpath('extra.hpp')
                 , os.path.realpath('extra.cpp')]
+
+        if deeper_is_included:
+            fnames.append( os.path.realpath('deeper.hpp') )
+            fnames.append( os.path.realpath('deeper.cpp') )
 
         # Add in the object filenames (only cpp have object files)
         for fname in [name for name in fnames if 'cpp' in name]:
@@ -178,32 +219,37 @@ class TestCake(unittest.TestCase):
             else:
                 self.assertAlmostEqual(postts[fname],prets[fname])
 
-    def _compile_edit_compile(self, files_to_edit, expected_changes):
+    def _compile_edit_compile(self, files_to_edit, expected_changes, deeper_is_included=False):
         ''' Test that the compile, edit, compile cycle works as you expect '''
         origdir = os.getcwd()
-        self._create_recompile_test_files()
+        self._create_recompile_test_files(deeper_is_included)
         os.chdir(self._tmpdir)
 
         # Do an initial build
         self._call_ct_cake()
 
         # Grab the timestamps on the build products so that later we can test that only the expected ones changed
-        prets = self._grab_timestamps()
+        # deeper_is_included must be false at this point becuase the option to inject it comes later/ver
+        prets = self._grab_timestamps(deeper_is_included=False)
 
-        # Edit the main source file
-        for fname in files_to_edit:
-            touch(fname)
+        # Edit the files for this test
+        if deeper_is_included:
+            self._inject_deeper_hpp_into_extra_hpp()
+        else:
+            for fname in files_to_edit:
+                touch(fname)
 
         # Rebuild
         self._call_ct_cake()
 
         # Grab the timestamps on the build products for comparison
-        postts = self._grab_timestamps()
+        postts = self._grab_timestamps(deeper_is_included)
 
         # Check that only the expected timestamps have changed
         self._verify_timestamps(expected_changes, prets, postts)
 
         # Cleanup
+        print(self._tmpdir)
         os.chdir(origdir)
         shutil.rmtree(self._tmpdir, ignore_errors=True)
         
@@ -220,6 +266,10 @@ class TestCake(unittest.TestCase):
         ''' Make sure that when an implied source file is altered that a rebuild occurs '''
         self._compile_edit_compile(['extra.cpp'],['extra.cpp', 'extra.o', 'main'])
 
+    def test_deeper_include_edit_recompiles(self):
+        ''' Make sure that when a deeper include file is put into extra.hpp that a rebuild occurs '''
+        self._compile_edit_compile(['extra.hpp'],['deeper.hpp', 'deeper.o', 'extra.o', 'main.o', 'main'],deeper_is_included=True)
+        pass
 
     def tearDown(self):
         uth.reset()
