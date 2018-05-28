@@ -23,12 +23,9 @@ class TestMakefile(unittest.TestCase):
     def setUp(self):
         uth.reset()
         global _moduletmpdir
-        if not _moduletmpdir:
+        if not _moduletmpdir or not os.path.exists(_moduletmpdir) :
             _moduletmpdir = tempfile.mkdtemp()
-        try:
-            os.mkdir(_moduletmpdir)
-        except OSError:
-            pass
+
         cap = configargparse.getArgumentParser(
             description='Configargparser in test code',
             formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
@@ -74,7 +71,6 @@ class TestMakefile(unittest.TestCase):
         os.chdir(origdir)
 
     def test_makefile(self):
-        #tempdir1 = _moduletmpdir
         tempdir1 = tempfile.mkdtemp()
         self._create_makefile_and_make(tempdir1)
 
@@ -84,12 +80,12 @@ class TestMakefile(unittest.TestCase):
 
         # Only check the bin directory as the config file has a unique name
         comparator = filecmp.dircmp(os.path.join(tempdir1,'bin'), os.path.join(tempdir2,'bin'))
-        print(comparator.diff_files)
+        #print(comparator.diff_files)
         self.assertEqual(len(comparator.diff_files), 0)
 
         # Cleanup
-        #shutil.rmtree(tempdir1, ignore_errors=True)
-        # shutil.rmtree(tempdir2)
+        shutil.rmtree(tempdir1, ignore_errors=True)
+        shutil.rmtree(tempdir2, ignore_errors=True)
 
     def test_static_library(self):
         _test_library("--static")
@@ -108,8 +104,11 @@ def _test_library(static_dynamic):
     """
     samplesdir = uth.samplesdir()
     origdir = uth.ctdir()
+    global _moduletmpdir
+    if not _moduletmpdir or not os.path.exists(_moduletmpdir) :
+        _moduletmpdir = tempfile.mkdtemp()
+    
     tempdir = _moduletmpdir
-    # tempdir = tempfile.mkdtemp()
     os.chdir(tempdir)
     temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
 
@@ -137,7 +136,7 @@ def _test_library(static_dynamic):
 
     # Cleanup
     os.chdir(origdir)
-    shutil.rmtree(tempdir, ignore_errors=True)
+    #shutil.rmtree(tempdir, ignore_errors=True)
 
 
 if __name__ == '__main__':
