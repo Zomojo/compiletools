@@ -60,11 +60,10 @@ class TestMagicFlagsModule(unittest.TestCase):
         return ct.magicflags.create(args, headerdeps)
 
     def test_parsing_CFLAGS(self):
+        origdir = os.getcwd()
         tempdir = tempfile.mkdtemp()
-        try:
-            os.mkdir(tempdir)
-        except OSError:
-            pass
+        os.chdir(tempdir)
+
         relativepath = 'simple/test_cflags.c'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
@@ -74,14 +73,14 @@ class TestMagicFlagsModule(unittest.TestCase):
             set(magicparser.parse(realpath).get('CFLAGS')),
             set(['-std=gnu99']))
 
+        os.chdir(origdir)
         shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_SOURCE_direct(self):
+        origdir = os.getcwd()
         tempdir = tempfile.mkdtemp()
-        try:
-            os.mkdir(tempdir)
-        except OSError:
-            pass
+        os.chdir(tempdir)
+
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
@@ -91,14 +90,15 @@ class TestMagicFlagsModule(unittest.TestCase):
             set(magicparser.parse(realpath).get('SOURCE')),
             {os.path.join(samplesdir,'cross_platform/cross_platform_lin.cpp'), 
              os.path.join(samplesdir,'cross_platform/cross_platform_win.cpp')})
+
+        os.chdir(origdir)
         shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_SOURCE_cpp(self):
+        origdir = os.getcwd()
         tempdir = tempfile.mkdtemp()
-        try:
-            os.mkdir(tempdir)
-        except OSError:
-            pass
+        os.chdir(tempdir)
+
         relativepath = 'cross_platform/cross_platform.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
@@ -107,14 +107,15 @@ class TestMagicFlagsModule(unittest.TestCase):
         self.assertSetEqual(
             set(magicparser.parse(realpath).get('SOURCE')),
             {os.path.join(samplesdir,'cross_platform/cross_platform_lin.cpp')})
+
+        os.chdir(origdir)
         shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_lotsofmagic(self):
+        origdir = os.getcwd()
         tempdir = tempfile.mkdtemp()
-        try:
-            os.mkdir(tempdir)
-        except OSError:
-            pass
+        os.chdir(tempdir)
+
         relativepath = 'lotsofmagic/lotsofmagic.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
@@ -127,14 +128,15 @@ class TestMagicFlagsModule(unittest.TestCase):
             'F2': {'2'},
             'F3': {'3'}}
         self.assertEqual(magicparser.parse(realpath), expected)
+
+        os.chdir(origdir)
         shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_SOURCE_in_header(self):
+        origdir = os.getcwd()
         tempdir = tempfile.mkdtemp()
-        try:
-            os.mkdir(tempdir)
-        except OSError:
-            pass
+        os.chdir(tempdir)
+
         relativepath = 'magicsourceinheader/main.cpp'
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
@@ -145,6 +147,8 @@ class TestMagicFlagsModule(unittest.TestCase):
             'SOURCE': OrderedSet(
                 [os.path.join(samplesdir,'magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp')])}
         self.assertEqual(magicparser.parse(realpath), expected)
+
+        os.chdir(origdir)
         shutil.rmtree(tempdir, ignore_errors=True)
 
     def tearDown(self):
