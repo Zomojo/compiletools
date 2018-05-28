@@ -133,7 +133,7 @@ class Hunter(object):
         ct.wrappedos.clear_cache()
         self.required_source_files.cache.clear()
         self.required_files.cache.clear()
-        self.headerdeps.clear_cache()
+        ct.headerdeps.HeaderDepsBase.clear_cache()
 
     def magicflags(self, filename):
         return self.magicparser.parse(filename)

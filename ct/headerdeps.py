@@ -66,6 +66,9 @@ class HeaderDepsBase(object):
 
         return result
 
+    @staticmethod
+    def clear_cache():
+        diskcache.clear_cache();
 
 class DirectHeaderDeps(HeaderDepsBase):
 
@@ -196,7 +199,8 @@ class DirectHeaderDeps(HeaderDepsBase):
         results.remove(realpath)
         return results
     
-    def clear_cache(self):
+    @staticmethod
+    def clear_cache():
         diskcache.clear_cache();
 
 class CppHeaderDeps(HeaderDepsBase):
@@ -231,5 +235,6 @@ class CppHeaderDeps(HeaderDepsBase):
         return {ct.wrappedos.realpath(x) for x in deplist.split() if x.strip(
             '\\\t\n\r') and x not in [realpath, "/dev/null"]}
 
-    def clear_cache(self):
+    @staticmethod
+    def clear_cache():
         diskcache.clear_cache();
