@@ -136,7 +136,7 @@ def _test_library(static_dynamic):
 
     # Cleanup
     os.chdir(origdir)
-    #shutil.rmtree(tempdir, ignore_errors=True)
+    shutil.rmtree(tempdir, ignore_errors=True)
 
 
 if __name__ == '__main__':
