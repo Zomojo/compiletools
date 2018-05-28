@@ -307,7 +307,7 @@ class Cake(object):
     def clear_cache(self):
         """ Only useful in test scenarios where you need to reset to a pristine state """
         ct.wrappedos.clear_cache()
-        self.headerdeps.clear_cache()
+        self.namer.clear_cache()
         self.hunter.clear_cache()
 
 
