@@ -45,7 +45,6 @@ class TestMovingHeaders(unittest.TestCase):
         # The concept of this test is to check that ct-cake copes with header files being changed directory
 
         # Setup
-        self.setUp()
         origdir = os.getcwd()
         os.mkdir(os.path.join(self._tmpdir,'subdir'))
 
@@ -57,7 +56,13 @@ class TestMovingHeaders(unittest.TestCase):
 
         os.chdir(self._tmpdir)
         temp_config_name = ct.unittesthelper.create_temp_config(self._tmpdir)
-        argv = ['--exemarkers=main','--testmarkers=unittest.hpp', '--quiet', '--auto','--include=subdir','--config='+temp_config_name ]
+        argv =  ['--exemarkers=main'
+                ,'--testmarkers=unittest.hpp'
+                , '--CTCACHE='+os.path.join(self._tmpdir,'ctcache')
+                , '--quiet'
+                , '--auto'
+                ,'--include=subdir'
+                ,'--config='+temp_config_name ]
         ct.cake.main(argv)
         
         self._verify_one_exe_per_main(relativepaths)
@@ -76,6 +81,8 @@ class TestMovingHeaders(unittest.TestCase):
         
     def tearDown(self):
         uth.reset()
+        if self._tmpdir and os.path.exists(self._tmpdir):
+            shutil.rmtree(self._tmpdir, ignore_errors=True)
 
 
 if __name__ == '__main__':
