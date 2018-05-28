@@ -58,7 +58,7 @@ def create_temp_ct_conf(tempdir=None):
         they are finished 
     """
     with open(os.path.join(tempdir,'ct.conf'), 'w') as ff:
-        ff.write('CTCACHE = ' + os.path.join(tempdir,'ct-unittest-cache'))
-        #ff.write('CTCACHE = None')
-        ff.write('variant = dbg')
+        #ff.write('CTCACHE = ' + os.path.join(tempdir,'ct-unittest-cache' + '\n'))
+        ff.write('CTCACHE = None' + '\n')
+        #ff.write('variant = debug' + '\n')
 
