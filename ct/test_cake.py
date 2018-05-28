@@ -11,7 +11,8 @@ import configargparse
 import ct.unittesthelper as uth
 import ct.cake
 
-def touch(fname):
+
+def _touch(fname):
     ''' Update the modification time of the given file ''' 
     with open(fname, 'a'):
         os.utime(fname, None)
@@ -30,7 +31,13 @@ class TestCake(unittest.TestCase):
         ct.cake.Cake.registercallback()
    
     def _create_argv(self):
-        return ['--exemarkers=main','--testmarkers=unittest.hpp','--auto','--config='+self._config_name ]
+        self._config_name = uth.create_temp_config(self._tmpdir) 
+
+        return [ '--exemarkers=main'
+               , '--testmarkers=unittest.hpp'
+               , '--auto'
+               , '--CTCACHE='+os.path.join(self._tmpdir,'ctcache')
+               , '--config='+self._config_name ]
 
     def _call_ct_cake(self): 
         ct.cake.main(self._create_argv())
@@ -39,14 +46,7 @@ class TestCake(unittest.TestCase):
         ''' Returns the original working directory so you can chdir back to that at the end '''
         origdir = os.getcwd()
         self._tmpdir = tempfile.mkdtemp()
-        try:
-            os.mkdir(self._tmpdir)
-        except OSError:
-            pass
         os.chdir(self._tmpdir)
-
-        # Create a ct.conf in the tmpdir
-        ct.unittesthelper.create_temp_ct_conf(self._tmpdir)
 
         return origdir
 
@@ -60,7 +60,6 @@ class TestCake(unittest.TestCase):
         for ff in realpaths:
             shutil.copy2(ff, self._tmpdir)
 
-        self._config_name = ct.unittesthelper.create_temp_config(self._tmpdir)
         self._call_ct_cake()
         
         # Check that an executable got built for each cpp
@@ -160,9 +159,6 @@ class TestCake(unittest.TestCase):
         self._create_deeper_hpp()    
         self._create_deeper_cpp()    
 
-        # Create a config file to use for the compiling
-        self._config_name = ct.unittesthelper.create_temp_config(self._tmpdir)
-
         os.chdir(origdir)
 
     def _grab_timestamps(self, deeper_is_included=False):
@@ -237,7 +233,7 @@ class TestCake(unittest.TestCase):
             self._inject_deeper_hpp_into_extra_hpp()
         else:
             for fname in files_to_edit:
-                touch(fname)
+                _touch(fname)
 
         # Rebuild
         self._call_ct_cake()
