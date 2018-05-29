@@ -45,6 +45,7 @@ class TestVariant(unittest.TestCase):
 
     def test_extract_variant_from_ct_conf(self):
         # Should find the one in the git repo ct.conf.d/ct.conf
+        origdir = self._setup_and_chdir_temp_dir()
         variant = ct.configutils.extract_item_from_ct_conf(
             key='variant',
             user_config_dir='/var',
@@ -52,8 +53,13 @@ class TestVariant(unittest.TestCase):
             exedir=uth.cakedir())
         self.assertEqual("debug", variant)
 
+        # Cleanup
+        os.chdir(origdir)
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
     def test_extract_variant_from_blank_argv(self):
         # Force to find the git repo ct.conf.d/ct.conf
+        origdir = self._setup_and_chdir_temp_dir()
         variant = ct.configutils.extract_variant(
             user_config_dir='/var',
             system_config_dir='/var',
@@ -61,14 +67,14 @@ class TestVariant(unittest.TestCase):
             verbose=0)
         self.assertEqual("gcc.debug", variant)
 
+        # Cleanup
+        os.chdir(origdir)
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
     def _setup_and_chdir_temp_dir(self):
         ''' Returns the original working directory so you can chdir back to that at the end '''
         origdir = os.getcwd()
         self._tmpdir = tempfile.mkdtemp()
-        try:
-            os.mkdir(self._tmpdir)
-        except OSError:
-            pass
         os.chdir(self._tmpdir)
         return origdir
 
