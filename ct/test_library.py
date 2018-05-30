@@ -20,25 +20,27 @@ class TestLibrary(unittest.TestCase):
         self._tmpdir = tempfile.mkdtemp()
 
         # Mimic the build.sh and create the library in a 'mylib' subdirectory
+        # Copy the sample source files into the test build location
         mylibdir = os.path.join(self._tmpdir,'mylib')
-        try:
-            os.mkdir(mylibdir)
-        except OSError:
-            pass
+        shutil.copytree( os.path.join(uth.samplesdir(), 'library/mylib')
+                       , mylibdir)
 
-        temp_config_name = ct.unittesthelper.create_temp_config(self._tmpdir)
-        samplesdir = uth.samplesdir()
-        relativepaths = ['library/mylib/get_numbers.cpp']
-        realpaths = [os.path.join(samplesdir, filename)
-                     for filename in relativepaths]
-        argv = ['--config='+temp_config_name, '--static'] + realpaths
+        # Build the library
+        temp_config_name = uth.create_temp_config(self._tmpdir)
+        uth.create_temp_ct_conf(self._tmpdir,defaultvariant=temp_config_name[:-1])
+        argv = ['--config='+temp_config_name, '--static', os.path.join(self._tmpdir,'mylib/get_numbers.cpp')]
         os.chdir(mylibdir)
         uth.reset()
         ct.cake.main(argv)
-        
+
+        # Copy the main that will link to the library into the test build location
         relativepaths = ['library/main.cpp']
-        realpaths = [os.path.join(samplesdir, filename)
+        realpaths = [os.path.join(uth.samplesdir(), filename)
                      for filename in relativepaths]
+        for ff in realpaths:
+            shutil.copy2(ff, self._tmpdir)
+
+        # Build the exe, linking agains the library
         argv = ['--config='+temp_config_name] + realpaths
         os.chdir(self._tmpdir)
         uth.reset()

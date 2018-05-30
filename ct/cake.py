@@ -319,8 +319,8 @@ def signal_handler(signal, frame):
 
 
 def main(argv):
-    variant = ct.configutils.extract_variant()
-    config_files = ct.configutils.config_files_from_variant()
+    variant = ct.configutils.extract_variant(argv=argv)
+    config_files = ct.configutils.config_files_from_variant(variant=variant,argv=argv)
     cap = configargparse.getArgumentParser(
         description='A convenience tool to aid migration from cake to the ct-* tools',
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
