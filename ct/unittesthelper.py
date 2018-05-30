@@ -53,12 +53,15 @@ def create_temp_config(tempdir=None, filename=None):
 
     return filename
 
-def create_temp_ct_conf(tempdir=None):
+def create_temp_ct_conf(tempdir,defaultvariant='debug'):
     """ User is responsible for removing the config file when 
         they are finished 
     """
     with open(os.path.join(tempdir,'ct.conf'), 'w') as ff:
         #ff.write('CTCACHE = ' + os.path.join(tempdir,'ct-unittest-cache' + '\n'))
-        ff.write('CTCACHE = None' + '\n')
-        #ff.write('variant = debug' + '\n')
+        #ff.write('CTCACHE = None' + '\n')
+        ff.write(' '.join(['variant =',defaultvariant,'\n']))
+        ff.write("variantaliases = {'dbg':'foo.debug', 'rls':'foo.release'}\n")
+        ff.write('exemarkers = [main]' + '\n')
+        ff.write('testmarkers = unit_test.hpp' + '\n')
 

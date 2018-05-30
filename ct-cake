@@ -3,19 +3,10 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import sys
-import configargparse
-import ct.utils
 import ct.cake
 
-
 if __name__ == '__main__':
-    variant = ct.configutils.extract_variant()
-    config_files = ct.configutils.config_files_from_variant()
-    cap = configargparse.getArgumentParser(
-        description='A convenience tool to aid migration from cake to the ct-* tools',
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        auto_env_var_prefix='',
-        default_config_files=config_files,
-        args_for_setting_config_path=["-c","--config"],
-        ignore_unknown_config_file_keys=True)
-    sys.exit(ct.cake.main())
+    # Output of stdout is done via increasing the verbosity
+    # Developers seem to be "default happy" when verbosity defaults to 1
+    sys.argv.append('-v')
+    sys.exit(ct.cake.main(sys.argv[1::]))

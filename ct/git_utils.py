@@ -55,6 +55,9 @@ def _strip_git_root(filename):
     size = len(find_git_root(filename)) + 1
     return filename[size:]
 
+def clear_cache():
+    _find_git_root.cache.clear()
+    _strip_git_root.cache.clear()
 
 class Project(object):
     def __init__(self, args):

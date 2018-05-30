@@ -405,7 +405,9 @@ def substitutions(args, verbose=None):
     if verbose >= 2:
         verboseprintconfig(args)
 
-def parseargs(cap, argv=None, verbose=None):
+
+def parseargs(cap, argv, verbose=None):
+    ''' argv must be the logical equivalent of sys.argv[1:] '''
     args = cap.parse_args(args=argv)
     _strip_quotes(args)
 

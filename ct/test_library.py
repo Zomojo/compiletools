@@ -12,15 +12,7 @@ import ct.cake
 
 class TestLibrary(unittest.TestCase):
     def setUp(self):
-        uth.reset()
-        cap = configargparse.getArgumentParser(
-        description='Configargparser in test code',
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        args_for_setting_config_path=["-c","--config"],
-        ignore_unknown_config_file_keys=False)
-        ct.cake.Cake.add_arguments(cap)
-        ct.cake.Cake.registercallback()
-   
+        pass
 
     def test_build_and_link_static_library(self):
         # Setup
@@ -41,6 +33,7 @@ class TestLibrary(unittest.TestCase):
                      for filename in relativepaths]
         argv = ['--config='+temp_config_name, '--static'] + realpaths
         os.chdir(mylibdir)
+        uth.reset()
         ct.cake.main(argv)
         
         relativepaths = ['library/main.cpp']
@@ -48,6 +41,7 @@ class TestLibrary(unittest.TestCase):
                      for filename in relativepaths]
         argv = ['--config='+temp_config_name] + realpaths
         os.chdir(self._tmpdir)
+        uth.reset()
         ct.cake.main(argv)
 
         # Check that an executable got built for each cpp

@@ -187,4 +187,12 @@ def main(argv=None):
     filelist = Filelist(args, hunter)
     filelist.process()
 
+    # For testing purposes, clear out the memcaches for the times when main is called more than once.
+    ct.wrappedos.clear_cache()
+    ct.utils.clear_cache()
+    ct.git_utils.clear_cache()
+    headerdeps.clear_cache()
+    magicparser.clear_cache()
+    hunter.clear_cache()
+
     return 0

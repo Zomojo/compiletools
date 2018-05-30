@@ -136,6 +136,9 @@ class Namer(object):
         return alltests
 
     def clear_cache(self):
+        ct.wrappedos.clear_cache()
+        ct.utils.clear_cache()
+        ct.git_utils.clear_cache()
         self.object_dir.cache.clear()
         self.object_name.cache.clear()
         self.object_pathname.cache.clear()

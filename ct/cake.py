@@ -307,24 +307,31 @@ class Cake(object):
     def clear_cache(self):
         """ Only useful in test scenarios where you need to reset to a pristine state """
         ct.wrappedos.clear_cache()
+        ct.utils.clear_cache()
+        ct.git_utils.clear_cache()
         self.namer.clear_cache()
         self.hunter.clear_cache()
+        ct.magicflags.MagicFlagsBase.clear_cache()
 
 
 def signal_handler(signal, frame):
     sys.exit(0)
 
 
-def main(argv=None):
-    cap = configargparse.getArgumentParser()
+def main(argv):
+    variant = ct.configutils.extract_variant()
+    config_files = ct.configutils.config_files_from_variant()
+    cap = configargparse.getArgumentParser(
+        description='A convenience tool to aid migration from cake to the ct-* tools',
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+        auto_env_var_prefix='',
+        default_config_files=config_files,
+        args_for_setting_config_path=["-c","--config"],
+        ignore_unknown_config_file_keys=True)
     Cake.add_arguments(cap)
     Cake.registercallback()
 
-    if argv is None:
-        # Output of stdout is done via increasing the verbosity
-        # Developers seem to be "default happy" when verbosity defaults to 1
-        sys.argv.append('-v')
-    args = ct.apptools.parseargs(cap, argv, verbose=0)
+    args = ct.apptools.parseargs(cap, argv)
 
     if not any([args.filename,
                 args.static,

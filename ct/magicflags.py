@@ -126,6 +126,13 @@ class MagicFlagsBase:
 
         return flagsforfilename
 
+    @staticmethod
+    def clear_cache():
+        ct.utils.clear_cache()
+        ct.git_utils.clear_cache()
+        ct.wrappedos.clear_cache()
+        DirectMagicFlags.clear_cache()
+        CppMagicFlags.clear_cache()
 
 class DirectMagicFlags(MagicFlagsBase):
 
@@ -153,7 +160,10 @@ class DirectMagicFlags(MagicFlagsBase):
     def parse(self, filename):
         return self._parse(filename)
 
-
+    @staticmethod
+    def clear_cache():
+        ct.diskcache.diskcache.clear_cache()
+        
 class CppMagicFlags(MagicFlagsBase):
 
     def __init__(self, args, headerdeps):
@@ -171,6 +181,9 @@ class CppMagicFlags(MagicFlagsBase):
     def parse(self, filename):
         return self._parse(filename)
 
+    @staticmethod
+    def clear_cache():
+        ct.diskcache.diskcache.clear_cache()
 
 class NullStyle(ct.git_utils.NameAdjuster):
 

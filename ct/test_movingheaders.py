@@ -63,6 +63,7 @@ class TestMovingHeaders(unittest.TestCase):
                 , '--auto'
                 ,'--include=subdir'
                 ,'--config='+temp_config_name ]
+        uth.reset()
         ct.cake.main(argv)
         
         self._verify_one_exe_per_main(relativepaths)
@@ -71,6 +72,7 @@ class TestMovingHeaders(unittest.TestCase):
         # Now move the header file to "subdir"  since it is already included in the path, all should be well
         os.rename(os.path.join(self._tmpdir, 'someheader.hpp'), os.path.join(self._tmpdir, 'subdir/someheader.hpp'));
         shutil.rmtree(os.path.join(self._tmpdir, 'bin'), ignore_errors=True);
+        uth.reset()
         ct.cake.main(argv)
         
         self._verify_one_exe_per_main(relativepaths)

@@ -68,7 +68,10 @@ class HeaderDepsBase(object):
 
     @staticmethod
     def clear_cache():
+        #print("HeaderDepsBase::clear_cache")
         diskcache.clear_cache();
+        DirectHeaderDeps.clear_cache()
+        CppHeaderDeps.clear_cache()
 
 class DirectHeaderDeps(HeaderDepsBase):
 
@@ -201,7 +204,11 @@ class DirectHeaderDeps(HeaderDepsBase):
     
     @staticmethod
     def clear_cache():
+        #print("DirectHeaderDeps::clear_cache")
         diskcache.clear_cache();
+        DirectHeaderDeps._search_project_includes.cache.clear()
+        DirectHeaderDeps._find_include.cache.clear()
+        DirectHeaderDeps._create_include_list.cache.clear()
 
 class CppHeaderDeps(HeaderDepsBase):
 
@@ -237,4 +244,6 @@ class CppHeaderDeps(HeaderDepsBase):
 
     @staticmethod
     def clear_cache():
-        diskcache.clear_cache();
+        #print("CppHeaderDeps::clear_cache")
+        diskcache.clear_cache()
+

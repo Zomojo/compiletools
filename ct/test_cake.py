@@ -8,9 +8,10 @@ import time
 import shutil
 import tempfile
 import configargparse
+#import pdb
+
 import ct.unittesthelper as uth
 import ct.cake
-
 
 def _touch(fname):
     ''' Update the modification time of the given file ''' 
@@ -19,28 +20,21 @@ def _touch(fname):
 
 class TestCake(unittest.TestCase):
     def setUp(self):
-        uth.reset()
         self._tmpdir = None
         self._config_name = None
-        cap = configargparse.getArgumentParser(
-        description='Configargparser in test code',
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        args_for_setting_config_path=["-c","--config"],
-        ignore_unknown_config_file_keys=False)
-        ct.cake.Cake.add_arguments(cap)
-        ct.cake.Cake.registercallback()
    
-    def _create_argv(self):
-        self._config_name = uth.create_temp_config(self._tmpdir) 
-
+    def _create_argv(self, cache_home='None'):
+        assert(self._config_name is not None)
         return [ '--exemarkers=main'
                , '--testmarkers=unittest.hpp'
                , '--auto'
-               , '--CTCACHE='+os.path.join(self._tmpdir,'ctcache')
-               , '--config='+self._config_name ]
+               , '--config='+self._config_name
+               , '--CTCACHE='+cache_home]
 
-    def _call_ct_cake(self): 
-        ct.cake.main(self._create_argv())
+    def _call_ct_cake(self, extraargv=[], cache_home='None'): 
+        assert(cache_home is not None)  # Note object None is not string 'None'
+        uth.reset()
+        ct.cake.main(self._create_argv(cache_home) + extraargv)
 
     def _setup_and_chdir_temp_dir(self):
         ''' Returns the original working directory so you can chdir back to that at the end '''
@@ -60,6 +54,8 @@ class TestCake(unittest.TestCase):
         for ff in realpaths:
             shutil.copy2(ff, self._tmpdir)
 
+        self._config_name = uth.create_temp_config(self._tmpdir) 
+        uth.create_temp_ct_conf(tempdir=self._tmpdir,defaultvariant=os.path.basename(self._config_name)[:-5])
         self._call_ct_cake()
         
         # Check that an executable got built for each cpp
@@ -125,9 +121,12 @@ class TestCake(unittest.TestCase):
             output.write(extrahpp)
 
     def _inject_deeper_hpp_into_extra_hpp(self):
-        with open("extra.hpp",'r+') as iofile:
-            data = ['#include "deeper.hpp"'] + iofile.readlines()
-            iofile.writelines(data)
+        data=[]
+        with open("extra.hpp",'r') as infile:
+            data = ['#include "deeper.hpp"'] + infile.readlines()
+
+        with open("extra.hpp",'w') as outfile:
+            outfile.writelines(data)
 
     def _create_main_cpp(self):
         # Write main.cpp
@@ -213,16 +212,20 @@ class TestCake(unittest.TestCase):
             if expected_to_change:
                 self.assertGreater(postts[fname],prets[fname])
             else:
+                print("verify " + fname)
                 self.assertAlmostEqual(postts[fname],prets[fname])
 
     def _compile_edit_compile(self, files_to_edit, expected_changes, deeper_is_included=False):
         ''' Test that the compile, edit, compile cycle works as you expect '''
+        #print(self._tmpdir)
         origdir = os.getcwd()
         self._create_recompile_test_files(deeper_is_included)
         os.chdir(self._tmpdir)
 
         # Do an initial build
-        self._call_ct_cake()
+        self._config_name = uth.create_temp_config(self._tmpdir) 
+        uth.create_temp_ct_conf(tempdir=self._tmpdir,defaultvariant=os.path.basename(self._config_name)[:-5])
+        self._call_ct_cake(extraargv=[])
 
         # Grab the timestamps on the build products so that later we can test that only the expected ones changed
         # deeper_is_included must be false at this point becuase the option to inject it comes later/ver
@@ -231,12 +234,12 @@ class TestCake(unittest.TestCase):
         # Edit the files for this test
         if deeper_is_included:
             self._inject_deeper_hpp_into_extra_hpp()
-        else:
-            for fname in files_to_edit:
-                _touch(fname)
+
+        for fname in files_to_edit:
+            _touch(fname)
 
         # Rebuild
-        self._call_ct_cake()
+        self._call_ct_cake(extraargv=[])
 
         # Grab the timestamps on the build products for comparison
         postts = self._grab_timestamps(deeper_is_included)
@@ -245,7 +248,6 @@ class TestCake(unittest.TestCase):
         self._verify_timestamps(expected_changes, prets, postts)
 
         # Cleanup
-        print(self._tmpdir)
         os.chdir(origdir)
         shutil.rmtree(self._tmpdir, ignore_errors=True)
         
@@ -257,14 +259,16 @@ class TestCake(unittest.TestCase):
     def test_header_edit_recompiles(self):
         ''' Make sure that when a header file is altered that a rebuild occurs '''
         self._compile_edit_compile(['extra.hpp'],['extra.hpp', 'extra.o', 'main.o', 'main'])
+        pass
 
     def test_dependent_source_edit_recompiles(self):
         ''' Make sure that when an implied source file is altered that a rebuild occurs '''
         self._compile_edit_compile(['extra.cpp'],['extra.cpp', 'extra.o', 'main'])
+        pass
 
     def test_deeper_include_edit_recompiles(self):
         ''' Make sure that when a deeper include file is put into extra.hpp that a rebuild occurs '''
-        #self._compile_edit_compile(['extra.hpp'],['deeper.hpp', 'deeper.o', 'extra.o', 'main.o', 'main'],deeper_is_included=True)
+        self._compile_edit_compile(['extra.hpp'],['extra.hpp','deeper.hpp', 'deeper.o', 'extra.o', 'main.o', 'main'],deeper_is_included=True)
         pass
 
     def tearDown(self):

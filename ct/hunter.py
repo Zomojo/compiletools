@@ -69,6 +69,7 @@ class Hunter(object):
         # Don't try and collapse these lines.
         # We don't want todo as a handle to the headerdeps.process object.
         todo = set()
+        todo |= self.headerdeps.process(realpath)
 
         # One of the magic flags is SOURCE.  If that was present, add to the
         # file list.
@@ -129,11 +130,14 @@ class Hunter(object):
             print("Hunter::required_files for " + filename)
         return self._required_files_impl(ct.wrappedos.realpath(filename))
 
-    def clear_cache(self):
+    @staticmethod
+    def clear_cache():
+        #print("Hunter::clear_cache")
         ct.wrappedos.clear_cache()
-        self.required_source_files.cache.clear()
-        self.required_files.cache.clear()
+        Hunter.required_source_files.cache.clear()
+        Hunter.required_files.cache.clear()
         ct.headerdeps.HeaderDepsBase.clear_cache()
+        ct.magicflags.MagicFlagsBase.clear_cache()
 
     def magicflags(self, filename):
         return self.magicparser.parse(filename)

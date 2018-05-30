@@ -7,8 +7,8 @@ import shutil
 import tempfile
 import configargparse
 import ct.unittesthelper as uth
-import ct.cake
 import ct.utils
+import ct.cake
 
 # Although this is virtually identical to the test_cake.py, we can't merge
 # the tests due to memoized results.
@@ -23,14 +23,6 @@ class TestMagicInclude(unittest.TestCase):
         except AttributeError:
             pass
         self._tmpdir = tempfile.mkdtemp()
-        uth.reset()
-        cap = configargparse.getArgumentParser(
-            description='Configargparser in test code',
-            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-            args_for_setting_config_path=["-c", "--config"],
-            ignore_unknown_config_file_keys=False)
-        # ct.cake.Cake.add_arguments(cap)
-        # ct.cake.Cake.registercallback()
 
     def _verify_one_exe_per_main(self, relativepaths):
         actual_exes = set()
@@ -49,8 +41,6 @@ class TestMagicInclude(unittest.TestCase):
         # and that the --include=subdir2 subdir3 
         # works to pick up subdir2/important2.hpp and subdir3/important3.hpp
 
-        # Setup
-        self.setUp()
         origdir = os.getcwd()
 
         # Copy the magicinclude test files to the temp directory and compile
@@ -64,12 +54,15 @@ class TestMagicInclude(unittest.TestCase):
         argv = [
             '--exemarkers=main',
             '--testmarkers=unittest.hpp',
+            '--CTCACHE=None',
             '--quiet',
             '--include=subdir2',
             'subdir3',
             '--auto',
             '--config=' +
             temp_config_name]
+
+        uth.reset()
         ct.cake.main(argv)
 
         relativepaths = ['magicinclude/main.cpp']
