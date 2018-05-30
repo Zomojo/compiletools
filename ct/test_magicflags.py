@@ -36,13 +36,6 @@ class TestMagicFlagsModule(unittest.TestCase):
 
     def setUp(self):
         uth.reset()
-        config_files = ct.configutils.config_files_from_variant(exedir=uth.cakedir())
-        cap = configargparse.getArgumentParser(
-            description='TestMagicFlagsModule',
-            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-            default_config_files=config_files,
-            args_for_setting_config_path=["-c","--config"],
-            ignore_unknown_config_file_keys=True)
 
     def _createmagicparser(self, extraargs=None, cache_home='None', tempdir=None):
         if not extraargs:
@@ -50,7 +43,13 @@ class TestMagicFlagsModule(unittest.TestCase):
         temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
         argv = ['--config='+temp_config_name] + extraargs
         _reload_ct(cache_home)
-        cap = configargparse.getArgumentParser()
+        config_files = ct.configutils.config_files_from_variant(argv=argv,exedir=uth.cakedir())
+        cap = configargparse.getArgumentParser(
+            description='TestMagicFlagsModule',
+            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+            default_config_files=config_files,
+            args_for_setting_config_path=["-c","--config"],
+            ignore_unknown_config_file_keys=True)
         ct.apptools.add_common_arguments(cap)
         ct.dirnamer.add_arguments(cap)
         ct.headerdeps.add_arguments(cap)

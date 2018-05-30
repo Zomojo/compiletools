@@ -34,7 +34,7 @@ class TestFindTargetsModule(unittest.TestCase):
 
         expectedexes = { os.path.realpath(os.path.join(uth.samplesdir(),exe)) for exe in relativeexpectedexes }
         expectedtests = { os.path.realpath(os.path.join(uth.samplesdir(),tt)) for tt in relativeexpectedtests }
-        config_files = ct.configutils.config_files_from_variant(exedir=uth.cakedir())
+        config_files = ct.configutils.config_files_from_variant(exedir=uth.cakedir(), argv=[])
         cap = configargparse.getArgumentParser(
             description='TestFindTargetsModule',
             formatter_class=configargparse.ArgumentDefaultsHelpFormatter,

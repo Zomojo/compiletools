@@ -104,7 +104,7 @@ class TestVariant(unittest.TestCase):
 
         configs = ct.configutils.config_files_from_variant(
             variant='gcc.debug',
-            argv=None,
+            argv=[],
             user_config_dir='/var',
             system_config_dir='/var',
             exedir=uth.cakedir(),
