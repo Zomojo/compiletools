@@ -9,7 +9,7 @@ What directory is the root of the git repository?
 :Author: geoff@zomojo.com
 :Date:   2017-09-28
 :Copyright: Copyright (C) 2011-2016 Zomojo Pty Ltd
-:Version: 4.1.54
+:Version: 4.1.55
 :Manual section: 1
 :Manual group: developers
 
