@@ -21,8 +21,12 @@ Url: http://zomojo.github.io/compiletools/
 BuildRequires: python-setuptools python-docutils python2-configargparse python-appdirs python-psutil python2-devel 
 Requires: python-setuptools python2-configargparse python-appdirs python-psutil python-%{srcname}
 %endif
-%if %{rhel} > 20
+%if %{rhel} >= 28
 # rhel is defined on Fedora so this will be used
+BuildRequires: python3-setuptools python3-docutils python3-configargparse python3-appdirs python3-psutil python3-devel 
+Requires: python-setuptools python2-configargparse python-appdirs python2-psutil python-%{srcname}
+%else
+# Assume we are on Fedora 24-26
 BuildRequires: python-setuptools python-docutils python2-configargparse python-appdirs python2-psutil python2-devel 
 Requires: python-setuptools python2-configargparse python-appdirs python2-psutil python-%{srcname}
 %endif
