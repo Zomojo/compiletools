@@ -27,8 +27,14 @@ class TestLibrary(unittest.TestCase):
 
         # Build the library
         temp_config_name = uth.create_temp_config(self._tmpdir)
-        uth.create_temp_ct_conf(self._tmpdir,defaultvariant=temp_config_name[:-1])
-        argv = ['--config='+temp_config_name, '--static', os.path.join(self._tmpdir,'mylib/get_numbers.cpp')]
+        uth.create_temp_ct_conf(self._tmpdir,defaultvariant=temp_config_name[:-5])
+        argv = [ '--exemarkers=main'
+               , '--testmarkers=unittest.hpp'
+               , '--config='+temp_config_name
+               , '--CTCACHE=None'
+               , '--static'
+               , os.path.join(self._tmpdir,'mylib/get_numbers.cpp')
+               ]
         os.chdir(mylibdir)
         uth.reset()
         ct.cake.main(argv)
@@ -41,7 +47,7 @@ class TestLibrary(unittest.TestCase):
             shutil.copy2(ff, self._tmpdir)
 
         # Build the exe, linking agains the library
-        argv = ['--config='+temp_config_name] + realpaths
+        argv = ['--config='+temp_config_name,'--CTCACHE=None'] + realpaths
         os.chdir(self._tmpdir)
         uth.reset()
         ct.cake.main(argv)
