@@ -36,6 +36,12 @@ def add_arguments(cap):
         default='indent',
         help="Output formatting style")
 
+    ct.utils.add_flag_argument(
+        parser=cap,
+        name="filenametestmatch",
+        default=True,
+        help="Identify tests based on filename in addition to testmarkers")
+
 
 class NullStyle(object):
 
@@ -125,7 +131,8 @@ class FindTargets(object):
                                for marker in self._args.exemarkers):
                             # A file starting with test....cpp will be interpreted
                             # As a test even though it satisfied the exemarker
-                            if filename.startswith('test'):
+                            if filename.startswith('test') and \
+                                    self._args.filenametestmatch:
                                 testtargets.append(pathname)
                                 if self._args.verbose >= 3:
                                     print("Found a test: " + pathname)
