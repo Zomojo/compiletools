@@ -25,6 +25,7 @@ ct-findtargets [-h] [-c CONFIG_FILE] [--variant VARIANT] [-v] [-q]
                     [--objdir OBJDIR] [--exemarkers EXEMARKERS]
                     [--testmarkers TESTMARKERS] [--auto | --no-auto]
                     [--style {indent,null,args,flat}]
+                    [--filenametestmatch | --no-filenametestmatch]
 
 
 DESCRIPTION
@@ -37,7 +38,7 @@ compile to either an executable or a unit test.  The default settings are
 * testmarkers = unit_test.hpp
 
 A filename that starts with "test" and also satisfies the exemarkers will 
-be reported as a test.
+be reported as a test, unless --no-filenametestmatch is set.
 
 EXAMPLES
 ========
