@@ -2,41 +2,13 @@
 from __future__ import unicode_literals
 from __future__ import print_function
 import argparse
-from ct.version import __version__
 import ct.listvariants
-import ct.utils
+
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
         description="Find the possible variants by looking in the local repository, system config files, user config files and the executable's directory.")
-    parser.add(
-        "-v",
-        "--verbose",
-        help="Output verbosity. Add more v's to make it more verbose",
-        action="count",
-        default=0)
-    parser.add(
-        "-q",
-        "--quiet",
-        help="Decrement verbosity. Useful in apps where the default verbosity > 0.",
-        action="count",
-        default=0)
-    parser.add(
-        "--version",
-        action="version",
-        version=__version__)
-    parser.add(
-        "-?",
-        action='help',
-        help='Help')
-
-    ct.utils.add_boolean_argument(
-          parser
-        , "repoonly"
-        , default=False
-        , help="Restrict the results to the local repository config files")
-
+    ct.listvariants.add_arguments(parser)
     args = parser.parse_args()
 
-    for line in ct.listvariants.find_possible_variants(args=args, verbose=args.verbose):
-        print(line)
+    print(ct.listvariants.find_possible_variants(args=args, verbose=args.verbose))
