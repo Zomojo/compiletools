@@ -79,11 +79,8 @@ class FlatStyle(object):
         pass
 
     def append_variants(self, variants):
-        if not variants:
-            self.output += 'None found'
-        else:
-            for vv in sorted(variants):
-                self.output += vv + ' '
+        for vv in sorted(variants):
+            self.output += vv + ' '
 
 
 def find_possible_variants(
