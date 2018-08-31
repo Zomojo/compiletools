@@ -342,14 +342,12 @@ def _strip_quotes(args):
             # Can't just use the for loop directly because that would
             # try and process every character in a string
             if ct.utils.is_nonstr_iter(value):
-                for element in value:
-                    element = element.strip("'")
-                    element = element.strip('"')
+                for index, element in enumerate(value):
+                    value[index] = element.strip('"\'')
             else:
                 try:
                     # Otherwise assume its a string
-                    setattr(args, name, value.strip("'"))
-                    setattr(args, name, getattr(args,name).strip('"'))
+                    setattr(args, name, value.strip('"\''))
                 except:
                     pass
 
