@@ -38,6 +38,11 @@ def add_arguments(parser):
         , default=False
         , help="Restrict the results to the local repository config files")
 
+    ct.utils.add_boolean_argument(
+          parser
+        , "shorten"
+        , default=True
+        , help="Shorten from the full path to the config filenames to only the variant name")
     
     # Figure out what style classes are available and add them to the command
     # line options
@@ -49,6 +54,7 @@ def add_arguments(parser):
         default='pretty',
         help="Output formatting style")
 
+
 class PrettyStyle(object):
     def __init__(self):
         self.output = ""
@@ -56,8 +62,12 @@ class PrettyStyle(object):
     def append_text(self, text):
         self.output += text + '\n'
 
-    def append_variant(self, variant):
-        self.output += '\t' + variant + '\n'
+    def append_variants(self, variants):
+        if not variants:
+            self.output += '    None found\n'
+        else:
+            for vv in sorted(variants):
+                self.output += '    ' + vv + '\n'
 
 
 
@@ -68,8 +78,12 @@ class FlatStyle(object):
     def append_text(self, text):
         pass
 
-    def append_variant(self, variant):
-        self.output += variant + ' '
+    def append_variants(self, variants):
+        if not variants:
+            self.output += 'None found'
+        else:
+            for vv in sorted(variants):
+                self.output += vv + ' '
 
 
 def find_possible_variants(
@@ -84,6 +98,10 @@ def find_possible_variants(
         stylename = args.style
     styleclass = globals()[stylename.title() + 'Style']
     style = styleclass()
+    
+    shorten = True
+    if args and not args.shorten:
+        shorten = False
 
     style.append_text("Variant aliases are:")
     style.append_text(
@@ -93,8 +111,7 @@ def find_possible_variants(
             system_config_dir=system_config_dir,
             exedir=exedir,
             verbose=verbose))
-    style.append_text(
-        "\nFrom highest to lowest priority configuration directories, the possible variants are: ")
+    style.append_text("From highest to lowest priority configuration directories, the possible variants are:")
 
     if args and args.repoonly:
         search_directories = ct.utils.OrderedSet([os.getcwd(), ct.git_utils.find_git_root()])
@@ -106,17 +123,19 @@ def find_possible_variants(
             verbose=verbose)
 
     for cfg_dir in search_directories:
-        found = False
+        found = []
         style.append_text(cfg_dir)
         try:
             for cfg_file in os.listdir(cfg_dir):
                 if fnmatch.fnmatch(cfg_file, '*.conf'):
-                    style.append_variant(os.path.splitext(cfg_file)[0])
-                    found = True
+                    if shorten:
+                        found.append(os.path.splitext(cfg_file)[0])
+                    else:
+                        found.append(os.path.join(cfg_dir,cfg_file))
+                        
         except OSError:
             pass
 
-        if not found:
-            style.append_text("\tNone found")
+        style.append_variants(found)
 
     return style.output

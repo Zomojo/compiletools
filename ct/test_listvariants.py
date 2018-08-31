@@ -14,32 +14,32 @@ class TestListVariants(unittest.TestCase):
         uth.reset()
 
     def test_none_found(self):
-        # These values are deliberately chosen so that we can know that
-        # no config files will be found except those in the git repo
-
         origdir = os.getcwd()
         tempdir = tempfile.mkdtemp()
         os.chdir(tempdir)
+        # These values are deliberately chosen so that we can know that
+        # no config files will be found except those in the git repo
         ucd = "/home/dummy/.config/ct"
         scd = "/usr/lib"
         ecd = uth.cakedir()
-        expected_output = [
-            'Variant aliases are:',
-            "{'debug':'gcc.debug', 'release':'gcc.release'}",
-            '\nFrom highest to lowest priority configuration directories, the possible variants are: ',
-            tempdir,
-            '\tNone found',
-            '/home/dummy/.config/ct',
-            '\tNone found',
-            '/usr/lib',
-            '\tNone found',
-            os.path.join(uth.cakedir(), 'ct.conf.d'),
-            '\tblank',
-            '\tclang.debug',
-            '\tclang.release',
-            '\tct',
-            '\tgcc.debug',
-            '\tgcc.release']
+        expected_output = '''\
+Variant aliases are:
+{{'debug':'gcc.debug', 'release':'gcc.release'}}
+From highest to lowest priority configuration directories, the possible variants are:
+{0}
+    None found
+/home/dummy/.config/ct
+    None found
+/usr/lib
+    None found
+{1}
+    blank
+    clang.debug
+    clang.release
+    ct
+    gcc.debug
+    gcc.release
+'''.format(tempdir,os.path.join(uth.cakedir(), 'ct.conf.d'))
 
         output = ct.listvariants.find_possible_variants(
             user_config_dir=ucd,
