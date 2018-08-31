@@ -12,6 +12,7 @@ def find_possible_variants(
         user_config_dir=None,
         system_config_dir=None,
         exedir=None,
+        args=None,
         verbose=0):
     output = ["Variant aliases are:"]
     output.append(
@@ -23,11 +24,16 @@ def find_possible_variants(
             verbose=verbose))
     output.append(
         "\nFrom highest to lowest priority configuration directories, the possible variants are: ")
-    for cfg_dir in ct.configutils.default_config_directories(
+    if args and args.repoonly:
+        search_directories = [os.getcwd(), ct.git_utils.find_git_root()]
+    else:
+        search_directories = ct.configutils.default_config_directories(
             user_config_dir=user_config_dir,
             system_config_dir=system_config_dir,
             exedir=exedir,
-            verbose=verbose):
+            verbose=verbose)
+
+    for cfg_dir in search_directories:
         output.append(cfg_dir)
         cfgs = []
         try:

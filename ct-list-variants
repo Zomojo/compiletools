@@ -4,10 +4,11 @@ from __future__ import print_function
 import argparse
 from ct.version import __version__
 import ct.listvariants
+import ct.utils
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(
-        description="Find the possible variants by looking in the system config files, user config files and the executable's directory.")
+        description="Find the possible variants by looking in the local repository, system config files, user config files and the executable's directory.")
     parser.add(
         "-v",
         "--verbose",
@@ -28,7 +29,14 @@ if __name__ == '__main__':
         "-?",
         action='help',
         help='Help')
+
+    ct.utils.add_boolean_argument(
+          parser
+        , "repoonly"
+        , default=False
+        , help="Restrict the results to the local repository config files")
+
     args = parser.parse_args()
 
-    for line in ct.listvariants.find_possible_variants(verbose=args.verbose):
+    for line in ct.listvariants.find_possible_variants(args=args, verbose=args.verbose):
         print(line)
