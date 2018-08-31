@@ -34,6 +34,12 @@ def add_arguments(parser):
 
     ct.utils.add_boolean_argument(
           parser
+        , "configname"
+        , default=False
+        , help="Print the .conf at the end of the variant")
+
+    ct.utils.add_boolean_argument(
+          parser
         , "repoonly"
         , default=False
         , help="Restrict the results to the local repository config files")
@@ -100,6 +106,10 @@ def find_possible_variants(
     if args and not args.shorten:
         shorten = False
 
+    confext = ''
+    if args and args.configname:
+        confext = '.conf'
+
     style.append_text("Variant aliases are:")
     style.append_text(
         ct.configutils.extract_item_from_ct_conf(
@@ -126,7 +136,7 @@ def find_possible_variants(
             for cfg_file in os.listdir(cfg_dir):
                 if fnmatch.fnmatch(cfg_file, '*.conf'):
                     if shorten:
-                        found.append(os.path.splitext(cfg_file)[0])
+                        found.append(os.path.splitext(cfg_file)[0]+confext)
                     else:
                         found.append(os.path.join(cfg_dir,cfg_file))
                         
