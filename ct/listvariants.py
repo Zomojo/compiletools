@@ -106,6 +106,10 @@ def find_possible_variants(
     if args and not args.shorten:
         shorten = False
 
+    repoonly = False
+    if args:
+        repoonly = args.repoonly
+
     confext = ''
     if args and args.configname:
         confext = '.conf'
@@ -120,14 +124,12 @@ def find_possible_variants(
             verbose=verbose))
     style.append_text("From highest to lowest priority configuration directories, the possible variants are:")
 
-    if args and args.repoonly:
-        search_directories = ct.utils.OrderedSet([os.getcwd(), ct.git_utils.find_git_root()])
-    else:
-        search_directories = ct.configutils.default_config_directories(
-            user_config_dir=user_config_dir,
-            system_config_dir=system_config_dir,
-            exedir=exedir,
-            verbose=verbose)
+    search_directories = ct.configutils.default_config_directories(
+        user_config_dir=user_config_dir,
+        system_config_dir=system_config_dir,
+        exedir=exedir,
+        repoonly=repoonly,
+        verbose=verbose)
 
     for cfg_dir in search_directories:
         found = []

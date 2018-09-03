@@ -158,6 +158,10 @@ class OrderedSet(collections.MutableSet):
     def __contains__(self, key):
         return key in self.map
 
+    def append(self, iterable):
+        for key in iterable:
+            self.add(key)
+
     def add(self, key):
         if key not in self.map:
             end = self.end

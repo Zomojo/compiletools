@@ -171,16 +171,19 @@ def default_config_directories(
         user_config_dir=None,
         system_config_dir=None,
         exedir=None,
+        repoonly=False,
         verbose=0):
     # Use configuration in the order (lowest to highest priority)
+    # If repoonly is true, start the procedure at step 4
     # 1) same path as exe,
     # 2) system config (XDG compliant.  /etc/xdg/ct)
     # 2b)   python virtual environment system configs (${python-site-packages}/etc/xdg/ct)
     # 3) user config   (XDG compliant. ~/.config/ct)
-    # 4) gitroot
-    # 5) current working directory
-    # 6) environment variables
-    # 7) given on the command line
+    # 4) repoconfig (usually <gitroot>/ct.conf.d TODO:make this configurable)
+    # 5) gitroot
+    # 6) current working directory
+    # 7) environment variables
+    # 8) given on the command line
 
     # These variables are settable to assist writing tests
     if user_config_dir is None:
@@ -200,7 +203,10 @@ def default_config_directories(
         exedir = ct.wrappedos.dirname(ct.wrappedos.realpath(sys.argv[0]))
 
     executable_config_dir = os.path.join(exedir, "ct.conf.d")
-    results = ct.utils.OrderedSet([os.getcwd(), ct.git_utils.find_git_root(), user_config_dir] + system_dirs + [executable_config_dir])
+    gitroot = ct.git_utils.find_git_root()
+    results = ct.utils.OrderedSet([os.getcwd(), gitroot, os.path.join(gitroot,'ct.conf.d')])
+    if not repoonly:
+        results.append([user_config_dir] + system_dirs + [executable_config_dir])
     if verbose >= 9:
         print(" ".join(["Default config directories"] + list(results)))
 

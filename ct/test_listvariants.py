@@ -28,18 +28,20 @@ Variant aliases are:
 From highest to lowest priority configuration directories, the possible variants are:
 {0}
     None found
+{1}
+    None found
 /home/dummy/.config/ct
     None found
 /usr/lib
     None found
-{1}
+{2}
     blank
     clang.debug
     clang.release
     ct
     gcc.debug
     gcc.release
-'''.format(tempdir,os.path.join(uth.cakedir(), 'ct.conf.d'))
+'''.format(tempdir,os.path.join(tempdir,'ct.conf.d'),os.path.join(uth.cakedir(), 'ct.conf.d'))
 
         output = ct.listvariants.find_possible_variants(
             user_config_dir=ucd,
