@@ -76,7 +76,6 @@ class PrettyStyle(object):
                 self.output += '    ' + vv + '\n'
 
 
-
 class FlatStyle(object):
     def __init__(self):
         self.output = ""
@@ -88,6 +87,16 @@ class FlatStyle(object):
         for vv in sorted(variants):
             self.output += vv + ' '
 
+class FilelistStyle(object):
+    def __init__(self):
+        self.output = ""
+
+    def append_text(self, text):
+        pass
+
+    def append_variants(self, variants):
+        for vv in sorted(variants):
+            self.output += vv + '\n'
 
 def find_possible_variants(
         user_config_dir=None,
