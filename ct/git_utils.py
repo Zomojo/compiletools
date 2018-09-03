@@ -51,13 +51,13 @@ def _find_git_root(directory):
 
 
 @memoize
-def _strip_git_root(filename):
+def strip_git_root(filename):
     size = len(find_git_root(filename)) + 1
     return filename[size:]
 
 def clear_cache():
     _find_git_root.cache.clear()
-    _strip_git_root.cache.clear()
+    strip_git_root.cache.clear()
 
 class Project(object):
     def __init__(self, args):
@@ -66,7 +66,7 @@ class Project(object):
     def pathname(self, filename):        
         """ Return the project part of the given filename """
         if self._args.git_root:
-            return _strip_git_root(filename)
+            return strip_git_root(filename)
         else:
             return ct.utils.removemount(filename)
 
@@ -89,6 +89,6 @@ class NameAdjuster(object):
 
     def adjust(self, name):
         if self._args.strip_git_root:
-            return _strip_git_root(name)
+            return strip_git_root(name)
         else:
             return name

@@ -111,8 +111,12 @@ def find_possible_variants(
         repoonly = args.repoonly
 
     confext = ''
-    if args and args.configname:
-        confext = '.conf'
+    if args:
+        if args.configname:
+            confext = '.conf'
+            removeconf = ''
+        else:
+            removeconf = '.conf'
 
     style.append_text("Variant aliases are:")
     style.append_text(
@@ -138,7 +142,10 @@ def find_possible_variants(
             for cfg_file in os.listdir(cfg_dir):
                 if fnmatch.fnmatch(cfg_file, '*.conf'):
                     if shorten:
-                        found.append(os.path.splitext(cfg_file)[0]+confext)
+                        if repoonly:
+                            found.append(ct.git_utils.strip_git_root(os.path.join(cfg_dir,cfg_file.replace(removeconf,''))))
+                        else:
+                            found.append(os.path.splitext(cfg_file)[0]+confext)
                     else:
                         found.append(os.path.join(cfg_dir,cfg_file))
                         
