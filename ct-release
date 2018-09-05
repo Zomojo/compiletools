@@ -1,0 +1,59 @@
+#!/bin/bash
+set -euo pipefail
+
+scriptdir=$(readlink -f "$(dirname "$0")")
+
+#
+# Bump the version of the vanilla compiletools repo and git push the tags
+# This can be elided by specifying --nobump on the command line
+#
+
+# If ctdevdir is not set in the environment then assume its in the home directory
+ctdd=${ctdevdir:=$HOME/compiletools}
+
+# Increase the version number in all files and push to github
+pushd "$ctdd" >/dev/null
+
+# If any command line parameter is given then don't bump the version
+zeromeansbump=${1:-}
+
+if [[ -z "$zeromeansbump" ]]; then
+    # If the last commit bumped the version then refuse to bump it again for no reason
+    bumpcount=$(git log --pretty=oneline -1 | grep -c Bump || true)
+    if [[ "$bumpcount" -eq 1 ]]; then
+        zeromeansbump="--nobump"
+    fi
+fi
+
+# Bump the version of the vanilla compiletools
+if [[ -z "$zeromeansbump" ]]; then
+    bumpversion patch
+    git push
+    git push --tags
+    echo Pausing to give github time to generate the archive
+    sleep 20
+fi
+tag=$(git describe --tags --exact)
+popd >/dev/null
+
+#Strip the v off the tag to get the numeric version
+version=${tag#*v}
+
+#
+# Pull a tarball from github and put it into SOURCES
+#
+rpmhome=$(rpm --eval %_topdir)
+pushd "$rpmhome" >/dev/null
+tarball=${tag}.tar.gz
+while [[ ! -s "SOURCES/${tarball}" ]]; do
+    curl -L "https://github.com/Zomojo/compiletools/archive/${tarball}" -o "SOURCES/${tarball}"
+done
+
+# Create rpms of python-compiletools
+rpmbuild -ta SOURCES/${tarball}
+
+popd >/dev/null
+
+# Push to PyPI
+python setup.py sdist
+twine upload dist/*  -r pypi 

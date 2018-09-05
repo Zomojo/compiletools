@@ -54,6 +54,7 @@ and you are currently testing in python2.  Solution is to remove the ct cache (c
 #
 # Making a release
 #
+There is now a ct-release script that should do all the following steps
 
 # Zeroth: Make sure all *.rst files have been added to .bumpversion.cfg
 
