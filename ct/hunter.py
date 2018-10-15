@@ -42,7 +42,7 @@ class Hunter(object):
         self.magicparser = magicparser
 
     def _extractSOURCE(self, realpath):
-        sources = self.magicparser.parse(realpath).get('SOURCE', set())
+        sources = self.magicparser.parse(realpath).get('SOURCE', ct.utils.OrderedSet())
         cwd = ct.wrappedos.dirname(realpath)
         ess = {ct.wrappedos.realpath(os.path.join(cwd, es)) for es in sources}
         if self.args.verbose >= 2 and ess:
@@ -60,7 +60,7 @@ class Hunter(object):
             It is a precondition that realpath actually is a realpath.
         """
         if not processed:
-            processed = set()
+            processed = ct.utils.OrderedSet()
         if self.args.verbose >= 7:
             print(
                 "Hunter::_required_files_impl. Finding header deps for ",
@@ -68,7 +68,7 @@ class Hunter(object):
 
         # Don't try and collapse these lines.
         # We don't want todo as a handle to the headerdeps.process object.
-        todo = set()
+        todo = ct.utils.OrderedSet()
         todo |= self.headerdeps.process(realpath)
 
         # One of the magic flags is SOURCE.  If that was present, add to the
@@ -94,7 +94,7 @@ class Hunter(object):
                     realpath,
                     " remaining todo:",
                     todo)
-            morefiles = set()
+            morefiles = ct.utils.OrderedSet()
             for nextfile in todo:
                 morefiles |= self._required_files_impl(nextfile, processed)
             todo = morefiles.difference(processed)

@@ -174,6 +174,14 @@ class OrderedSet(collections.MutableSet):
             prev[2] = next_
             next_[1] = prev
 
+    def difference(self, iterable):
+        output = OrderedSet()
+        for key in self.map:
+            if key not in iterable:
+                output.add(key)
+        return output
+
+
     def __iter__(self):
         end = self.end
         curr = end[2]

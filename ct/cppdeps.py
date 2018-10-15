@@ -29,7 +29,7 @@ def main(argv=None):
                 args.filename[0]))
         return 1
 
-    results = set()
+    results = ct.utils.OrderedSet()
     for fname in args.filename:
         results |= hh.process(fname)
 

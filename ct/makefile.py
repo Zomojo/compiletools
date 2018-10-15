@@ -381,7 +381,7 @@ class MakefileCreator:
         """ Gather all the source files listed on the command line 
             into one uber set 
         """
-        sources = set()
+        sources = ct.utils.OrderedSet()
         if self.args.static:
             sources.update(self.args.static)
         if self.args.dynamic:
@@ -395,7 +395,7 @@ class MakefileCreator:
 
     def _gather_build_outputs(self):
         """ Gathers together object files and other outputs """
-        buildoutputs = set()
+        buildoutputs = ct.utils.OrderedSet()
 
         if self.args.static:
             staticlibrarypathname = self.namer.staticlibrary_pathname()

@@ -119,7 +119,7 @@ class Namer(object):
         """ Use the filenames from the command line to determine the 
             executable names.
         """
-        allexes = set()
+        allexes = ct.utils.OrderedSet()
         if self.args.filename:
             allexes = { self.executable_pathname(ct.wrappedos.realpath(source)) 
                             for source in self.args.filename}
@@ -129,7 +129,7 @@ class Namer(object):
         """ Use the test files from the command line to determine the 
             executable names.
         """
-        alltests = set() 
+        alltests = ct.utils.OrderedSet()
         if self.args.tests:
             alltestsexes = { self.executable_pathname(ct.wrappedos.realpath(source)) 
                                 for source in self.args.tests}

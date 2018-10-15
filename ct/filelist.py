@@ -110,7 +110,7 @@ class Filelist(object):
     def process(self):
         filterclass = globals()[self.args.filter.title() + 'PassFilter']
         filterobject = filterclass()
-        extras = set()
+        extras = ct.utils.OrderedSet()
 
         # Add all the command line specified extras
         if self.args.extrafile:
@@ -136,7 +136,7 @@ class Filelist(object):
                 extras |= {fileintestdir for fileintestdir in os.listdir(
                     testdir) if ct.wrappedos.isfile(fileintestdir)}
 
-        mergedfiles = set()
+        mergedfiles = ct.utils.OrderedSet()
         if self.args.merge:
             filteredfiles = filterobject(
                 {ct.wrappedos.realpath(fname) for fname in extras})
@@ -146,7 +146,7 @@ class Filelist(object):
                 realpath = ct.wrappedos.realpath(fname)
                 print(self.styleobject.adjust(realpath))
 
-        followable = set()
+        followable = ct.utils.OrderedSet()
         lists = [
             self.args.filename,
             self.args.static,

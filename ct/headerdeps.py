@@ -197,7 +197,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         if self.args.verbose >= 9:
             print("DirectHeaderDeps::_process_impl: " + realpath)
 
-        results = set()
+        results = ct.utils.OrderedSet()
         self._process_impl_recursive(realpath, results)
         results.remove(realpath)
         return results
