@@ -116,8 +116,8 @@ class Hunter(object):
         """
         if self.args.verbose >= 9:
             print("Hunter::required_source_files for " + filename)
-        return {filename for filename in self.required_files(
-            filename) if ct.utils.issource(filename)}
+        return ct.utils.OrderedSet([filename for filename in self.required_files(
+            filename) if ct.utils.issource(filename)])
 
     @memoize
     def required_files(self, filename):

@@ -168,6 +168,9 @@ class OrderedSet(collections.MutableSet):
             curr = end[1]
             curr[2] = end[1] = self.map[key] = [key, curr, end]
 
+    def update(self, iterable):
+        self.append(iterable)
+
     def discard(self, key):
         if key in self.map:
             key, prev, next_ = self.map.pop(key)

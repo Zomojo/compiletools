@@ -239,8 +239,8 @@ class CppHeaderDeps(HeaderDepsBase):
         # Use a set to inherently remove any redundancies
         # Use realpath to get rid of  // and ../../ etc in paths (similar to normpath) and
         # to get the full path even to files in the current working directory
-        return {ct.wrappedos.realpath(x) for x in deplist.split() if x.strip(
-            '\\\t\n\r') and x not in [realpath, "/dev/null"]}
+        return ct.utils.OrderedSet([ct.wrappedos.realpath(x) for x in deplist.split() if x.strip(
+            '\\\t\n\r') and x not in [realpath, "/dev/null"]])
 
     @staticmethod
     def clear_cache():
