@@ -32,7 +32,7 @@ def _reload_ct(cache_home):
 
 
 def _callprocess(headerobj, filenames):
-    result = set()
+    result = ct.utils.OrderedSet()
     for filename in filenames:
         realpath = ct.wrappedos.realpath(filename)
         result |= headerobj.process(realpath)
