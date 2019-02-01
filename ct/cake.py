@@ -150,7 +150,7 @@ class Cake(object):
             "--output",
             help="When there is only a single build product, rename it to this name.")
 
-        ct.utils.add_boolean_argument(
+        ct.utils.add_flag_argument(
             parser=cap,
             name="serialise-tests",
             dest="serialisetests",
