@@ -109,7 +109,7 @@ class LinkRuleCreator(object):
                     ct.utils.OrderedSet())  # For backward compatibility with cake
         recipe = ""
         if self.args.verbose >= 1:
-            recipe += " ".join(["@echo ...", outputname, ";"])
+            recipe += " ".join(["+@echo ...", outputname, ";"])
         recipe += " ".join([linker, "-o", outputname] +
                            list(object_names) +
                            list(all_magic_ldflags) +
