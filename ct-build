@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 set -euo pipefail
 
 all=$(ct-findtargets --style=args $@)

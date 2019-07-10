@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/bash
 
 # Build a static library in the subdiretory
 # If you would like to do a dynamic library (i.e., .so)
