@@ -5,7 +5,7 @@
 %global version_release 1
 
 Summary: %sum
-Name: python-%{srcname}
+Name: python3-%{srcname}
 Version: %{version_base}
 Release: %{version_release}%{?org_tag}%{?dist}
 Source0: https://github.com/%{owner}/%{srcname}/archive/v%{version_base}.tar.gz
@@ -25,7 +25,7 @@ BuildRequires: python3-setuptools python3-docutils python3-configargparse python
 Requires: python3-setuptools python3-configargparse python3-appdirs python3-psutil
 %endif 
 
-Obsoletes: cake
+Obsoletes: cake python-%{srcname}
 Provides: cake
 
 
