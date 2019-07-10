@@ -45,7 +45,7 @@ mkdir -p %{buildroot}%{_sysconfdir}/xdg/ct/
 mkdir -p %{buildroot}%{_mandir}/man1/
 mkdir -p %{buildroot}%{_datadir}/licenses/python-%{srcname}/
 
-install -m 0644 -t %{buildroot}%{_mandir}/man1/ *.1
+install -m 0644 -t %{buildroot}%{_mandir}/man1/ man1/*.1
 
 # --root $RPM_BUILD_ROOT makes the package install with a single, expanded
 # directory in %{python2_sitelib} and a separate egginfo directory.
