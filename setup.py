@@ -21,6 +21,7 @@ setup(
     description='Tools to make compiling C/C++ projects easy',
     long_description=long_description,
     url='http://zomojo.github.io/compiletools/',
+    python_requires='>=2.7,!=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*'
     author='Zomojo Pty Ltd',
     author_email='geoff@zomojo.com',
     license='GPLv3+',
