@@ -29,7 +29,7 @@ Requires: python3-setuptools python3-configargparse python3-appdirs python3-psut
 %endif 
 
 Obsoletes: cake python-%{srcname}
-Provides: cake
+Provides: cake python-%{srcname}
 
 
 %description
