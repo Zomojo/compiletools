@@ -220,6 +220,9 @@ class MakefileCreator:
             "--makefilename",
             default="Makefile",
             help="Output filename for the Makefile")
+        cap.add(
+            "--build-exclusively",
+            help="Only build the binaries depending on the source or header absolute filenames in this list.")
 
     def _uptodate(self):
         """ Is the Makefile up to date?
@@ -446,6 +449,38 @@ class MakefileCreator:
             realpath_tests = sorted(
                 ct.wrappedos.realpath(source) for source in self.args.tests)
             realpath_sources += realpath_tests
+        # if self.args.build_exclusively:
+        #     print("Sources: {}".format(realpath_sources))
+        #     changed_files = set(self.args.build_exclusively.split())
+        #     print("changed_files: {}".format(changed_files))
+        #     realpath_sources = list(set(realpath_sources).intersection(changed_files))
+        #     print("Sources: {}".format(realpath_sources))
+            
+            # filtered_rules = []
+            # minimal_set_rules = []
+            # changed_files = set(self.args.build_exclusively.split())
+            # for rule in self.rules:
+            #     if set(rule.prerequisites.split()).intersection(changed_files) or rule.phony:
+            #         print("{} is buildworthy".format(rule.target))
+            #         minimal_set_rules.append(rule)
+            # for rule in self.rules:
+            #     for minimal_rule in minimal_set_rules:
+            #         filtered_rules.append(minimal_rule)
+            #         if minimal_rule.target in rule.prerequisites:
+            #             if rule not in filtered_rules:
+            #                 filtered_rules.append(rule)
+                        
+                
+            #     # woo = completesources.intersection(changed_files)
+            #     # if not woo:
+            #     #     self._skip_files.add(source)
+            #     #     continue
+            #     # print("{} is buildworthy because of the following changes:".format(source))
+            #     # for a in woo:
+            #     #     print("Intersection: " + a)
+            # self.rules = filtered_rules
+            # # for rule in self.rules:
+            #     print(rule)
 
         if self.args.filename or self.args.tests:
             allexes = {
@@ -559,6 +594,7 @@ class MakefileCreator:
         # (or library as appropriate)
         rules_for_source = ct.utils.OrderedSet()
 
+        # put the filtering in here somewhere
         # Output all the link rules
         if self.args.verbose >= 3:
             print("Creating link rule for ", sources)
@@ -569,6 +605,16 @@ class MakefileCreator:
             args=self.args,
             namer=self.namer,
             hunter=self.hunter)
+        print("Zimbu")
+        print(linkrulecreatorobject)
+        if self.args.build_exclusively:
+            changed_files = set(self.args.build_exclusively.split())
+            print("Sources: {}".format(sources))
+            This won't work. We need to pass something to the hunter that can nix a source file if 
+            it doesn't find anything that matches the list of changed files.
+        #     print("changed_files: {}".format(changed_files))
+        #     realpath_sources = list(set(realpath_sources).intersection(changed_files))
+        #     print("Sources: {}".format(realpath_sources))
         rules_for_source |= linkrulecreatorobject(
             libraryname=libraryname,
             sources=sources)
