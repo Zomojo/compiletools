@@ -532,6 +532,28 @@ class MakefileCreator:
 
         self.rules |= self._create_clean_rules(buildoutputs)
 
+        if self.args.build_exclusively:
+            changed_files = set(self.args.build_exclusively.split())
+            neccessary_rules = set()
+            prev_neccessary_rules_count = -1
+            while len(neccessary_rules) != prev_neccessary_rules_count
+                # This will break out of the loop if neccessary_rules stops growing.
+                prev_neccessary_rules_count = len(neccessary_rules)
+                for rule in self.rules:
+                    if rule.phony:
+                        neccessary_rules.add(rule)
+                        continue
+                    rule.all_prerequisites_set = set(rule.prerequisites.split()) + set(rule.order_only_prerequisites.split())
+                    if rule.all_prerequisites_set.intersection(changed_files):
+                        neccessary_rules.add(rule)
+                        continue
+                    for neccessary_rule in neccessary_rules:
+                        if neccessary_rule.target in rule.all_prerequisites_set:
+                            neccessary_rules.add(rule)
+                        if rule.target in neccessary_rules.all_prerequisites_set:
+                            neccessary_rules.add(rule)
+                self.rules = list(neccessary_rules)
+
         self.write(self.args.makefilename)
         return self.args.makefilename
 
@@ -605,16 +627,6 @@ class MakefileCreator:
             args=self.args,
             namer=self.namer,
             hunter=self.hunter)
-        print("Zimbu")
-        print(linkrulecreatorobject)
-        if self.args.build_exclusively:
-            changed_files = set(self.args.build_exclusively.split())
-            print("Sources: {}".format(sources))
-            This won't work. We need to pass something to the hunter that can nix a source file if 
-            it doesn't find anything that matches the list of changed files.
-        #     print("changed_files: {}".format(changed_files))
-        #     realpath_sources = list(set(realpath_sources).intersection(changed_files))
-        #     print("Sources: {}".format(realpath_sources))
         rules_for_source |= linkrulecreatorobject(
             libraryname=libraryname,
             sources=sources)
