@@ -536,14 +536,15 @@ class MakefileCreator:
             changed_files = set(self.args.build_exclusively.split())
             neccessary_rules = set()
             prev_neccessary_rules_count = -1
-            while len(neccessary_rules) != prev_neccessary_rules_count
+            while len(neccessary_rules) != prev_neccessary_rules_count:
                 # This will break out of the loop if neccessary_rules stops growing.
                 prev_neccessary_rules_count = len(neccessary_rules)
                 for rule in self.rules:
                     if rule.phony:
                         neccessary_rules.add(rule)
                         continue
-                    rule.all_prerequisites_set = set(rule.prerequisites.split()) + set(rule.order_only_prerequisites.split())
+                    rule.all_prerequisites_set = set(rule.prerequisites.split())
+                    # rule.all_prerequisites_set = set(rule.prerequisites.split()) + set(rule.order_only_prerequisites.split())
                     if rule.all_prerequisites_set.intersection(changed_files):
                         neccessary_rules.add(rule)
                         continue
