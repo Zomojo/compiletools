@@ -533,27 +533,39 @@ class MakefileCreator:
         self.rules |= self._create_clean_rules(buildoutputs)
 
         if self.args.build_exclusively:
-            changed_files = set(self.args.build_exclusively.split())
+            changed_files = set(self.args.build_exclusively.split(' '))
             neccessary_rules = set()
+            total_dependencies = set()
+            targets = set()
             prev_neccessary_rules_count = -1
             while len(neccessary_rules) != prev_neccessary_rules_count:
                 # This will break out of the loop if neccessary_rules stops growing.
                 prev_neccessary_rules_count = len(neccessary_rules)
                 for rule in self.rules:
+                    if rule in neccessary_rules:
+                        continue
                     if rule.phony:
                         neccessary_rules.add(rule)
+                        print("Keeping {} because it's a phony.".format(rule.target))
                         continue
-                    rule.all_prerequisites_set = set(rule.prerequisites.split())
-                    # rule.all_prerequisites_set = set(rule.prerequisites.split()) + set(rule.order_only_prerequisites.split())
-                    if rule.all_prerequisites_set.intersection(changed_files):
+                    if rule.prerequisites == '':
                         neccessary_rules.add(rule)
+                        print("Keeping {} because it's got no prerequisites.".format(rule.target))
                         continue
-                    for neccessary_rule in neccessary_rules:
-                        if neccessary_rule.target in rule.all_prerequisites_set:
-                            neccessary_rules.add(rule)
-                        if rule.target in neccessary_rules.all_prerequisites_set:
-                            neccessary_rules.add(rule)
-                self.rules = list(neccessary_rules)
+                    all_prerequisites_set = set(rule.prerequisites.split(' '))
+                    if all_prerequisites_set.intersection(changed_files):
+                        neccessary_rules.add(rule)
+                        # total_dependencies = total_dependencies.union(all_prerequisites_set)
+                        changed_files.add(rule.target)
+                        targets.add(rule.target)
+                        print("Keeping {} because it depends on changed: {}".format(rule.target, list(all_prerequisites_set.intersection(changed_files))))
+                        continue
+                    # if rule.target in total_dependencies:
+                    #     print("Keeping {} because we depend on it".format(rule.target))
+                    #     neccessary_rules.add(rule)
+                    #     total_dependencies = total_dependencies.union(all_prerequisites_set)
+                    #     targets.add(rule.target)
+            self.rules = list(neccessary_rules)
 
         self.write(self.args.makefilename)
         return self.args.makefilename
