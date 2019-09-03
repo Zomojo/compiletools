@@ -222,7 +222,7 @@ class MakefileCreator:
             help="Output filename for the Makefile")
         cap.add(
             "--build-only-changed",
-            help="Only build the binaries depending on the source or header absolute filenames in this list.")
+            help="Only build the binaries depending on the source or header absolute filenames in this space-delimited list.")
 
     def _uptodate(self):
         """ Is the Makefile up to date?
@@ -587,7 +587,6 @@ class MakefileCreator:
         # (or library as appropriate)
         rules_for_source = ct.utils.OrderedSet()
 
-        # put the filtering in here somewhere
         # Output all the link rules
         if self.args.verbose >= 3:
             print("Creating link rule for ", sources)
