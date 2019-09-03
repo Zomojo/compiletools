@@ -145,6 +145,17 @@ strictly needed to build your particular binary, so you only pay for what
 you use. This difference alone should see a large improvement on most
 projects, especially for incremental rebuilds.
 
+Selective build and test
+===========
+
+You can instruct ct-cake to only build binarires dependant on a list of
+source files using the ``--build-only-changed`` flag. This is helpful for
+limiting building and testing in a Continuous Integration pipeline to only
+source that has changed from master.
+
+``changed_source=git diff --name-only master | sed "s,^,$(git rev-parse --show-toplevel)/,"
+ct-cake --auto --build-only-changed \"$changed_source\"``
+
 Configuration
 =============
 
