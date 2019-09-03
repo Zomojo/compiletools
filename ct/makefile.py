@@ -535,37 +535,31 @@ class MakefileCreator:
         if self.args.build_exclusively:
             changed_files = set(self.args.build_exclusively.split(' '))
             neccessary_rules = set()
-            total_dependencies = set()
             targets = set()
-            prev_neccessary_rules_count = -1
-            while len(neccessary_rules) != prev_neccessary_rules_count:
-                # This will break out of the loop if neccessary_rules stops growing.
-                prev_neccessary_rules_count = len(neccessary_rules)
+            done = False
+            while not done:
+                done = True
                 for rule in self.rules:
-                    if rule in neccessary_rules:
+                    # if rule.phony:
+                        # continue
+                    if rule.target in changed_files:
                         continue
-                    if rule.phony:
-                        neccessary_rules.add(rule)
-                        print("Keeping {} because it's a phony.".format(rule.target))
-                        continue
-                    if rule.prerequisites == '':
-                        neccessary_rules.add(rule)
-                        print("Keeping {} because it's got no prerequisites.".format(rule.target))
-                        continue
-                    all_prerequisites_set = set(rule.prerequisites.split(' '))
-                    if all_prerequisites_set.intersection(changed_files):
-                        neccessary_rules.add(rule)
-                        # total_dependencies = total_dependencies.union(all_prerequisites_set)
+                    if set(rule.prerequisites.split(' ')).intersection(changed_files):
                         changed_files.add(rule.target)
                         targets.add(rule.target)
-                        print("Keeping {} because it depends on changed: {}".format(rule.target, list(all_prerequisites_set.intersection(changed_files))))
-                        continue
-                    # if rule.target in total_dependencies:
-                    #     print("Keeping {} because we depend on it".format(rule.target))
-                    #     neccessary_rules.add(rule)
-                    #     total_dependencies = total_dependencies.union(all_prerequisites_set)
-                    #     targets.add(rule.target)
-            self.rules = list(neccessary_rules)
+                        done = False
+                        print("Keeping {} because it depends on changed: {}".format(rule.target, list(set(rule.prerequisites.split(' ')).intersection(changed_files))))
+            new_rules = ct.utils.OrderedSet()
+            for rule in self.rules:
+                if not rule.phony:
+                    new_rules.add(rule)
+                    continue
+                if rule.target in ["build", "runtests"]:
+                    rule.prerequisites = ' '.join(set(rule.prerequisites.split()).intersection(targets))
+                    new_rules.add(rule)
+                else:
+                    new_rules.add(rule)
+            self.rules = new_rules
 
         self.write(self.args.makefilename)
         return self.args.makefilename
