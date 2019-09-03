@@ -510,12 +510,12 @@ class MakefileCreator:
                     if rule.target in changed_files:
                         continue
                     relevant_changed_files = set(rule.prerequisites.split(' ')).intersection(changed_files)
-                    if relevant_changed_files:
-                        changed_files.add(rule.target)
-                        targets.add(rule.target)
-                        done = False
-                        # if self.args.verbose >= 3:
-                            print("Building {} because it depends on changed: {}".format(rule.target, list(relevant_changed_files)))
+                    if not relevant_changed_files:
+                        continue
+                    changed_files.add(rule.target)
+                    targets.add(rule.target)
+                    done = False
+                    print("Building {} because it depends on changed: {}".format(rule.target, list(relevant_changed_files)))
             new_rules = ct.utils.OrderedSet()
             for rule in self.rules:
                 if not rule.phony:
