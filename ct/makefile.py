@@ -507,7 +507,7 @@ class MakefileCreator:
             while not done:
                 done = True
                 for rule in self.rules:
-                    if rule.target in changed_files:
+                    if rule.target in targets:
                         continue
                     relevant_changed_files = set(rule.prerequisites.split(' ')).intersection(changed_files)
                     if not relevant_changed_files:
