@@ -148,7 +148,7 @@ projects, especially for incremental rebuilds.
 Selective build and test
 ===========
 
-You can instruct ct-cake to only build binarires dependant on a list of
+You can instruct ct-cake to only build binaries dependant on a list of
 source files using the ``--build-only-changed`` flag. This is helpful for
 limiting building and testing in a Continuous Integration pipeline to only
 source that has changed from master.
