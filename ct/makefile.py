@@ -534,30 +534,26 @@ class MakefileCreator:
 
         if self.args.build_exclusively:
             changed_files = set(self.args.build_exclusively.split(' '))
-            neccessary_rules = set()
             targets = set()
             done = False
             while not done:
                 done = True
                 for rule in self.rules:
-                    # if rule.phony:
-                        # continue
                     if rule.target in changed_files:
                         continue
-                    if set(rule.prerequisites.split(' ')).intersection(changed_files):
+                    relevant_changed_files = set(rule.prerequisites.split(' ')).intersection(changed_files)
+                    if relevant_changed_files:
                         changed_files.add(rule.target)
                         targets.add(rule.target)
                         done = False
-                        print("Keeping {} because it depends on changed: {}".format(rule.target, list(set(rule.prerequisites.split(' ')).intersection(changed_files))))
+                        # if self.args.verbose >= 3:
+                            print("Building {} because it depends on changed: {}".format(rule.target, list(relevant_changed_files)))
             new_rules = ct.utils.OrderedSet()
             for rule in self.rules:
                 if not rule.phony:
                     new_rules.add(rule)
-                    continue
-                if rule.target in ["build", "runtests"]:
-                    rule.prerequisites = ' '.join(set(rule.prerequisites.split()).intersection(targets))
-                    new_rules.add(rule)
                 else:
+                    rule.prerequisites = ' '.join(set(rule.prerequisites.split()).intersection(targets))
                     new_rules.add(rule)
             self.rules = new_rules
 
