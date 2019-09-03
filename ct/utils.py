@@ -184,6 +184,12 @@ class OrderedSet(collections.MutableSet):
                 output.add(key)
         return output
 
+    def intersection(self, iterable):
+        output = OrderedSet()
+        for key in self.map:
+            if key in iterable:
+                output.add(key)
+        return output
 
     def __iter__(self):
         end = self.end

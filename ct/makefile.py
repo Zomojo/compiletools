@@ -220,6 +220,9 @@ class MakefileCreator:
             "--makefilename",
             default="Makefile",
             help="Output filename for the Makefile")
+        cap.add(
+            "--build-only-changed",
+            help="Only build the binaries depending on the source or header absolute filenames in this space-delimited list.")
 
     def _uptodate(self):
         """ Is the Makefile up to date?
@@ -496,6 +499,32 @@ class MakefileCreator:
             self.rules |= self._create_compile_rules_for_sources(realpath_dynamic)
 
         self.rules |= self._create_clean_rules(buildoutputs)
+
+        if self.args.build_only_changed:
+            changed_files = set(self.args.build_only_changed.split(' '))
+            targets = set()
+            done = False
+            while not done:
+                done = True
+                for rule in self.rules:
+                    if rule.target in targets:
+                        continue
+                    relevant_changed_files = set(rule.prerequisites.split(' ')).intersection(changed_files)
+                    if not relevant_changed_files:
+                        continue
+                    changed_files.add(rule.target)
+                    targets.add(rule.target)
+                    done = False
+                    if self.args.verbose >=3:
+                        print("Building {} because it depends on changed: {}".format(rule.target, list(relevant_changed_files)))
+            new_rules = ct.utils.OrderedSet()
+            for rule in self.rules:
+                if not rule.phony:
+                    new_rules.add(rule)
+                else:
+                    rule.prerequisites = ' '.join(set(rule.prerequisites.split()).intersection(targets))
+                    new_rules.add(rule)
+            self.rules = new_rules
 
         self.write(self.args.makefilename)
         return self.args.makefilename
