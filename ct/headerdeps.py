@@ -18,7 +18,7 @@ from ct.diskcache import diskcache
 
 def create(args):
     """ HeaderDeps Factory """
-    classname = args.headerdeps.title() + 'HeaderDeps'
+    classname = args.headerdeps.title() + "HeaderDeps"
     if args.verbose >= 4:
         print("Creating " + classname + " to process header dependencies.")
     depsclass = globals()[classname]
@@ -29,13 +29,15 @@ def create(args):
 def add_arguments(cap):
     """ Add the command line arguments that the HeaderDeps classes require """
     ct.apptools.add_common_arguments(cap)
-    alldepscls = [st[:-10].lower()
-                  for st in dict(globals()) if st.endswith('HeaderDeps')]
+    alldepscls = [
+        st[:-10].lower() for st in dict(globals()) if st.endswith("HeaderDeps")
+    ]
     cap.add(
-        '--headerdeps',
+        "--headerdeps",
         choices=alldepscls,
-        default='direct',
-        help="Methodology for determining header dependencies")
+        default="direct",
+        help="Methodology for determining header dependencies",
+    )
 
 
 class HeaderDepsBase(object):
@@ -68,10 +70,11 @@ class HeaderDepsBase(object):
 
     @staticmethod
     def clear_cache():
-        #print("HeaderDepsBase::clear_cache")
-        diskcache.clear_cache();
+        # print("HeaderDepsBase::clear_cache")
+        diskcache.clear_cache()
         DirectHeaderDeps.clear_cache()
         CppHeaderDeps.clear_cache()
+
 
 class DirectHeaderDeps(HeaderDepsBase):
 
@@ -84,7 +87,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         self.ancestor_paths = []
 
         # Grab the include paths from the CPPFLAGS
-        pat = re.compile('-I ([\S]*)')
+        pat = re.compile("-I ([\S]*)")
         self.includes = pat.findall(self.args.CPPFLAGS)
 
         if self.args.verbose >= 3:
@@ -120,14 +123,12 @@ class DirectHeaderDeps(HeaderDepsBase):
     @memoize
     def _create_include_list(self, realpath):
         """ Internal use. Create the list of includes for the given file """
-        with open(realpath, encoding='utf-8', errors='ignore') as ff:
+        with open(realpath, encoding="utf-8", errors="ignore") as ff:
             # Assume that all includes occur at the top of the file
             text = ff.read(8192)
 
         # The pattern is intended to match all include statements
-        pat = re.compile(
-            '^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]',
-            re.MULTILINE)
+        pat = re.compile('^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]', re.MULTILINE)
 
         return pat.findall(text)
 
@@ -148,7 +149,8 @@ class DirectHeaderDeps(HeaderDepsBase):
             if self.args.verbose >= 7:
                 print(
                     "DirectHeaderDeps::_generate_tree_impl is breaking the cycle on ",
-                    realpath)
+                    realpath,
+                )
             return node
         self.ancestor_paths.append(realpath)
 
@@ -186,13 +188,14 @@ class DirectHeaderDeps(HeaderDepsBase):
                 if self.args.verbose >= 9:
                     print(
                         "DirectHeaderDeps::_process_impl_recursive about to follow ",
-                        trialpath)
+                        trialpath,
+                    )
                 self._process_impl_recursive(trialpath, results)
 
     # TODO: Stop writing to the same cache as CPPHeaderDeps.
     # Because the magic flags rely on the .deps cache, this hack was put in
     # place.
-    @diskcache('deps', deps_mode=True)
+    @diskcache("deps", deps_mode=True)
     def _process_impl(self, realpath):
         if self.args.verbose >= 9:
             print("DirectHeaderDeps::_process_impl: " + realpath)
@@ -201,14 +204,15 @@ class DirectHeaderDeps(HeaderDepsBase):
         self._process_impl_recursive(realpath, results)
         results.remove(realpath)
         return results
-    
+
     @staticmethod
     def clear_cache():
-        #print("DirectHeaderDeps::clear_cache")
-        diskcache.clear_cache();
+        # print("DirectHeaderDeps::clear_cache")
+        diskcache.clear_cache()
         DirectHeaderDeps._search_project_includes.cache.clear()
         DirectHeaderDeps._find_include.cache.clear()
         DirectHeaderDeps._create_include_list.cache.clear()
+
 
 class CppHeaderDeps(HeaderDepsBase):
 
@@ -218,7 +222,7 @@ class CppHeaderDeps(HeaderDepsBase):
         HeaderDepsBase.__init__(self, args)
         self.preprocessor = ct.preprocessor.PreProcessor(args)
 
-    @diskcache('deps', deps_mode=True)
+    @diskcache("deps", deps_mode=True)
     def _process_impl(self, realpath):
         """ Use the -MM option to the compiler to generate the list of dependencies
             If you supply a header file rather than a source file then
@@ -239,11 +243,15 @@ class CppHeaderDeps(HeaderDepsBase):
         # Use a set to inherently remove any redundancies
         # Use realpath to get rid of  // and ../../ etc in paths (similar to normpath) and
         # to get the full path even to files in the current working directory
-        return ct.utils.OrderedSet([ct.wrappedos.realpath(x) for x in deplist.split() if x.strip(
-            '\\\t\n\r') and x not in [realpath, "/dev/null"]])
+        return ct.utils.OrderedSet(
+            [
+                ct.wrappedos.realpath(x)
+                for x in deplist.split()
+                if x.strip("\\\t\n\r") and x not in [realpath, "/dev/null"]
+            ]
+        )
 
     @staticmethod
     def clear_cache():
-        #print("CppHeaderDeps::clear_cache")
+        # print("CppHeaderDeps::clear_cache")
         diskcache.clear_cache()
-

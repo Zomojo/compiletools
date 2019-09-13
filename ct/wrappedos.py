@@ -25,7 +25,7 @@ def isdir(trialpath):
 @memoize
 def realpath(trialpath):
     """ Cache os.path.realpath """
-    # Note: We can't raise an exception on file non-existence 
+    # Note: We can't raise an exception on file non-existence
     # because this is sometimes called in order to create the file.
     rp = os.path.realpath(trialpath)
     return rp
@@ -53,6 +53,7 @@ def makedirs(path):
     except OSError:
         if not os.path.isdir(path):
             raise
+
 
 def copy(src, dest):
     """ copy the src to the dest and print any errors """

@@ -41,7 +41,7 @@ class diskcache:
     # approach is easier to understand and maintain over the
     # decorator function with decorator argument approach. See
     # http://www.artima.com/weblogs/viewpost.jsp?thread=240845
-        
+
     # Keep track of the instances so we can clear the cache
     _instances = {}
 
@@ -49,8 +49,8 @@ class diskcache:
         self.cache_identifier = cache_identifier
         self.deps_mode = deps_mode
         self.magic_mode = magic_mode
-        self.cachedir = ct.dirnamer.user_cache_dir(appname='ct')
-        if self.cachedir != 'None':
+        self.cachedir = ct.dirnamer.user_cache_dir(appname="ct")
+        if self.cachedir != "None":
             ct.wrappedos.makedirs(self.cachedir)
 
         # Keep a copy of the cachefile in memory to reduce disk IO
@@ -59,21 +59,25 @@ class diskcache:
 
     def _cachefile(self, filename):
         """ What cachefile corresponds to the given filename """
-        # Note that we can't use os.path.join because it 
+        # Note that we can't use os.path.join because it
         # THROWS AWAY self.cachedir due to filename being an absolute path.
         # That _feature_ cost me half a day.
-        return ct.wrappedos.realpath(''.join([self.cachedir, os.sep, filename, '.', self.cache_identifier]))
+        return ct.wrappedos.realpath(
+            "".join([self.cachedir, os.sep, filename, ".", self.cache_identifier])
+        )
 
     def _deps_cachefile(self, filename):
         """ What deps cachefile corresponds to the given filename """
-        return ct.wrappedos.realpath(''.join([self.cachedir, os.sep, filename, '.deps']))
+        return ct.wrappedos.realpath(
+            "".join([self.cachedir, os.sep, filename, ".deps"])
+        )
 
     def cached_cachefile(self, cachefile):
         """ Rather than using @memoize, keep the cache so that 
             we can manually prepopulate it.
         """
         if cachefile not in self.cache:
-            with open(cachefile, mode='rb') as cf:
+            with open(cachefile, mode="rb") as cf:
                 self.cache[cachefile] = pickle.load(cf)
                 if self.deps_mode:
                     # Verify that each of the files in the pickled disk cache still exists
@@ -83,7 +87,12 @@ class diskcache:
                             os.remove(cachefile)
                             self.cache[cachefile] = None
                             diskcache.clear_cache()
-                            raise IOError("Diskcache " + cachefile + " refered to nonexistent " + filename)
+                            raise IOError(
+                                "Diskcache "
+                                + cachefile
+                                + " refered to nonexistent "
+                                + filename
+                            )
 
         return self.cache[cachefile]
 
@@ -184,7 +193,7 @@ class diskcache:
             newargs = args[:-1] + (filename,)
             result = func(*newargs)
             ct.wrappedos.makedirs(ct.wrappedos.dirname(cachefile))
-            with open(cachefile, mode='wb') as cf:
+            with open(cachefile, mode="wb") as cf:
                 pickle.dump(result, cf)
             self.cache[cachefile] = result
         else:
@@ -200,8 +209,9 @@ class diskcache:
                     self._refresh_cache(dep, depcachefile, func, *args)
 
     def __call__(self, func):
-        try:            
-            if ct.dirnamer.user_cache_dir() == 'None':
+        try:
+            if ct.dirnamer.user_cache_dir() == "None":
+
                 @functools.wraps(func)
                 @memoize
                 def memcacher(*args):
@@ -226,20 +236,18 @@ class diskcache:
             if not os.path.exists(cachefile):
                 self.cache[cachefile] = None
                 self._refresh_cache(filename, cachefile, func, *args)
-                
-            if not self.deps_mode and not self.magic_mode and self._any_changes(
-                    filename,
-                    cachefile):
+
+            if (
+                not self.deps_mode
+                and not self.magic_mode
+                and self._any_changes(filename, cachefile)
+            ):
                 self._refresh_cache(filename, cachefile, func, *args)
 
-            if self.deps_mode and self._recursive_any_changes(
-                    filename,
-                    cachefile):
+            if self.deps_mode and self._recursive_any_changes(filename, cachefile):
                 self._refresh_cache(filename, cachefile, func, *args)
 
-            if self.magic_mode and self._magic_mode_any_changes(
-                    filename,
-                    cachefile):
+            if self.magic_mode and self._magic_mode_any_changes(filename, cachefile):
                 self._refresh_cache(filename, cachefile, func, *args)
 
             return self.cached_cachefile(cachefile)

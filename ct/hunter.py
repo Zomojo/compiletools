@@ -28,7 +28,9 @@ def add_arguments(cap):
         name="allow-magic-source-in-header",
         dest="allow_magic_source_in_header",
         default=False,
-        help="Set this to true if you want to use the //#SOURCE=foo.cpp magic flag in your header files. Defaults to false because it is significantly slower.")
+        help="Set this to true if you want to use the //#SOURCE=foo.cpp magic flag in your header files. Defaults to false because it is significantly slower.",
+    )
+
 
 class Hunter(object):
 
@@ -42,15 +44,11 @@ class Hunter(object):
         self.magicparser = magicparser
 
     def _extractSOURCE(self, realpath):
-        sources = self.magicparser.parse(realpath).get('SOURCE', ct.utils.OrderedSet())
+        sources = self.magicparser.parse(realpath).get("SOURCE", ct.utils.OrderedSet())
         cwd = ct.wrappedos.dirname(realpath)
         ess = {ct.wrappedos.realpath(os.path.join(cwd, es)) for es in sources}
         if self.args.verbose >= 2 and ess:
-            print(
-                "Hunter::_extractSOURCE. realpath=",
-                realpath,
-                " SOURCE flag:",
-                ess)
+            print("Hunter::_extractSOURCE. realpath=", realpath, " SOURCE flag:", ess)
         return ess
 
     def _required_files_impl(self, realpath, processed=None):
@@ -62,9 +60,7 @@ class Hunter(object):
         if not processed:
             processed = ct.utils.OrderedSet()
         if self.args.verbose >= 7:
-            print(
-                "Hunter::_required_files_impl. Finding header deps for ",
-                realpath)
+            print("Hunter::_required_files_impl. Finding header deps for ", realpath)
 
         # Don't try and collapse these lines.
         # We don't want todo as a handle to the headerdeps.process object.
@@ -73,7 +69,7 @@ class Hunter(object):
 
         # One of the magic flags is SOURCE.  If that was present, add to the
         # file list.
-        if self.args.allow_magic_source_in_header or ct.utils.issource(realpath): 
+        if self.args.allow_magic_source_in_header or ct.utils.issource(realpath):
             todo |= self._extractSOURCE(realpath)
 
         # The header deps and magic flags have been parsed at this point so it
@@ -90,21 +86,15 @@ class Hunter(object):
         while todo:
             if self.args.verbose >= 9:
                 print(
-                    "Hunter::_required_files_impl. ",
-                    realpath,
-                    " remaining todo:",
-                    todo)
+                    "Hunter::_required_files_impl. ", realpath, " remaining todo:", todo
+                )
             morefiles = ct.utils.OrderedSet()
             for nextfile in todo:
                 morefiles |= self._required_files_impl(nextfile, processed)
             todo = morefiles.difference(processed)
 
         if self.args.verbose >= 9:
-            print(
-                "Hunter::_required_files_impl. ",
-                realpath,
-                " Returning ",
-                processed)
+            print("Hunter::_required_files_impl. ", realpath, " Returning ", processed)
         return processed
 
     @memoize
@@ -116,8 +106,13 @@ class Hunter(object):
         """
         if self.args.verbose >= 9:
             print("Hunter::required_source_files for " + filename)
-        return ct.utils.OrderedSet([filename for filename in self.required_files(
-            filename) if ct.utils.issource(filename)])
+        return ct.utils.OrderedSet(
+            [
+                filename
+                for filename in self.required_files(filename)
+                if ct.utils.issource(filename)
+            ]
+        )
 
     @memoize
     def required_files(self, filename):
@@ -132,7 +127,7 @@ class Hunter(object):
 
     @staticmethod
     def clear_cache():
-        #print("Hunter::clear_cache")
+        # print("Hunter::clear_cache")
         ct.wrappedos.clear_cache()
         Hunter.required_source_files.cache.clear()
         Hunter.required_files.cache.clear()
@@ -144,7 +139,5 @@ class Hunter(object):
 
     def header_dependencies(self, source_filename):
         if self.args.verbose >= 8:
-            print(
-                "Hunter asking for header dependencies for ",
-                source_filename)
+            print("Hunter asking for header dependencies for ", source_filename)
         return self.headerdeps.process(source_filename)

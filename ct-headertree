@@ -17,9 +17,7 @@ class FlatStyle(ct.git_utils.NameAdjuster):
 
     def __init__(self, tree_, args):
         ct.git_utils.NameAdjuster.__init__(self, args)
-        tree.depth_first_traverse(
-            node=tree_,
-            pre_traverse_function=self.print_wrapper)
+        tree.depth_first_traverse(node=tree_, pre_traverse_function=self.print_wrapper)
 
     def print_wrapper(self, key):
         """ Wrap the builtin print so that it can be passed to the tree.depth_first_traverse """
@@ -34,8 +32,8 @@ class DepthStyle(ct.git_utils.NameAdjuster):
         ct.git_utils.NameAdjuster.__init__(self, args)
         self.indicator = indicator
         tree.depth_first_traverse(
-            node=tree_,
-            pre_traverse_function=self.depth_indicator_print)
+            node=tree_, pre_traverse_function=self.depth_indicator_print
+        )
 
     def depth_indicator_print(self, key, depth):
         """ Print the filenames with a leading indicator to denote the depth of the file from the root """
@@ -53,9 +51,7 @@ class DotStyle(ct.git_utils.NameAdjuster):
             # nodes
             self.name = self.adjust(key)
         self._print_header()
-        tree.depth_first_traverse(
-            node=tree_,
-            pre_traverse_function=self._print_node)
+        tree.depth_first_traverse(node=tree_, pre_traverse_function=self._print_node)
         self._print_footer()
 
     def _print_header(self):
@@ -69,12 +65,7 @@ class DotStyle(ct.git_utils.NameAdjuster):
         print('"' + self.adjust(key) + '"')
 
         for child_key in value:
-            print(
-                '"' +
-                self.adjust(key) +
-                '"->"' +
-                self.adjust(child_key) +
-                '"')
+            print('"' + self.adjust(key) + '"->"' + self.adjust(child_key) + '"')
 
 
 class TreeStyle(ct.git_utils.NameAdjuster):
@@ -88,7 +79,7 @@ class TreeStyle(ct.git_utils.NameAdjuster):
     #       should be command line settable so that you only get what
     #       you want
 
-    def __init__(self, tree_, args ):
+    def __init__(self, tree_, args):
         ct.git_utils.NameAdjuster.__init__(self, args)
         self.verbose = args.verbose
 
@@ -113,7 +104,8 @@ class TreeStyle(ct.git_utils.NameAdjuster):
         tree.depth_first_traverse(
             node=tree_,
             pre_traverse_function=self._pre,
-            post_traverse_function=self._post)
+            post_traverse_function=self._post,
+        )
         self.print()
 
     def _pre(self, key):
@@ -138,19 +130,28 @@ class TreeStyle(ct.git_utils.NameAdjuster):
         self.max_parents = max(self.max_parents, len(self.parents[key]))
 
         # store cumulative includes and direct includes
-        self.reverse_result.append({'cumulative': last, 'self': len(
-            value), 'depth': depth, 'name': name, 'key': key})
+        self.reverse_result.append(
+            {
+                "cumulative": last,
+                "self": len(value),
+                "depth": depth,
+                "name": name,
+                "key": key,
+            }
+        )
 
     def print(self):
         if self.verbose >= 1:
             print(
-                "First column is the cumulative count of headers (recursively) included by the filename.")
+                "First column is the cumulative count of headers (recursively) included by the filename."
+            )
             print(
-                "Second column is the self count.  That is, the headers directly included by the filename.")
+                "Second column is the self count.  That is, the headers directly included by the filename."
+            )
             print(
-                "Third column is the number of times the file is duplicated in this tree.")
-            print(
-                "Fourth column is the number of unique parents the file has.")
+                "Third column is the number of times the file is duplicated in this tree."
+            )
+            print("Fourth column is the number of unique parents the file has.")
 
         def _righttreechars(child_index):
             return {1: u"\u2514\u2500"}.get(child_index, u"\u251c\u2500")
@@ -172,37 +173,29 @@ class TreeStyle(ct.git_utils.NameAdjuster):
             tree_structure = ""
 
             # Trim any no longer needed information from the remaining children
-            if item['depth'] < len(remaining_children):
-                remaining_children = remaining_children[:(item['depth'])]
+            if item["depth"] < len(remaining_children):
+                remaining_children = remaining_children[: (item["depth"])]
 
             # Create the internal tree structure up to the grandparents
-            if item['depth'] > 1:
-                for child_index in remaining_children[:(item['depth'] - 1)]:
+            if item["depth"] > 1:
+                for child_index in remaining_children[: (item["depth"] - 1)]:
                     tree_structure += _internaltreechars(child_index)
 
             # Add on the connector to the parent
-            if item['depth'] > 0:
-                tree_structure += _righttreechars(
-                    remaining_children[
-                        item['depth'] -
-                        1])
+            if item["depth"] > 0:
+                tree_structure += _righttreechars(remaining_children[item["depth"] - 1])
             print(
-                cumulative_format_str.format(
-                    c=item['cumulative']) +
-                " " +
-                self_format_str.format(
-                    s=item['self']) +
-                " " +
-                duplicates_format_str.format(
-                    d=self.duplicates[
-                        item['key']]) +
-                " " +
-                parents_format_str.format(
-                    p=len(self.parents[
-                        item['key']])) +
-                " " +
-                tree_structure +
-                item['name'])
+                cumulative_format_str.format(c=item["cumulative"])
+                + " "
+                + self_format_str.format(s=item["self"])
+                + " "
+                + duplicates_format_str.format(d=self.duplicates[item["key"]])
+                + " "
+                + parents_format_str.format(p=len(self.parents[item["key"]]))
+                + " "
+                + tree_structure
+                + item["name"]
+            )
 
             # Since the child has now been drawn, reduce the parents count of
             # their remaining children (except for the topmost node which has
@@ -210,29 +203,24 @@ class TreeStyle(ct.git_utils.NameAdjuster):
             if remaining_children:
                 remaining_children[-1] -= 1
 
-            if item['self'] > 0:
-                remaining_children.append(item['self'])
+            if item["self"] > 0:
+                remaining_children.append(item["self"])
 
 
 def main(argv=None):
     # Python 3 stdout accepts unicode by default
     # So we only need to force python 2 stdout to accept unicode
     if sys.version_info[0] < 3:
-        UTF8Writer = codecs.getwriter('utf8')
+        UTF8Writer = codecs.getwriter("utf8")
         sys.stdout = UTF8Writer(sys.stdout)
 
     cap = configargparse.getArgumentParser()
-    cap.add("filename", help="File to start tracing headers from", nargs='+')
+    cap.add("filename", help="File to start tracing headers from", nargs="+")
 
     # Figure out what style classes are available and add them to the command
     # line options
-    styles = [st[:-5].lower()
-              for st in dict(globals()) if st.endswith('Style')]
-    cap.add(
-        '--style',
-        choices=styles,
-        default='tree',
-        help="Output formatting style")
+    styles = [st[:-5].lower() for st in dict(globals()) if st.endswith("Style")]
+    cap.add("--style", choices=styles, default="tree", help="Output formatting style")
 
     ct.headerdeps.add_arguments(cap)
     args = ct.apptools.parseargs(cap, argv)
@@ -241,12 +229,14 @@ def main(argv=None):
     if not ct.wrappedos.isfile(args.filename[0]):
         sys.stderr.write(
             "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(
-                args.filename[0]))
+                args.filename[0]
+            )
+        )
         exit(1)
 
     # Create the headertree then print it in the appropriate style
     inctree = ht.generatetree(args.filename[0])
-    styleclass = globals()[args.style.title() + 'Style']
+    styleclass = globals()[args.style.title() + "Style"]
 
     # Construct an instance of the style class which will print the header
     # tree as a side effect
@@ -257,13 +247,15 @@ def main(argv=None):
 
     return 0
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
-        description='Create a tree of header dependencies starting at a given C/C++ file. ',
+        description="Create a tree of header dependencies starting at a given C/C++ file. ",
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        auto_env_var_prefix='',
+        auto_env_var_prefix="",
         default_config_files=config_files,
-        args_for_setting_config_path=["-c","--config"],
-        ignore_unknown_config_file_keys=True)
+        args_for_setting_config_path=["-c", "--config"],
+        ignore_unknown_config_file_keys=True,
+    )
     sys.exit(main())

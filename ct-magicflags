@@ -6,14 +6,15 @@ import ct.utils
 import ct.magicflags
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     variant = ct.configutils.extract_variant()
     config_files = ct.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
-        description='Parse a file and show the magicflags it exports. ',
+        description="Parse a file and show the magicflags it exports. ",
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        auto_env_var_prefix='',
+        auto_env_var_prefix="",
         default_config_files=config_files,
-        args_for_setting_config_path=["-c","--config"],
-        ignore_unknown_config_file_keys=True)
+        args_for_setting_config_path=["-c", "--config"],
+        ignore_unknown_config_file_keys=True,
+    )
     sys.exit(ct.magicflags.main())

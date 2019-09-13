@@ -26,7 +26,7 @@ def _reload_ct(cache_home):
     """ Set the CTCACHE environment variable to cache_home
         and reload the ct.hunter module
     """
-    os.environ['CTCACHE'] = cache_home
+    os.environ["CTCACHE"] = cache_home
     reload(ct.dirnamer)
     reload(ct.headerdeps)
 
@@ -43,13 +43,15 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
     if extraargs is None:
         extraargs = []
     temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
-    
-    argv = [ '--headerdeps',
+
+    argv = [
+        "--headerdeps",
         name,
-        '--include',
+        "--include",
         uth.ctdir(),
-        '-c',
-        temp_config_name] + extraargs
+        "-c",
+        temp_config_name,
+    ] + extraargs
     cachename = os.path.join(tempdir, name)
     _reload_ct(cachename)
 
@@ -62,14 +64,14 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
 
 
 class TestHeaderDepsModule(unittest.TestCase):
-
     def setUp(self):
         uth.reset()
         cap = configargparse.getArgumentParser(
-            description='Configargparser in test code',
+            description="Configargparser in test code",
             formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-            args_for_setting_config_path=["-c","--config"],
-            ignore_unknown_config_file_keys=False)
+            args_for_setting_config_path=["-c", "--config"],
+            ignore_unknown_config_file_keys=False,
+        )
         ct.headerdeps.add_arguments(cap)
 
     def _direct_cpp_tester(self, filename, extraargs=None):
@@ -78,17 +80,17 @@ class TestHeaderDepsModule(unittest.TestCase):
             extraargs = []
         realpath = ct.wrappedos.realpath(filename)
         temp_config_name = ct.unittesthelper.create_temp_config()
-        argv = ['--config='+temp_config_name] + extraargs
+        argv = ["--config=" + temp_config_name] + extraargs
 
         # Turn off diskcaching so that we can't just read up a prior result
         origcache = ct.dirnamer.user_cache_dir()
-        _reload_ct('None')
+        _reload_ct("None")
         cap = configargparse.getArgumentParser()
         ct.headerdeps.add_arguments(cap)
-        argvdirect = argv + ['--headerdeps=direct']
+        argvdirect = argv + ["--headerdeps=direct"]
         argsdirect = ct.apptools.parseargs(cap, argvdirect)
 
-        argvcpp = argv + ['--headerdeps', 'cpp']
+        argvcpp = argv + ["--headerdeps", "cpp"]
         argscpp = ct.apptools.parseargs(cap, argvcpp)
 
         hdirect = ct.headerdeps.create(argsdirect)
@@ -101,11 +103,12 @@ class TestHeaderDepsModule(unittest.TestCase):
 
     def test_direct_and_cpp_generate_same_results(self):
         filenames = [
-            'factory/test_factory.cpp',
-            'numbers/test_direct_include.cpp',
-            'dottypaths/dottypaths.cpp']
+            "factory/test_factory.cpp",
+            "numbers/test_direct_include.cpp",
+            "dottypaths/dottypaths.cpp",
+        ]
         for filename in filenames:
-            self._direct_cpp_tester(os.path.join(uth.samplesdir(),filename))
+            self._direct_cpp_tester(os.path.join(uth.samplesdir(), filename))
 
     def _direct_and_cpp_generate_same_results_ex(self, extraargs=None):
         """ Test that HeaderTree and HeaderDependencies give the same results.
@@ -119,18 +122,20 @@ class TestHeaderDepsModule(unittest.TestCase):
         tempdir = tempfile.mkdtemp()
         samplesdir = uth.samplesdir()
         relativepaths = [
-            'factory/test_factory.cpp',
-            'numbers/test_direct_include.cpp',
-            'simple/helloworld_c.c',
-            'simple/helloworld_cpp.cpp',
-            'simple/test_cflags.c']
-        realpaths = [os.path.join(samplesdir, filename)
-                     for filename in relativepaths]
+            "factory/test_factory.cpp",
+            "numbers/test_direct_include.cpp",
+            "simple/helloworld_c.c",
+            "simple/helloworld_cpp.cpp",
+            "simple/test_cflags.c",
+        ]
+        realpaths = [os.path.join(samplesdir, filename) for filename in relativepaths]
 
         directcache, config1, directresults = _generatecache(
-            tempdir, 'direct', realpaths, extraargs)
+            tempdir, "direct", realpaths, extraargs
+        )
         cppcache, config2, cppresults = _generatecache(
-            tempdir, 'cpp', realpaths, extraargs)
+            tempdir, "cpp", realpaths, extraargs
+        )
 
         # Check the returned python sets are the same regardless of methodology
         # used to create
@@ -152,5 +157,6 @@ class TestHeaderDepsModule(unittest.TestCase):
     def tearDown(self):
         uth.reset()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

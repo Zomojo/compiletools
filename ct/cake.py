@@ -19,8 +19,8 @@ import ct.findtargets
 import ct.jobs
 import ct.wrappedos
 
-class Cake(object):
 
+class Cake(object):
     def __init__(self, args):
         self.args = args
         self.namer = None
@@ -35,11 +35,13 @@ class Cake(object):
         """
         namer = ct.namer.Namer(args)
         if namer.executable_dir() not in args.makefilename:
-            movedmakefile = os.path.join(
-                namer.executable_dir(), args.makefilename)
+            movedmakefile = os.path.join(namer.executable_dir(), args.makefilename)
             if args.verbose > 4:
                 print(
-                    "Makefile location is being altered.  New location is {}".format(movedmakefile))
+                    "Makefile location is being altered.  New location is {}".format(
+                        movedmakefile
+                    )
+                )
             args.makefilename = movedmakefile
 
     @staticmethod
@@ -54,10 +56,7 @@ class Cake(object):
         self.namer = ct.namer.Namer(self.args)
         self.headerdeps = ct.headerdeps.create(self.args)
         self.magicparser = ct.magicflags.create(self.args, self.headerdeps)
-        self.hunter = ct.hunter.Hunter(
-            self.args,
-            self.headerdeps,
-            self.magicparser)
+        self.hunter = ct.hunter.Hunter(self.args, self.headerdeps, self.magicparser)
 
     @staticmethod
     def _add_prepend_append_argument(cap, name, destname=None, extrahelp=None):
@@ -68,63 +67,71 @@ class Cake(object):
         if extrahelp is None:
             extrahelp = ""
 
-        cap.add("".join(["--",
-                         "prepend",
-                         "-",
-                         name.upper()]),
-                dest="".join(["prepend",
-                              destname.lower()]),
-                action="append",
-                help=" ".join(["prepend".title(),
-                               "the given text to the",
-                               name.upper(),
-                               "already set. Useful for adding search paths etc.",
-                               extrahelp]))
-        cap.add("".join(["--",
-                         "append",
-                         "-",
-                         name.upper()]),
-                dest="".join(["append",
-                              destname.lower()]),
-                action="append",
-                help=" ".join(["append".title(),
-                               "the given text to the",
-                               name.upper(),
-                               "already set. Useful for adding search paths etc.",
-                               extrahelp]))
+        cap.add(
+            "".join(["--", "prepend", "-", name.upper()]),
+            dest="".join(["prepend", destname.lower()]),
+            action="append",
+            help=" ".join(
+                [
+                    "prepend".title(),
+                    "the given text to the",
+                    name.upper(),
+                    "already set. Useful for adding search paths etc.",
+                    extrahelp,
+                ]
+            ),
+        )
+        cap.add(
+            "".join(["--", "append", "-", name.upper()]),
+            dest="".join(["append", destname.lower()]),
+            action="append",
+            help=" ".join(
+                [
+                    "append".title(),
+                    "the given text to the",
+                    name.upper(),
+                    "already set. Useful for adding search paths etc.",
+                    extrahelp,
+                ]
+            ),
+        )
 
     @staticmethod
     def add_arguments(cap):
         ct.makefile.MakefileCreator.add_arguments(cap)
         ct.jobs.add_arguments(cap)
 
-        Cake._add_prepend_append_argument(cap, 'cppflags')
-        Cake._add_prepend_append_argument(cap, 'cflags')
-        Cake._add_prepend_append_argument(cap, 'cxxflags')
-        Cake._add_prepend_append_argument(cap, 'ldflags')
+        Cake._add_prepend_append_argument(cap, "cppflags")
+        Cake._add_prepend_append_argument(cap, "cflags")
+        Cake._add_prepend_append_argument(cap, "cxxflags")
+        Cake._add_prepend_append_argument(cap, "ldflags")
         Cake._add_prepend_append_argument(
             cap,
-            'linkflags',
-            destname='ldflags',
-            extrahelp='Synonym for setting LDFLAGS.')
+            "linkflags",
+            destname="ldflags",
+            extrahelp="Synonym for setting LDFLAGS.",
+        )
 
         cap.add(
             "--file-list",
             "--filelist",
-            dest='filelist',
-            action='store_true',
-            help="Print list of referenced files.")
+            dest="filelist",
+            action="store_true",
+            help="Print list of referenced files.",
+        )
         ct.filelist.Filelist.add_arguments(cap)  # To get the style arguments
 
         cap.add(
             "--begintests",
-            dest='tests',
-            nargs='*',
-            help="Starts a test block. The cpp files following this declaration will generate executables which are then run. Synonym for --tests")
+            dest="tests",
+            nargs="*",
+            help="Starts a test block. The cpp files following this declaration will generate executables which are then run. Synonym for --tests",
+        )
         cap.add(
             "--endtests",
-            action='store_true',
-            help="Ignored. For backwards compatibility only.")
+            action="store_true",
+            help="Ignored. For backwards compatibility only.",
+        )
 
         ct.findtargets.add_arguments(cap)
 
@@ -132,33 +139,34 @@ class Cake(object):
             parser=cap,
             name="preprocess",
             default=False,
-            help="Set both --magic=cpp and --headerdeps=cpp. Defaults to false because it is slower.")
+            help="Set both --magic=cpp and --headerdeps=cpp. Defaults to false because it is slower.",
+        )
 
         cap.add(
             "--CAKE_PREPROCESS",
             dest="preprocess",
             default=False,
-            help="Deprecated. Synonym for preprocess")
+            help="Deprecated. Synonym for preprocess",
+        )
 
-        cap.add(
-            "--clean",
-            action='store_true',
-            help="Agressively cleanup.")
+        cap.add("--clean", action="store_true", help="Agressively cleanup.")
 
         cap.add(
             "-o",
             "--output",
-            help="When there is only a single build product, rename it to this name.")
+            help="When there is only a single build product, rename it to this name.",
+        )
 
         ct.utils.add_flag_argument(
             parser=cap,
             name="serialise-tests",
             dest="serialisetests",
             default=False,
-            help="Force the unit tests to run serially rather than in parallel. Defaults to false because it is slower.")
+            help="Force the unit tests to run serially rather than in parallel. Defaults to false because it is slower.",
+        )
 
     def _callfilelist(self):
-        filelist = ct.filelist.Filelist(self.args, self.hunter, style='flat')
+        filelist = ct.filelist.Filelist(self.args, self.hunter, style="flat")
         filelist.process()
 
     def _copyexes(self):
@@ -170,25 +178,22 @@ class Cake(object):
                 print(self.args.output)
             if self.args.filename:
                 ct.wrappedos.copy(
-                    self.namer.executable_pathname(
-                        self.args.filename[0]),
-                    self.args.output)
+                    self.namer.executable_pathname(self.args.filename[0]),
+                    self.args.output,
+                )
             if self.args.static:
-                ct.wrappedos.copy(
-                    self.namer.staticlibrary_pathname(),
-                    self.args.output)
+                ct.wrappedos.copy(self.namer.staticlibrary_pathname(), self.args.output)
             if self.args.dynamic:
                 ct.wrappedos.copy(
-                    self.namer.dynamiclibrary_pathname(),
-                    self.args.output)
+                    self.namer.dynamiclibrary_pathname(), self.args.output
+                )
         else:
             outputdir = self.namer.topbindir()
             filelist = self.namer.all_executable_pathnames()
             for srcexe in filelist:
                 base = os.path.basename(srcexe)
-                destexe = ct.wrappedos.realpath(
-                    os.path.join(outputdir, base))
-                if ct.utils.isexecutable(srcexe) and srcexe != destexe: 
+                destexe = ct.wrappedos.realpath(os.path.join(outputdir, base))
+                if ct.utils.isexecutable(srcexe) and srcexe != destexe:
                     if self.args.verbose > 0:
                         print("".join([outputdir, base]))
                     ct.wrappedos.copy(srcexe, outputdir)
@@ -215,31 +220,35 @@ class Cake(object):
         makefile_creator = ct.makefile.MakefileCreator(self.args, self.hunter)
         makefilename = makefile_creator.create()
         ct.wrappedos.makedirs(self.namer.executable_dir())
-        cmd = ['make']
+        cmd = ["make"]
         if self.args.verbose <= 1:
-            cmd.append('-s')
+            cmd.append("-s")
         if self.args.verbose >= 4:
             # --trace first comes in GNU make 4.0
-            make_version = subprocess.check_output(['make','--version'], universal_newlines=True).splitlines()[0].split(' ')[-1].split('.')[0]
+            make_version = (
+                subprocess.check_output(["make", "--version"], universal_newlines=True)
+                .splitlines()[0]
+                .split(" ")[-1]
+                .split(".")[0]
+            )
             if int(make_version) >= 4:
-                cmd.append('--trace')
-        cmd.extend(['-j', str(self.args.parallel),
-                    '-f', self.args.makefilename])
+                cmd.append("--trace")
+        cmd.extend(["-j", str(self.args.parallel), "-f", self.args.makefilename])
         if self.args.clean:
-            cmd.append('realclean')
+            cmd.append("realclean")
         else:
-            cmd.append('build')
+            cmd.append("build")
         if self.args.verbose >= 1:
             print(" ".join(cmd))
         subprocess.check_call(cmd, universal_newlines=True)
 
         if self.args.tests and not self.args.clean:
-            cmd = ['make']
+            cmd = ["make"]
             if not self.args.serialisetests:
-                cmd.extend(['-j', str(self.args.parallel)])
+                cmd.extend(["-j", str(self.args.parallel)])
             if self.args.verbose < 2:
-                cmd.append('-s')
-            cmd.extend(['-f', self.args.makefilename, 'runtests'])
+                cmd.append("-s")
+            cmd.extend(["-f", self.args.makefilename, "runtests"])
             if self.args.verbose >= 2:
                 print(" ".join(cmd))
             subprocess.check_call(cmd, universal_newlines=True)
@@ -273,14 +282,14 @@ class Cake(object):
         recreateobjs = False
         if self.args.static and len(self.args.static) == 1:
             self.args.static.extend(
-                self.hunter.required_source_files(
-                    self.args.static[0]))
+                self.hunter.required_source_files(self.args.static[0])
+            )
             recreateobjs = True
 
         if self.args.dynamic and len(self.args.dynamic) == 1:
             self.args.dynamic.extend(
-                self.hunter.required_source_files(
-                    self.args.dynamic[0]))
+                self.hunter.required_source_files(self.args.dynamic[0])
+            )
             recreateobjs = True
 
         if self.args.auto:
@@ -303,7 +312,6 @@ class Cake(object):
         else:
             self._callmakefile()
 
-
     def clear_cache(self):
         """ Only useful in test scenarios where you need to reset to a pristine state """
         ct.wrappedos.clear_cache()
@@ -320,26 +328,24 @@ def signal_handler(signal, frame):
 
 def main(argv):
     variant = ct.configutils.extract_variant(argv=argv)
-    config_files = ct.configutils.config_files_from_variant(variant=variant,argv=argv)
+    config_files = ct.configutils.config_files_from_variant(variant=variant, argv=argv)
     cap = configargparse.getArgumentParser(
-        description='A convenience tool to aid migration from cake to the ct-* tools',
+        description="A convenience tool to aid migration from cake to the ct-* tools",
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        auto_env_var_prefix='',
+        auto_env_var_prefix="",
         default_config_files=config_files,
-        args_for_setting_config_path=["-c","--config"],
-        ignore_unknown_config_file_keys=True)
+        args_for_setting_config_path=["-c", "--config"],
+        ignore_unknown_config_file_keys=True,
+    )
     Cake.add_arguments(cap)
     Cake.registercallback()
 
     args = ct.apptools.parseargs(cap, argv)
 
-    if not any([args.filename,
-                args.static,
-                args.dynamic,
-                args.tests,
-                args.auto]):
+    if not any([args.filename, args.static, args.dynamic, args.tests, args.auto]):
         print(
-            'Nothing for cake to do.  Did you mean cake --auto? Use cake --help for help.')
+            "Nothing for cake to do.  Did you mean cake --auto? Use cake --help for help."
+        )
         return 0
 
     signal.signal(signal.SIGINT, signal_handler)
@@ -352,8 +358,7 @@ def main(argv):
         cake.clear_cache()
     except IOError as ioe:
         if args.verbose < 2:
-            print(
-                " ".join(["Error processing", ioe.filename, ". Does it exist?"]))
+            print(" ".join(["Error processing", ioe.filename, ". Does it exist?"]))
             return 1
         else:
             raise
@@ -363,5 +368,5 @@ def main(argv):
             return 1
         else:
             raise
-    
+
     return 0

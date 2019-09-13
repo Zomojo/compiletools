@@ -25,28 +25,25 @@ def add_base_arguments(cap, argv=None, variant=None):
     cap.add(
         "--variant",
         help="Specifies which variant of the config should be used. "
-             "Use the config name without the .conf",
-        default=variant)
+        "Use the config name without the .conf",
+        default=variant,
+    )
     cap.add(
         "-v",
         "--verbose",
         help="Output verbosity. Add more v's to make it more verbose",
         action="count",
-        default=0)
+        default=0,
+    )
     cap.add(
         "-q",
         "--quiet",
         help="Decrement verbosity. Useful in apps where the default verbosity > 0.",
         action="count",
-        default=0)
-    cap.add(
-        "--version",
-        action="version",
-        version=__version__)
-    cap.add(
-        "-?",
-        action='help',
-        help='Help')
+        default=0,
+    )
+    cap.add("--version", action="version", version=__version__)
+    cap.add("-?", action="help", help="Help")
 
 
 def add_common_arguments(cap, argv=None, variant=None):
@@ -56,61 +53,56 @@ def add_common_arguments(cap, argv=None, variant=None):
     cap.add(
         "--ID",
         help="Compiler identification string.  The same string as CMake uses.",
-        default=None)
-    cap.add(
-        "--CPP",
-        help="C preprocessor",
-        default="unsupplied_implies_use_CXX")
+        default=None,
+    )
+    cap.add("--CPP", help="C preprocessor", default="unsupplied_implies_use_CXX")
     cap.add("--CC", help="C compiler", default="gcc")
     cap.add("--CXX", help="C++ compiler", default="g++")
     cap.add(
         "--CPPFLAGS",
         help="C preprocessor flags",
-        default="unsupplied_implies_use_CXXFLAGS")
-    cap.add(
-        "--CXXFLAGS",
-        help="C++ compiler flags",
-        default="-fPIC -g -Wall")
-    cap.add(
-        "--CFLAGS",
-        help="C compiler flags",
-        default="-fPIC -g -Wall")
+        default="unsupplied_implies_use_CXXFLAGS",
+    )
+    cap.add("--CXXFLAGS", help="C++ compiler flags", default="-fPIC -g -Wall")
+    cap.add("--CFLAGS", help="C compiler flags", default="-fPIC -g -Wall")
     ct.utils.add_flag_argument(
         parser=cap,
         name="git-root",
         dest="git_root",
         default=True,
-        help="Determine the git root then add it to the include paths.")
+        help="Determine the git root then add it to the include paths.",
+    )
     cap.add(
         "--include",
         help="Extra path(s) to add to the list of include paths",
-        nargs='*',
-        default=[])
+        nargs="*",
+        default=[],
+    )
     ct.git_utils.NameAdjuster.add_arguments(cap)
 
 
 def add_link_arguments(cap):
     """ Insert the link arguments into the configargparse singleton """
-    cap.add(
-        "--LD",
-        help="Linker",
-        default="unsupplied_implies_use_CXX")
+    cap.add("--LD", help="Linker", default="unsupplied_implies_use_CXX")
     cap.add(
         "--LDFLAGS",
         "--LINKFLAGS",
         help="Linker flags",
-        default="unsupplied_implies_use_CXXFLAGS")
+        default="unsupplied_implies_use_CXXFLAGS",
+    )
 
 
 def add_output_directory_arguments(cap, variant):
     cap.add(
         "--bindir",
         help="Output directory for executables",
-        default="".join(["bin/", variant]))
+        default="".join(["bin/", variant]),
+    )
     cap.add(
         "--objdir",
         help="Output directory for object files",
-        default="".join(["bin/", variant, "/obj"]))
+        default="".join(["bin/", variant, "/obj"]),
+    )
 
 
 def add_target_arguments(cap):
@@ -118,25 +110,22 @@ def add_target_arguments(cap):
         into the configargparse singleton.
     """
     # Don't re-add filename if it is already in the configargparsea
-    if not any('filename' in action.dest for action in cap._actions):
-        cap.add(
-            "filename",
-            nargs="*",
-            help="File(s) to compile to an executable(s)")
+    if not any("filename" in action.dest for action in cap._actions):
+        cap.add("filename", nargs="*", help="File(s) to compile to an executable(s)")
     cap.add(
         "--dynamic",
         "--dynamic-library",
-        nargs='*',
-        help="File(s) to compile to a dynamic library")
+        nargs="*",
+        help="File(s) to compile to a dynamic library",
+    )
     cap.add(
         "--static",
         "--static-library",
-        nargs='*',
-        help="File(s) to compile to a static library")
-    cap.add(
-        "--tests",
-        nargs='*',
-        help="File(s) to compile to a test and then execute")
+        nargs="*",
+        help="File(s) to compile to a static library",
+    )
+    cap.add("--tests", nargs="*", help="File(s) to compile to a test and then execute")
+
 
 def add_target_arguments_ex(cap):
     """ Add the target arguments and the extra arguments that augment 
@@ -145,15 +134,18 @@ def add_target_arguments_ex(cap):
     add_target_arguments(cap)
     cap.add(
         "--TESTPREFIX",
-        help='Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"')
+        help='Runs tests with the given prefix, eg. "valgrind --quiet --error-exitcode=1"',
+    )
     cap.add(
         "--project-version",
         dest="projectversion",
-        help="Set the CAKE_PROJECT_VERSION macro to this value")
+        help="Set the CAKE_PROJECT_VERSION macro to this value",
+    )
     cap.add(
         "--project-version-cmd",
         dest="projectversioncmd",
-        help="Execute this command to determine the CAKE_PROJECT_VERSION macro")
+        help="Execute this command to determine the CAKE_PROJECT_VERSION macro",
+    )
 
 
 def unsupplied_replacement(variable, default_variable, verbose, variable_str):
@@ -163,10 +155,12 @@ def unsupplied_replacement(variable, default_variable, verbose, variable_str):
     replacement = variable
     if "unsupplied" in variable:
         replacement = default_variable
-        if verbose >= 4:            
-            print(" ".join([variable_str,
-                            "was unsupplied. Changed to use ",
-                            default_variable]))
+        if verbose >= 4:
+            print(
+                " ".join(
+                    [variable_str, "was unsupplied. Changed to use ", default_variable]
+                )
+            )
     return replacement
 
 
@@ -176,14 +170,16 @@ def _substitute_CXX_for_missing(args):
     """
     args.CPP = unsupplied_replacement(args.CPP, args.CXX, args.verbose, "CPP")
     args.CPPFLAGS = unsupplied_replacement(
-        args.CPPFLAGS, args.CXXFLAGS, args.verbose, "CPPFLAGS")
+        args.CPPFLAGS, args.CXXFLAGS, args.verbose, "CPPFLAGS"
+    )
     try:
         args.LD = unsupplied_replacement(args.LD, args.CXX, args.verbose, "LD")
     except AttributeError:
         pass
     try:
         args.LDFLAGS = unsupplied_replacement(
-            args.LDFLAGS, args.CXXFLAGS, args.verbose, "LDFLAGS")
+            args.LDFLAGS, args.CXXFLAGS, args.verbose, "LDFLAGS"
+        )
     except AttributeError:
         pass
 
@@ -193,10 +189,11 @@ def _extend_includes_using_git_root(args):
         to the list of include paths
     """
     if args.git_root and (
-            hasattr(args, 'filename') or
-            hasattr(args, 'static') or
-            hasattr(args, 'dynamic') or
-            hasattr(args, 'tests')):
+        hasattr(args, "filename")
+        or hasattr(args, "static")
+        or hasattr(args, "dynamic")
+        or hasattr(args, "tests")
+    ):
 
         git_roots = set()
 
@@ -204,16 +201,16 @@ def _extend_includes_using_git_root(args):
         # filenames will be a list
         filenames = []
 
-        if hasattr(args, 'filename') and args.filename:
+        if hasattr(args, "filename") and args.filename:
             filenames.extend(args.filename)
 
-        if hasattr(args, 'static') and args.static:
+        if hasattr(args, "static") and args.static:
             filenames.extend(args.static)
 
-        if hasattr(args, 'dynamic') and args.dynamic:
+        if hasattr(args, "dynamic") and args.dynamic:
             filenames.extend(args.dynamic)
 
-        if hasattr(args, 'tests') and args.tests:
+        if hasattr(args, "tests") and args.tests:
             filenames.extend(args.tests)
 
         for filename in filenames:
@@ -234,8 +231,7 @@ def _add_include_paths_to_flags(args):
                 args.CXXFLAGS += " -I " + path
 
     if args.verbose >= 4 and len(args.include) > 0:
-        print(
-            "Extra include paths have been appended to the *FLAG variables:")
+        print("Extra include paths have been appended to the *FLAG variables:")
         print("\tCPPFLAGS=" + args.CPPFLAGS)
         print("\tCFLAGS=" + args.CFLAGS)
         print("\tCXXFLAGS=" + args.CXXFLAGS)
@@ -247,48 +243,55 @@ def _set_project_version(args):
         Otherwise execute projectversioncmd to determine projectversion.
         In the completely unspecified case, use the zero version.
     """
-    if hasattr(args,'projectversion') and args.projectversion:
+    if hasattr(args, "projectversion") and args.projectversion:
         return
 
     try:
-        args.projectversion = subprocess.check_output(
-            args.projectversioncmd.split(),
-            universal_newlines=True).strip('\n').split()[0]
+        args.projectversion = (
+            subprocess.check_output(
+                args.projectversioncmd.split(), universal_newlines=True
+            )
+            .strip("\n")
+            .split()[0]
+        )
         if args.verbose >= 4:
             print("Used projectversioncmd to set projectversion")
-    except (subprocess.CalledProcessError, OSError) as err:        
-            sys.stderr.write(" ".join(["Could not use projectversioncmd =",
-                                      args.projectversioncmd,
-                                      "to set projectversion.\n"]))
-            if args.verbose <= 2:
-                sys.stderr.write(str(err)+"\n")
-                sys.exit(1)
-            else:
-                raise
-    except AttributeError:        
+    except (subprocess.CalledProcessError, OSError) as err:
+        sys.stderr.write(
+            " ".join(
+                [
+                    "Could not use projectversioncmd =",
+                    args.projectversioncmd,
+                    "to set projectversion.\n",
+                ]
+            )
+        )
+        if args.verbose <= 2:
+            sys.stderr.write(str(err) + "\n")
+            sys.exit(1)
+        else:
+            raise
+    except AttributeError:
         if args.verbose >= 6:
-            print("Could not use projectversioncmd to set projectversion. Will use either existing projectversion or the zero version.")
+            print(
+                "Could not use projectversioncmd to set projectversion. Will use either existing projectversion or the zero version."
+            )
 
     try:
         if not args.projectversion:
-            args.projectversion = "-".join(
-                [os.path.basename(os.getcwd()), "0.0.0-0"])
+            args.projectversion = "-".join([os.path.basename(os.getcwd()), "0.0.0-0"])
             if args.verbose >= 5:
                 print("Set projectversion to the zero version")
 
-        if '-DCAKE_PROJECT_VERSION' not in args.CPPFLAGS:
-            args.CPPFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
-                args.projectversion + '\\"'
-        if '-DCAKE_PROJECT_VERSION' not in args.CFLAGS:
-            args.CFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
-                args.projectversion + '\\"'
-        if '-DCAKE_PROJECT_VERSION' not in args.CXXFLAGS:
-            args.CXXFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + \
-                args.projectversion + '\\"'
+        if "-DCAKE_PROJECT_VERSION" not in args.CPPFLAGS:
+            args.CPPFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + args.projectversion + '\\"'
+        if "-DCAKE_PROJECT_VERSION" not in args.CFLAGS:
+            args.CFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + args.projectversion + '\\"'
+        if "-DCAKE_PROJECT_VERSION" not in args.CXXFLAGS:
+            args.CXXFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + args.projectversion + '\\"'
 
         if args.verbose >= 4:
-            print(
-                "*FLAG variables have been modified with the project version:")
+            print("*FLAG variables have been modified with the project version:")
             print("\tCPPFLAGS=" + args.CPPFLAGS)
             print("\tCFLAGS=" + args.CFLAGS)
             print("\tCXXFLAGS=" + args.CXXFLAGS)
@@ -296,14 +299,15 @@ def _set_project_version(args):
         if args.verbose >= 3:
             print("No projectversion specified for the args.")
 
+
 def _do_xxpend(args, name):
     """ For example, if name is CPPFLAGS, take the 
         args.prependcppflags and prepend them to args.CPPFLAGS.
         Similarly for append.
     """
-    xxlist=('prepend','append')
+    xxlist = ("prepend", "append")
     for xx in xxlist:
-        xxpendname = ''.join([xx,name.lower()])
+        xxpendname = "".join([xx, name.lower()])
         if hasattr(args, xxpendname):
             xxpendattr = getattr(args, xxpendname)
             attr = getattr(args, name)
@@ -312,44 +316,47 @@ def _do_xxpend(args, name):
                 for flag in xxpendattr:
                     if flag not in attr:
                         extra.append(flag)
-                if xx == 'prepend':
+                if xx == "prepend":
                     attr = " ".join(extra + [attr])
                 else:
                     attr = " ".join([attr] + extra)
-            setattr(args, name, attr) 
+            setattr(args, name, attr)
+
 
 def _tier_one_modifications(args):
     """ Do some early modifications that can potentially cause 
         downstream modifications.
     """
     _substitute_CXX_for_missing(args)
-    flaglist = ('CPPFLAGS', 'CFLAGS', 'CXXFLAGS', 'LDFLAGS')
+    flaglist = ("CPPFLAGS", "CFLAGS", "CXXFLAGS", "LDFLAGS")
     for flag in flaglist:
         _do_xxpend(args, flag)
 
     # Cake used preprocess to mean both magic flag preprocess and headerdeps preprocess
-    if hasattr(args, 'preprocess') and args.preprocess:
-        args.magic = 'cpp'
-        args.headerdeps = 'cpp'
+    if hasattr(args, "preprocess") and args.preprocess:
+        args.magic = "cpp"
+        args.headerdeps = "cpp"
+
 
 def _strip_quotes(args):
     """ Sometimes you need to quote options (e.g. ones that start with hypen)
         This will strip a layer of quotes off.
     """
     for name in vars(args):
-        value = getattr(args,name)
+        value = getattr(args, name)
         if value is not None:
             # Can't just use the for loop directly because that would
             # try and process every character in a string
             if ct.utils.is_nonstr_iter(value):
                 for index, element in enumerate(value):
-                    value[index] = element.strip('"\'')
+                    value[index] = element.strip("\"'")
             else:
                 try:
                     # Otherwise assume its a string
-                    setattr(args, name, value.strip('"\''))
+                    setattr(args, name, value.strip("\"'"))
                 except:
                     pass
+
 
 def _commonsubstitutions(args):
     """ If certain arguments have not been specified but others have
@@ -368,23 +375,30 @@ def _commonsubstitutions(args):
 
     try:
         # If the user didn't explicitly supply a bindir then modify the bindir to use the variant name
-        args.bindir = unsupplied_replacement(args.bindir, os.path.join("bin",args.variant), args.verbose, "bindir")
+        args.bindir = unsupplied_replacement(
+            args.bindir, os.path.join("bin", args.variant), args.verbose, "bindir"
+        )
     except AttributeError:
         pass
 
     try:
         # Same idea as the bindir modification
-        args.objdir = unsupplied_replacement(args.objdir, os.path.join(args.bindir,"obj"), args.verbose, "objdir")
+        args.objdir = unsupplied_replacement(
+            args.objdir, os.path.join(args.bindir, "obj"), args.verbose, "objdir"
+        )
     except AttributeError:
         pass
 
+
 # List to store the callback functions for parse args
 _substitutioncallbacks = [_commonsubstitutions]
+
 
 def resetcallbacks():
     """ Useful in tests to clear out the substitution callbacks """
     global _substitutioncallbacks
     _substitutioncallbacks = [_commonsubstitutions]
+
 
 def registercallback(callback):
     """ Use this to register a function to be called back during the 
@@ -392,6 +406,7 @@ def registercallback(callback):
         The callback function will later be given "args" as its argument.
     """
     _substitutioncallbacks.append(callback)
+
 
 def substitutions(args, verbose=None):
     if verbose is None:
@@ -405,7 +420,7 @@ def substitutions(args, verbose=None):
 
 
 def parseargs(cap, argv, verbose=None):
-    ''' argv must be the logical equivalent of sys.argv[1:] '''
+    """ argv must be the logical equivalent of sys.argv[1:] """
     args = cap.parse_args(args=argv)
     _strip_quotes(args)
 
@@ -419,10 +434,11 @@ def parseargs(cap, argv, verbose=None):
 def terminalcolumns():
     """ How many columns in the text terminal """
     try:
-        columns = int(subprocess.check_output(['stty', 'size']).split()[1])
+        columns = int(subprocess.check_output(["stty", "size"]).split()[1])
     except subprocess.CalledProcessError:
         columns = 80
     return columns
+
 
 def verboseprintconfig(args):
     if args.verbose >= 3:
@@ -432,6 +448,7 @@ def verboseprintconfig(args):
 
     if args.verbose >= 2:
         verbose_print_args(args)
+
 
 def verbose_print_args(args):
     # Print the args in two columns Attr: Value
@@ -458,7 +475,7 @@ def verbose_print_args(args):
             print(fmt.format(attr, strvalue))
         else:
             # values are too long to fit.  Split them on spaces
-            valuesplit = strvalue.split(' ', valuelen % rightcolsize)
+            valuesplit = strvalue.split(" ", valuelen % rightcolsize)
             print(fmt.format(attr, valuesplit[0]))
             for kk in range(1, len(valuesplit)):
                 print(fmt.format("", valuesplit[kk]))

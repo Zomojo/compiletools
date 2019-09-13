@@ -10,6 +10,8 @@ While I dislike some of PEP 8, making it the convention avoids bike shed argumen
 Before check-in you should format the code using
 
 autopep8 --in-place --aggressive --aggressive somefile.py
+or 
+black somefile.py
 
 
 

@@ -13,9 +13,9 @@ def memoize(obj):
         key = str(args) + str(kwargs)
         if key not in cache:
             cache[key] = obj(*args, **kwargs)
-            #print(" ".join([str(obj),"memoize cache miss for",key,":",str(cache[key])]) )
-        #else:
-            #print(" ".join([str(obj),"memoize cache hit  for",key,":",str(cache[key])]) )
+            # print(" ".join([str(obj),"memoize cache miss for",key,":",str(cache[key])]) )
+        # else:
+        # print(" ".join([str(obj),"memoize cache hit  for",key,":",str(cache[key])]) )
         return cache[key]
 
     return memoizer

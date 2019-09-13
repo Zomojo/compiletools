@@ -1,6 +1,5 @@
 #!/usr/bin/python3
 import ct.git_utils
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     print(ct.git_utils.find_git_root())
-

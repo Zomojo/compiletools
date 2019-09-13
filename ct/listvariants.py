@@ -16,49 +16,45 @@ def add_arguments(parser):
         "--verbose",
         help="Output verbosity. Add more v's to make it more verbose",
         action="count",
-        default=0)
+        default=0,
+    )
     parser.add(
         "-q",
         "--quiet",
         help="Decrement verbosity. Useful in apps where the default verbosity > 0.",
         action="count",
-        default=0)
-    parser.add(
-        "--version",
-        action="version",
-        version=__version__)
-    parser.add(
-        "-?",
-        action='help',
-        help='Help')
+        default=0,
+    )
+    parser.add("--version", action="version", version=__version__)
+    parser.add("-?", action="help", help="Help")
 
     ct.utils.add_boolean_argument(
-          parser
-        , "configname"
-        , default=False
-        , help="Print the .conf at the end of the variant")
+        parser,
+        "configname",
+        default=False,
+        help="Print the .conf at the end of the variant",
+    )
 
     ct.utils.add_boolean_argument(
-          parser
-        , "repoonly"
-        , default=False
-        , help="Restrict the results to the local repository config files")
+        parser,
+        "repoonly",
+        default=False,
+        help="Restrict the results to the local repository config files",
+    )
 
     ct.utils.add_boolean_argument(
-          parser
-        , "shorten"
-        , default=True
-        , help="Shorten from the full path to the config filenames to only the variant name")
-    
+        parser,
+        "shorten",
+        default=True,
+        help="Shorten from the full path to the config filenames to only the variant name",
+    )
+
     # Figure out what style classes are available and add them to the command
     # line options
-    styles = [st[:-5].lower()
-              for st in dict(globals()) if st.endswith('Style')]
+    styles = [st[:-5].lower() for st in dict(globals()) if st.endswith("Style")]
     parser.add(
-        '--style',
-        choices=styles,
-        default='pretty',
-        help="Output formatting style")
+        "--style", choices=styles, default="pretty", help="Output formatting style"
+    )
 
 
 class PrettyStyle(object):
@@ -66,14 +62,14 @@ class PrettyStyle(object):
         self.output = ""
 
     def append_text(self, text):
-        self.output += text + '\n'
+        self.output += text + "\n"
 
     def append_variants(self, variants):
         if not variants:
-            self.output += '    None found\n'
+            self.output += "    None found\n"
         else:
             for vv in sorted(variants):
-                self.output += '    ' + vv + '\n'
+                self.output += "    " + vv + "\n"
 
 
 class FlatStyle(object):
@@ -85,7 +81,8 @@ class FlatStyle(object):
 
     def append_variants(self, variants):
         for vv in sorted(variants):
-            self.output += vv + ' '
+            self.output += vv + " "
+
 
 class FilelistStyle(object):
     def __init__(self):
@@ -96,21 +93,19 @@ class FilelistStyle(object):
 
     def append_variants(self, variants):
         for vv in sorted(variants):
-            self.output += vv + '\n'
+            self.output += vv + "\n"
+
 
 def find_possible_variants(
-        user_config_dir=None,
-        system_config_dir=None,
-        exedir=None,
-        args=None,
-        verbose=0):
+    user_config_dir=None, system_config_dir=None, exedir=None, args=None, verbose=0
+):
 
     stylename = "Pretty"
     if args and args.style:
         stylename = args.style
-    styleclass = globals()[stylename.title() + 'Style']
+    styleclass = globals()[stylename.title() + "Style"]
     style = styleclass()
-    
+
     shorten = True
     if args and not args.shorten:
         shorten = False
@@ -119,45 +114,56 @@ def find_possible_variants(
     if args:
         repoonly = args.repoonly
 
-    confext = ''
+    confext = ""
     if args:
         if args.configname:
-            confext = '.conf'
-            removeconf = ''
+            confext = ".conf"
+            removeconf = ""
         else:
-            removeconf = '.conf'
+            removeconf = ".conf"
 
     style.append_text("Variant aliases are:")
     style.append_text(
         ct.configutils.extract_item_from_ct_conf(
-            key='variantaliases',
+            key="variantaliases",
             user_config_dir=user_config_dir,
             system_config_dir=system_config_dir,
             exedir=exedir,
-            verbose=verbose))
-    style.append_text("From highest to lowest priority configuration directories, the possible variants are:")
+            verbose=verbose,
+        )
+    )
+    style.append_text(
+        "From highest to lowest priority configuration directories, the possible variants are:"
+    )
 
     search_directories = ct.configutils.default_config_directories(
         user_config_dir=user_config_dir,
         system_config_dir=system_config_dir,
         exedir=exedir,
         repoonly=repoonly,
-        verbose=verbose)
+        verbose=verbose,
+    )
 
     for cfg_dir in search_directories:
         found = []
         style.append_text(cfg_dir)
         try:
             for cfg_file in os.listdir(cfg_dir):
-                if fnmatch.fnmatch(cfg_file, '*.conf'):
+                if fnmatch.fnmatch(cfg_file, "*.conf"):
                     if shorten:
                         if repoonly:
-                            found.append(ct.git_utils.strip_git_root(os.path.join(cfg_dir,cfg_file.replace(removeconf,''))))
+                            found.append(
+                                ct.git_utils.strip_git_root(
+                                    os.path.join(
+                                        cfg_dir, cfg_file.replace(removeconf, "")
+                                    )
+                                )
+                            )
                         else:
-                            found.append(os.path.splitext(cfg_file)[0]+confext)
+                            found.append(os.path.splitext(cfg_file)[0] + confext)
                     else:
-                        found.append(os.path.join(cfg_dir,cfg_file))
-                        
+                        found.append(os.path.join(cfg_dir, cfg_file))
+
         except OSError:
             pass
 

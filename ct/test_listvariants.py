@@ -9,7 +9,6 @@ import ct.listvariants
 
 
 class TestListVariants(unittest.TestCase):
-
     def setUp(self):
         uth.reset()
 
@@ -22,7 +21,7 @@ class TestListVariants(unittest.TestCase):
         ucd = "/home/dummy/.config/ct"
         scd = "/usr/lib"
         ecd = uth.cakedir()
-        expected_output = '''\
+        expected_output = """\
 Variant aliases are:
 {{'debug':'gcc.debug', 'release':'gcc.release'}}
 From highest to lowest priority configuration directories, the possible variants are:
@@ -41,12 +40,15 @@ From highest to lowest priority configuration directories, the possible variants
     ct
     gcc.debug
     gcc.release
-'''.format(tempdir,os.path.join(tempdir,'ct.conf.d'),os.path.join(uth.cakedir(), 'ct.conf.d'))
+""".format(
+            tempdir,
+            os.path.join(tempdir, "ct.conf.d"),
+            os.path.join(uth.cakedir(), "ct.conf.d"),
+        )
 
         output = ct.listvariants.find_possible_variants(
-            user_config_dir=ucd,
-            system_config_dir=scd,
-            exedir=ecd, verbose=9)
+            user_config_dir=ucd, system_config_dir=scd, exedir=ecd, verbose=9
+        )
         self.assertEqual(expected_output, output)
 
         os.chdir(origdir)
@@ -55,5 +57,6 @@ From highest to lowest priority configuration directories, the possible variants
     def tearDown(self):
         uth.reset()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

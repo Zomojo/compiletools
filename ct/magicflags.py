@@ -14,9 +14,10 @@ import ct.git_utils
 import ct.headerdeps
 import ct.wrappedos
 
+
 def create(args, headerdeps):
     """ MagicFlags Factory """
-    classname = args.magic.title() + 'MagicFlags'
+    classname = args.magic.title() + "MagicFlags"
     if args.verbose >= 4:
         print("Creating " + classname + " to process magicflags.")
     magicclass = globals()[classname]
@@ -24,17 +25,19 @@ def create(args, headerdeps):
     return magicobject
 
 
-def add_arguments(cap,variant=None):
+def add_arguments(cap, variant=None):
     """ Add the command line arguments that the MagicFlags classes require """
     ct.apptools.add_common_arguments(cap, variant=variant)
     ct.preprocessor.PreProcessor.add_arguments(cap)
-    alldepscls = [st[:-10].lower()
-                  for st in dict(globals()) if st.endswith('MagicFlags')]
+    alldepscls = [
+        st[:-10].lower() for st in dict(globals()) if st.endswith("MagicFlags")
+    ]
     cap.add(
-        '--magic',
+        "--magic",
         choices=alldepscls,
-        default='direct',
-        help="Methodology for reading file when processing magic flags")
+        default="direct",
+        help="Methodology for reading file when processing magic flags",
+    )
 
 
 class MagicFlagsBase:
@@ -62,9 +65,7 @@ class MagicFlagsBase:
         self._headerdeps = headerdeps
 
         # The magic pattern is //#key=value with whitespace ignored
-        self.magicpattern = re.compile(
-            '^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)',
-            re.MULTILINE)
+        self.magicpattern = re.compile("^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)", re.MULTILINE)
 
     def readfile(self, filename):
         """ Derived classes implement this method """
@@ -91,38 +92,57 @@ class MagicFlagsBase:
             magic, flag = match.groups()
 
             # If the magic was SOURCE then fix up the path
-            if magic == 'SOURCE':
+            if magic == "SOURCE":
                 # Find the include before the //#SOURCE=
                 result = re.search(
-                    '# \d.* "(/\S*?)".*?//#SOURCE\s*=\s*' +
-                    flag,
-                    text,
-                    re.DOTALL)
+                    '# \d.* "(/\S*?)".*?//#SOURCE\s*=\s*' + flag, text, re.DOTALL
+                )
                 # Now adjust the flag to include the full path
-                newflag = ct.wrappedos.realpath(os.path.join(
-                    ct.wrappedos.dirname(
-                        result.group(1)),
-                    flag.strip()))
+                newflag = ct.wrappedos.realpath(
+                    os.path.join(ct.wrappedos.dirname(result.group(1)), flag.strip())
+                )
                 if self._args.verbose >= 9:
-                    print(' '.join(['Adjusting source magicflag from flag=',flag,'to',newflag]))
+                    print(
+                        " ".join(
+                            [
+                                "Adjusting source magicflag from flag=",
+                                flag,
+                                "to",
+                                newflag,
+                            ]
+                        )
+                    )
                 flag = newflag
 
                 if not ct.wrappedos.isfile(flag):
-                    raise IOError(filename + " specified " + magic + "='" + flag + "' but it does not exist")
+                    raise IOError(
+                        filename
+                        + " specified "
+                        + magic
+                        + "='"
+                        + flag
+                        + "' but it does not exist"
+                    )
 
             # If the magic was INCLUDE then modify that into the equivalent CPPFLAGS, CFLAGS, and CXXFLAGS
-            if magic == 'INCLUDE':
-                flagsforfilename.setdefault('CPPFLAGS',ct.utils.OrderedSet()).add('-I '+flag)                
-                flagsforfilename.setdefault('CFLAGS',ct.utils.OrderedSet()).add('-I '+flag)                
-                flagsforfilename.setdefault('CXXFLAGS',ct.utils.OrderedSet()).add('-I '+flag)                
+            if magic == "INCLUDE":
+                flagsforfilename.setdefault("CPPFLAGS", ct.utils.OrderedSet()).add(
+                    "-I " + flag
+                )
+                flagsforfilename.setdefault("CFLAGS", ct.utils.OrderedSet()).add(
+                    "-I " + flag
+                )
+                flagsforfilename.setdefault("CXXFLAGS", ct.utils.OrderedSet()).add(
+                    "-I " + flag
+                )
 
             flagsforfilename.setdefault(magic, ct.utils.OrderedSet()).add(flag)
             if self._args.verbose >= 5:
                 print(
                     "Using magic flag {0}={1} extracted from {2}".format(
-                        magic,
-                        flag,
-                        filename))
+                        magic, flag, filename
+                    )
+                )
 
         return flagsforfilename
 
@@ -134,8 +154,8 @@ class MagicFlagsBase:
         DirectMagicFlags.clear_cache()
         CppMagicFlags.clear_cache()
 
-class DirectMagicFlags(MagicFlagsBase):
 
+class DirectMagicFlags(MagicFlagsBase):
     def readfile(self, filename):
         """ Read the first chunk of the file and all the headers it includes """
         # reading and handling as one string is slightly faster than
@@ -145,8 +165,8 @@ class DirectMagicFlags(MagicFlagsBase):
         text = ""
         for filename in headers | {filename}:
             if self._args.verbose >= 9:
-                print('DirectMagicFlags::readfile is inserting # ' + filename)
-            with open(filename, encoding='utf-8', errors='ignore') as ff:
+                print("DirectMagicFlags::readfile is inserting # " + filename)
+            with open(filename, encoding="utf-8", errors="ignore") as ff:
                 # To match the output of the C Pre Processor we insert
                 # the filename before the text
                 text += '# 1 "'
@@ -156,28 +176,28 @@ class DirectMagicFlags(MagicFlagsBase):
 
         return text
 
-    @diskcache('directmagic', magic_mode=True)
+    @diskcache("directmagic", magic_mode=True)
     def parse(self, filename):
         return self._parse(filename)
 
     @staticmethod
     def clear_cache():
         ct.diskcache.diskcache.clear_cache()
-        
-class CppMagicFlags(MagicFlagsBase):
 
+
+class CppMagicFlags(MagicFlagsBase):
     def __init__(self, args, headerdeps):
         MagicFlagsBase.__init__(self, args, headerdeps)
         self.preprocessor = ct.preprocessor.PreProcessor(args)
 
     def readfile(self, filename):
         """ Preprocess the given filename but leave comments """
-        extraargs = '-C -E'
-        return self.preprocessor.process(realpath=filename,
-                                         extraargs='-C -E',
-                                         redirect_stderr_to_stdout=True)
+        extraargs = "-C -E"
+        return self.preprocessor.process(
+            realpath=filename, extraargs="-C -E", redirect_stderr_to_stdout=True
+        )
 
-    @diskcache('cppmagic', magic_mode=True)
+    @diskcache("cppmagic", magic_mode=True)
     def parse(self, filename):
         return self._parse(filename)
 
@@ -185,8 +205,8 @@ class CppMagicFlags(MagicFlagsBase):
     def clear_cache():
         ct.diskcache.diskcache.clear_cache()
 
-class NullStyle(ct.git_utils.NameAdjuster):
 
+class NullStyle(ct.git_utils.NameAdjuster):
     def __init__(self, args):
         ct.git_utils.NameAdjuster.__init__(self, args)
 
@@ -195,7 +215,6 @@ class NullStyle(ct.git_utils.NameAdjuster):
 
 
 class PrettyStyle(ct.git_utils.NameAdjuster):
-
     def __init__(self, args):
         ct.git_utils.NameAdjuster.__init__(self, args)
 
@@ -214,26 +233,18 @@ def main(argv=None):
     cap = configargparse.getArgumentParser()
     ct.headerdeps.add_arguments(cap)
     add_arguments(cap)
-    cap.add(
-        "filename",
-        help='File/s to extract magicflags from"',
-        nargs='+')
+    cap.add("filename", help='File/s to extract magicflags from"', nargs="+")
 
     # Figure out what style classes are available and add them to the command
     # line options
-    styles = [st[:-5].lower()
-              for st in dict(globals()) if st.endswith('Style')]
-    cap.add(
-        '--style',
-        choices=styles,
-        default='pretty',
-        help="Output formatting style")
+    styles = [st[:-5].lower() for st in dict(globals()) if st.endswith("Style")]
+    cap.add("--style", choices=styles, default="pretty", help="Output formatting style")
 
     args = ct.apptools.parseargs(cap, argv)
     headerdeps = ct.headerdeps.create(args)
     magicparser = create(args, headerdeps)
 
-    styleclass = globals()[args.style.title() + 'Style']
+    styleclass = globals()[args.style.title() + "Style"]
     styleobject = styleclass(args)
 
     for fname in args.filename:

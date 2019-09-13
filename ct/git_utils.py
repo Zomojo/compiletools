@@ -7,6 +7,7 @@ import subprocess
 from ct.memoize import memoize
 import ct.utils
 
+
 def find_git_root(filename=None):
     """ Return the absolute path of .git for the given filename """
     # Note: You can't memoize this one since the None parameter will
@@ -32,7 +33,8 @@ def _find_git_root(directory):
         gitroot = subprocess.check_output(
             ["git", "rev-parse", "--show-toplevel"],
             stderr=subprocess.STDOUT,
-            universal_newlines=True).strip('\n')
+            universal_newlines=True,
+        ).strip("\n")
     except (subprocess.CalledProcessError, OSError) as err:
         # A CalledProcessError exception means we aren't in a real git repository.
         # An OSError probably means git isn't installed on this machine.
@@ -40,8 +42,8 @@ def _find_git_root(directory):
         # file)
         trialgitroot = directory
 
-        while (trialgitroot != "/"):
-            if (os.path.exists(trialgitroot + "/.git")):
+        while trialgitroot != "/":
+            if os.path.exists(trialgitroot + "/.git"):
                 gitroot = trialgitroot
                 break
             trialgitroot = os.path.dirname(trialgitroot)
@@ -55,15 +57,17 @@ def strip_git_root(filename):
     size = len(find_git_root(filename)) + 1
     return filename[size:]
 
+
 def clear_cache():
     _find_git_root.cache.clear()
     strip_git_root.cache.clear()
+
 
 class Project(object):
     def __init__(self, args):
         self._args = args
 
-    def pathname(self, filename):        
+    def pathname(self, filename):
         """ Return the project part of the given filename """
         if self._args.git_root:
             return strip_git_root(filename)
@@ -83,9 +87,10 @@ class NameAdjuster(object):
         ct.utils.add_flag_argument(
             cap,
             "shorten",
-            'strip_git_root',
+            "strip_git_root",
             default=False,
-            help="Strip the git root from the filenames")
+            help="Strip the git root from the filenames",
+        )
 
     def adjust(self, name):
         if self._args.strip_git_root:

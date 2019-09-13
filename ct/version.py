@@ -1,5 +1,5 @@
-''' Use bumpversion to increment version.py, and README.rst, and ..., 
+""" Use bumpversion to increment version.py, and README.rst, and ..., 
     simultaneously.  Also add the flags to git tag and commit everything
     in one operation.
-'''
-__version__ = '4.1.68'
+"""
+__version__ = "4.1.68"

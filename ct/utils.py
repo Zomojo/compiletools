@@ -12,31 +12,35 @@ import ct.wrappedos
 # Python3 defines __iter__ for str but python2 does not
 PY3 = sys.version_info[0] == 3
 if PY3:
+
     def is_nonstr_iter(obj):
-        ''' A python 2/3 compatible method for deciding if the given variable
+        """ A python 2/3 compatible method for deciding if the given variable
             is a non-string iterable
-        '''
+        """
         if isinstance(obj, str):
             return False
-        return hasattr(obj, '__iter__')
+        return hasattr(obj, "__iter__")
+
+
 else:
+
     def is_nonstr_iter(obj):
-        ''' A python 2/3 compatible method for deciding if the given variable
+        """ A python 2/3 compatible method for deciding if the given variable
             is a non-string iterable
-        '''
-        return hasattr(obj, '__iter__')
+        """
+        return hasattr(obj, "__iter__")
+
 
 @memoize
 def isheader(filename):
     """ Internal use.  Is filename a header file?"""
-    return filename.split(
-        '.')[-1].lower() in ["h", "hpp", "hxx", "hh", "inl"]
+    return filename.split(".")[-1].lower() in ["h", "hpp", "hxx", "hh", "inl"]
 
 
 @memoize
 def issource(filename):
     """ Internal use. Is the filename a source file?"""
-    return filename.split('.')[-1].lower() in ["cpp", "cxx", "cc", "c"]
+    return filename.split(".")[-1].lower() in ["cpp", "cxx", "cc", "c"]
 
 
 def isexecutable(filename):
@@ -68,11 +72,13 @@ def impliedheader(filename):
     else:
         return None
 
+
 def clear_cache():
     isheader.cache.clear()
     issource.cache.clear()
     implied_source.cache.clear()
     impliedheader.cache.clear()
+
 
 def extractinitargs(args, classname):
     """ Extract the arguments that classname.__init__ needs out of args """
@@ -107,15 +113,17 @@ def add_boolean_argument(parser, name, dest=None, default=False, help=None):
     group = parser.add_mutually_exclusive_group()
     bool_help = help + " Use --no-" + name + " to turn the feature off."
     group.add_argument(
-        '--' + name,
+        "--" + name,
         metavar="",
-        nargs='?',
+        nargs="?",
         dest=dest,
         default=default,
         const=True,
         type=tobool,
-        help=bool_help)
-    group.add_argument('--no-' + name, dest=dest, action='store_false')
+        help=bool_help,
+    )
+    group.add_argument("--no-" + name, dest=dest, action="store_false")
+
 
 def add_flag_argument(parser, name, dest=None, default=False, help=None):
     """ Add a flag argument to an ArgumentParser instance.
@@ -127,12 +135,12 @@ def add_flag_argument(parser, name, dest=None, default=False, help=None):
     group = parser.add_mutually_exclusive_group()
     bool_help = help + " Use --no-" + name + " to turn the feature off."
     group.add_argument(
-        '--' + name,
-        dest=dest,
-        default=default,
-        action='store_true',
-        help=bool_help)
-    group.add_argument('--no-' + name, dest=dest, action='store_false', default=not default)
+        "--" + name, dest=dest, default=default, action="store_true", help=bool_help
+    )
+    group.add_argument(
+        "--no-" + name, dest=dest, action="store_false", default=not default
+    )
+
 
 def removemount(absolutepath):
     """ Remove the '/' on unix and (TODO) 'C:\' on Windows """
@@ -147,8 +155,8 @@ class OrderedSet(collections.MutableSet):
 
     def __init__(self, iterable=None):
         self.end = end = []
-        end += [None, end, end]         # sentinel node for doubly linked list
-        self.map = {}                   # key --> [key, prev, next]
+        end += [None, end, end]  # sentinel node for doubly linked list
+        self.map = {}  # key --> [key, prev, next]
         if iterable is not None:
             self |= iterable
 
@@ -207,15 +215,15 @@ class OrderedSet(collections.MutableSet):
 
     def pop(self, last=True):
         if not self:
-            raise KeyError('set is empty')
+            raise KeyError("set is empty")
         key = self.end[1][0] if last else self.end[2][0]
         self.discard(key)
         return key
 
     def __repr__(self):
         if not self:
-            return '%s()' % (self.__class__.__name__,)
-        return '%s(%r)' % (self.__class__.__name__, list(self))
+            return "%s()" % (self.__class__.__name__,)
+        return "%s(%r)" % (self.__class__.__name__, list(self))
 
     def __eq__(self, other):
         if isinstance(other, OrderedSet):

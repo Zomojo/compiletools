@@ -5,9 +5,11 @@ import configargparse
 import ct.apptools
 import psutil
 
+
 def _cpus():
     thisprocess = psutil.Process()
     return len(thisprocess.cpu_affinity())
+
 
 def add_arguments(cap):
     cap.add(
@@ -15,11 +17,12 @@ def add_arguments(cap):
         "--jobs",
         "--CAKE_PARALLEL",
         "--parallel",
-        dest='parallel',
+        dest="parallel",
         type=int,
         default=_cpus(),
-        help="Sets the number of CPUs to use in parallel for a build.")
-        
+        help="Sets the number of CPUs to use in parallel for a build.",
+    )
+
 
 def main(argv=None):
     cap = configargparse.getArgumentParser()

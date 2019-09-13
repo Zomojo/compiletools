@@ -31,10 +31,8 @@ def flatten(tree_):
 
 
 def depth_first_traverse(
-        node,
-        pre_traverse_function=None,
-        post_traverse_function=None,
-        depth=0):
+    node, pre_traverse_function=None, post_traverse_function=None, depth=0
+):
     """ Traverse a tree, calling the given pre/post functions on the nodes.
         By default the function will be passed the node key as the first argument.
         However, if the function takes named arguments of key, value, or depth
@@ -45,23 +43,23 @@ def depth_first_traverse(
     pre_function_args = {}
     if pre_traverse_function:
         pre_function_args = inspect.getargspec(pre_traverse_function).args
-        if 'depth' in pre_function_args:
-            pre_kwargs['depth'] = depth
+        if "depth" in pre_function_args:
+            pre_kwargs["depth"] = depth
 
     post_kwargs = {}
     post_function_args = []
     if post_traverse_function:
         post_function_args = inspect.getargspec(post_traverse_function).args
-        if 'depth' in post_function_args:
-            post_kwargs['depth'] = depth
+        if "depth" in post_function_args:
+            post_kwargs["depth"] = depth
 
     def _call_function(function, function_args, key, value, kwargs):
         """ Helper function to save copy'n'paste for pre/post variations """
         if function:
-            if 'key' in function_args:
-                kwargs['key'] = key
-            if 'value' in function_args:
-                kwargs['value'] = value
+            if "key" in function_args:
+                kwargs["key"] = key
+            if "value" in function_args:
+                kwargs["value"] = value
             if kwargs:
                 function(**kwargs)
             else:
@@ -69,23 +67,16 @@ def depth_first_traverse(
 
     # traverse the tree recursively
     for key, value in list(node.items()):
-        _call_function(
-            pre_traverse_function,
-            pre_function_args,
-            key,
-            value,
-            pre_kwargs)
+        _call_function(pre_traverse_function, pre_function_args, key, value, pre_kwargs)
         depth_first_traverse(
             node=value,
             pre_traverse_function=pre_traverse_function,
             post_traverse_function=post_traverse_function,
-            depth=depth + 1)
+            depth=depth + 1,
+        )
         _call_function(
-            post_traverse_function,
-            post_function_args,
-            key,
-            value,
-            post_kwargs)
+            post_traverse_function, post_function_args, key, value, post_kwargs
+        )
 
 
 class InTree(object):
@@ -100,9 +91,7 @@ class InTree(object):
 
     def __call__(self, key):
         self.key = key
-        depth_first_traverse(
-            node=self.tree,
-            pre_traverse_function=self._has_key)
+        depth_first_traverse(node=self.tree, pre_traverse_function=self._has_key)
         return self.result
 
     def _has_key(self, key):

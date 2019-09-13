@@ -11,7 +11,6 @@ import ct.utils as utils
 
 
 class TestIsFuncs(unittest.TestCase):
-
     def test_isheader(self):
         self.assertTrue(utils.isheader("myfile.h"))
         self.assertTrue(utils.isheader("/home/user/myfile.h"))
@@ -52,22 +51,18 @@ class TestIsFuncs(unittest.TestCase):
 
 
 class TestImpliedSource(unittest.TestCase):
-
     def test_implied_source_nonexistent_file(self):
-        self.assertIsNone(utils.implied_source('nonexistent_file.hpp'))
+        self.assertIsNone(utils.implied_source("nonexistent_file.hpp"))
 
     def test_implied_source(self):
-        relativefilename = 'dottypaths/d2/d2.hpp'
+        relativefilename = "dottypaths/d2/d2.hpp"
         basename = os.path.splitext(relativefilename)[0]
-        expected = os.path.join(uth.samplesdir(), basename + '.cpp')
-        result = utils.implied_source(
-            os.path.join(
-                uth.samplesdir(),
-                relativefilename))
+        expected = os.path.join(uth.samplesdir(), basename + ".cpp")
+        result = utils.implied_source(os.path.join(uth.samplesdir(), relativefilename))
         self.assertEqual(expected, result)
 
-class TestOrderedSet(unittest.TestCase):
 
+class TestOrderedSet(unittest.TestCase):
     def test_initialization(self):
         s1 = utils.OrderedSet([5, 4, 3, 2, 1])
         self.assertEqual(len(s1), 5)
@@ -92,10 +87,9 @@ class TestOrderedSet(unittest.TestCase):
         s1.add("newentry")
         self.assertEqual(len(s1), 6)
         self.assertIn("newentry", s1)
-        s2 = utils.OrderedSet(
-            ["five", "four", "three", "two", "one", "newentry"])
+        s2 = utils.OrderedSet(["five", "four", "three", "two", "one", "newentry"])
         self.assertEqual(s1, s2)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()

@@ -36,33 +36,29 @@ def _reload_ct(cache_home):
     """ Set the CTCACHE environment variable to cache_home
         and reload the ct.* modules
     """
-    os.environ['CTCACHE'] = cache_home
+    os.environ["CTCACHE"] = cache_home
     reload(ct.headerdeps)
     reload(ct.magicflags)
     reload(ct.hunter)
 
 
 class TestHunterModule(unittest.TestCase):
-
     def setUp(self):
         uth.reset()
         cap = configargparse.getArgumentParser(
-            description='Configargparser in test code',
+            description="Configargparser in test code",
             formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-            args_for_setting_config_path=["-c","--config"],
-            ignore_unknown_config_file_keys=False)
+            args_for_setting_config_path=["-c", "--config"],
+            ignore_unknown_config_file_keys=False,
+        )
 
     def test_hunter_follows_source_files_from_header(self):
-        origcache = ct.dirnamer.user_cache_dir('ct')
+        origcache = ct.dirnamer.user_cache_dir("ct")
         tempdir = tempfile.mkdtemp()
         _reload_ct(tempdir)
-        
+
         temp_config = ct.unittesthelper.create_temp_config()
-        argv = [
-            '-c',
-            temp_config,
-            '--include',
-            uth.ctdir()]
+        argv = ["-c", temp_config, "--include", uth.ctdir()]
         cap = configargparse.getArgumentParser()
         ct.hunter.add_arguments(cap)
         args = ct.apptools.parseargs(cap, argv)
@@ -70,11 +66,10 @@ class TestHunterModule(unittest.TestCase):
         magicparser = ct.magicflags.create(args, headerdeps)
         hntr = ct.hunter.Hunter(args, headerdeps, magicparser)
 
-        relativepath = 'factory/widget_factory.hpp'
+        relativepath = "factory/widget_factory.hpp"
         realpath = os.path.join(uth.samplesdir(), relativepath)
         filesfromheader = hntr.required_source_files(realpath)
-        filesfromsource = hntr.required_source_files(
-            ct.utils.implied_source(realpath))
+        filesfromsource = hntr.required_source_files(ct.utils.implied_source(realpath))
         self.assertSetEqual(filesfromheader, filesfromsource)
 
         # Cleanup
@@ -86,19 +81,15 @@ class TestHunterModule(unittest.TestCase):
     def _hunter_is_not_order_dependent(precall):
         samplesdir = uth.samplesdir()
         relativepaths = [
-            'factory/test_factory.cpp',
-            'numbers/test_direct_include.cpp',
-            'simple/helloworld_c.c',
-            'simple/helloworld_cpp.cpp',
-            'simple/test_cflags.c']
-        bulkpaths = [os.path.join(samplesdir, filename)
-                     for filename in relativepaths]
+            "factory/test_factory.cpp",
+            "numbers/test_direct_include.cpp",
+            "simple/helloworld_c.c",
+            "simple/helloworld_cpp.cpp",
+            "simple/test_cflags.c",
+        ]
+        bulkpaths = [os.path.join(samplesdir, filename) for filename in relativepaths]
         temp_config = ct.unittesthelper.create_temp_config()
-        argv = [
-            '--config',
-            temp_config,
-            '--include',
-            uth.ctdir()] + bulkpaths
+        argv = ["--config", temp_config, "--include", uth.ctdir()] + bulkpaths
         cap = configargparse.getArgumentParser()
         ct.hunter.add_arguments(cap)
         args = ct.apptools.parseargs(cap, argv)
@@ -107,7 +98,7 @@ class TestHunterModule(unittest.TestCase):
         hntr = ct.hunter.Hunter(args, headerdeps, magicparser)
         os.unlink(temp_config)
 
-        realpath = os.path.join(samplesdir, 'dottypaths/dottypaths.cpp')
+        realpath = os.path.join(samplesdir, "dottypaths/dottypaths.cpp")
         if precall:
             result = hntr.required_source_files(realpath)
             return result
@@ -118,7 +109,7 @@ class TestHunterModule(unittest.TestCase):
             return result
 
     def test_hunter_is_not_order_dependent(self):
-        origcache = ct.dirnamer.user_cache_dir('ct')
+        origcache = ct.dirnamer.user_cache_dir("ct")
         tempdir = tempfile.mkdtemp()
         _reload_ct(tempdir)
 
@@ -138,5 +129,6 @@ class TestHunterModule(unittest.TestCase):
     def tearDown(self):
         uth.reset()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

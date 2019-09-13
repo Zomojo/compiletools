@@ -19,41 +19,40 @@ _moduletmpdir = None
 
 
 class TestMakefile(unittest.TestCase):
-
     def setUp(self):
         uth.reset()
         global _moduletmpdir
-        if not _moduletmpdir or not os.path.exists(_moduletmpdir) :
+        if not _moduletmpdir or not os.path.exists(_moduletmpdir):
             _moduletmpdir = tempfile.mkdtemp()
 
         cap = configargparse.getArgumentParser(
-            description='Configargparser in test code',
+            description="Configargparser in test code",
             formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-            args_for_setting_config_path=["-c","--config"],
-            ignore_unknown_config_file_keys=False)
+            args_for_setting_config_path=["-c", "--config"],
+            ignore_unknown_config_file_keys=False,
+        )
 
     def _create_makefile_and_make(self, tempdir):
         origdir = uth.ctdir()
-        print("origdir="+origdir)
+        print("origdir=" + origdir)
         print(tempdir)
         samplesdir = uth.samplesdir()
-        print("samplesdir="+samplesdir)
+        print("samplesdir=" + samplesdir)
         os.chdir(tempdir)
         temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
         relativepaths = [
-            'numbers/test_direct_include.cpp',
-            'factory/test_factory.cpp',
-            'simple/helloworld_c.c',
-            'simple/helloworld_cpp.cpp',
-            'dottypaths/dottypaths.cpp']
-        realpaths = [os.path.join(samplesdir, filename)
-                     for filename in relativepaths]
-        ct.makefile.main(
-            ['--config='+temp_config_name] + realpaths)
+            "numbers/test_direct_include.cpp",
+            "factory/test_factory.cpp",
+            "simple/helloworld_c.c",
+            "simple/helloworld_cpp.cpp",
+            "dottypaths/dottypaths.cpp",
+        ]
+        realpaths = [os.path.join(samplesdir, filename) for filename in relativepaths]
+        ct.makefile.main(["--config=" + temp_config_name] + realpaths)
 
-        filelist = os.listdir('.')
-        makefilename = [ff for ff in filelist if ff.startswith('Makefile')]
-        cmd = ['make', '-f'] + makefilename
+        filelist = os.listdir(".")
+        makefilename = [ff for ff in filelist if ff.startswith("Makefile")]
+        cmd = ["make", "-f"] + makefilename
         subprocess.check_output(cmd, universal_newlines=True)
 
         # Check that an executable got built for each cpp
@@ -65,8 +64,9 @@ class TestMakefile(unittest.TestCase):
                     print(root + " " + ff)
 
         expected_exes = {
-            os.path.splitext(
-                os.path.split(filename)[1])[0] for filename in relativepaths}
+            os.path.splitext(os.path.split(filename)[1])[0]
+            for filename in relativepaths
+        }
         self.assertSetEqual(expected_exes, actual_exes)
         os.chdir(origdir)
 
@@ -79,8 +79,10 @@ class TestMakefile(unittest.TestCase):
         self._create_makefile_and_make(tempdir2)
 
         # Only check the bin directory as the config file has a unique name
-        comparator = filecmp.dircmp(os.path.join(tempdir1,'bin'), os.path.join(tempdir2,'bin'))
-        #print(comparator.diff_files)
+        comparator = filecmp.dircmp(
+            os.path.join(tempdir1, "bin"), os.path.join(tempdir2, "bin")
+        )
+        # print(comparator.diff_files)
         self.assertEqual(len(comparator.diff_files), 0)
 
         # Cleanup
@@ -105,33 +107,28 @@ def _test_library(static_dynamic):
     samplesdir = uth.samplesdir()
     origdir = uth.ctdir()
     global _moduletmpdir
-    if not _moduletmpdir or not os.path.exists(_moduletmpdir) :
+    if not _moduletmpdir or not os.path.exists(_moduletmpdir):
         _moduletmpdir = tempfile.mkdtemp()
-    
+
     tempdir = _moduletmpdir
     os.chdir(tempdir)
     temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
 
-    exerelativepath = 'numbers/test_library.cpp'
+    exerelativepath = "numbers/test_library.cpp"
     librelativepaths = [
-        'numbers/get_numbers.cpp',
-        'numbers/get_int.cpp',
-        'numbers/get_double.cpp']
+        "numbers/get_numbers.cpp",
+        "numbers/get_int.cpp",
+        "numbers/get_double.cpp",
+    ]
     exerealpath = os.path.join(samplesdir, exerelativepath)
-    librealpaths = [
-        os.path.join(
-            samplesdir,
-            filename) for filename in librelativepaths]
-    argv = [
-        '--config='+temp_config_name,
-        exerealpath,
-        static_dynamic] + librealpaths
+    librealpaths = [os.path.join(samplesdir, filename) for filename in librelativepaths]
+    argv = ["--config=" + temp_config_name, exerealpath, static_dynamic] + librealpaths
     ct.makefile.main(argv)
 
     # Figure out the name of the makefile and run make
-    filelist = os.listdir('.')
-    makefilename = [ff for ff in filelist if ff.startswith('Makefile')]
-    cmd = ['make', '-f'] + makefilename
+    filelist = os.listdir(".")
+    makefilename = [ff for ff in filelist if ff.startswith("Makefile")]
+    cmd = ["make", "-f"] + makefilename
     subprocess.check_output(cmd, universal_newlines=True)
 
     # Cleanup
@@ -139,5 +136,5 @@ def _test_library(static_dynamic):
     shutil.rmtree(tempdir, ignore_errors=True)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     unittest.main()
