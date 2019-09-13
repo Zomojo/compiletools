@@ -3,14 +3,9 @@ This files contains notes to coders who want to contribute to the project
 #
 # Code Style
 #
-The code must run under both python2.7 and 3.x
+The code must run under python 3.4->
 
-Use 
-    from __future__ import unicode_literals
-to force unicode strings under python2.7.
-
-
-Write code following the PEP 8 style guide.  
+Aspirationally, write code following the PEP 8 style guide.  
 While I dislike some of PEP 8, making it the convention avoids bike shed arguments.
 Before check-in you should format the code using
 
