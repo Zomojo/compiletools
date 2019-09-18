@@ -24,6 +24,12 @@ nosetests
 noestests-3.x  (where is is appropriate to your machine)
 
 #
+# Running coverage tests
+#
+pytest --cov=ct ct/test_*
+nosetests-3 --with-coverage
+
+#
 # Caches/Performance
 #
 When you are doing performance testing there are 3 caches you need to be aware of
