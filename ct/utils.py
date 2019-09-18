@@ -147,7 +147,7 @@ def removemount(absolutepath):
     return absolutepath[1:]
 
 
-class OrderedSet(collections.MutableSet):
+class OrderedSet(collections.abc.MutableSet):
 
     """ Set that remembers original insertion order.
         See https://code.activestate.com/recipes/576694/
