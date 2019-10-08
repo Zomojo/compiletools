@@ -2,8 +2,6 @@
     using it.  For a quick tutorial on this autovivification technique see
     https://gist.github.com/hrldcpr/2012250
 """
-from __future__ import unicode_literals
-
 import inspect
 from collections import defaultdict
 

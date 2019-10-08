@@ -1,6 +1,3 @@
-from __future__ import print_function
-from __future__ import unicode_literals
-
 import unittest
 import ct.apptools
 import argparse  # Used for the parse_args test

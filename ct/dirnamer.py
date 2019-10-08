@@ -1,6 +1,3 @@
-from __future__ import print_function
-from __future__ import unicode_literals
-
 """ Wrapper around appdirs that intercepts user_cache_dir 
     and uses the CTCACHE environment variable and other ct config files 
 """
