@@ -124,10 +124,15 @@ class DirectHeaderDeps(HeaderDepsBase):
             # Assume that all includes occur at the top of the file
             text = ff.read(8192)
 
-        # The pattern is intended to match all include statements
-        pat = re.compile('^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]', re.MULTILINE)
-
-        return pat.findall(text)
+        # The pattern is intended to match all include statements but
+        # not the ones with either C or C++ commented out.
+        # Note that if you use the #if 0 #endif comment trick then
+        # this regex will erroneously find #includes
+        pat = re.compile(
+            r'/\*.*?\*/|//.*?$|^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]',
+            re.MULTILINE | re.DOTALL,
+        )
+        return [group for group in pat.findall(text) if group]
 
     def _generate_tree_impl(self, realpath, node=None):
         """ Return a tree that describes the header includes
