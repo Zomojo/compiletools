@@ -148,6 +148,9 @@ class OrderedSet(collections.abc.MutableSet):
 
     """ Set that remembers original insertion order.
         See https://code.activestate.com/recipes/576694/
+        As of python 3.7, standard dict is guaranteed to preserve order so we can switch to something like
+        >>> keywords = ['foo', 'bar', 'bar', 'foo', 'baz', 'foo']
+        >>> list(dict.fromkeys(keywords).keys())
     """
 
     def __init__(self, iterable=None):
