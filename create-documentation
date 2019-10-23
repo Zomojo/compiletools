@@ -3,7 +3,7 @@
 # On Fedora 30 we need rst2man but on earlier versions we need rst2man-3
 CONV=rst2man
 source /etc/os-release
-if (( $VERSION_ID < 30 )); then
+if [[ $ID == fedora ]] && (( $VERSION_ID < 30 )); then
     CONV=rst2man-3
 fi
 
