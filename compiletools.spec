@@ -19,10 +19,10 @@ Url: http://zomojo.github.io/compiletools/
 # Can now assume rhel exists
 
 %if %{rhel} == 7
-BuildRequires: python36-setuptools python36-docutils python36-configargparse python36-appdirs python36-psutil python36-devel python36-docutils
+BuildRequires: python36-setuptools python36-configargparse python36-appdirs python36-psutil python36-devel python36-docutils
 Requires: python36-setuptools python36-configargparse python36-appdirs python36-psutil
 %else
-BuildRequires: python3-setuptools python3-docutils python3-configargparse python3-appdirs python3-psutil python3-devel python3-docutils make gcc-c++
+BuildRequires: python3-setuptools python3-configargparse python3-appdirs python3-psutil python3-devel python3-docutils make gcc-c++
 Requires: python3-setuptools python3-configargparse python3-appdirs python3-psutil
 %endif 
 

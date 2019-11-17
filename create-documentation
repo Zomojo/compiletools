@@ -1,9 +1,12 @@
 #! /usr/bin/bash
 
-# On Fedora 30 we need rst2man but on earlier versions we need rst2man-3
+# On Fedora 30 and Centos 8 we need rst2man but on earlier versions we need rst2man-3
 CONV=rst2man
 source /etc/os-release
 if [[ $ID == fedora ]] && (( $VERSION_ID < 30 )); then
+    CONV=rst2man-3
+fi
+if [[ $ID == centos ]] && (( $VERSION_ID < 8 )); then
     CONV=rst2man-3
 fi
 
