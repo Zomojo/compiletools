@@ -62,6 +62,7 @@ There is now a ct-release script that should do all the following steps
 # Zeroth: Make sure all *.rst files have been added to .bumpversion.cfg
 
 # First increase the version number using bumpversion.
+# The currently actively developed bumpversion is https://github.com/c4urself/bump2version
 # The .bumpversion.cfg has been set to tag and commit (but not push)
 bumpversion patch
 or
