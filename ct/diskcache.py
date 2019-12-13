@@ -2,11 +2,7 @@ import functools
 import os
 from io import open
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
-
+import pickle
 import ct.dirnamer
 from ct.memoize import memoize_false
 from ct.memoize import memoize
