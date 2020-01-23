@@ -72,7 +72,7 @@ def add_common_arguments(cap, argv=None, variant=None):
     cap.add(
         "--include",
         help="Extra path(s) to add to the list of include paths",
-        nargs="*",
+        action="append",
         default=[],
     )
     ct.git_utils.NameAdjuster.add_arguments(cap)

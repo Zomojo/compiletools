@@ -86,7 +86,7 @@ class TestHunterModule(unittest.TestCase):
         ]
         bulkpaths = [os.path.join(samplesdir, filename) for filename in relativepaths]
         temp_config = ct.unittesthelper.create_temp_config()
-        argv = ["--config", temp_config, "--include", uth.ctdir()] + bulkpaths
+        argv = ["--config", temp_config, "--include", uth.ctdir()]
         cap = configargparse.getArgumentParser()
         ct.hunter.add_arguments(cap)
         args = ct.apptools.parseargs(cap, argv)

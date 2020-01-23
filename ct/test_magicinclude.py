@@ -55,7 +55,7 @@ class TestMagicInclude(unittest.TestCase):
             "--CTCACHE=None",
             "--quiet",
             "--include=subdir2",
-            "subdir3",
+            "--include=subdir3",
             "--auto",
             "--config=" + temp_config_name,
         ]
