@@ -361,7 +361,7 @@ def main(argv):
             raise
     except Exception as err:
         if args.verbose < 2:
-            print(err.message)
+            print(err)
             return 1
         else:
             raise
