@@ -109,15 +109,15 @@ class MagicFlagsBase:
     def _handle_pkg_config(self, flag):
         flagsforfilename = {}
         for pkg in flag.split():
-            # TODO: when we move to python 3.7, use text=True rather than universal_newlines=True
+            # TODO: when we move to python 3.7, use text=True rather than universal_newlines=True and capture_output=True,
             cflags = subprocess.run(
                 ["pkg-config", "--cflags", pkg],
-                capture_output=True,
+                stdout=subprocess.PIPE, 
                 universal_newlines=True,
             ).stdout.rstrip()
             libs = subprocess.run(
                 ["pkg-config", "--libs", pkg],
-                capture_output=True,
+                stdout=subprocess.PIPE, 
                 universal_newlines=True,
             ).stdout.rstrip()
             flagsforfilename.setdefault("CPPFLAGS", ct.utils.OrderedSet()).add(cflags)
