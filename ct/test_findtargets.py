@@ -20,6 +20,7 @@ class TestFindTargetsModule(unittest.TestCase):
             "lotsofmagic/lotsofmagic.cpp",
             "magicsourceinheader/main.cpp",
             "magicinclude/main.cpp",
+            "magicpkgconfig/main.cpp",
             "movingheaders/main.cpp",
         }
         relativeexpectedtests = {

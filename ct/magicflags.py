@@ -71,6 +71,61 @@ class MagicFlagsBase:
     def __call__(self, filename):
         return self.parse(filename)
 
+    def _handle_source(self, flag, text):
+        # Find the include before the //#SOURCE=
+        result = re.search(
+            '# \d.* "(/\S*?)".*?//#SOURCE\s*=\s*' + flag, text, re.DOTALL
+        )
+        # Now adjust the flag to include the full path
+        newflag = ct.wrappedos.realpath(
+            os.path.join(ct.wrappedos.dirname(result.group(1)), flag.strip())
+        )
+        if self._args.verbose >= 9:
+            print(
+                " ".join(
+                    ["Adjusting source magicflag from flag=", flag, "to", newflag,]
+                )
+            )
+
+        if not ct.wrappedos.isfile(newflag):
+            raise IOError(
+                filename
+                + " specified "
+                + magic
+                + "='"
+                + newflag
+                + "' but it does not exist"
+            )
+
+        return newflag
+
+    def _handle_include(self, flag):
+        flagsforfilename = {}
+        flagsforfilename.setdefault("CPPFLAGS", ct.utils.OrderedSet()).add("-I " + flag)
+        flagsforfilename.setdefault("CFLAGS", ct.utils.OrderedSet()).add("-I " + flag)
+        flagsforfilename.setdefault("CXXFLAGS", ct.utils.OrderedSet()).add("-I " + flag)
+        return flagsforfilename
+
+    def _handle_pkg_config(self, flag):
+        flagsforfilename = {}
+        for pkg in flag.split():
+            # TODO: when we move to python 3.7, use text=True rather than universal_newlines=True
+            cflags = subprocess.run(
+                ["pkg-config", "--cflags", pkg],
+                capture_output=True,
+                universal_newlines=True,
+            ).stdout.rstrip()
+            libs = subprocess.run(
+                ["pkg-config", "--libs", pkg],
+                capture_output=True,
+                universal_newlines=True,
+            ).stdout.rstrip()
+            flagsforfilename.setdefault("CPPFLAGS", ct.utils.OrderedSet()).add(cflags)
+            flagsforfilename.setdefault("CFLAGS", ct.utils.OrderedSet()).add(cflags)
+            flagsforfilename.setdefault("CXXFLAGS", ct.utils.OrderedSet()).add(cflags)
+            flagsforfilename.setdefault("LDFLAGS", ct.utils.OrderedSet()).add(libs)
+        return flagsforfilename
+
     def _parse(self, filename):
         if self._args.verbose >= 4:
             print("Parsing magic flags for " + filename)
@@ -88,50 +143,19 @@ class MagicFlagsBase:
         for match in self.magicpattern.finditer(text):
             magic, flag = match.groups()
 
-            # If the magic was SOURCE then fix up the path
+            # If the magic was SOURCE then fix up the path in the flag
             if magic == "SOURCE":
-                # Find the include before the //#SOURCE=
-                result = re.search(
-                    '# \d.* "(/\S*?)".*?//#SOURCE\s*=\s*' + flag, text, re.DOTALL
-                )
-                # Now adjust the flag to include the full path
-                newflag = ct.wrappedos.realpath(
-                    os.path.join(ct.wrappedos.dirname(result.group(1)), flag.strip())
-                )
-                if self._args.verbose >= 9:
-                    print(
-                        " ".join(
-                            [
-                                "Adjusting source magicflag from flag=",
-                                flag,
-                                "to",
-                                newflag,
-                            ]
-                        )
-                    )
-                flag = newflag
-
-                if not ct.wrappedos.isfile(flag):
-                    raise IOError(
-                        filename
-                        + " specified "
-                        + magic
-                        + "='"
-                        + flag
-                        + "' but it does not exist"
-                    )
+                flag = self._handle_source(flag, text)
 
             # If the magic was INCLUDE then modify that into the equivalent CPPFLAGS, CFLAGS, and CXXFLAGS
             if magic == "INCLUDE":
-                flagsforfilename.setdefault("CPPFLAGS", ct.utils.OrderedSet()).add(
-                    "-I " + flag
-                )
-                flagsforfilename.setdefault("CFLAGS", ct.utils.OrderedSet()).add(
-                    "-I " + flag
-                )
-                flagsforfilename.setdefault("CXXFLAGS", ct.utils.OrderedSet()).add(
-                    "-I " + flag
-                )
+                extrafff = self._handle_include(flag)
+                flagsforfilename = {**flagsforfilename, **extrafff}
+
+            # If the magic was PKG-CONFIG then call pkg-config
+            if magic == "PKG-CONFIG":
+                extrafff = self._handle_pkg_config(flag)
+                flagsforfilename = {**flagsforfilename, **extrafff}
 
             flagsforfilename.setdefault(magic, ct.utils.OrderedSet()).add(flag)
             if self._args.verbose >= 5:
