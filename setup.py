@@ -10,16 +10,12 @@ here = os.path.abspath(os.path.dirname(__file__))
 with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as ff:
     long_description = ff.read()
 
-# Figure out the config files to install
-# TODO: Make this cross platform
-# TODO: data_files is deprecated
-data_files = [
-    ("/etc/xdg/ct", [os.path.join("ct.conf.d", ff) for ff in os.listdir("ct.conf.d")])
-]
 pkg_data_files = [
-    os.path.join(here, ff) for ff in glob.glob("samples/**/*pp", recursive=True)
+    ff for ff in glob.glob("ct/samples/**/*pp", recursive=True)
+] + [
+    ff for ff in glob.glob("ct/ct.conf.d/*")
 ]
-
+    
 setup(
     name="compiletools",
     version=__version__,
@@ -41,7 +37,6 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={"": pkg_data_files},
-    data_files=data_files,
     install_requires=["configargparse", "appdirs", "psutil"],
     test_suite="ct",
     scripts=[ff for ff in os.listdir(".") if ff.startswith("ct-")],
