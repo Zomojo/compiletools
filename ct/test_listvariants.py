@@ -40,8 +40,8 @@ From highest to lowest priority configuration directories, the possible variants
     gcc.release
 """.format(
             tempdir,
-            os.path.join(tempdir, "ct.conf.d"),
-            os.path.join(uth.cakedir(), "ct.conf.d"),
+            os.path.join(tempdir, "ct", "ct.conf.d"),
+            os.path.join(uth.cakedir(), "ct", "ct.conf.d"),
         )
 
         output = ct.listvariants.find_possible_variants(

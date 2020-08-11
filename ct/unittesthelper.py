@@ -28,11 +28,11 @@ def cakedir():
 
 
 def samplesdir():
-    return os.path.realpath(os.path.join(ctdir(), "../samples"))
+    return os.path.realpath(os.path.join(ctdir(), "samples"))
 
 
 def ctconfdir():
-    return os.path.realpath(os.path.join(ctdir(), "../ct.conf.d"))
+    return os.path.realpath(os.path.join(ctdir(), "ct.conf.d"))
 
 
 def create_temp_config(tempdir=None, filename=None):

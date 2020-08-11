@@ -190,7 +190,7 @@ def default_config_directories(
         system_dirs.append(system_config_dir)
     else:
         for python_config_dir in sys.path[::-1]:
-            trialpath = os.path.join(python_config_dir, "etc/xdg/ct")
+            trialpath = os.path.join(python_config_dir, "ct", "ct.conf.d")
             if ct.wrappedos.isdir(trialpath) and trialpath not in system_dirs:
                 system_dirs.append(trialpath)
         system_dirs.append(appdirs.site_config_dir(appname="ct"))
@@ -198,10 +198,10 @@ def default_config_directories(
     if exedir is None:
         exedir = ct.wrappedos.dirname(ct.wrappedos.realpath(sys.argv[0]))
 
-    executable_config_dir = os.path.join(exedir, "ct.conf.d")
+    executable_config_dir = os.path.join(exedir, "ct", "ct.conf.d")
     gitroot = ct.git_utils.find_git_root()
     results = ct.utils.OrderedSet(
-        [os.getcwd(), gitroot, os.path.join(gitroot, "ct.conf.d")]
+        [os.getcwd(), gitroot, os.path.join(gitroot, "ct", "ct.conf.d")]
     )
     if not repoonly:
         results.append([user_config_dir] + system_dirs + [executable_config_dir])
