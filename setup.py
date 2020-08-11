@@ -13,7 +13,7 @@ with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as ff:
 setup(
     name="compiletools",
     version=__version__,
-    setup_requires=["setuptools-scm"],
+    setup_requires=["setuptools_scm"],
     description="Tools to make compiling C/C++ projects easy",
     long_description=long_description,
     url="http://zomojo.github.io/compiletools/",
