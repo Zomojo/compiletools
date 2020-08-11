@@ -52,7 +52,6 @@ python3 setup.py test
 
 %install
 mkdir -p %{buildroot}%{_bindir}
-mkdir -p %{buildroot}%{_sysconfdir}/xdg/ct/
 mkdir -p %{buildroot}%{_mandir}/man1/
 mkdir -p %{buildroot}%{_datadir}/licenses/python-%{srcname}/
 
@@ -75,7 +74,6 @@ rm -rf %{buildroot}
 %license LICENSE.txt
 %doc README.rst
 %{_mandir}/man1/*.1.gz
-%{_sysconfdir}/xdg/ct
 %{python3_sitelib}/*
 %{_bindir}/ct-*
 %{_bindir}/cake
