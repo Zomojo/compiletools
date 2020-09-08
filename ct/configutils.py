@@ -173,7 +173,7 @@ def default_config_directories(
     # If repoonly is true, start the procedure at step 4
     # 1) same path as exe,
     # 2) system config (XDG compliant.  /etc/xdg/ct)
-    # 2b)   python virtual environment system configs (${python-site-packages}/etc/xdg/ct)
+    # 2b)   python virtual environment system configs (${python-site-packages}/etc/xdg/ct/ct.conf.d)
     # 3) user config   (XDG compliant. ~/.config/ct)
     # 4) repoconfig (usually <gitroot>/ct.conf.d TODO:make this configurable)
     # 5) gitroot
@@ -201,7 +201,7 @@ def default_config_directories(
     executable_config_dir = os.path.join(exedir, "ct", "ct.conf.d")
     gitroot = ct.git_utils.find_git_root()
     results = ct.utils.OrderedSet(
-        [os.getcwd(), gitroot, os.path.join(gitroot, "ct", "ct.conf.d")]
+        [os.getcwd(), gitroot, os.path.join(gitroot, "ct.conf.d")]
     )
     if not repoonly:
         results.append([user_config_dir] + system_dirs + [executable_config_dir])
