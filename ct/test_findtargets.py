@@ -22,6 +22,7 @@ class TestFindTargetsModule(unittest.TestCase):
             "magicinclude/main.cpp",
             "magicpkgconfig/main.cpp",
             "movingheaders/main.cpp",
+            "pkgconfig/main.cpp",
         }
         relativeexpectedtests = {
             "cross_platform/test_source.cpp",

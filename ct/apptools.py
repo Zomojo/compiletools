@@ -71,7 +71,14 @@ def add_common_arguments(cap, argv=None, variant=None):
     )
     cap.add(
         "--include",
-        help="Extra path(s) to add to the list of include paths",
+        help="Extra path(s) to add to the list of include paths.",
+        action="append",
+        default=[],
+    )
+    cap.add(
+        "--pkg-config",
+        dest="pkg_config",
+        help="Query pkg-config to obtain libs and flags for these packages.",
         action="append",
         default=[],
     )
@@ -233,6 +240,24 @@ def _add_include_paths_to_flags(args):
         print("\tCFLAGS=" + args.CFLAGS)
         print("\tCXXFLAGS=" + args.CXXFLAGS)
 
+def _add_flags_from_pkg_config(args):
+    for pkg in args.pkg_config:
+        # TODO: when we move to python 3.7, use text=True rather than universal_newlines=True and capture_output=True,
+        cflags = subprocess.run(
+            ["pkg-config", "--cflags", pkg],
+            stdout=subprocess.PIPE, 
+            universal_newlines=True,
+        ).stdout.rstrip()
+        args.CPPFLAGS += f" {cflags}"
+        args.CFLAGS += f" {cflags}"
+        args.CXXFLAGS += f" {cflags}"
+
+        libs = subprocess.run(
+            ["pkg-config", "--libs", pkg],
+            stdout=subprocess.PIPE, 
+            universal_newlines=True,
+        ).stdout.rstrip()
+        args.LDFLAGS += f" {libs}"
 
 def _set_project_version(args):
     """ C/C++ source code can rely on the CAKE_PROJECT_VERSION macro being set.
@@ -368,6 +393,7 @@ def _commonsubstitutions(args):
     _tier_one_modifications(args)
     _extend_includes_using_git_root(args)
     _add_include_paths_to_flags(args)
+    _add_flags_from_pkg_config(args)
     _set_project_version(args)
 
     try:

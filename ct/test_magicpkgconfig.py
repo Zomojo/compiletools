@@ -66,6 +66,39 @@ class TestMagicPKGCONFIG(unittest.TestCase):
         os.chdir(origdir)
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
+    def test_cmdline_pkgconfig(self):
+        # This test is to ensure that the "--pkg-config zlib" flag 
+        # correctly acquires extra cflags and libs
+
+        origdir = os.getcwd()
+
+        # Copy the pkgconfig test files to the temp directory and compile
+        # using ct-cake
+        tmppkgconfig = os.path.join(self._tmpdir, "pkgconfig")
+        shutil.copytree(os.path.join(uth.samplesdir(), "pkgconfig"), tmppkgconfig)
+        os.chdir(tmppkgconfig)
+
+        temp_config_name = ct.unittesthelper.create_temp_config(tmppkgconfig)
+        argv = [
+            "--exemarkers=main",
+            "--testmarkers=gtest.hpp",
+            "--CTCACHE=None",
+            "--quiet",
+            "--auto",
+            "--pkg-config=zlib",
+            "--config=" + temp_config_name,
+        ]
+
+        uth.reset()
+        ct.cake.main(argv)
+
+        relativepaths = ["pkgconfig/main.cpp"]
+        self._verify_one_exe_per_main(relativepaths)
+
+        # Cleanup
+        os.chdir(origdir)
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
     def tearDown(self):
         uth.reset()
 
