@@ -28,11 +28,11 @@ def extract_value_from_argv(key, argv=None, default=None, verbose=0):
         for arg in argv:
             try:
                 keywithhyphens = "".join([hh, key, "="])
-                if keywithhyphens in arg:
+                if arg.startswith(keywithhyphens):
                     value = arg.split("=")[1]
                 else:
                     keywithhyphens = "".join([hh, key])
-                    if keywithhyphens in arg:
+                    if arg.startswith(keywithhyphens):
                         index = argv.index(keywithhyphens)
                         value = argv[index + 1]
             except ValueError:

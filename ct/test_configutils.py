@@ -15,6 +15,16 @@ class TestVariant(unittest.TestCase):
         uth.reset()
         self._tmpdir = None
 
+    def test_extract_value_from_argv(self):
+        argv = ['/usr/bin/ct-config', '--pkg-config=fig', '-vvvvv']
+
+        value = ct.configutils.extract_value_from_argv("pkg-config", argv)
+        self.assertEqual(value, "fig")
+
+        value = ct.configutils.extract_value_from_argv("config", argv)
+        self.assertEqual(value, None)
+
+
     def test_extract_variant(self):
         self.assertEqual("abc", ct.configutils.extract_variant("--variant=abc".split()))
         self.assertEqual("abc", ct.configutils.extract_variant("--variant abc".split()))
