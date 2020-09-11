@@ -1,8 +1,8 @@
 // Simple test for pkg-config
 
+//#CXXFLAGS=-std=c++17
 #include <cstring>
 #include <zlib.h>
-//CXXFLAGS=-std=c++17
 // The libsystemd is here to make sure multiple packages on one line are OK
 //#PKG-CONFIG=zlib libsystemd
 

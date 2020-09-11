@@ -3,6 +3,7 @@ import os
 import subprocess
 import re
 import configargparse
+from collections import defaultdict
 from io import open
 from ct.diskcache import diskcache
 from ct.memoize import memoize
@@ -104,26 +105,32 @@ class MagicFlagsBase:
         flagsforfilename.setdefault("CPPFLAGS", ct.utils.OrderedSet()).add("-I " + flag)
         flagsforfilename.setdefault("CFLAGS", ct.utils.OrderedSet()).add("-I " + flag)
         flagsforfilename.setdefault("CXXFLAGS", ct.utils.OrderedSet()).add("-I " + flag)
+        if self._args.verbose >= 9:
+            print(f"Added -I {flag} to CPPFLAGS, CFLAGS, and CXXFLAGS")
         return flagsforfilename
 
     def _handle_pkg_config(self, flag):
-        flagsforfilename = {}
+        flagsforfilename = defaultdict(ct.utils.OrderedSet)
         for pkg in flag.split():
             # TODO: when we move to python 3.7, use text=True rather than universal_newlines=True and capture_output=True,
             cflags = subprocess.run(
                 ["pkg-config", "--cflags", pkg],
-                stdout=subprocess.PIPE, 
+                stdout=subprocess.PIPE,
                 universal_newlines=True,
             ).stdout.rstrip()
             libs = subprocess.run(
                 ["pkg-config", "--libs", pkg],
-                stdout=subprocess.PIPE, 
+                stdout=subprocess.PIPE,
                 universal_newlines=True,
             ).stdout.rstrip()
-            flagsforfilename.setdefault("CPPFLAGS", ct.utils.OrderedSet()).add(cflags)
-            flagsforfilename.setdefault("CFLAGS", ct.utils.OrderedSet()).add(cflags)
-            flagsforfilename.setdefault("CXXFLAGS", ct.utils.OrderedSet()).add(cflags)
-            flagsforfilename.setdefault("LDFLAGS", ct.utils.OrderedSet()).add(libs)
+            flagsforfilename["CPPFLAGS"].add(cflags)
+            flagsforfilename["CFLAGS"].add(cflags)
+            flagsforfilename["CXXFLAGS"].add(cflags)
+            flagsforfilename["LDFLAGS"].add(libs)
+            if self._args.verbose >= 9:
+                print(f"Magic PKG-CONFIG = {pkg}:")
+                print(f"\tadded {cflags} to CPPFLAGS, CFLAGS, and CXXFLAGS")
+                print(f"\tadded {libs} to LDFLAGS")
         return flagsforfilename
 
     def _parse(self, filename):
@@ -138,7 +145,7 @@ class MagicFlagsBase:
         self._headerdeps.process(filename)
 
         text = self.readfile(filename)
-        flagsforfilename = {}
+        flagsforfilename = defaultdict(ct.utils.OrderedSet)
 
         for match in self.magicpattern.finditer(text):
             magic, flag = match.groups()
@@ -150,14 +157,18 @@ class MagicFlagsBase:
             # If the magic was INCLUDE then modify that into the equivalent CPPFLAGS, CFLAGS, and CXXFLAGS
             if magic == "INCLUDE":
                 extrafff = self._handle_include(flag)
-                flagsforfilename = {**flagsforfilename, **extrafff}
+                for key, values in extrafff.items():
+                    for value in values:
+                        flagsforfilename[key].add(value)
 
             # If the magic was PKG-CONFIG then call pkg-config
             if magic == "PKG-CONFIG":
                 extrafff = self._handle_pkg_config(flag)
-                flagsforfilename = {**flagsforfilename, **extrafff}
+                for key, values in extrafff.items():
+                    for value in values:
+                        flagsforfilename[key].add(value)
 
-            flagsforfilename.setdefault(magic, ct.utils.OrderedSet()).add(flag)
+            flagsforfilename[magic].add(flag)
             if self._args.verbose >= 5:
                 print(
                     "Using magic flag {0}={1} extracted from {2}".format(
