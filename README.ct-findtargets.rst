@@ -9,7 +9,7 @@ What
 :Author: geoff@zomojo.com
 :Date:   2018-04-17
 :Copyright: Copyright (C) 2011-2018 Zomojo Pty Ltd
-:Version: 4.1.78
+:Version: 4.1.79
 :Manual section: 1
 :Manual group: developers
 
