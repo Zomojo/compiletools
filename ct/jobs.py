@@ -1,11 +1,26 @@
 import configargparse
 import ct.apptools
-import psutil
+import os
+try:
+    # Termux can't import psutil without double exceptions
+    os.stat("/proc/stat")
+    import psutil
+except PermissionError:
+    import subprocess
 
 
 def _cpus():
-    thisprocess = psutil.Process()
-    return len(thisprocess.cpu_affinity())
+    try:
+        thisprocess = psutil.Process()
+        return len(thisprocess.cpu_affinity())
+    except:
+        # Workaround for Termux
+        return subprocess.run(
+            ["nproc"],
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+        ).stdout.rstrip()
+
 
 
 def add_arguments(cap):
