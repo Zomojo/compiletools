@@ -1,26 +1,53 @@
 import configargparse
 import ct.apptools
 import os
-try:
-    # Termux can't import psutil without double exceptions
-    os.stat("/proc/stat")
+import platform
+
+
+def _determine_system():
+    system = platform.system().lower()
+    if platform.system() == "Linux":
+        try:
+            # A Termux fingerprint is that it
+            # doesn't have permissions for /proc/stat
+            os.stat("/proc/stat")
+        except PermissionError:
+            system = "termux"
+    return system
+
+
+def _cpus_linux():
     import psutil
-except PermissionError:
+
+    thisprocess = psutil.Process()
+    return len(thisprocess.cpu_affinity())
+
+
+def _cpus_termux():
+    # Termux can't import psutil without double exceptions
+    # which is why we use nproc
     import subprocess
 
+    return subprocess.run(
+        ["nproc"],
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    ).stdout.rstrip()
 
-def _cpus():
-    try:
-        thisprocess = psutil.Process()
-        return len(thisprocess.cpu_affinity())
-    except:
-        # Workaround for Termux
-        return subprocess.run(
-            ["nproc"],
-            stdout=subprocess.PIPE,
-            universal_newlines=True,
-        ).stdout.rstrip()
 
+def _cpus_darwin():
+    # psutil isn't supported on Darwin and
+    # nproc isn't installed by default
+    import subprocess
+
+    return subprocess.run(
+        ["sysctl", "-n", "hw.ncpu"],
+        stdout=subprocess.PIPE,
+        universal_newlines=True,
+    ).stdout.rstrip()
+
+
+_cpu_count = globals()["_".join(["_cpus", _determine_system()])]
 
 
 def add_arguments(cap):
@@ -31,7 +58,7 @@ def add_arguments(cap):
         "--parallel",
         dest="parallel",
         type=int,
-        default=_cpus(),
+        default=_cpu_count(),
         help="Sets the number of CPUs to use in parallel for a build.",
     )
 
