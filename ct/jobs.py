@@ -47,7 +47,13 @@ def _cpus_darwin():
     ).stdout.rstrip()
 
 
-_cpu_count = globals()["_".join(["_cpus", _determine_system()])]
+def _cpu_count():
+    try:
+        cpu_func = globals()["_".join(["_cpus", _determine_system()])]
+        return cpu_func()
+    except KeyError:
+        # A safe-ish default even for phones
+        return 4
 
 
 def add_arguments(cap):
