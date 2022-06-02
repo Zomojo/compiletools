@@ -13,16 +13,18 @@ class TestFindTargetsModule(unittest.TestCase):
 
     def test_samples(self):
         relativeexpectedexes = {
-            "simple/helloworld_c.c",
-            "simple/helloworld_cpp.cpp",
             "dottypaths/dottypaths.cpp",
             "library/main.cpp",
             "lotsofmagic/lotsofmagic.cpp",
-            "magicsourceinheader/main.cpp",
             "magicinclude/main.cpp",
             "magicpkgconfig/main.cpp",
+            "magicsourceinheader/main.cpp",
             "movingheaders/main.cpp",
+            "nestedconfig/nc.cpp",
+            "nestedconfig/subdir/nc.cpp",
             "pkgconfig/main.cpp",
+            "simple/helloworld_c.c",
+            "simple/helloworld_cpp.cpp",
         }
         relativeexpectedtests = {
             "cross_platform/test_source.cpp",
