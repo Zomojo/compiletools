@@ -146,7 +146,7 @@ you use. This difference alone should see a large improvement on most
 projects, especially for incremental rebuilds.
 
 Selective build and test
-===========
+========================
 
 You can instruct ct-cake to only build binaries dependant on a list of
 source files using the ``--build-only-changed`` flag. This is helpful for
