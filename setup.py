@@ -7,7 +7,7 @@ from ct.version import __version__
 here = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the README file
-with io.open(os.path.join(here, "README.rst"), encoding="utf-8") as ff:
+with io.open(os.path.join(here, "ct", "README.rst"), encoding="utf-8") as ff:
     long_description = ff.read()
 
 setup(
@@ -30,10 +30,11 @@ setup(
     ],
     keywords="c++ make development",
     packages=find_packages(),
+    package_data={"":[ff for ff in os.listdir("ct") if ff.startswith("README")]},
     include_package_data=True,
     install_requires=["configargparse", "appdirs", "psutil", "rich", "rich_rst"],
     test_suite="ct",
-    scripts=[ff for ff in os.listdir(".") if ff.startswith("ct-") or ff.startswith("README")],
+    scripts=[ff for ff in os.listdir(".") if ff.startswith("ct-")],
     download_url="https://github.com/Zomojo/compiletools/archive/v"
     + __version__
     + ".tar.gz",

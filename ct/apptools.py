@@ -14,7 +14,7 @@ import ct.dirnamer
 
 import rich
 from rich_rst import RestructuredText
-
+import inspect
 
 class DocumentationAction(argparse.Action):
     def __init__(self, option_strings, dest, nargs=0, **kwargs):
@@ -25,7 +25,8 @@ class DocumentationAction(argparse.Action):
         super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
     def __call__(self, parser, namespace, values, option_string=None):
-        doc_filename = f"README.{parser.prog}.rst"
+        this_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0)))
+        doc_filename = os.path.join(this_dir, f"README.{parser.prog}.rst")
         with open(doc_filename, "r") as docfile:
             text = docfile.read()
             rich.print(RestructuredText(text))
