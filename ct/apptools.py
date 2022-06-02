@@ -1,6 +1,7 @@
 import sys
 import os
 import subprocess
+import argparse
 
 # Only used for the verbose print.
 import configargparse
@@ -10,6 +11,25 @@ import ct.git_utils
 import ct.configutils
 import ct.utils
 import ct.dirnamer
+
+import rich
+from rich_rst import RestructuredText
+
+
+class DocumentationAction(argparse.Action):
+    def __init__(self, option_strings, dest, nargs=0, **kwargs):
+        if nargs != 0:
+            raise ValueError(
+                "nargs for DocumentationAction must be 0; it is " "just a flag."
+            )
+        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        doc_filename = f"README.{parser.prog}.rst"
+        with open(doc_filename, "r") as docfile:
+            text = docfile.read()
+            rich.print(RestructuredText(text))
+        sys.exit(0)
 
 
 def add_base_arguments(cap, argv=None, variant=None):
@@ -41,10 +61,11 @@ def add_base_arguments(cap, argv=None, variant=None):
     )
     cap.add("--version", action="version", version=__version__)
     cap.add("-?", action="help", help="Help")
+    cap.add("--man", "--doc", default=False, action=DocumentationAction)
 
 
 def add_common_arguments(cap, argv=None, variant=None):
-    """ Insert common arguments into the configargparse object """
+    """Insert common arguments into the configargparse object"""
     add_base_arguments(cap, argv=argv, variant=variant)
     ct.dirnamer.add_arguments(cap)
     cap.add(
@@ -86,7 +107,7 @@ def add_common_arguments(cap, argv=None, variant=None):
 
 
 def add_link_arguments(cap):
-    """ Insert the link arguments into the configargparse singleton """
+    """Insert the link arguments into the configargparse singleton"""
     cap.add("--LD", help="Linker", default="unsupplied_implies_use_CXX")
     cap.add(
         "--LDFLAGS",
@@ -110,8 +131,8 @@ def add_output_directory_arguments(cap, variant):
 
 
 def add_target_arguments(cap):
-    """ Insert the arguments that control what targets get created
-        into the configargparse singleton.
+    """Insert the arguments that control what targets get created
+    into the configargparse singleton.
     """
     # Don't re-add filename if it is already in the configargparsea
     if not any("filename" in action.dest for action in cap._actions):
@@ -132,8 +153,8 @@ def add_target_arguments(cap):
 
 
 def add_target_arguments_ex(cap):
-    """ Add the target arguments and the extra arguments that augment 
-        the target arguments 
+    """Add the target arguments and the extra arguments that augment
+    the target arguments
     """
     add_target_arguments(cap)
     cap.add(
@@ -153,8 +174,8 @@ def add_target_arguments_ex(cap):
 
 
 def unsupplied_replacement(variable, default_variable, verbose, variable_str):
-    """ If a given variable has the letters "unsupplied" in it
-        then return the given default variable.
+    """If a given variable has the letters "unsupplied" in it
+    then return the given default variable.
     """
     replacement = variable
     if "unsupplied" in variable:
@@ -169,8 +190,8 @@ def unsupplied_replacement(variable, default_variable, verbose, variable_str):
 
 
 def _substitute_CXX_for_missing(args):
-    """ If C PreProcessor variables (and the same for the LD*) are not set
-        but CXX ones are set then just use the CXX equivalents
+    """If C PreProcessor variables (and the same for the LD*) are not set
+    but CXX ones are set then just use the CXX equivalents
     """
     args.CPP = unsupplied_replacement(args.CPP, args.CXX, args.verbose, "CPP")
     args.CPPFLAGS = unsupplied_replacement(
@@ -189,8 +210,8 @@ def _substitute_CXX_for_missing(args):
 
 
 def _extend_includes_using_git_root(args):
-    """ Unless turned off, the git root will be added
-        to the list of include paths
+    """Unless turned off, the git root will be added
+    to the list of include paths
     """
     if args.git_root and (
         hasattr(args, "filename")
@@ -224,7 +245,7 @@ def _extend_includes_using_git_root(args):
 
 
 def _add_include_paths_to_flags(args):
-    """ Add all the include paths to all three compile flags """
+    """Add all the include paths to all three compile flags"""
     for path in args.include:
         if path is not None:
             if path not in args.CPPFLAGS:
@@ -240,12 +261,13 @@ def _add_include_paths_to_flags(args):
         print("\tCFLAGS=" + args.CFLAGS)
         print("\tCXXFLAGS=" + args.CXXFLAGS)
 
+
 def _add_flags_from_pkg_config(args):
     for pkg in args.pkg_config:
         # TODO: when we move to python 3.7, use text=True rather than universal_newlines=True and capture_output=True,
         cflags = subprocess.run(
             ["pkg-config", "--cflags", pkg],
-            stdout=subprocess.PIPE, 
+            stdout=subprocess.PIPE,
             universal_newlines=True,
         ).stdout.rstrip()
         args.CPPFLAGS += f" {cflags}"
@@ -254,16 +276,17 @@ def _add_flags_from_pkg_config(args):
 
         libs = subprocess.run(
             ["pkg-config", "--libs", pkg],
-            stdout=subprocess.PIPE, 
+            stdout=subprocess.PIPE,
             universal_newlines=True,
         ).stdout.rstrip()
         args.LDFLAGS += f" {libs}"
 
+
 def _set_project_version(args):
-    """ C/C++ source code can rely on the CAKE_PROJECT_VERSION macro being set.
-        If the user specified a projectversion then use that.
-        Otherwise execute projectversioncmd to determine projectversion.
-        In the completely unspecified case, use the zero version.
+    """C/C++ source code can rely on the CAKE_PROJECT_VERSION macro being set.
+    If the user specified a projectversion then use that.
+    Otherwise execute projectversioncmd to determine projectversion.
+    In the completely unspecified case, use the zero version.
     """
     if hasattr(args, "projectversion") and args.projectversion:
         return
@@ -323,9 +346,9 @@ def _set_project_version(args):
 
 
 def _do_xxpend(args, name):
-    """ For example, if name is CPPFLAGS, take the 
-        args.prependcppflags and prepend them to args.CPPFLAGS.
-        Similarly for append.
+    """For example, if name is CPPFLAGS, take the
+    args.prependcppflags and prepend them to args.CPPFLAGS.
+    Similarly for append.
     """
     xxlist = ("prepend", "append")
     for xx in xxlist:
@@ -346,8 +369,8 @@ def _do_xxpend(args, name):
 
 
 def _tier_one_modifications(args):
-    """ Do some early modifications that can potentially cause 
-        downstream modifications.
+    """Do some early modifications that can potentially cause
+    downstream modifications.
     """
     _substitute_CXX_for_missing(args)
     flaglist = ("CPPFLAGS", "CFLAGS", "CXXFLAGS", "LDFLAGS")
@@ -361,8 +384,8 @@ def _tier_one_modifications(args):
 
 
 def _strip_quotes(args):
-    """ Sometimes you need to quote options (e.g. ones that start with hypen)
-        This will strip a layer of quotes off.
+    """Sometimes you need to quote options (e.g. ones that start with hypen)
+    This will strip a layer of quotes off.
     """
     for name in vars(args):
         value = getattr(args, name)
@@ -381,8 +404,8 @@ def _strip_quotes(args):
 
 
 def _commonsubstitutions(args):
-    """ If certain arguments have not been specified but others have
-        then there are some obvious substitutions to make
+    """If certain arguments have not been specified but others have
+    then there are some obvious substitutions to make
     """
     args.verbose -= args.quiet
 
@@ -418,15 +441,15 @@ _substitutioncallbacks = [_commonsubstitutions]
 
 
 def resetcallbacks():
-    """ Useful in tests to clear out the substitution callbacks """
+    """Useful in tests to clear out the substitution callbacks"""
     global _substitutioncallbacks
     _substitutioncallbacks = [_commonsubstitutions]
 
 
 def registercallback(callback):
-    """ Use this to register a function to be called back during the 
-        substitutions call (usually during parseargs).
-        The callback function will later be given "args" as its argument.
+    """Use this to register a function to be called back during the
+    substitutions call (usually during parseargs).
+    The callback function will later be given "args" as its argument.
     """
     _substitutioncallbacks.append(callback)
 
@@ -443,7 +466,7 @@ def substitutions(args, verbose=None):
 
 
 def parseargs(cap, argv, verbose=None):
-    """ argv must be the logical equivalent of sys.argv[1:] """
+    """argv must be the logical equivalent of sys.argv[1:]"""
     args = cap.parse_args(args=argv)
     _strip_quotes(args)
 
@@ -455,7 +478,7 @@ def parseargs(cap, argv, verbose=None):
 
 
 def terminalcolumns():
-    """ How many columns in the text terminal """
+    """How many columns in the text terminal"""
     try:
         columns = int(subprocess.check_output(["stty", "size"]).split()[1])
     except subprocess.CalledProcessError:

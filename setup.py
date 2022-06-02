@@ -31,10 +31,11 @@ setup(
     keywords="c++ make development",
     packages=find_packages(),
     include_package_data=True,
-    install_requires=["configargparse", "appdirs", "psutil"],
+    install_requires=["configargparse", "appdirs", "psutil", "rich", "rich_rst"],
     test_suite="ct",
-    scripts=[ff for ff in os.listdir(".") if ff.startswith("ct-")],
+    scripts=[ff for ff in os.listdir(".") if ff.startswith("ct-") or ff.startswith("README")],
     download_url="https://github.com/Zomojo/compiletools/archive/v"
     + __version__
     + ".tar.gz",
 )
+
