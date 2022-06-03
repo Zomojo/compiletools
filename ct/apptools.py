@@ -12,29 +12,30 @@ import ct.configutils
 import ct.utils
 import ct.dirnamer
 
-import rich
-from rich_rst import RestructuredText
-import inspect
+if sys.version_info.major == 3 and sys.version_info.minor >= 9:
+    import rich
+    from rich_rst import RestructuredText
+    import inspect
 
-class DocumentationAction(argparse.Action):
-    def __init__(self, option_strings, dest, nargs=0, **kwargs):
-        if nargs != 0:
-            raise ValueError(
-                "nargs for DocumentationAction must be 0; it is " "just a flag."
-            )
-        super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+    class DocumentationAction(argparse.Action):
+        def __init__(self, option_strings, dest, nargs=0, **kwargs):
+            if nargs != 0:
+                raise ValueError(
+                    "nargs for DocumentationAction must be 0; it is " "just a flag."
+                )
+            super().__init__(option_strings, dest, nargs=nargs, **kwargs)
 
-    def __call__(self, parser, namespace, values, option_string=None):
-        this_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0)))
-        doc_filename = os.path.join(this_dir, f"README.{parser.prog}.rst")
-        try:
-            with open(doc_filename, "r") as docfile:
-                text = docfile.read()
-                rich.print(RestructuredText(text))
-        except FileNotFoundError:
-            rich.print("No man/doc available :cry:")
+        def __call__(self, parser, namespace, values, option_string=None):
+            this_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0)))
+            doc_filename = os.path.join(this_dir, f"README.{parser.prog}.rst")
+            try:
+                with open(doc_filename, "r") as docfile:
+                    text = docfile.read()
+                    rich.print(RestructuredText(text))
+            except FileNotFoundError:
+                rich.print("No man/doc available :cry:")
 
-        sys.exit(0)
+            sys.exit(0)
 
 
 def add_base_arguments(cap, argv=None, variant=None):
@@ -66,7 +67,9 @@ def add_base_arguments(cap, argv=None, variant=None):
     )
     cap.add("--version", action="version", version=__version__)
     cap.add("-?", action="help", help="Help")
-    cap.add("--man", "--doc", default=False, action=DocumentationAction)
+
+    if sys.version_info.major == 3 and sys.version_info.minor >= 9:
+        cap.add("--man", "--doc", default=False, action=DocumentationAction)
 
 
 def add_common_arguments(cap, argv=None, variant=None):
