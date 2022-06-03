@@ -6,7 +6,7 @@ ct-jobs
 How many jobs to run concurrently by the ct-* applications.  
 ------------------------------------------------------------
 
-:Author: geoff@zomojo.com
+:Author: drgeoffathome@gmail.com
 :Date:   2017-04-28
 :Copyright: Copyright (C) 2011-2016 Zomojo Pty Ltd
 :Version: 4.1.83

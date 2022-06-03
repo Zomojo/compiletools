@@ -6,7 +6,7 @@ ct-headertree
 Create a tree of header dependencies starting at the given C/C++ file
 ---------------------------------------------------------------------
 
-:Author: geoff@zomojo.com
+:Author: drgeoffathome@gmail.com
 :Date:   2018-07-26
 :Copyright: Copyright (C) 2011-2018 Zomojo Pty Ltd
 :Version: 4.1.83
