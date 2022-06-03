@@ -7,7 +7,7 @@ from ct.version import __version__
 here = os.path.abspath(os.path.dirname(__file__))
 
 # Get the long description from the README file
-with io.open(os.path.join(here, "ct", "README.rst"), encoding="utf-8") as ff:
+with io.open(os.path.join(here, "ct", "README.ct-doc.rst"), encoding="utf-8") as ff:
     long_description = ff.read()
 
 setup(
