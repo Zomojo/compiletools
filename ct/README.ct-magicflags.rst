@@ -67,21 +67,28 @@ VALID MAGIC FLAGS
 A magic flag follows the pattern ``//#key=value``. Whitespace around the 
 equal sign is acceptable.
 
-The known magic flags are: ::
+The known magic flags are::
 
-    CPPFLAGS: C Pre Processor flags
-    CFLAGS: C compiler flags
-    CXXFLAGS: C++ flags (do not confuse these with the C PreProcessor flags)
-    LDFLAGS: Linker flags
-    LINKFLAGS: Linker flags (deprecated)
-    SOURCE: Inject an extra souce file into the list of files to be built. 
-            This is most commonly used in cross platform work.
-
+    =========   ==============================================================
+    Key         Description
+    =========   ==============================================================
+    CPPFLAGS    C Pre Processor flags
+    CFLAGS      C compiler flags
+    CXXFLAGS    C++ flags (do not confuse these with the C PreProcessor flags)
+    INCLUDE     Specify include paths without "-I". 
+                Adds the path to CPPFLAGS, CFLAGS and CXXFLAGS.
+    LDFLAGS     Linker flags
+    LINKFLAGS   Linker flags (deprecated)
+    SOURCE      Inject an extra souce file into the list of files to be built. 
+                This is most commonly used in cross platform work.
+    PKG-CONFIG  Extract the cflags and libs using pkg-config
+    ==========  ==============================================================
 
 EXAMPLES
 ========
-ct-magicflags main.cpp 
-ct-magicflags --variant=release main.cpp 
+
+* ct-magicflags main.cpp 
+* ct-magicflags --variant=release main.cpp 
 
 SEE ALSO
 ========
