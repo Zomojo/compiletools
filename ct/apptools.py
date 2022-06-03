@@ -27,9 +27,13 @@ class DocumentationAction(argparse.Action):
     def __call__(self, parser, namespace, values, option_string=None):
         this_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0)))
         doc_filename = os.path.join(this_dir, f"README.{parser.prog}.rst")
-        with open(doc_filename, "r") as docfile:
-            text = docfile.read()
-            rich.print(RestructuredText(text))
+        try:
+            with open(doc_filename, "r") as docfile:
+                text = docfile.read()
+                rich.print(RestructuredText(text))
+        except FileNotFoundError:
+            rich.print("No man/doc available :cry:")
+
         sys.exit(0)
 
 
