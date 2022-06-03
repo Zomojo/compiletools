@@ -39,20 +39,21 @@ popd >/dev/null
 #Strip the v off the tag to get the numeric version
 version=${tag#*v}
 
-#
+# Use pyp2rpm to create a RPM
+# The following is now actively deprecated
 # Pull a tarball from github and put it into SOURCES
 #
-rpmhome=$(rpm --eval %_topdir)
-pushd "$rpmhome" >/dev/null
-tarball=${tag}.tar.gz
-while [[ ! -s "SOURCES/${tarball}" ]]; do
-    curl -L "https://github.com/Zomojo/compiletools/archive/${tarball}" -o "SOURCES/${tarball}"
-done
+#rpmhome=$(rpm --eval %_topdir)
+#pushd "$rpmhome" >/dev/null
+#tarball=${tag}.tar.gz
+#while [[ ! -s "SOURCES/${tarball}" ]]; do
+#    curl -L "https://github.com/Zomojo/compiletools/archive/${tarball}" -o "SOURCES/${tarball}"
+#done
 
 # Create rpms of python-compiletools
-rpmbuild -ta SOURCES/${tarball}
+#rpmbuild -ta SOURCES/${tarball}
 
-popd >/dev/null
+#popd >/dev/null
 
 # Push to PyPI
 python3 setup.py sdist
