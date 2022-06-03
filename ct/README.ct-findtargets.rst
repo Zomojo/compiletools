@@ -9,7 +9,7 @@ What
 :Author: drgeoffathome@gmail.com
 :Date:   2018-04-17
 :Copyright: Copyright (C) 2011-2018 Zomojo Pty Ltd
-:Version: 4.1.83
+:Version: 4.1.84
 :Manual section: 1
 :Manual group: developers
 
