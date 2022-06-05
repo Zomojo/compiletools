@@ -1,5 +1,13 @@
 #!/usr/bin/python3
+import sys
+import configargparse
+import ct.apptools
 import ct.git_utils
 
 if __name__ == "__main__":
-    print(ct.git_utils.find_git_root())
+    cap = configargparse.getArgumentParser(
+        description="Determine the path of the git root.",
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+        auto_env_var_prefix="",
+    )
+    sys.exit(ct.git_utils.main())
