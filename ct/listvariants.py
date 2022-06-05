@@ -1,5 +1,5 @@
 import sys
-import argparse
+import configargparse
 import fnmatch
 import os
 import ct.configutils
@@ -8,23 +8,6 @@ from ct.version import __version__
 
 
 def add_arguments(parser):
-    parser.add(
-        "-v",
-        "--verbose",
-        help="Output verbosity. Add more v's to make it more verbose",
-        action="count",
-        default=0,
-    )
-    parser.add(
-        "-q",
-        "--quiet",
-        help="Decrement verbosity. Useful in apps where the default verbosity > 0.",
-        action="count",
-        default=0,
-    )
-    parser.add("--version", action="version", version=__version__)
-    parser.add("-?", action="help", help="Help")
-
     ct.utils.add_boolean_argument(
         parser,
         "configname",
@@ -167,3 +150,11 @@ def find_possible_variants(
         style.append_variants(found)
 
     return style.output
+
+def main(argv=None):
+    cap = configargparse.getArgumentParser()
+    ct.apptools.add_base_arguments(cap)
+    add_arguments(cap)
+    args = cap.parse_args(args=argv)
+    print(ct.listvariants.find_possible_variants(args=args, verbose=args.verbose))
+    return 0
