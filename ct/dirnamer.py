@@ -4,6 +4,7 @@
 import sys
 import os
 import appdirs
+import configargparse
 import ct.configutils
 
 user_data_dir = appdirs.user_data_dir
@@ -94,3 +95,11 @@ def user_cache_dir(
     cachedir = appdirs.user_cache_dir(appname, appauthor, version, opinion)
     _verbose_write_found(cachedir, verbose=verbose)
     return cachedir
+
+
+def main(argv=None):
+    cap = configargparse.getArgumentParser()
+    ct.apptools.add_base_arguments(cap)
+    add_arguments(cap)
+    args = cap.parse_args(args=argv)
+    print(ct.dirnamer.user_cache_dir(args=args))
