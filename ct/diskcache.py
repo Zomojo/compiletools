@@ -1,11 +1,10 @@
-import functools
 import os
 from io import open
+import functools
 
 import pickle
 import ct.dirnamer
 from ct.memoize import memoize_false
-from ct.memoize import memoize
 import ct.wrappedos
 
 
@@ -209,7 +208,7 @@ class diskcache:
             if ct.dirnamer.user_cache_dir() == "None":
 
                 @functools.wraps(func)
-                @memoize
+                @functools.cache
                 def memcacher(*args):
                     diskcache._instances[func] = self
                     return func(*args)

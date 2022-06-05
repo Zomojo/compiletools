@@ -2,7 +2,7 @@ import collections
 import os
 import sys
 import inspect
-from ct.memoize import memoize
+import functools
 import ct.wrappedos
 
 
@@ -14,13 +14,13 @@ def is_nonstr_iter(obj):
         return False
     return hasattr(obj, "__iter__")
 
-@memoize
+@functools.cache
 def isheader(filename):
     """ Internal use.  Is filename a header file?"""
     return filename.split(".")[-1].lower() in ["h", "hpp", "hxx", "hh", "inl"]
 
 
-@memoize
+@functools.cache
 def issource(filename):
     """ Internal use. Is the filename a source file?"""
     return filename.split(".")[-1].lower() in ["cpp", "cxx", "cc", "c"]
@@ -30,7 +30,7 @@ def isexecutable(filename):
     return os.path.isfile(filename) and os.access(filename, os.X_OK)
 
 
-@memoize
+@functools.cache
 def implied_source(filename):
     """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
     basename = os.path.splitext(filename)[0]
@@ -43,7 +43,7 @@ def implied_source(filename):
         return None
 
 
-@memoize
+@functools.cache
 def impliedheader(filename):
     """ Guess what the header file is corresponding to the given source file """
     basename = os.path.splitext(filename)[0]
@@ -57,10 +57,10 @@ def impliedheader(filename):
 
 
 def clear_cache():
-    isheader.cache.clear()
-    issource.cache.clear()
-    implied_source.cache.clear()
-    impliedheader.cache.clear()
+    isheader.cache_clear()
+    issource.cache_clear()
+    implied_source.cache_clear()
+    impliedheader.cache_clear()
 
 
 def extractinitargs(args, classname):

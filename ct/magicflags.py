@@ -6,7 +6,6 @@ import configargparse
 from collections import defaultdict
 from io import open
 from ct.diskcache import diskcache
-from ct.memoize import memoize
 import ct.utils
 import ct.git_utils
 import ct.headerdeps

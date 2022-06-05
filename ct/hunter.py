@@ -3,13 +3,13 @@ import re
 import subprocess
 import sys
 from io import open
+import functools
 
 import configargparse
 
 import ct.utils
 import ct.wrappedos
 from ct.diskcache import diskcache
-from ct.memoize import memoize
 import ct.headerdeps
 import ct.magicflags
 
@@ -94,7 +94,7 @@ class Hunter(object):
             print("Hunter::_required_files_impl. ", realpath, " Returning ", processed)
         return processed
 
-    @memoize
+    @functools.cache
     def required_source_files(self, filename):
         """ Create the list of source files that also need to be compiled
             to complete the linkage of the given file. If filename is a source
@@ -111,7 +111,7 @@ class Hunter(object):
             ]
         )
 
-    @memoize
+    @functools.cache
     def required_files(self, filename):
         """ Create the list of files (both header and source)
             that are either directly or indirectly utilised by the given file.
@@ -126,8 +126,8 @@ class Hunter(object):
     def clear_cache():
         # print("Hunter::clear_cache")
         ct.wrappedos.clear_cache()
-        Hunter.required_source_files.cache.clear()
-        Hunter.required_files.cache.clear()
+        Hunter.required_source_files.cache_clear()
+        Hunter.required_files.cache_clear()
         ct.headerdeps.HeaderDepsBase.clear_cache()
         ct.magicflags.MagicFlagsBase.clear_cache()
 

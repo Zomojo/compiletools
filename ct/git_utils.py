@@ -1,13 +1,13 @@
 import os
 import subprocess
 
-from ct.memoize import memoize
+import functools
 import ct.utils
 
 
 def find_git_root(filename=None):
     """ Return the absolute path of .git for the given filename """
-    # Note: You can't memoize this one since the None parameter will
+    # Note: You can't functools.cache this one since the None parameter will
     # return different results as the cwd changes
     if filename:
         directory = os.path.dirname(os.path.realpath(filename))
@@ -16,7 +16,7 @@ def find_git_root(filename=None):
     return _find_git_root(directory)
 
 
-@memoize
+@functools.cache
 def _find_git_root(directory):
     """ Internal function to find the git root but cache it against the given directory """
     original_cwd = os.getcwd()
@@ -49,15 +49,15 @@ def _find_git_root(directory):
     return gitroot
 
 
-@memoize
+@functools.cache
 def strip_git_root(filename):
     size = len(find_git_root(filename)) + 1
     return filename[size:]
 
 
 def clear_cache():
-    _find_git_root.cache.clear()
-    strip_git_root.cache.clear()
+    _find_git_root.cache_clear()
+    strip_git_root.cache_clear()
 
 
 class Project(object):

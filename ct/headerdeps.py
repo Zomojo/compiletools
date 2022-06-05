@@ -1,11 +1,11 @@
 import os
 import re
 from io import open
+import functools
 
 # At deep verbose levels pprint is used
 from pprint import pprint
 
-from ct.memoize import memoize
 import ct.wrappedos
 import ct.apptools
 import ct.tree as tree
@@ -90,7 +90,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         if self.args.verbose >= 3:
             print("Includes=" + str(self.includes))
 
-    @memoize
+    @functools.cache
     def _search_project_includes(self, include):
         """ Internal use.  Find the given include file in the project include paths """
         for inc_dir in self.includes:
@@ -104,7 +104,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         #    raise FileNotFoundError("DirectHeaderDeps could not determine the location of ",include)
         return None
 
-    @memoize
+    @functools.cache
     def _find_include(self, include, cwd):
         """ Internal use.  Find the given include file.
             Start at the current working directory then try the project includes
@@ -117,7 +117,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         else:
             return self._search_project_includes(include)
 
-    @memoize
+    @functools.cache
     def _create_include_list(self, realpath):
         """ Internal use. Create the list of includes for the given file """
         with open(realpath, encoding="utf-8", errors="ignore") as ff:
@@ -211,9 +211,9 @@ class DirectHeaderDeps(HeaderDepsBase):
     def clear_cache():
         # print("DirectHeaderDeps::clear_cache")
         diskcache.clear_cache()
-        DirectHeaderDeps._search_project_includes.cache.clear()
-        DirectHeaderDeps._find_include.cache.clear()
-        DirectHeaderDeps._create_include_list.cache.clear()
+        DirectHeaderDeps._search_project_includes.cache_clear()
+        DirectHeaderDeps._find_include.cache_clear()
+        DirectHeaderDeps._create_include_list.cache_clear()
 
 
 class CppHeaderDeps(HeaderDepsBase):

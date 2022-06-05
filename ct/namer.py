@@ -1,5 +1,5 @@
 import os
-from ct.memoize import memoize
+import functools
 import ct.wrappedos
 import ct.git_utils
 import ct.utils
@@ -42,7 +42,7 @@ class Namer(object):
             relative = defaultdir
         return ct.wrappedos.realpath(relative)
 
-    @memoize
+    @functools.cache
     def object_dir(self, sourcefilename=None):
         """ This function allows for alternative behaviour to be explore.
             Previously we tried replicating the source directory structure
@@ -51,7 +51,7 @@ class Namer(object):
         """
         return self.args.objdir
 
-    @memoize
+    @functools.cache
     def object_name(self, sourcefilename):
         """ Return the name (not the path) of the object file
             for the given source.
@@ -60,25 +60,25 @@ class Namer(object):
         basename = os.path.splitext(name)[0]
         return "".join([directory.replace("/", "@@"), "@@", basename, ".o"])
 
-    @memoize
+    @functools.cache
     def object_pathname(self, sourcefilename):
         return "".join(
             [self.object_dir(sourcefilename), "/", self.object_name(sourcefilename)]
         )
 
-    @memoize
+    @functools.cache
     def executable_dir(self, sourcefilename=None):
         """ Similar to object_dir, this allows for alternative 
             behaviour experimentation.
         """
         return self.args.bindir
 
-    @memoize
+    @functools.cache
     def executable_name(self, sourcefilename):
         name = os.path.split(sourcefilename)[1]
         return os.path.splitext(name)[0]
 
-    @memoize
+    @functools.cache
     def executable_pathname(self, sourcefilename):
         return "".join(
             [
@@ -88,14 +88,14 @@ class Namer(object):
             ]
         )
 
-    @memoize
+    @functools.cache
     def staticlibrary_name(self, sourcefilename=None):
         if sourcefilename is None and self.args.static:
             sourcefilename = self.args.static[0]
         name = os.path.split(sourcefilename)[1]
         return "lib" + os.path.splitext(name)[0] + ".a"
 
-    @memoize
+    @functools.cache
     def staticlibrary_pathname(self, sourcefilename=None):
         """ Put static libraries in the same directory as executables """
         if sourcefilename is None and self.args.static:
@@ -108,14 +108,14 @@ class Namer(object):
             ]
         )
 
-    @memoize
+    @functools.cache
     def dynamiclibrary_name(self, sourcefilename=None):
         if sourcefilename is None and self.args.dynamic:
             sourcefilename = self.args.dynamic[0]
         name = os.path.split(sourcefilename)[1]
         return "lib" + os.path.splitext(name)[0] + ".so"
 
-    @memoize
+    @functools.cache
     def dynamiclibrary_pathname(self, sourcefilename=None):
         """ Put dynamic libraries in the same directory as executables """
         if sourcefilename is None and self.args.dynamic:
@@ -156,13 +156,13 @@ class Namer(object):
         ct.wrappedos.clear_cache()
         ct.utils.clear_cache()
         ct.git_utils.clear_cache()
-        self.object_dir.cache.clear()
-        self.object_name.cache.clear()
-        self.object_pathname.cache.clear()
-        self.executable_dir.cache.clear()
-        self.executable_name.cache.clear()
-        self.executable_pathname.cache.clear()
-        self.staticlibrary_name.cache.clear()
-        self.staticlibrary_pathname.cache.clear()
-        self.dynamiclibrary_name.cache.clear()
-        self.dynamiclibrary_pathname.cache.clear()
+        self.object_dir.cache_clear()
+        self.object_name.cache_clear()
+        self.object_pathname.cache_clear()
+        self.executable_dir.cache_clear()
+        self.executable_name.cache_clear()
+        self.executable_pathname.cache_clear()
+        self.staticlibrary_name.cache_clear()
+        self.staticlibrary_pathname.cache_clear()
+        self.dynamiclibrary_name.cache_clear()
+        self.dynamiclibrary_pathname.cache_clear()

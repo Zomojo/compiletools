@@ -1,28 +1,28 @@
 """ Wrap and memoize a variety of os calls """
 import os
 import shutil
-from ct.memoize import memoize
+import functools
 
 
-@memoize
+@functools.cache
 def getmtime(realpath):
     """ Cached version of os.path.getmtime """
     return os.path.getmtime(realpath)
 
 
-@memoize
+@functools.cache
 def isfile(trialpath):
     """ Cached version of os.path.isfile """
     return os.path.isfile(trialpath)
 
 
-@memoize
+@functools.cache
 def isdir(trialpath):
     """ Cached version of os.path.isdir """
     return os.path.isdir(trialpath)
 
 
-@memoize
+@functools.cache
 def realpath(trialpath):
     """ Cache os.path.realpath """
     # Note: We can't raise an exception on file non-existence
@@ -31,7 +31,7 @@ def realpath(trialpath):
     return rp
 
 
-@memoize
+@functools.cache
 def dirname(trialpath):
     """ A cached verion of os.path.dirname """
     return os.path.dirname(trialpath)
@@ -64,8 +64,8 @@ def copy(src, dest):
 
 
 def clear_cache():
-    getmtime.cache.clear()
-    isfile.cache.clear()
-    isdir.cache.clear()
-    realpath.cache.clear()
-    dirname.cache.clear()
+    getmtime.cache_clear()
+    isfile.cache_clear()
+    isdir.cache_clear()
+    realpath.cache_clear()
+    dirname.cache_clear()
