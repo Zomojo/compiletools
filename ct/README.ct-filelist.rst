@@ -22,7 +22,7 @@ DESCRIPTION
 ct-filelist uses the given variants/configs, command line arguments, 
 environment variables, and most importantly one or more filenames to determine 
 the list of files that are required to build the given filename(s). For example, 
-if myfile.cpp includes myfile.hpp and myfile.hpp in turn includes awesome. h
+if myfile.cpp includes myfile.hpp and myfile.hpp in turn includes awesome.h
 
 ::
 
@@ -45,25 +45,28 @@ output to build up a set of files to include in a tarball.
 OPTIONS
 =======
 
-  --extrafile [EXTRAFILE [EXTRAFILE ...]]
-                        Extra files to directly add to the filelist [env var:
-                        EXTRAFILE] (default: None)
-  --extradir [EXTRADIR [EXTRADIR ...]]
-                        Extra directories to add all files from to the
-                        filelist [env var: EXTRADIR] (default: None)
-  --extrafilelist [EXTRAFILELIST [EXTRAFILELIST ...]]
-                        Read the given files to find a list of extra files to
-                        add to the filelist [env var: EXTRAFILELIST] (default:
-                        None)
+--extrafile [EXTRAFILE [EXTRAFILE ...]]
+                    Extra files to directly add to the filelist 
+                    [env var: EXTRAFILE] (default: None)
+--extradir [EXTRADIR [EXTRADIR ...]]
+                    Extra directories to add all files from to the filelist 
+                    [env var: EXTRADIR] (default: None)
+--extrafilelist [EXTRAFILELIST [EXTRAFILELIST ...]]
+                    Read the given files to find a list of extra files to add to the filelist 
+                    [env var: EXTRAFILELIST] (default: None)
+--shorten []      
+                    Strip the git root from the filenames.
+                    Use "--no-shorten" to turn the feature off. 
+                    [env var: SHORTEN] (default: False)
+--no-shorten []          
+                    [env var: NO_SHORTEN] (default: True)
+--merge []
+                    Merge all outputs into a single list Use "--no-merge" to 
+                    turn the feature off. 
+                    [env var: MERGE] (default: True)
+--no-merge []
+                    [env var: NO_MERGE] (default: False)
 
-  --shorten             Strip the git root from the filenames Use --no-shorten
-                        to turn the feature off. [env var: SHORTEN] (default:
-                        False)
-  --no-shorten          [env var: NO_SHORTEN] (default: True)
-
-  --merge               Merge all outputs into a single list Use --no-merge to
-                        turn the feature off. [env var: MERGE] (default: True)
-  --no-merge            [env var: NO_MERGE] (default: False)
 
 EXAMPLES
 ========
