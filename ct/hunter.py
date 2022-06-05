@@ -94,7 +94,7 @@ class Hunter(object):
             print("Hunter::_required_files_impl. ", realpath, " Returning ", processed)
         return processed
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def required_source_files(self, filename):
         """ Create the list of source files that also need to be compiled
             to complete the linkage of the given file. If filename is a source
@@ -111,7 +111,7 @@ class Hunter(object):
             ]
         )
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def required_files(self, filename):
         """ Create the list of files (both header and source)
             that are either directly or indirectly utilised by the given file.

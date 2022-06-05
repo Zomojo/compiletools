@@ -208,7 +208,7 @@ class diskcache:
             if ct.dirnamer.user_cache_dir() == "None":
 
                 @functools.wraps(func)
-                @functools.cache
+                @functools.lru_cache(maxsize=None)
                 def memcacher(*args):
                     diskcache._instances[func] = self
                     return func(*args)

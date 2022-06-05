@@ -4,25 +4,25 @@ import shutil
 import functools
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def getmtime(realpath):
     """ Cached version of os.path.getmtime """
     return os.path.getmtime(realpath)
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def isfile(trialpath):
     """ Cached version of os.path.isfile """
     return os.path.isfile(trialpath)
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def isdir(trialpath):
     """ Cached version of os.path.isdir """
     return os.path.isdir(trialpath)
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def realpath(trialpath):
     """ Cache os.path.realpath """
     # Note: We can't raise an exception on file non-existence
@@ -31,7 +31,7 @@ def realpath(trialpath):
     return rp
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def dirname(trialpath):
     """ A cached verion of os.path.dirname """
     return os.path.dirname(trialpath)

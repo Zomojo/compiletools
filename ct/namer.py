@@ -42,7 +42,7 @@ class Namer(object):
             relative = defaultdir
         return ct.wrappedos.realpath(relative)
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def object_dir(self, sourcefilename=None):
         """ This function allows for alternative behaviour to be explore.
             Previously we tried replicating the source directory structure
@@ -51,7 +51,7 @@ class Namer(object):
         """
         return self.args.objdir
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def object_name(self, sourcefilename):
         """ Return the name (not the path) of the object file
             for the given source.
@@ -60,25 +60,25 @@ class Namer(object):
         basename = os.path.splitext(name)[0]
         return "".join([directory.replace("/", "@@"), "@@", basename, ".o"])
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def object_pathname(self, sourcefilename):
         return "".join(
             [self.object_dir(sourcefilename), "/", self.object_name(sourcefilename)]
         )
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def executable_dir(self, sourcefilename=None):
         """ Similar to object_dir, this allows for alternative 
             behaviour experimentation.
         """
         return self.args.bindir
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def executable_name(self, sourcefilename):
         name = os.path.split(sourcefilename)[1]
         return os.path.splitext(name)[0]
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def executable_pathname(self, sourcefilename):
         return "".join(
             [
@@ -88,14 +88,14 @@ class Namer(object):
             ]
         )
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def staticlibrary_name(self, sourcefilename=None):
         if sourcefilename is None and self.args.static:
             sourcefilename = self.args.static[0]
         name = os.path.split(sourcefilename)[1]
         return "lib" + os.path.splitext(name)[0] + ".a"
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def staticlibrary_pathname(self, sourcefilename=None):
         """ Put static libraries in the same directory as executables """
         if sourcefilename is None and self.args.static:
@@ -108,14 +108,14 @@ class Namer(object):
             ]
         )
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def dynamiclibrary_name(self, sourcefilename=None):
         if sourcefilename is None and self.args.dynamic:
             sourcefilename = self.args.dynamic[0]
         name = os.path.split(sourcefilename)[1]
         return "lib" + os.path.splitext(name)[0] + ".so"
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def dynamiclibrary_pathname(self, sourcefilename=None):
         """ Put dynamic libraries in the same directory as executables """
         if sourcefilename is None and self.args.dynamic:

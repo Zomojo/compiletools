@@ -14,13 +14,13 @@ def is_nonstr_iter(obj):
         return False
     return hasattr(obj, "__iter__")
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def isheader(filename):
     """ Internal use.  Is filename a header file?"""
     return filename.split(".")[-1].lower() in ["h", "hpp", "hxx", "hh", "inl"]
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def issource(filename):
     """ Internal use. Is the filename a source file?"""
     return filename.split(".")[-1].lower() in ["cpp", "cxx", "cc", "c"]
@@ -30,7 +30,7 @@ def isexecutable(filename):
     return os.path.isfile(filename) and os.access(filename, os.X_OK)
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def implied_source(filename):
     """ If a header file is included in a build then assume that the corresponding c or cpp file must also be build. """
     basename = os.path.splitext(filename)[0]
@@ -43,7 +43,7 @@ def implied_source(filename):
         return None
 
 
-@functools.cache
+@functools.lru_cache(maxsize=None)
 def impliedheader(filename):
     """ Guess what the header file is corresponding to the given source file """
     basename = os.path.splitext(filename)[0]

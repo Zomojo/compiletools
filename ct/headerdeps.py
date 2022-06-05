@@ -90,7 +90,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         if self.args.verbose >= 3:
             print("Includes=" + str(self.includes))
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def _search_project_includes(self, include):
         """ Internal use.  Find the given include file in the project include paths """
         for inc_dir in self.includes:
@@ -104,7 +104,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         #    raise FileNotFoundError("DirectHeaderDeps could not determine the location of ",include)
         return None
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def _find_include(self, include, cwd):
         """ Internal use.  Find the given include file.
             Start at the current working directory then try the project includes
@@ -117,7 +117,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         else:
             return self._search_project_includes(include)
 
-    @functools.cache
+    @functools.lru_cache(maxsize=None)
     def _create_include_list(self, realpath):
         """ Internal use. Create the list of includes for the given file """
         with open(realpath, encoding="utf-8", errors="ignore") as ff:
