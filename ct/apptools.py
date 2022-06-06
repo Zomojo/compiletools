@@ -17,25 +17,30 @@ if sys.version_info.major == 3 and sys.version_info.minor >= 9:
     from rich_rst import RestructuredText
     import inspect
 
-    class DocumentationAction(argparse.Action):
-        def __init__(self, option_strings, dest, nargs=0, **kwargs):
-            if nargs != 0:
-                raise ValueError(
-                    "nargs for DocumentationAction must be 0; it is " "just a flag."
-                )
-            super().__init__(option_strings, dest, nargs=nargs, **kwargs)
+    class DocumentationAction(argparse.BooleanOptionalAction):
+        def __init__(self, option_strings, dest):
+            super().__init__(
+                option_strings=option_strings, 
+                dest=dest,
+                default=None,
+                type=None,
+                choices=None,
+                required=False,
+                help="Show the documentation/manual page",
+                metavar=None)
 
         def __call__(self, parser, namespace, values, option_string=None):
-            this_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0)))
-            doc_filename = os.path.join(this_dir, f"README.{parser.prog}.rst")
-            try:
-                with open(doc_filename, "r") as docfile:
-                    text = docfile.read()
-                    rich.print(RestructuredText(text))
-            except FileNotFoundError:
-                rich.print("No man/doc available :cry:")
+            if option_string in self.option_strings and not option_string.startswith("--no-"):
+                this_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0)))
+                doc_filename = os.path.join(this_dir, f"README.{parser.prog}.rst")
+                try:
+                    with open(doc_filename, "r") as docfile:
+                        text = docfile.read()
+                        rich.print(RestructuredText(text))
+                except FileNotFoundError:
+                    rich.print("No man/doc available :cry:")
 
-            sys.exit(0)
+                sys.exit(0)
 
 
 def add_base_arguments(cap, argv=None, variant=None):
