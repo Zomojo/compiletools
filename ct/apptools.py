@@ -69,7 +69,7 @@ def add_base_arguments(cap, argv=None, variant=None):
     cap.add("-?", action="help", help="Help")
 
     if sys.version_info.major == 3 and sys.version_info.minor >= 9:
-        cap.add("--man", "--doc", default=False, action=DocumentationAction)
+        cap.add("--man", "--doc", action=DocumentationAction)
 
 
 def add_common_arguments(cap, argv=None, variant=None):
