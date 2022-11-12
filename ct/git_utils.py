@@ -101,5 +101,6 @@ def main(argv=None):
     cap = configargparse.getArgumentParser()
     ct.apptools.add_base_arguments(cap)
     args = cap.parse_args(args=argv)
-    return ct.git_utils.find_git_root()
+    print(ct.git_utils.find_git_root())
+    return 0
 
