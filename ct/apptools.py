@@ -261,11 +261,11 @@ def _add_include_paths_to_flags(args):
     """Add all the include paths to all three compile flags"""
     for path in args.include:
         if path is not None:
-            if path not in args.CPPFLAGS:
+            if path not in args.CPPFLAGS.split():
                 args.CPPFLAGS += " -I " + path
-            if path not in args.CFLAGS:
+            if path not in args.CFLAGS.split():
                 args.CFLAGS += " -I " + path
-            if path not in args.CXXFLAGS:
+            if path not in args.CXXFLAGS.split():
                 args.CXXFLAGS += " -I " + path
 
     if args.verbose >= 4 and len(args.include) > 0:
