@@ -399,6 +399,7 @@ def _tier_one_modifications(args):
 def _strip_quotes(args):
     """Sometimes you need to quote options (e.g. ones that start with hypen)
     This will strip a layer of quotes off.
+    Also strip any extraneous whitespace.
     """
     for name in vars(args):
         value = getattr(args, name)
@@ -407,11 +408,11 @@ def _strip_quotes(args):
             # try and process every character in a string
             if ct.utils.is_nonstr_iter(value):
                 for index, element in enumerate(value):
-                    value[index] = element.strip("\"'")
+                    value[index] = element.strip("\"'").strip()
             else:
                 try:
                     # Otherwise assume its a string
-                    setattr(args, name, value.strip("\"'"))
+                    setattr(args, name, value.strip("\"'").strip())
                 except:
                     pass
 
