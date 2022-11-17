@@ -283,16 +283,22 @@ def _add_flags_from_pkg_config(args):
             stdout=subprocess.PIPE,
             universal_newlines=True,
         ).stdout.rstrip()
-        args.CPPFLAGS += f" {cflags}"
-        args.CFLAGS += f" {cflags}"
-        args.CXXFLAGS += f" {cflags}"
+        if cflags:
+            args.CPPFLAGS += f" {cflags}"
+            args.CFLAGS += f" {cflags}"
+            args.CXXFLAGS += f" {cflags}"
+            if args.verbose >= 4:
+                print(f"pkg-config --cflags {pkg} added FLAGS={cflags}")
 
         libs = subprocess.run(
             ["pkg-config", "--libs", pkg],
             stdout=subprocess.PIPE,
             universal_newlines=True,
         ).stdout.rstrip()
-        args.LDFLAGS += f" {libs}"
+        if libs:
+            args.LDFLAGS += f" {libs}"
+            if args.verbose >= 4:
+                print(f"pkg-config --libs {pkg} added LDFLAGS={libs}")
 
 
 def _set_project_version(args):

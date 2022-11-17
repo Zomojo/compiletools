@@ -275,6 +275,9 @@ class Cake(object):
         """
         # If the user specified only a single file to be turned into a library, guess that
         # they mean for ct-cake to chase down all the implied files.
+        if self.args.verbose > 4:
+            print("cake determining targets and implied files")
+
         self._createctobjs()
         recreateobjs = False
         if self.args.static and len(self.args.static) == 1:
@@ -299,6 +302,8 @@ class Cake(object):
             # run the substitutions again
             # Primarily, this fixes the --includes for the git root of the
             # targets. And recreate the ct objects
+            if self.args.verbose > 4:
+                print("cake recreating objects for second stage processing")
             ct.apptools.substitutions(self.args, verbose=0)
             self._createctobjs()
 
