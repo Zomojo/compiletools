@@ -255,6 +255,8 @@ def _extend_includes_using_git_root(args):
             git_roots.add(ct.git_utils.find_git_root(filename))
 
         args.include.extend(git_roots)
+        if args.verbose > 4:
+            print(f"Extended includes to have the gitroots {git_roots}")
 
 
 def _add_include_paths_to_flags(args):
@@ -432,6 +434,8 @@ def _commonsubstitutions(args):
     # Fix the variant for any variant aliases
     # Taking the easy way out and just reparsing
     args.variant = ct.configutils.extract_variant()
+    if args.verbose > 4:
+        print(f"Determined variant to be {args.variant}")
 
     _tier_one_modifications(args)
     _extend_includes_using_git_root(args)
@@ -479,6 +483,8 @@ def substitutions(args, verbose=None):
         verbose = args.verbose
 
     for func in _substitutioncallbacks:
+        if verbose > 8:
+            print("Performing substitution: {func}")
         func(args)
 
     if verbose >= 2:
@@ -492,6 +498,9 @@ def parseargs(cap, argv, verbose=None):
 
     if verbose is None:
         verbose = args.verbose
+
+    if verbose > 8:
+        print("Parsed commandline arguments")
 
     substitutions(args, verbose)
     return args
