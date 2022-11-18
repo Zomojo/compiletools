@@ -506,7 +506,7 @@ def parseargs(cap, argv, verbose=None):
         verbose = args.verbose
 
     if verbose > 8:
-        print("Parsed commandline arguments")
+        print("Parsing commandline arguments has occured.")
 
     substitutions(args, verbose)
     return args

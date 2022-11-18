@@ -342,8 +342,6 @@ def main(argv):
     Cake.add_arguments(cap)
     Cake.registercallback()
 
-    if args.verbose > 8:
-        print("Initial arg parsing")
     args = ct.apptools.parseargs(cap, argv)
 
     if not any([args.filename, args.static, args.dynamic, args.tests, args.auto]):
