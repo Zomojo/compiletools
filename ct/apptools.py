@@ -251,12 +251,18 @@ def _extend_includes_using_git_root(args):
         if hasattr(args, "tests") and args.tests:
             filenames.extend(args.tests)
 
+        if hasattr(args, "auto") and args.auto:
+            git_roots.add(ct.git_utils.find_git_root())
+
         for filename in filenames:
             git_roots.add(ct.git_utils.find_git_root(filename))
 
-        args.include.extend(git_roots)
-        if args.verbose > 4:
-            print(f"Extended includes to have the gitroots {git_roots}")
+        if git_roots:
+            args.include.extend(git_roots)
+            if args.verbose > 4:
+                print(f"Extended includes to have the gitroots {git_roots}")
+        else:
+            raise ValueError(f"args.git_root is True but no git roots found. :( .  If this is expected then specify --no-git-root.")
 
 
 def _add_include_paths_to_flags(args):
@@ -484,7 +490,7 @@ def substitutions(args, verbose=None):
 
     for func in _substitutioncallbacks:
         if verbose > 8:
-            print("Performing substitution: {func}")
+            print(f"Performing substitution: {func.__qualname__}")
         func(args)
 
     if verbose >= 2:
