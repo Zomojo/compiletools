@@ -234,6 +234,7 @@ def _extend_includes_using_git_root(args):
     ):
 
         git_roots = set()
+        git_roots.add(ct.git_utils.find_git_root())
 
         # No matter whether args.filename is a single value or a list,
         # filenames will be a list
@@ -250,9 +251,6 @@ def _extend_includes_using_git_root(args):
 
         if hasattr(args, "tests") and args.tests:
             filenames.extend(args.tests)
-
-        if hasattr(args, "auto") and args.auto:
-            git_roots.add(ct.git_utils.find_git_root())
 
         for filename in filenames:
             git_roots.add(ct.git_utils.find_git_root(filename))
