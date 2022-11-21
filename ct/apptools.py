@@ -193,7 +193,7 @@ def unsupplied_replacement(variable, default_variable, verbose, variable_str):
     replacement = variable
     if "unsupplied" in variable:
         replacement = default_variable
-        if verbose >= 4:
+        if verbose >= 6:
             print(
                 " ".join(
                     [variable_str, "was unsupplied. Changed to use ", default_variable]
@@ -206,6 +206,8 @@ def _substitute_CXX_for_missing(args):
     """If C PreProcessor variables (and the same for the LD*) are not set
     but CXX ones are set then just use the CXX equivalents
     """
+    if args.verbose > 8:
+        print("Using CXX variables as defaults for missing C, CPP, LD variables")
     args.CPP = unsupplied_replacement(args.CPP, args.CXX, args.verbose, "CPP")
     args.CPPFLAGS = unsupplied_replacement(
         args.CPPFLAGS, args.CXXFLAGS, args.verbose, "CPPFLAGS"
@@ -233,6 +235,9 @@ def _extend_includes_using_git_root(args):
         or hasattr(args, "tests")
     ):
 
+        if args.verbose > 8:
+            print("Extending the include paths to have the git root")
+
         git_roots = set()
         git_roots.add(ct.git_utils.find_git_root())
 
@@ -257,7 +262,7 @@ def _extend_includes_using_git_root(args):
 
         if git_roots:
             args.include.extend(git_roots)
-            if args.verbose > 4:
+            if args.verbose > 6:
                 print(f"Extended includes to have the gitroots {git_roots}")
         else:
             raise ValueError(f"args.git_root is True but no git roots found. :( .  If this is expected then specify --no-git-root.")
@@ -274,7 +279,7 @@ def _add_include_paths_to_flags(args):
             if path not in args.CXXFLAGS.split():
                 args.CXXFLAGS += " -I " + path
 
-    if args.verbose >= 4 and len(args.include) > 0:
+    if args.verbose >= 6 and len(args.include) > 0:
         print("Extra include paths have been appended to the *FLAG variables:")
         print("\tCPPFLAGS=" + args.CPPFLAGS)
         print("\tCFLAGS=" + args.CFLAGS)
@@ -293,7 +298,7 @@ def _add_flags_from_pkg_config(args):
             args.CPPFLAGS += f" {cflags}"
             args.CFLAGS += f" {cflags}"
             args.CXXFLAGS += f" {cflags}"
-            if args.verbose >= 4:
+            if args.verbose >= 6:
                 print(f"pkg-config --cflags {pkg} added FLAGS={cflags}")
 
         libs = subprocess.run(
@@ -303,7 +308,7 @@ def _add_flags_from_pkg_config(args):
         ).stdout.rstrip()
         if libs:
             args.LDFLAGS += f" {libs}"
-            if args.verbose >= 4:
+            if args.verbose >= 6:
                 print(f"pkg-config --libs {pkg} added LDFLAGS={libs}")
 
 
@@ -324,7 +329,7 @@ def _set_project_version(args):
             .strip("\n")
             .split()[0]
         )
-        if args.verbose >= 4:
+        if args.verbose >= 6:
             print("Used projectversioncmd to set projectversion")
     except (subprocess.CalledProcessError, OSError) as err:
         sys.stderr.write(
@@ -360,7 +365,7 @@ def _set_project_version(args):
         if "-DCAKE_PROJECT_VERSION" not in args.CXXFLAGS:
             args.CXXFLAGS += ' -DCAKE_PROJECT_VERSION=\\"' + args.projectversion + '\\"'
 
-        if args.verbose >= 4:
+        if args.verbose >= 6:
             print("*FLAG variables have been modified with the project version:")
             print("\tCPPFLAGS=" + args.CPPFLAGS)
             print("\tCFLAGS=" + args.CFLAGS)
@@ -397,6 +402,8 @@ def _tier_one_modifications(args):
     """Do some early modifications that can potentially cause
     downstream modifications.
     """
+    if args.verbose > 8:
+        print("Tier one modification")
     _substitute_CXX_for_missing(args)
     flaglist = ("CPPFLAGS", "CFLAGS", "CXXFLAGS", "LDFLAGS")
     for flag in flaglist:
@@ -435,10 +442,13 @@ def _commonsubstitutions(args):
     """
     args.verbose -= args.quiet
 
+    if args.verbose > 8:
+        print("Performing common substitutions")
+
     # Fix the variant for any variant aliases
     # Taking the easy way out and just reparsing
     args.variant = ct.configutils.extract_variant()
-    if args.verbose > 4:
+    if args.verbose > 6:
         print(f"Determined variant to be {args.variant}")
 
     _tier_one_modifications(args)
@@ -491,7 +501,8 @@ def substitutions(args, verbose=None):
             print(f"Performing substitution: {func.__qualname__}")
         func(args)
 
-    if verbose >= 2:
+    if verbose >= 8:
+        print("Args after substitutions")
         verboseprintconfig(args)
 
 
@@ -507,6 +518,9 @@ def parseargs(cap, argv, verbose=None):
         print("Parsing commandline arguments has occured.")
 
     substitutions(args, verbose)
+     
+    if verbose > 8:
+        print("parseargs has completed.  Returning args")
     return args
 
 
