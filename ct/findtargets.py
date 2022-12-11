@@ -27,6 +27,14 @@ def add_arguments(cap):
         help="Search the filesystem from the current working directory to find all the C/C++ files with main functions and unit tests",
     )
 
+    ct.utils.add_flag_argument(
+        parser=cap,
+        name="disable-tests",
+        default=False,
+        dest="disable_tests",
+        help="When --auto is specified, add --disable-tests to stop automatic building and running of tests",
+    )
+
     # Figure out what style classes are available and add them to the command
     # line options
     styles = [st[:-5].lower() for st in dict(globals()) if st.endswith("Style")]
@@ -143,6 +151,8 @@ class FindTargets(object):
                             if self._args.verbose >= 3:
                                 print("Found a test: " + pathname)
                             break
+        if self._args.disable_tests:
+            testtargets = []
         return executabletargets, testtargets
 
 
