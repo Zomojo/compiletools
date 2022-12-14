@@ -11,7 +11,7 @@ class TestFindTargetsModule(unittest.TestCase):
     def setUp(self):
         uth.reset()
 
-    def _find_samples_targets(self, disable_tests):
+    def _find_samples_targets(self, disable_tests, disable_exes=False):
         relativeexpectedexes = {
             "dottypaths/dottypaths.cpp",
             "library/main.cpp",
@@ -34,10 +34,12 @@ class TestFindTargetsModule(unittest.TestCase):
             "simple/test_cflags.c",
         }
 
-        expectedexes = {
-            os.path.realpath(os.path.join(uth.samplesdir(), exe))
-            for exe in relativeexpectedexes
-        }
+        expectedexes = set()
+        if not disable_exes:
+            expectedexes = {
+                os.path.realpath(os.path.join(uth.samplesdir(), exe))
+                for exe in relativeexpectedexes
+            }
         expectedtests = set()
         if not disable_tests:
             expectedtests = {
@@ -59,6 +61,8 @@ class TestFindTargetsModule(unittest.TestCase):
         argv = ["--shorten"]
         if disable_tests:
             argv.append("--disable-tests")
+        if disable_exes:
+            argv.append("--disable-exes")
         args = ct.apptools.parseargs(cap, argv=argv)
         findtargets = ct.findtargets.FindTargets(args, exedir=uth.cakedir())
         executabletargets, testtargets = findtargets(path=uth.cakedir())
@@ -70,6 +74,9 @@ class TestFindTargetsModule(unittest.TestCase):
 
     def test_disable_tests(self):
         self._find_samples_targets(disable_tests=True)
+
+    def test_tests_only(self):
+        self._find_samples_targets(disable_tests=False, disable_exes=True)
 
     def tearDown(self):
         uth.reset()

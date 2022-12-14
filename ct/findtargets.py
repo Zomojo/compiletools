@@ -35,6 +35,14 @@ def add_arguments(cap):
         help="When --auto is specified, add --disable-tests to stop automatic building and running of tests",
     )
 
+    ct.utils.add_flag_argument(
+        parser=cap,
+        name="disable-exes",
+        default=False,
+        dest="disable_exes",
+        help="When --auto is specified, add --disable-exes to stop automatic building of exes. (Useful for automatically building tests)",
+    )
+
     # Figure out what style classes are available and add them to the command
     # line options
     styles = [st[:-5].lower() for st in dict(globals()) if st.endswith("Style")]
@@ -153,6 +161,8 @@ class FindTargets(object):
                             break
         if self._args.disable_tests:
             testtargets = []
+        if self._args.disable_exes:
+            executabletargets = []
         return executabletargets, testtargets
 
 
