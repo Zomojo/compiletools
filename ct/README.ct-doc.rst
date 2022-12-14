@@ -12,7 +12,7 @@ C/C++ build tools that requires almost no configuration.
 :Author: drgeoffathome@gmail.com
 :Date:   2016-08-09
 :Copyright: Copyright (C) 2011-2016 Zomojo Pty Ltd
-:Version: 4.1.90
+:Version: 4.1.91
 :Manual section: 1
 :Manual group: developers
 

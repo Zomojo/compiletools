@@ -9,7 +9,7 @@ Show the magic flags / magic comments that a file exports
 :Author: drgeoffathome@gmail.com
 :Date:   2018-02-23
 :Copyright: Copyright (C) 2011-2018 Zomojo Pty Ltd
-:Version: 4.1.90
+:Version: 4.1.91
 :Manual section: 1
 :Manual group: developers
 
