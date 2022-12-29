@@ -40,14 +40,14 @@ def depth_first_traverse(
     pre_kwargs = {}
     pre_function_args = {}
     if pre_traverse_function:
-        pre_function_args = inspect.getargspec(pre_traverse_function).args
+        pre_function_args = inspect.getfullargspec(pre_traverse_function).args
         if "depth" in pre_function_args:
             pre_kwargs["depth"] = depth
 
     post_kwargs = {}
     post_function_args = []
     if post_traverse_function:
-        post_function_args = inspect.getargspec(post_traverse_function).args
+        post_function_args = inspect.getfullargspec(post_traverse_function).args
         if "depth" in post_function_args:
             post_kwargs["depth"] = depth
 

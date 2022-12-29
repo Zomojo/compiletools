@@ -69,7 +69,7 @@ def extractinitargs(args, classname):
     # For each argument given on the command line, check if it matches one for
     # the __init__
     kwargs = {}
-    function_args = inspect.getargspec(classname.__init__).args
+    function_args = inspect.getfullargspec(classname.__init__).args
     for key, value in list(vars(args).items()):
         if key in function_args:
             kwargs[key] = value
