@@ -12,9 +12,15 @@ import ct.configutils
 import ct.utils
 import ct.dirnamer
 
-if sys.version_info.major == 3 and sys.version_info.minor >= 9:
-    import rich
+try:
     from rich_rst import RestructuredText
+    rich_rst_available = True
+except ModuleNotFoundError:
+    rich_rst_available = False
+    print("rich_rst module not available.  Disabling DocumentationAction and '--man'", file=sys.stderr)
+
+if rich_rst_available and sys.version_info.major == 3 and sys.version_info.minor >= 9:
+    import rich
     import inspect
 
     class DocumentationAction(argparse.BooleanOptionalAction):
@@ -73,7 +79,7 @@ def add_base_arguments(cap, argv=None, variant=None):
     cap.add("--version", action="version", version=__version__)
     cap.add("-?", action="help", help="Help")
 
-    if sys.version_info.major == 3 and sys.version_info.minor >= 9:
+    if rich_rst_available and sys.version_info.major == 3 and sys.version_info.minor >= 9:
         cap.add("--man", "--doc", action=DocumentationAction)
 
 
@@ -104,10 +110,11 @@ def add_common_arguments(cap, argv=None, variant=None):
         help="Determine the git root then add it to the include paths.",
     )
     cap.add(
+        "--INCLUDE",
         "--include",
+        dest="INCLUDE",
         help="Extra path(s) to add to the list of include paths.",
-        action="append",
-        default=[],
+        default=""
     )
     cap.add(
         "--pkg-config",
@@ -261,7 +268,7 @@ def _extend_includes_using_git_root(args):
             git_roots.add(ct.git_utils.find_git_root(filename))
 
         if git_roots:
-            args.include.extend(git_roots)
+            args.INCLUDE = " ".join(args.INCLUDE.split() + list(git_roots))
             if args.verbose > 6:
                 print(f"Extended includes to have the gitroots {git_roots}")
         else:
@@ -270,7 +277,7 @@ def _extend_includes_using_git_root(args):
 
 def _add_include_paths_to_flags(args):
     """Add all the include paths to all three compile flags"""
-    for path in args.include:
+    for path in args.INCLUDE.split():
         if path is not None:
             if path not in args.CPPFLAGS.split():
                 args.CPPFLAGS += " -I " + path
@@ -279,7 +286,7 @@ def _add_include_paths_to_flags(args):
             if path not in args.CXXFLAGS.split():
                 args.CXXFLAGS += " -I " + path
 
-    if args.verbose >= 6 and len(args.include) > 0:
+    if args.verbose >= 6 and len(args.INCLUDE) > 0:
         print("Extra include paths have been appended to the *FLAG variables:")
         print("\tCPPFLAGS=" + args.CPPFLAGS)
         print("\tCFLAGS=" + args.CFLAGS)
@@ -386,6 +393,7 @@ def _do_xxpend(args, name):
         if hasattr(args, xxpendname):
             xxpendattr = getattr(args, xxpendname)
             attr = getattr(args, name)
+
             if xxpendattr:
                 extra = []
                 for flag in xxpendattr:
@@ -405,7 +413,7 @@ def _tier_one_modifications(args):
     if args.verbose > 8:
         print("Tier one modification")
     _substitute_CXX_for_missing(args)
-    flaglist = ("CPPFLAGS", "CFLAGS", "CXXFLAGS", "LDFLAGS")
+    flaglist = ("INCLUDE", "CPPFLAGS", "CFLAGS", "CXXFLAGS", "LDFLAGS")
     for flag in flaglist:
         _do_xxpend(args, flag)
 

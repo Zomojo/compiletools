@@ -98,6 +98,7 @@ class Cake(object):
         ct.makefile.MakefileCreator.add_arguments(cap)
         ct.jobs.add_arguments(cap)
 
+        Cake._add_prepend_append_argument(cap, "include")
         Cake._add_prepend_append_argument(cap, "cppflags")
         Cake._add_prepend_append_argument(cap, "cflags")
         Cake._add_prepend_append_argument(cap, "cxxflags")
