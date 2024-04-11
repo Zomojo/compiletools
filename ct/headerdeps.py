@@ -84,7 +84,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         self.ancestor_paths = []
 
         # Grab the include paths from the CPPFLAGS
-        pat = re.compile("-I ([\S]*)")
+        pat = re.compile(r"-I ([\S]*)")
         self.includes = pat.findall(self.args.CPPFLAGS)
 
         if self.args.verbose >= 3:

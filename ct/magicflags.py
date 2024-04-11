@@ -62,7 +62,7 @@ class MagicFlagsBase:
         self._headerdeps = headerdeps
 
         # The magic pattern is //#key=value with whitespace ignored
-        self.magicpattern = re.compile("^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)", re.MULTILINE)
+        self.magicpattern = re.compile(r"^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)", re.MULTILINE)
 
     def readfile(self, filename):
         """ Derived classes implement this method """
@@ -74,7 +74,7 @@ class MagicFlagsBase:
     def _handle_source(self, flag, text):
         # Find the include before the //#SOURCE=
         result = re.search(
-            '# \d.* "(/\S*?)".*?//#SOURCE\s*=\s*' + flag, text, re.DOTALL
+            r'# \d.* "(/\S*?)".*?//#SOURCE\s*=\s*' + flag, text, re.DOTALL
         )
         # Now adjust the flag to include the full path
         newflag = ct.wrappedos.realpath(
