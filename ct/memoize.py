@@ -6,13 +6,14 @@ def memoize_false(func):
 
     @functools.wraps(func)
     def memoizer(*args, **kwargs):
-        key = str(args) + str(kwargs)
+        # Using a tuple to represent the key since it's hashable and can store both args and kwargs
+        # This avoids the need to convert args and kwargs to strings
+        key = (args, tuple(sorted(kwargs.items())))
         if key in cache:
             return False
-        else:
-            result = func(*args, **kwargs)
-            if not result:
-                cache.add(key)
-            return result
+        result = func(*args, **kwargs)
+        if not result:
+            cache.add(key)
+        return result
 
     return memoizer
