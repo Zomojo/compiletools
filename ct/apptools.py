@@ -14,10 +14,14 @@ import ct.dirnamer
 
 try:
     from rich_rst import RestructuredText
+
     rich_rst_available = True
 except ModuleNotFoundError:
     rich_rst_available = False
-    print("rich_rst module not available.  Disabling DocumentationAction and '--man'", file=sys.stderr)
+    print(
+        "rich_rst module not available.  Disabling DocumentationAction and '--man'",
+        file=sys.stderr,
+    )
 
 if rich_rst_available and sys.version_info.major == 3 and sys.version_info.minor >= 9:
     import rich
@@ -26,18 +30,23 @@ if rich_rst_available and sys.version_info.major == 3 and sys.version_info.minor
     class DocumentationAction(argparse.BooleanOptionalAction):
         def __init__(self, option_strings, dest):
             super().__init__(
-                option_strings=option_strings, 
+                option_strings=option_strings,
                 dest=dest,
                 default=None,
                 type=None,
                 choices=None,
                 required=False,
                 help="Show the documentation/manual page",
-                metavar=None)
+                metavar=None,
+            )
 
         def __call__(self, parser, namespace, values, option_string=None):
-            if option_string in self.option_strings and not option_string.startswith("--no-"):
-                this_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda:0)))
+            if option_string in self.option_strings and not option_string.startswith(
+                "--no-"
+            ):
+                this_dir = os.path.dirname(
+                    os.path.abspath(inspect.getsourcefile(lambda: 0))
+                )
                 doc_filename = os.path.join(this_dir, f"README.{parser.prog}.rst")
                 try:
                     with open(doc_filename, "r") as docfile:
@@ -50,6 +59,7 @@ if rich_rst_available and sys.version_info.major == 3 and sys.version_info.minor
 
 
 def add_base_arguments(cap, argv=None, variant=None):
+    """All compiletools applications MUST call this function.  Note that it is usually called indirectly from add_common_arguments."""
     # Even though the variant is actually sucked out of the command line by
     # parsing the sys.argv directly, we put it into the configargparse to get
     # the help.
@@ -79,7 +89,11 @@ def add_base_arguments(cap, argv=None, variant=None):
     cap.add("--version", action="version", version=__version__)
     cap.add("-?", action="help", help="Help")
 
-    if rich_rst_available and sys.version_info.major == 3 and sys.version_info.minor >= 9:
+    if (
+        rich_rst_available
+        and sys.version_info.major == 3
+        and sys.version_info.minor >= 9
+    ):
         cap.add("--man", "--doc", action=DocumentationAction)
 
 
@@ -114,7 +128,7 @@ def add_common_arguments(cap, argv=None, variant=None):
         "--include",
         dest="INCLUDE",
         help="Extra path(s) to add to the list of include paths.",
-        default=""
+        default="",
     )
     cap.add(
         "--pkg-config",
@@ -190,6 +204,45 @@ def add_target_arguments_ex(cap):
         "--project-version-cmd",
         dest="projectversioncmd",
         help="Execute this command to determine the CAKE_PROJECT_VERSION macro",
+    )
+
+
+def _add_xxpend_argument(cap, name, destname=None, extrahelp=None):
+    """Add a prepend flags argument and an append flags argument to the config arg parser"""
+    if destname is None:
+        destname = name
+
+    if extrahelp is None:
+        extrahelp = ""
+
+    xxlist = ("prepend", "append")
+    for xx in xxlist:
+        cap.add(
+            "".join(["--", xx, "-", name.upper()]),
+            dest="".join([xx, destname.lower()]),
+            action="append",
+            help=" ".join(
+                [
+                    xx.title(),
+                    "the given text to the",
+                    name.upper(),
+                    "already set. Useful for adding search paths etc.",
+                    extrahelp,
+                ]
+            ),
+        )
+
+
+def add_xxpend_arguments(cap):
+    """Add prepend-BLAH and append-BLAH for the common flags"""
+    xxpendableargs = ("include", "cppflags", "cflags", "cxxflags", "ldflags")
+    for arg in xxpendableargs:
+        _add_xxpend_argument(cap, arg)
+    _add_xxpend_argument(
+        cap,
+        "linkflags",
+        destname="ldflags",
+        extrahelp="Synonym for setting LDFLAGS.",
     )
 
 
@@ -272,7 +325,9 @@ def _extend_includes_using_git_root(args):
             if args.verbose > 6:
                 print(f"Extended includes to have the gitroots {git_roots}")
         else:
-            raise ValueError(f"args.git_root is True but no git roots found. :( .  If this is expected then specify --no-git-root.")
+            raise ValueError(
+                f"args.git_root is True but no git roots found. :( .  If this is expected then specify --no-git-root."
+            )
 
 
 def _add_include_paths_to_flags(args):
@@ -412,6 +467,7 @@ def _tier_one_modifications(args):
     """
     if args.verbose > 8:
         print("Tier one modification")
+        print(f"{args=}")
     _substitute_CXX_for_missing(args)
     flaglist = ("INCLUDE", "CPPFLAGS", "CFLAGS", "CXXFLAGS", "LDFLAGS")
     for flag in flaglist:
@@ -519,6 +575,11 @@ def parseargs(cap, argv, verbose=None):
     args = cap.parse_args(args=argv)
     _strip_quotes(args)
 
+    if "verbose" not in vars(args):
+        raise ValueError(
+            "verbose was not found in args.  Fix is to call apptools.add_common_arguments or apptools.add_base_arguments before calling parseargs"
+        )
+
     if verbose is None:
         verbose = args.verbose
 
@@ -526,7 +587,7 @@ def parseargs(cap, argv, verbose=None):
         print("Parsing commandline arguments has occured.")
 
     substitutions(args, verbose)
-     
+
     if verbose > 8:
         print("parseargs has completed.  Returning args")
     return args

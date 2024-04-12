@@ -56,59 +56,10 @@ class Cake(object):
         self.hunter = ct.hunter.Hunter(self.args, self.headerdeps, self.magicparser)
 
     @staticmethod
-    def _add_prepend_append_argument(cap, name, destname=None, extrahelp=None):
-        """ Add a prepend flags argument and an append flags argument to the config arg parser """
-        if destname is None:
-            destname = name
-
-        if extrahelp is None:
-            extrahelp = ""
-
-        cap.add(
-            "".join(["--", "prepend", "-", name.upper()]),
-            dest="".join(["prepend", destname.lower()]),
-            action="append",
-            help=" ".join(
-                [
-                    "prepend".title(),
-                    "the given text to the",
-                    name.upper(),
-                    "already set. Useful for adding search paths etc.",
-                    extrahelp,
-                ]
-            ),
-        )
-        cap.add(
-            "".join(["--", "append", "-", name.upper()]),
-            dest="".join(["append", destname.lower()]),
-            action="append",
-            help=" ".join(
-                [
-                    "append".title(),
-                    "the given text to the",
-                    name.upper(),
-                    "already set. Useful for adding search paths etc.",
-                    extrahelp,
-                ]
-            ),
-        )
-
-    @staticmethod
     def add_arguments(cap):
         ct.makefile.MakefileCreator.add_arguments(cap)
         ct.jobs.add_arguments(cap)
-
-        Cake._add_prepend_append_argument(cap, "include")
-        Cake._add_prepend_append_argument(cap, "cppflags")
-        Cake._add_prepend_append_argument(cap, "cflags")
-        Cake._add_prepend_append_argument(cap, "cxxflags")
-        Cake._add_prepend_append_argument(cap, "ldflags")
-        Cake._add_prepend_append_argument(
-            cap,
-            "linkflags",
-            destname="ldflags",
-            extrahelp="Synonym for setting LDFLAGS.",
-        )
+        ct.apptools.add_xxpend_arguments(cap)
 
         cap.add(
             "--file-list",

@@ -3,7 +3,7 @@ import os
 from io import open
 import tempfile
 import ct.apptools
-
+# The abbreviation "uth" is often used for this "unittesthelper"
 
 def reset():
     delete_existing_parsers()
