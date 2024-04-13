@@ -5,6 +5,7 @@ import configargparse
 import tempfile
 
 import ct.unittesthelper as uth
+import ct.uth_reload as uthr
 import ct.dirnamer
 import ct.apptools
 import ct.headerdeps
@@ -21,7 +22,7 @@ class TestMagicFlagsModule(unittest.TestCase):
             extraargs = []
         temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
         argv = ["--config=" + temp_config_name] + extraargs
-        uth.reload_ct(cache_home)
+        uthr.reload_ct(cache_home)
         config_files = ct.configutils.config_files_from_variant(
             argv=argv, exedir=uth.cakedir()
         )
