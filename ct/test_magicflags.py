@@ -4,30 +4,12 @@ import shutil
 import configargparse
 import tempfile
 
-try:
-    # This call to reload is simply to test
-    # that reload is in the current namespace
-    reload(unittest)
-except NameError:
-    from importlib import reload
-
 import ct.unittesthelper as uth
 import ct.dirnamer
 import ct.apptools
 import ct.headerdeps
 import ct.magicflags
 from ct.utils import OrderedSet
-
-
-def _reload_ct(cache_home):
-    """ Set the CTCACHE environment variable to cache_home
-        and reload the ct.* modules
-    """
-    os.environ["CTCACHE"] = cache_home
-    reload(ct.dirnamer)
-    reload(ct.apptools)
-    reload(ct.headerdeps)
-    reload(ct.magicflags)
 
 
 class TestMagicFlagsModule(unittest.TestCase):
@@ -39,7 +21,7 @@ class TestMagicFlagsModule(unittest.TestCase):
             extraargs = []
         temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
         argv = ["--config=" + temp_config_name] + extraargs
-        _reload_ct(cache_home)
+        uth.reload_ct(cache_home)
         config_files = ct.configutils.config_files_from_variant(
             argv=argv, exedir=uth.cakedir()
         )

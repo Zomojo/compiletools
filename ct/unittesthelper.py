@@ -7,6 +7,13 @@ import tempfile
 import ct.apptools
 # The abbreviation "uth" is often used for this "unittesthelper"
 
+try:
+    # This call to reload is simply to test
+    # that reload is in the current namespace
+    reload(unittest)
+except NameError:
+    from importlib import reload
+
 def reset():
     delete_existing_parsers()
     ct.apptools.resetcallbacks()
@@ -72,7 +79,15 @@ def create_temp_ct_conf(tempdir, defaultvariant="debug"):
         ff.write("exemarkers = [main]" + "\n")
         ff.write("testmarkers = unit_test.hpp" + "\n")
 
-
+def reload_ct(cache_home):
+    """ Set the CTCACHE environment variable to cache_home
+        and reload the ct.* modules
+    """
+    os.environ["CTCACHE"] = cache_home
+    reload(ct.dirnamer)
+    reload(ct.apptools)
+    reload(ct.headerdeps)
+    reload(ct.magicflags)
 
 class TempDirContext:
     def __enter__(self):
