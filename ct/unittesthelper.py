@@ -1,5 +1,7 @@
 import configargparse
 import os
+import contextlib
+import shutil
 from io import open
 import tempfile
 import ct.apptools
@@ -69,3 +71,17 @@ def create_temp_ct_conf(tempdir, defaultvariant="debug"):
         ff.write("variantaliases = {'dbg':'foo.debug', 'rls':'foo.release'}\n")
         ff.write("exemarkers = [main]" + "\n")
         ff.write("testmarkers = unit_test.hpp" + "\n")
+
+
+
+class TempDirContext:
+    def __enter__(self):
+        self._origdir = os.getcwd()  # Save the current directory
+        self._tmpdir = tempfile.mkdtemp()
+        os.chdir(self._tmpdir)
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        os.chdir(self._origdir)  # Return to the original directory
+        shutil.rmtree(self._tmpdir, ignore_errors=True)  # Cleanup the temporary directory
+

@@ -40,6 +40,7 @@ class TestCake(unittest.TestCase):
 
     def _setup_and_chdir_temp_dir(self):
         """ Returns the original working directory so you can chdir back to that at the end """
+        #TODO Migrate all usage of this to uth.TempDirContext()
         origdir = os.getcwd()
         self._tmpdir = tempfile.mkdtemp()
         os.chdir(self._tmpdir)
@@ -47,39 +48,36 @@ class TestCake(unittest.TestCase):
         return origdir
 
     def test_no_git_root(self):
-        origdir = self._setup_and_chdir_temp_dir()
+        with uth.TempDirContext():
+            self._tmpdir = os.getcwd()
 
-        # Copy a known cpp file to a non-git directory and compile using cake
-        relativepaths = ["simple/helloworld_cpp.cpp"]
-        realpaths = [
-            os.path.join(uth.samplesdir(), filename) for filename in relativepaths
-        ]
-        for ff in realpaths:
-            shutil.copy2(ff, self._tmpdir)
+            # Copy a known cpp file to a non-git directory and compile using cake
+            relativepaths = ["simple/helloworld_cpp.cpp"]
+            realpaths = [
+                os.path.join(uth.samplesdir(), filename) for filename in relativepaths
+            ]
+            for ff in realpaths:
+                shutil.copy2(ff, self._tmpdir)
 
-        self._config_name = uth.create_temp_config(self._tmpdir)
-        uth.create_temp_ct_conf(
-            tempdir=self._tmpdir,
-            defaultvariant=os.path.basename(self._config_name)[:-5],
-        )
-        self._call_ct_cake()
+            self._config_name = uth.create_temp_config(self._tmpdir)
+            uth.create_temp_ct_conf(
+                tempdir=self._tmpdir,
+                defaultvariant=os.path.basename(self._config_name)[:-5],
+            )
+            self._call_ct_cake()
 
-        # Check that an executable got built for each cpp
-        actual_exes = set()
-        for root, dirs, files in os.walk(self._tmpdir):
-            for ff in files:
-                if ct.utils.isexecutable(os.path.join(root, ff)):
-                    actual_exes.add(ff)
+            # Check that an executable got built for each cpp
+            actual_exes = set()
+            for root, dirs, files in os.walk(self._tmpdir):
+                for ff in files:
+                    if ct.utils.isexecutable(os.path.join(root, ff)):
+                        actual_exes.add(ff)
 
-        expected_exes = {
-            os.path.splitext(os.path.split(filename)[1])[0]
-            for filename in relativepaths
-        }
-        self.assertSetEqual(expected_exes, actual_exes)
-
-        # Cleanup
-        os.chdir(origdir)
-        shutil.rmtree(self._tmpdir, ignore_errors=True)
+            expected_exes = {
+                os.path.splitext(os.path.split(filename)[1])[0]
+                for filename in relativepaths
+            }
+            self.assertSetEqual(expected_exes, actual_exes)
 
     def _create_deeper_cpp(self):
         data = """
