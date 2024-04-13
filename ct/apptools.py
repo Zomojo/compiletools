@@ -33,11 +33,8 @@ if rich_rst_available and sys.version_info.major == 3 and sys.version_info.minor
                 option_strings=option_strings,
                 dest=dest,
                 default=None,
-                type=None,
-                choices=None,
                 required=False,
                 help="Show the documentation/manual page",
-                metavar=None,
             )
 
         def __call__(self, parser, namespace, values, option_string=None):
