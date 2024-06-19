@@ -59,7 +59,6 @@ class Cake(object):
     def add_arguments(cap):
         ct.makefile.MakefileCreator.add_arguments(cap)
         ct.jobs.add_arguments(cap)
-        ct.apptools.add_xxpend_arguments(cap)
 
         cap.add(
             "--file-list",

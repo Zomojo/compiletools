@@ -93,6 +93,38 @@ def add_base_arguments(cap, argv=None, variant=None):
     ):
         cap.add("--man", "--doc", action=DocumentationAction)
 
+def _add_xxpend_argument(cap, name, destname=None, extrahelp=None):
+    """Add a prepend flags argument and an append flags argument to the config arg parser"""
+    if destname is None:
+        destname = name
+
+    if extrahelp is None:
+        extrahelp = ""
+
+    xxlist = ("prepend", "append")
+    for xx in xxlist:
+        cap.add(
+            "".join(["--", xx, "-", name.upper()]),
+            dest="_".join([xx, destname.lower()]),
+            action="append",
+            default=[],
+            help=" ".join(
+                [
+                    xx.title(),
+                    "the given text to the",
+                    name.upper(),
+                    "already set. Useful for adding search paths etc.",
+                    extrahelp,
+                ]
+            ),
+        )
+
+
+def _add_xxpend_arguments(cap, xxpendableargs):
+    """Add prepend-BLAH and append-BLAH for the common flags"""
+    for arg in xxpendableargs:
+        _add_xxpend_argument(cap, arg)
+
 
 def add_common_arguments(cap, argv=None, variant=None):
     """Insert common arguments into the configargparse object"""
@@ -103,16 +135,16 @@ def add_common_arguments(cap, argv=None, variant=None):
         help="Compiler identification string.  The same string as CMake uses.",
         default=None,
     )
-    cap.add("--CPP", help="C preprocessor", default="unsupplied_implies_use_CXX")
-    cap.add("--CC", help="C compiler", default="gcc")
-    cap.add("--CXX", help="C++ compiler", default="g++")
+    cap.add("--CPP", help="C preprocessor (overwrite)", default="unsupplied_implies_use_CXX")
+    cap.add("--CC", help="C compiler (overwrite)", default="gcc")
+    cap.add("--CXX", help="C++ compiler (overwrite)", default="g++")
     cap.add(
         "--CPPFLAGS",
-        help="C preprocessor flags",
+        help="C preprocessor flags (overwrite)",
         default="unsupplied_implies_use_CXXFLAGS",
     )
-    cap.add("--CXXFLAGS", help="C++ compiler flags", default="-fPIC -g -Wall")
-    cap.add("--CFLAGS", help="C compiler flags", default="-fPIC -g -Wall")
+    cap.add("--CXXFLAGS", help="C++ compiler flags (overwrite)", default="-fPIC -g -Wall")
+    cap.add("--CFLAGS", help="C compiler flags (overwrite)", default="-fPIC -g -Wall")
     ct.utils.add_flag_argument(
         parser=cap,
         name="git-root",
@@ -124,7 +156,7 @@ def add_common_arguments(cap, argv=None, variant=None):
         "--INCLUDE",
         "--include",
         dest="INCLUDE",
-        help="Extra path(s) to add to the list of include paths.",
+        help="Extra path(s) to add to the list of include paths. (overwrite)",
         default="",
     )
     cap.add(
@@ -135,16 +167,24 @@ def add_common_arguments(cap, argv=None, variant=None):
         default=[],
     )
     ct.git_utils.NameAdjuster.add_arguments(cap)
+    _add_xxpend_arguments(cap, xxpendableargs = ("include", "cppflags", "cflags", "cxxflags"))
 
 
 def add_link_arguments(cap):
     """Insert the link arguments into the configargparse singleton"""
-    cap.add("--LD", help="Linker", default="unsupplied_implies_use_CXX")
+    cap.add("--LD", help="Linker (overwrite)", default="unsupplied_implies_use_CXX")
     cap.add(
         "--LDFLAGS",
         "--LINKFLAGS",
-        help="Linker flags",
+        help="Linker flags (overwrite)",
         default="unsupplied_implies_use_CXXFLAGS",
+    )
+    _add_xxpend_argument(cap, "ldflags")
+    _add_xxpend_argument(
+        cap,
+        "linkflags",
+        destname="ldflags",
+        extrahelp="Synonym for setting LDFLAGS.",
     )
 
 
@@ -201,45 +241,6 @@ def add_target_arguments_ex(cap):
         "--project-version-cmd",
         dest="projectversioncmd",
         help="Execute this command to determine the CAKE_PROJECT_VERSION macro",
-    )
-
-
-def _add_xxpend_argument(cap, name, destname=None, extrahelp=None):
-    """Add a prepend flags argument and an append flags argument to the config arg parser"""
-    if destname is None:
-        destname = name
-
-    if extrahelp is None:
-        extrahelp = ""
-
-    xxlist = ("prepend", "append")
-    for xx in xxlist:
-        cap.add(
-            "".join(["--", xx, "-", name.upper()]),
-            dest="".join([xx, destname.lower()]),
-            action="append",
-            help=" ".join(
-                [
-                    xx.title(),
-                    "the given text to the",
-                    name.upper(),
-                    "already set. Useful for adding search paths etc.",
-                    extrahelp,
-                ]
-            ),
-        )
-
-
-def add_xxpend_arguments(cap):
-    """Add prepend-BLAH and append-BLAH for the common flags"""
-    xxpendableargs = ("include", "cppflags", "cflags", "cxxflags", "ldflags")
-    for arg in xxpendableargs:
-        _add_xxpend_argument(cap, arg)
-    _add_xxpend_argument(
-        cap,
-        "linkflags",
-        destname="ldflags",
-        extrahelp="Synonym for setting LDFLAGS.",
     )
 
 
@@ -581,7 +582,7 @@ def parseargs(cap, argv, verbose=None):
         verbose = args.verbose
 
     if verbose > 8:
-        print("Parsing commandline arguments has occured.")
+        print(f"Parsing commandline arguments has occured. Before substitutions args={args}")
 
     substitutions(args, verbose)
 

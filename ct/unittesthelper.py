@@ -38,7 +38,7 @@ def ctconfdir():
     return os.path.realpath(os.path.join(ctdir(), "ct.conf.d"))
 
 
-def create_temp_config(tempdir=None, filename=None):
+def create_temp_config(tempdir=None, filename=None, extralines=[]):
     """ User is responsible for removing the config file when 
         they are finished 
     """
@@ -56,12 +56,14 @@ def create_temp_config(tempdir=None, filename=None):
         ff.write("ID=GNU\n")
         ff.write("CC=" + CC + "\n")
         ff.write("CXX=" + CXX + "\n")
-        ff.write('CPPFLAGS="-std=c++11"\n')
+        ff.write('CPPFLAGS="-std=c++20"\n')
+        for line in extralines:
+            ff.write(line + "\n")
 
     return filename
 
 
-def create_temp_ct_conf(tempdir, defaultvariant="debug"):
+def create_temp_ct_conf(tempdir, defaultvariant="debug", extralines=[]):
     """ User is responsible for removing the config file when 
         they are finished 
     """
@@ -72,6 +74,8 @@ def create_temp_ct_conf(tempdir, defaultvariant="debug"):
         ff.write("variantaliases = {'dbg':'foo.debug', 'rls':'foo.release'}\n")
         ff.write("exemarkers = [main]" + "\n")
         ff.write("testmarkers = unit_test.hpp" + "\n")
+        for line in extralines:
+            ff.write(line + "\n")
 
 class TempDirContext:
     def __enter__(self):
