@@ -14,7 +14,7 @@ from ct.diskcache import diskcache
 
 
 def create(args):
-    """ HeaderDeps Factory """
+    """HeaderDeps Factory"""
     classname = args.headerdeps.title() + "HeaderDeps"
     if args.verbose >= 4:
         print("Creating " + classname + " to process header dependencies.")
@@ -24,11 +24,9 @@ def create(args):
 
 
 def add_arguments(cap):
-    """ Add the command line arguments that the HeaderDeps classes require """
+    """Add the command line arguments that the HeaderDeps classes require"""
     ct.apptools.add_common_arguments(cap)
-    alldepscls = [
-        st[:-10].lower() for st in dict(globals()) if st.endswith("HeaderDeps")
-    ]
+    alldepscls = [st[:-10].lower() for st in dict(globals()) if st.endswith("HeaderDeps")]
     cap.add(
         "--headerdeps",
         choices=alldepscls,
@@ -38,20 +36,19 @@ def add_arguments(cap):
 
 
 class HeaderDepsBase(object):
-
-    """ Implement the common functionality of the different header
-        searching classes.  This really should be an abstract base class.
+    """Implement the common functionality of the different header
+    searching classes.  This really should be an abstract base class.
     """
 
     def __init__(self, args):
         self.args = args
 
     def _process_impl(self, realpath):
-        """ Derived classes implement this function """
+        """Derived classes implement this function"""
         raise NotImplemented
 
     def process(self, filename):
-        """ Return the set of dependencies for a given filename """
+        """Return the set of dependencies for a given filename"""
         realpath = ct.wrappedos.realpath(filename)
         try:
             result = self._process_impl(realpath)
@@ -74,8 +71,7 @@ class HeaderDepsBase(object):
 
 
 class DirectHeaderDeps(HeaderDepsBase):
-
-    """ Create a tree structure that shows the header include tree """
+    """Create a tree structure that shows the header include tree"""
 
     def __init__(self, args):
         HeaderDepsBase.__init__(self, args)
@@ -92,7 +88,7 @@ class DirectHeaderDeps(HeaderDepsBase):
 
     @functools.lru_cache(maxsize=None)
     def _search_project_includes(self, include):
-        """ Internal use.  Find the given include file in the project include paths """
+        """Internal use.  Find the given include file in the project include paths"""
         for inc_dir in self.includes:
             trialpath = os.path.join(inc_dir, include)
             if ct.wrappedos.isfile(trialpath):
@@ -106,8 +102,8 @@ class DirectHeaderDeps(HeaderDepsBase):
 
     @functools.lru_cache(maxsize=None)
     def _find_include(self, include, cwd):
-        """ Internal use.  Find the given include file.
-            Start at the current working directory then try the project includes
+        """Internal use.  Find the given include file.
+        Start at the current working directory then try the project includes
         """
         # Check if the file is referable from the current working directory
         # if that guess doesn't exist then try all the include paths
@@ -119,7 +115,7 @@ class DirectHeaderDeps(HeaderDepsBase):
 
     @functools.lru_cache(maxsize=None)
     def _create_include_list(self, realpath):
-        """ Internal use. Create the list of includes for the given file """
+        """Internal use. Create the list of includes for the given file"""
         with open(realpath, encoding="utf-8", errors="ignore") as ff:
             # Assume that all includes occur at the top of the file
             text = ff.read(8192)
@@ -135,9 +131,9 @@ class DirectHeaderDeps(HeaderDepsBase):
         return [group for group in pat.findall(text) if group]
 
     def _generate_tree_impl(self, realpath, node=None):
-        """ Return a tree that describes the header includes
-            The node is passed recursively, however the original caller
-            does not need to pass it in.
+        """Return a tree that describes the header includes
+        The node is passed recursively, however the original caller
+        does not need to pass it in.
         """
 
         if self.args.verbose >= 4:
@@ -176,7 +172,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         return node
 
     def generatetree(self, filename):
-        """ Returns the tree of include files """
+        """Returns the tree of include files"""
         self.ancestor_paths = []
         realpath = ct.wrappedos.realpath(filename)
         return self._generate_tree_impl(realpath)
@@ -217,8 +213,7 @@ class DirectHeaderDeps(HeaderDepsBase):
 
 
 class CppHeaderDeps(HeaderDepsBase):
-
-    """ Using the C Pre Processor, create the list of headers that the given file depends upon. """
+    """Using the C Pre Processor, create the list of headers that the given file depends upon."""
 
     def __init__(self, args):
         HeaderDepsBase.__init__(self, args)
@@ -226,11 +221,19 @@ class CppHeaderDeps(HeaderDepsBase):
 
     @diskcache("deps", deps_mode=True)
     def _process_impl(self, realpath):
-        """ Use the -MM option to the compiler to generate the list of dependencies
-            If you supply a header file rather than a source file then
-            a dummy, blank, source file will be transparently provided
-            and the supplied header file will be included into the dummy source file.
+        """Use the -MM option to the compiler to generate the list of dependencies
+        If you supply a header file rather than a source file then
+        a dummy, blank, source file will be transparently provided
+        and the supplied header file will be included into the dummy source file.
         """
+        # By default, exclude system paths
+        # TODO: include system paths if the user sets (the currently nonexistent) "use-system" flag
+        regex = r"-isystem ([^\s]+)"  # Regex to find paths following -isystem
+        system_paths = re.findall(regex, self.args.CPPFLAGS)
+        system_paths = tuple(item for pth in system_paths for item in (pth, ct.wrappedos.realpath(pth)))
+        if realpath.startswith(system_paths):
+            return ct.utils.OrderedSet()
+
         output = self.preprocessor.process(realpath, extraargs="-MM")
 
         # output will be something like
@@ -249,7 +252,7 @@ class CppHeaderDeps(HeaderDepsBase):
             [
                 ct.wrappedos.realpath(x)
                 for x in deplist.split()
-                if x.strip("\\\t\n\r") and x not in [realpath, "/dev/null"]
+                if x.strip("\\\t\n\r") and x not in [realpath, "/dev/null"] and not x.startswith(system_paths)
             ]
         )
 
