@@ -29,13 +29,14 @@ class TestFuncs(unittest.TestCase):
 
     def test_parse_args_strips_quotes(self):
         cmdline = [
-            '--append-CPPFLAGS="-DNEWPROTOCOL -DV172"',
-            '--append-CXXFLAGS="-DNEWPROTOCOL -DV172"',
+            '--append-CPPFLAGS', '"-DNEWPROTOCOL -DV172"',
+            '--append-CXXFLAGS', '"-DNEWPROTOCOL -DV172"',
         ]
         ap = argparse.ArgumentParser()
         ap.add_argument("--append-CPPFLAGS", action="append")
         ap.add_argument("--append-CXXFLAGS", action="append")
         args = ap.parse_args(cmdline)
+
         ct.apptools._strip_quotes(args)
         self.assertEqual(args.append_CPPFLAGS, ["-DNEWPROTOCOL -DV172"])
         self.assertEqual(args.append_CXXFLAGS, ["-DNEWPROTOCOL -DV172"])
@@ -48,16 +49,12 @@ class TestConfig(unittest.TestCase):
         with uth.TempDirContext():
             uth.create_temp_ct_conf(os.getcwd())
             cfgfile = "foo.dbg.conf"
-            uth.create_temp_config(os.getcwd(), cfgfile, extralines=['APPEND_CXXFLAGS="-fdiagnostics-color=always"', 'append_CXXFLAGS="-fdiagnostics-color=always"'])
+            uth.create_temp_config(os.getcwd(), cfgfile, extralines=['append-CXXFLAGS="-fdiagnostics-color=always"'])
             with open(cfgfile, "r") as ff:
                 print(ff.read())
             argv = ["--config=foo.dbg.conf", "-vvvvvvvvvv"]
-            #variant = ct.configutils.extract_variant(argv=argv)
-            #print(f"{variant=}")
-            #config_files = ct.configutils.config_files_from_variant(variant=variant, argv=argv)
-            #print(config_files)
-
-
+            variant = ct.configutils.extract_variant(argv=argv)
+            config_files = ct.configutils.config_files_from_variant(variant=variant, argv=argv)
 
             cap = configargparse.getArgumentParser(
                 description="Test reading and overriding configs",
@@ -69,9 +66,11 @@ class TestConfig(unittest.TestCase):
             )
             ct.apptools.add_common_arguments(cap)
             ct.apptools.add_link_arguments(cap)
-            print(cap.format_help())
+            #print(cap.format_help())
             args = ct.apptools.parseargs(cap, argv)
-            print(args)
+            #print(args)
+            # Check that the append-CXXFLAGS argument made its way into the CXXFLAGS
+            self.assertTrue("-fdiagnostics-color=always" in args.CXXFLAGS)
 
 
 if __name__ == "__main__":
