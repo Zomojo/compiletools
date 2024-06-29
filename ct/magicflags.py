@@ -117,6 +117,7 @@ class MagicFlagsBase:
                 stdout=subprocess.PIPE,
                 universal_newlines=True,
             ).stdout.rstrip()
+            cflags = re.sub(r'-I', '-isystem ', cflags) # This helps the CppHeaderDeps avoid searching packages
             libs = subprocess.run(
                 ["pkg-config", "--libs", pkg],
                 stdout=subprocess.PIPE,
