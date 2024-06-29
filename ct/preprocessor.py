@@ -4,8 +4,7 @@ import ct.utils
 
 
 class PreProcessor(object):
-
-    """ Make it easy to call the C Pre Processor """
+    """Make it easy to call the C Pre Processor"""
 
     def __init__(self, args):
         self.args = args
@@ -35,8 +34,17 @@ class PreProcessor(object):
                 print(output)
         except OSError as err:
             print(
-                "Failed to prepreocess {0}  Error={1}".format(realpath, err),
+                "Failed to preprocess {0}. Error={1}".format(realpath, err),
                 file=sys.stderr,
             )
-            raise (err)
+            raise err
+        except subprocess.CalledProcessError as err:
+            print(
+                "Preprocessing failed for {0}. Return code={1}, Output={2}".format(
+                    realpath, err.returncode, err.output
+                ),
+                file=sys.stderr,
+            )
+            raise err
+
         return output
