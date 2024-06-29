@@ -93,6 +93,7 @@ def add_base_arguments(cap, argv=None, variant=None):
     ):
         cap.add("--man", "--doc", action=DocumentationAction)
 
+
 def _add_xxpend_argument(cap, name, destname=None, extrahelp=None):
     """Add a prepend flags argument and an append flags argument to the config arg parser"""
     if destname is None:
@@ -135,7 +136,9 @@ def add_common_arguments(cap, argv=None, variant=None):
         help="Compiler identification string.  The same string as CMake uses.",
         default=None,
     )
-    cap.add("--CPP", help="C preprocessor (overwrite)", default="unsupplied_implies_use_CXX")
+    cap.add(
+        "--CPP", help="C preprocessor (overwrite)", default="unsupplied_implies_use_CXX"
+    )
     cap.add("--CC", help="C compiler (overwrite)", default="gcc")
     cap.add("--CXX", help="C++ compiler (overwrite)", default="g++")
     cap.add(
@@ -143,7 +146,9 @@ def add_common_arguments(cap, argv=None, variant=None):
         help="C preprocessor flags (overwrite)",
         default="unsupplied_implies_use_CXXFLAGS",
     )
-    cap.add("--CXXFLAGS", help="C++ compiler flags (overwrite)", default="-fPIC -g -Wall")
+    cap.add(
+        "--CXXFLAGS", help="C++ compiler flags (overwrite)", default="-fPIC -g -Wall"
+    )
     cap.add("--CFLAGS", help="C compiler flags (overwrite)", default="-fPIC -g -Wall")
     ct.utils.add_flag_argument(
         parser=cap,
@@ -167,7 +172,9 @@ def add_common_arguments(cap, argv=None, variant=None):
         default=[],
     )
     ct.git_utils.NameAdjuster.add_arguments(cap)
-    _add_xxpend_arguments(cap, xxpendableargs = ("include", "cppflags", "cflags", "cxxflags"))
+    _add_xxpend_arguments(
+        cap, xxpendableargs=("include", "cppflags", "cflags", "cxxflags")
+    )
 
 
 def add_link_arguments(cap):
@@ -349,11 +356,15 @@ def _add_include_paths_to_flags(args):
 def _add_flags_from_pkg_config(args):
     for pkg in args.pkg_config:
         # TODO: when we move to python 3.7, use text=True rather than universal_newlines=True and capture_output=True,
-        cflags = subprocess.run(
-            ["pkg-config", "--cflags", pkg],
-            stdout=subprocess.PIPE,
-            universal_newlines=True,
-        ).stdout.rstrip().replace('-I', '-isystem ') # This helps the CppHeaderDeps avoid searching packages
+        cflags = (
+            subprocess.run(
+                ["pkg-config", "--cflags", pkg],
+                stdout=subprocess.PIPE,
+                universal_newlines=True,
+            )
+            .stdout.rstrip()
+            .replace("-I", "-isystem ")
+        )  # This helps the CppHeaderDeps avoid searching packages
 
         if cflags:
             args.CPPFLAGS += f" {cflags}"
@@ -585,7 +596,9 @@ def parseargs(cap, argv, verbose=None):
         verbose = args.verbose
 
     if verbose > 8:
-        print(f"Parsing commandline arguments has occured. Before substitutions args={args}")
+        print(
+            f"Parsing commandline arguments has occured. Before substitutions args={args}"
+        )
 
     substitutions(args, verbose)
 

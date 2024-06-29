@@ -13,7 +13,7 @@ import ct.wrappedos
 
 
 def create(args, headerdeps):
-    """ MagicFlags Factory """
+    """MagicFlags Factory"""
     classname = args.magic.title() + "MagicFlags"
     if args.verbose >= 4:
         print("Creating " + classname + " to process magicflags.")
@@ -23,7 +23,7 @@ def create(args, headerdeps):
 
 
 def add_arguments(cap, variant=None):
-    """ Add the command line arguments that the MagicFlags classes require """
+    """Add the command line arguments that the MagicFlags classes require"""
     ct.apptools.add_common_arguments(cap, variant=variant)
     ct.preprocessor.PreProcessor.add_arguments(cap)
     alldepscls = [
@@ -38,23 +38,22 @@ def add_arguments(cap, variant=None):
 
 
 class MagicFlagsBase:
+    """A magic flag in a file is anything that starts
+    with a //# and ends with an =
+    E.g., //#key=value1 value2
 
-    """ A magic flag in a file is anything that starts
-        with a //# and ends with an =
-        E.g., //#key=value1 value2
+    Note that a magic flag is a C++ comment.
 
-        Note that a magic flag is a C++ comment.
-
-        This class is a map of filenames
-        to the map of all magic flags for that file.
-        Each magic flag has an OrderedSet of values.
-        E.g., { '/somepath/libs/base/somefile.hpp':
-                   {'CPPFLAGS':OrderedSet('-D MYMACRO','-D MACRO2'),
-                    'CXXFLAGS':OrderedSet('-fsomeoption'),
-                    'LDFLAGS':OrderedSet('-lsomelib')}}
-        This function will extract all the magics flags from the given
-        source (and all its included headers).
-        source_filename must be an absolute path
+    This class is a map of filenames
+    to the map of all magic flags for that file.
+    Each magic flag has an OrderedSet of values.
+    E.g., { '/somepath/libs/base/somefile.hpp':
+               {'CPPFLAGS':OrderedSet('-D MYMACRO','-D MACRO2'),
+                'CXXFLAGS':OrderedSet('-fsomeoption'),
+                'LDFLAGS':OrderedSet('-lsomelib')}}
+    This function will extract all the magics flags from the given
+    source (and all its included headers).
+    source_filename must be an absolute path
     """
 
     def __init__(self, args, headerdeps):
@@ -62,10 +61,12 @@ class MagicFlagsBase:
         self._headerdeps = headerdeps
 
         # The magic pattern is //#key=value with whitespace ignored
-        self.magicpattern = re.compile(r"^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)", re.MULTILINE)
+        self.magicpattern = re.compile(
+            r"^[\s]*//#([\S]*?)[\s]*=[\s]*(.*)", re.MULTILINE
+        )
 
     def readfile(self, filename):
-        """ Derived classes implement this method """
+        """Derived classes implement this method"""
         raise NotImplemented
 
     def __call__(self, filename):
@@ -83,7 +84,12 @@ class MagicFlagsBase:
         if self._args.verbose >= 9:
             print(
                 " ".join(
-                    ["Adjusting source magicflag from flag=", flag, "to", newflag,]
+                    [
+                        "Adjusting source magicflag from flag=",
+                        flag,
+                        "to",
+                        newflag,
+                    ]
                 )
             )
 
@@ -112,11 +118,15 @@ class MagicFlagsBase:
         flagsforfilename = defaultdict(ct.utils.OrderedSet)
         for pkg in flag.split():
             # TODO: when we move to python 3.7, use text=True rather than universal_newlines=True and capture_output=True,
-            cflags = subprocess.run(
-                ["pkg-config", "--cflags", pkg],
-                stdout=subprocess.PIPE,
-                universal_newlines=True,
-            ).stdout.rstrip().replace('-I', '-isystem ') # This helps the CppHeaderDeps avoid searching packages
+            cflags = (
+                subprocess.run(
+                    ["pkg-config", "--cflags", pkg],
+                    stdout=subprocess.PIPE,
+                    universal_newlines=True,
+                )
+                .stdout.rstrip()
+                .replace("-I", "-isystem ")
+            )  # This helps the CppHeaderDeps avoid searching packages
             libs = subprocess.run(
                 ["pkg-config", "--libs", pkg],
                 stdout=subprocess.PIPE,
@@ -188,7 +198,7 @@ class MagicFlagsBase:
 
 class DirectMagicFlags(MagicFlagsBase):
     def readfile(self, filename):
-        """ Read the first chunk of the file and all the headers it includes """
+        """Read the first chunk of the file and all the headers it includes"""
         # reading and handling as one string is slightly faster than
         # handling a list of strings.
         # Only read the top part of the files for speed
@@ -222,7 +232,7 @@ class CppMagicFlags(MagicFlagsBase):
         self.preprocessor = ct.preprocessor.PreProcessor(args)
 
     def readfile(self, filename):
-        """ Preprocess the given filename but leave comments """
+        """Preprocess the given filename but leave comments"""
         extraargs = "-C -E"
         return self.preprocessor.process(
             realpath=filename, extraargs="-C -E", redirect_stderr_to_stdout=True
