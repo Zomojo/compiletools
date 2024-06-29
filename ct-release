@@ -58,3 +58,4 @@ version=${tag#*v}
 # Push to PyPI
 python3 setup.py sdist
 twine upload dist/*  -r pypi 
+# or should it be twine upload --repository compiletools
