@@ -353,7 +353,8 @@ def _add_flags_from_pkg_config(args):
             ["pkg-config", "--cflags", pkg],
             stdout=subprocess.PIPE,
             universal_newlines=True,
-        ).stdout.rstrip()
+        ).stdout.rstrip().replace('-I', '-isystem ') # This helps the CppHeaderDeps avoid searching packages
+
         if cflags:
             args.CPPFLAGS += f" {cflags}"
             args.CFLAGS += f" {cflags}"
@@ -442,7 +443,7 @@ def _do_xxpend(args, name):
     """
     xxlist = ("prepend", "append")
     for xx in xxlist:
-        xxpendname = "".join([xx, name.lower()])
+        xxpendname = "_".join([xx, name.lower()])
         if hasattr(args, xxpendname):
             xxpendattr = getattr(args, xxpendname)
             attr = getattr(args, name)
@@ -452,6 +453,8 @@ def _do_xxpend(args, name):
                 for flag in xxpendattr:
                     if flag not in attr:
                         extra.append(flag)
+                        if args.verbose > 8:
+                            print(f"{xx} {extra} to {name}")
                 if xx == "prepend":
                     attr = " ".join(extra + [attr])
                 else:
