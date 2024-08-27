@@ -15,15 +15,14 @@ import ct.namer
 
 
 class Rule:
-
-    """ A rule is a target, prerequisites and optionally a recipe 
-        and optionally any order_only_prerequisites.
-        https://www.gnu.org/software/make/manual/html_node/Rule-Introduction.html#Rule-Introduction
-        Example: myrule = Rule( target='mytarget'
-                              , prerequisites='file1.hpp file2.hpp'
-                              , recipe='g++ -c mytarget.cpp -o mytarget.o'
-                              )
-        Note: it had to be a class rather than a dict so that we could hash it.
+    """A rule is a target, prerequisites and optionally a recipe
+    and optionally any order_only_prerequisites.
+    https://www.gnu.org/software/make/manual/html_node/Rule-Introduction.html#Rule-Introduction
+    Example: myrule = Rule( target='mytarget'
+                          , prerequisites='file1.hpp file2.hpp'
+                          , recipe='g++ -c mytarget.cpp -o mytarget.o'
+                          )
+    Note: it had to be a class rather than a dict so that we could hash it.
     """
 
     def __init__(
@@ -53,7 +52,7 @@ class Rule:
         return hash(self.target)
 
     def write(self, makefile):
-        """ Write the given rule into the given Makefile."""
+        """Write the given rule into the given Makefile."""
         if self.phony:
             makefile.write(" ".join([".PHONY:", self.target, "\n"]))
 
@@ -70,9 +69,8 @@ class Rule:
 
 
 class LinkRuleCreator(object):
-
-    """ Base class to provide common infrastructure for the creation of
-        specific link rules by the derived classes.
+    """Base class to provide common infrastructure for the creation of
+    specific link rules by the derived classes.
     """
 
     def __init__(self, args, namer, hunter):
@@ -89,9 +87,9 @@ class LinkRuleCreator(object):
         extraprereqs=None,
         suppressmagicldflags=False,
     ):
-        """ For a given source file (so usually the file with the main) and the
-            set of complete sources (i.e., all the other source files + the original)
-            return the link rule required for the Makefile
+        """For a given source file (so usually the file with the main) and the
+        set of complete sources (i.e., all the other source files + the original)
+        return the link rule required for the Makefile
         """
         if extraprereqs is None:
             extraprereqs = []
@@ -99,9 +97,7 @@ class LinkRuleCreator(object):
             linkerflags = ""
 
         allprerequisites = " ".join(extraprereqs)
-        object_names = {
-            self.namer.object_pathname(source) for source in completesources
-        }
+        object_names = {self.namer.object_pathname(source) for source in completesources}
         allprerequisites += " "
         allprerequisites += " ".join(object_names)
 
@@ -116,12 +112,7 @@ class LinkRuleCreator(object):
         recipe = ""
         if self.args.verbose >= 1:
             recipe += " ".join(["+@echo ...", outputname, ";"])
-        recipe += " ".join(
-            [linker, "-o", outputname]
-            + list(object_names)
-            + list(all_magic_ldflags)
-            + [linkerflags]
-        )
+        recipe += " ".join([linker, "-o", outputname] + list(object_names) + list(all_magic_ldflags) + [linkerflags])
         return Rule(target=outputname, prerequisites=allprerequisites, recipe=recipe)
 
 
@@ -160,20 +151,12 @@ class ExeLinkRuleCreator(LinkRuleCreator):
             linkerflags += " -L"
             linkerflags += self.namer.executable_dir()
         if self.args.static:
-            staticlibrarypathname = self.namer.staticlibrary_pathname(
-                ct.wrappedos.realpath(self.args.static[0])
-            )
-            libname = os.path.join(
-                self.namer.executable_dir(), os.path.basename(staticlibrarypathname)
-            )
+            staticlibrarypathname = self.namer.staticlibrary_pathname(ct.wrappedos.realpath(self.args.static[0]))
+            libname = os.path.join(self.namer.executable_dir(), os.path.basename(staticlibrarypathname))
             extraprereqs.append(libname)
         if self.args.dynamic:
-            dynamiclibrarypathname = self.namer.dynamiclibrary_pathname(
-                ct.wrappedos.realpath(self.args.dynamic[0])
-            )
-            libname = os.path.join(
-                self.namer.executable_dir(), os.path.basename(dynamiclibrarypathname)
-            )
+            dynamiclibrarypathname = self.namer.dynamiclibrary_pathname(ct.wrappedos.realpath(self.args.dynamic[0]))
+            libname = os.path.join(self.namer.executable_dir(), os.path.basename(dynamiclibrarypathname))
             extraprereqs.append(libname)
 
         linkrules = ct.utils.OrderedSet()
@@ -206,9 +189,8 @@ class ExeLinkRuleCreator(LinkRuleCreator):
 
 
 class MakefileCreator:
-
-    """ Create a Makefile based on the filename, --static and --dynamic
-        command line options.
+    """Create a Makefile based on the filename, --static and --dynamic
+    command line options.
     """
 
     def __init__(self, args, hunter):
@@ -252,11 +234,11 @@ class MakefileCreator:
         )
 
     def _uptodate(self):
-        """ Is the Makefile up to date?
-            If the argv has changed
-            then regenerate on the assumption that the filelist or flags have changed
-            else check if the modification time of the Makefile is greater than 
-                 the modification times of all the source and header files.  
+        """Is the Makefile up to date?
+        If the argv has changed
+        then regenerate on the assumption that the filelist or flags have changed
+        else check if the modification time of the Makefile is greater than
+             the modification times of all the source and header files.
         """
         # Check if the Makefile exists and grab its modification time if it does exist.
         try:
@@ -266,9 +248,7 @@ class MakefileCreator:
             if self.args.verbose > 7:
                 print("Regenerating Makefile.")
                 print(
-                    "Could not determine mtime for {}. Assuming that it doesn't exist.".format(
-                        self.args.makefilename
-                    )
+                    "Could not determine mtime for {}. Assuming that it doesn't exist.".format(self.args.makefilename)
                 )
             return False
 
@@ -284,9 +264,7 @@ class MakefileCreator:
                     print('Current  generation line  is "{}".'.format(expected))
                 return False
             elif self.args.verbose > 9:
-                print(
-                    "Makefile header line is identical.  Testing mod time of all the files now."
-                )
+                print("Makefile header line is identical.  Testing mod time of all the files now.")
 
         # Check the mod times of all the implied files against the mod time of the Makefile
         for sf in self._gather_root_sources():
@@ -296,9 +274,7 @@ class MakefileCreator:
                     if self.args.verbose > 7:
                         print("Regenerating Makefile.")
                         print(
-                            "mtime {} for {} is newer than mtime for the Makefile".format(
-                                ct.wrappedos.getmtime(ff), ff
-                            )
+                            "mtime {} for {} is newer than mtime for the Makefile".format(ct.wrappedos.getmtime(ff), ff)
                         )
                     return False
                 elif self.args.verbose > 9:
@@ -314,7 +290,7 @@ class MakefileCreator:
         return True
 
     def _create_all_rule(self):
-        """ Create the rule that in depends on all build products """
+        """Create the rule that in depends on all build products"""
         prerequisites = ["build"]
         if self.args.tests:
             prerequisites.append("runtests")
@@ -323,7 +299,7 @@ class MakefileCreator:
 
     @staticmethod
     def _create_build_rule(prerequisites):
-        """ Create the rule that in depends on all build products """
+        """Create the rule that in depends on all build products"""
         return Rule(target="build", prerequisites=" ".join(prerequisites), phony=True)
 
     def _create_clean_rules(self, alloutputs):
@@ -338,18 +314,12 @@ class MakefileCreator:
                 "-type f -executable -delete 2>/dev/null",
             ]
         )
-        rmtargetsandobjects = " ".join(
-            ["rm -f"] + list(alloutputs) + list(self.objects)
-        )
-        rmemptydirs = " ".join(
-            ["find", self.namer.object_dir(), "-type d -empty -delete"]
-        )
+        rmtargetsandobjects = " ".join(["rm -f"] + list(alloutputs) + list(self.objects))
+        rmemptydirs = " ".join(["find", self.namer.object_dir(), "-type d -empty -delete"])
         recipe = ";".join([rmcopiedexes, rmtargetsandobjects, rmemptydirs])
 
         if self.namer.executable_dir() != self.namer.object_dir():
-            recipe += " ".join(
-                [";find", self.namer.executable_dir(), "-type d -empty -delete"]
-            )
+            recipe += " ".join([";find", self.namer.executable_dir(), "-type d -empty -delete"])
 
         rule_clean = Rule(target="clean", prerequisites="", recipe=recipe, phony=True)
         rules.add(rule_clean)
@@ -359,24 +329,20 @@ class MakefileCreator:
         recipe = " ".join(["rm -rf", self.namer.executable_dir()])
         if self.namer.executable_dir() != self.namer.object_dir():
             recipe += "; rm -rf " + self.namer.object_dir()
-        rule_realclean = Rule(
-            target="realclean", prerequisites="", recipe=recipe, phony=True
-        )
+        rule_realclean = Rule(target="realclean", prerequisites="", recipe=recipe, phony=True)
         rules.add(rule_realclean)
 
         return rules
 
     def _create_cp_rule(self, output):
-        """ Given the original output, copy it to the executable_dir() """
+        """Given the original output, copy it to the executable_dir()"""
         if self.namer.executable_dir() == ct.wrappedos.dirname(output):
             return None
 
         return Rule(
             target=os.path.join(self.namer.executable_dir(), os.path.basename(output)),
             prerequisites=output,
-            recipe=" ".join(
-                ["cp", output, self.namer.executable_dir(), "2>/dev/null ||true"]
-            ),
+            recipe=" ".join(["cp", output, self.namer.executable_dir(), "2>/dev/null ||true"]),
         )
 
     def _create_test_rules(self, alltestsources):
@@ -387,12 +353,7 @@ class MakefileCreator:
         rules = set()
 
         # Create the PHONY that will run all the tests
-        prerequisites = " ".join(
-            [
-                ".".join([self.namer.executable_pathname(tt), "result"])
-                for tt in alltestsources
-            ]
-        )
+        prerequisites = " ".join([".".join([self.namer.executable_pathname(tt), "result"]) for tt in alltestsources])
         runtestsrule = Rule(target="runtests", prerequisites=prerequisites, phony=True)
         rules.add(runtestsrule)
 
@@ -404,19 +365,17 @@ class MakefileCreator:
             recipe = ""
             if self.args.verbose >= 1:
                 recipe += " ".join(["@echo ...", exename, ";"])
-            recipe += " ".join(
-                ["rm -f", testresult, "&&", testprefix, exename, "&& touch", testresult]
-            )
+            recipe += " ".join(["rm -f", testresult, "&&", testprefix, exename, "&& touch", testresult])
             rules.add(Rule(target=testresult, prerequisites=exename, recipe=recipe))
         return rules
-    
+
     def _create_tests_not_parallel_rule(self, alltestsources):
-        prerequisites = " ".join([self.name.executable_pathname(tt) for tt in alltestsources])
-        return Rule(target=".NOTPARALLEL", prerequisites="", phony=True)
-    
+        prerequisites = " ".join([self.namer.executable_pathname(tt) for tt in alltestsources])
+        return Rule(target=".NOTPARALLEL", prerequisites=prerequisites, phony=True)
+
     def _gather_root_sources(self):
-        """ Gather all the source files listed on the command line 
-            into one uber set 
+        """Gather all the source files listed on the command line
+        into one uber set
         """
         sources = ct.utils.OrderedSet()
         if self.args.static:
@@ -431,17 +390,13 @@ class MakefileCreator:
         return sources
 
     def _gather_build_outputs(self):
-        """ Gathers together object files and other outputs """
+        """Gathers together object files and other outputs"""
         buildoutputs = ct.utils.OrderedSet()
 
         if self.args.static:
             staticlibrarypathname = self.namer.staticlibrary_pathname()
             buildoutputs.add(staticlibrarypathname)
-            buildoutputs.add(
-                os.path.join(
-                    self.namer.executable_dir(), os.path.basename(staticlibrarypathname)
-                )
-            )
+            buildoutputs.add(os.path.join(self.namer.executable_dir(), os.path.basename(staticlibrarypathname)))
 
         if self.args.dynamic:
             dynamiclibrarypathname = self.namer.dynamiclibrary_pathname()
@@ -456,9 +411,7 @@ class MakefileCreator:
         buildoutputs |= self.namer.all_executable_pathnames()
         if self.args.filename:
             allcopiedexes = {
-                os.path.join(
-                    self.namer.executable_dir(), self.namer.executable_name(source)
-                )
+                os.path.join(self.namer.executable_dir(), self.namer.executable_name(source))
                 for source in self.args.filename
             }
             buildoutputs |= allcopiedexes
@@ -480,43 +433,33 @@ class MakefileCreator:
 
         realpath_sources = []
         if self.args.filename:
-            realpath_sources += sorted(
-                ct.wrappedos.realpath(source) for source in self.args.filename
-            )
+            realpath_sources += sorted(ct.wrappedos.realpath(source) for source in self.args.filename)
         if self.args.tests:
-            realpath_tests = sorted(
-                ct.wrappedos.realpath(source) for source in self.args.tests
-            )
+            realpath_tests = sorted(ct.wrappedos.realpath(source) for source in self.args.tests)
             realpath_sources += realpath_tests
 
         if self.args.filename or self.args.tests:
-            allexes = {
-                self.namer.executable_pathname(source) for source in realpath_sources
-            }
+            allexes = {self.namer.executable_pathname(source) for source in realpath_sources}
             for exe in allexes:
                 cprule = self._create_cp_rule(exe)
                 if cprule:
                     self.rules.add(cprule)
 
-            self.rules |= self._create_link_rules_for_sources(
-                realpath_sources, exe_static_dynamic="Exe"
-            )
+            self.rules |= self._create_link_rules_for_sources(realpath_sources, exe_static_dynamic="Exe")
 
         if self.args.tests:
             self.rules |= self._create_test_rules(realpath_tests)
             if self.args.serialisetests:
-                self.rules |= self._create_tests_not_parallel(realpath_tests)
+                notparalleltestsrule = self._create_tests_not_parallel_rule(realpath_tests)
+                if notparalleltestsrule:
+                    self.rules.add(notparalleltestsrule)
 
         if self.args.static:
-            libraryname = self.namer.staticlibrary_pathname(
-                ct.wrappedos.realpath(self.args.static[0])
-            )
+            libraryname = self.namer.staticlibrary_pathname(ct.wrappedos.realpath(self.args.static[0]))
             cprule = self._create_cp_rule(libraryname)
             if cprule:
                 self.rules.add(self._create_cp_rule(libraryname))
-            realpath_static = {
-                ct.wrappedos.realpath(filename) for filename in self.args.static
-            }
+            realpath_static = {ct.wrappedos.realpath(filename) for filename in self.args.static}
             self.rules |= self._create_link_rules_for_sources(
                 realpath_static,
                 exe_static_dynamic="StaticLibrary",
@@ -524,15 +467,11 @@ class MakefileCreator:
             )
 
         if self.args.dynamic:
-            libraryname = self.namer.dynamiclibrary_pathname(
-                ct.wrappedos.realpath(self.args.dynamic[0])
-            )
+            libraryname = self.namer.dynamiclibrary_pathname(ct.wrappedos.realpath(self.args.dynamic[0]))
             cprule = self._create_cp_rule(libraryname)
             if cprule:
                 self.rules.add(cprule)
-            realpath_dynamic = {
-                ct.wrappedos.realpath(filename) for filename in self.args.dynamic
-            }
+            realpath_dynamic = {ct.wrappedos.realpath(filename) for filename in self.args.dynamic}
             self.rules |= self._create_link_rules_for_sources(
                 realpath_dynamic,
                 exe_static_dynamic="DynamicLibrary",
@@ -557,9 +496,7 @@ class MakefileCreator:
                 for rule in self.rules:
                     if rule.target in targets:
                         continue
-                    relevant_changed_files = set(
-                        rule.prerequisites.split(" ")
-                    ).intersection(changed_files)
+                    relevant_changed_files = set(rule.prerequisites.split(" ")).intersection(changed_files)
                     if not relevant_changed_files:
                         continue
                     changed_files.add(rule.target)
@@ -576,9 +513,7 @@ class MakefileCreator:
                 if not rule.phony:
                     new_rules.add(rule)
                 else:
-                    rule.prerequisites = " ".join(
-                        set(rule.prerequisites.split()).intersection(targets)
-                    )
+                    rule.prerequisites = " ".join(set(rule.prerequisites.split()).intersection(targets))
                     new_rules.add(rule)
             self.rules = new_rules
 
@@ -593,14 +528,12 @@ class MakefileCreator:
         )
 
     def _create_compile_rule_for_source(self, filename):
-        """ For a given source file return the compile rule required for the Makefile """
+        """For a given source file return the compile rule required for the Makefile"""
         if self.args.verbose >= 9:
             print("MakefileCreator::_create_compile_rule_for_source" + filename)
 
         if ct.utils.isheader(filename):
-            sys.stderr.write(
-                "Error.  Trying to create a compile rule for a header file: ", filename
-            )
+            sys.stderr.write("Error.  Trying to create a compile rule for a header file: ", filename)
 
         deplist = self.hunter.header_dependencies(filename)
         prerequisites = [filename] + sorted([str(dep) for dep in deplist])
@@ -616,16 +549,12 @@ class MakefileCreator:
         if ct.wrappedos.isc(filename):
             magic_c_flags = magicflags.get("CFLAGS", [])
             recipe += " ".join(
-                [self.args.CC, self.args.CFLAGS]
-                + list(magic_c_flags)
-                + ["-c", "-o", obj_name, filename]
+                [self.args.CC, self.args.CFLAGS] + list(magic_c_flags) + ["-c", "-o", obj_name, filename]
             )
         else:
             magic_cxx_flags = magicflags.get("CXXFLAGS", [])
             recipe += " ".join(
-                [self.args.CXX, self.args.CXXFLAGS]
-                + list(magic_cxx_flags)
-                + ["-c", "-o", obj_name, filename]
+                [self.args.CXX, self.args.CXXFLAGS] + list(magic_cxx_flags) + ["-c", "-o", obj_name, filename]
             )
 
         if self.args.verbose >= 3:
@@ -639,11 +568,9 @@ class MakefileCreator:
             recipe=recipe,
         )
 
-    def _create_link_rules_for_sources(
-        self, sources, exe_static_dynamic, libraryname=None
-    ):
-        """ For all the given source files return the set of rules required
-            for the Makefile that will _link_ the source files into executables.
+    def _create_link_rules_for_sources(self, sources, exe_static_dynamic, libraryname=None):
+        """For all the given source files return the set of rules required
+        for the Makefile that will _link_ the source files into executables.
         """
 
         # The set of rules needed to turn the source file into an executable
@@ -654,18 +581,14 @@ class MakefileCreator:
         if self.args.verbose >= 3:
             print("Creating link rule for ", sources)
         linkrulecreatorclass = globals()[exe_static_dynamic + "LinkRuleCreator"]
-        linkrulecreatorobject = linkrulecreatorclass(
-            args=self.args, namer=self.namer, hunter=self.hunter
-        )
-        rules_for_source |= linkrulecreatorobject(
-            libraryname=libraryname, sources=sources
-        )
+        linkrulecreatorobject = linkrulecreatorclass(args=self.args, namer=self.namer, hunter=self.hunter)
+        rules_for_source |= linkrulecreatorobject(libraryname=libraryname, sources=sources)
 
         return rules_for_source
 
     def _create_compile_rules_for_sources(self, sources):
-        """ For all the given source files return the set of rules required
-            for the Makefile that will compile the source files into object files.
+        """For all the given source files return the set of rules required
+        for the Makefile that will compile the source files into object files.
         """
 
         # The set of rules needed to turn the source file into an executable
@@ -689,7 +612,7 @@ class MakefileCreator:
         return rules_for_source
 
     def write(self, makefile_name="Makefile"):
-        """ Take a list of rules and write the rules to a Makefile """
+        """Take a list of rules and write the rules to a Makefile"""
         with open(makefile_name, mode="w", encoding="utf-8") as mfile:
             mfile.write("# Makefile generated by ")
             mfile.write(str(self.args))
@@ -698,7 +621,7 @@ class MakefileCreator:
                 rule.write(mfile)
 
     def clear_cache(self):
-        """ Only useful in test scenarios where you need to reset to a pristine state """
+        """Only useful in test scenarios where you need to reset to a pristine state"""
         ct.wrappedos.clear_cache()
         ct.utils.clear_cache()
         ct.git_utils.clear_cache()
