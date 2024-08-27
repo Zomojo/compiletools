@@ -243,6 +243,13 @@ class MakefileCreator:
             "--build-only-changed",
             help="Only build the binaries depending on the source or header absolute filenames in this space-delimited list.",
         )
+        ct.utils.add_flag_argument(
+            parser=cap,
+            name="serialise-tests",
+            dest="serialisetests",
+            default=False,
+            help="Force the unit tests to run serially rather than in parallel. Defaults to false because it is slower.",
+        )
 
     def _uptodate(self):
         """ Is the Makefile up to date?
@@ -402,7 +409,11 @@ class MakefileCreator:
             )
             rules.add(Rule(target=testresult, prerequisites=exename, recipe=recipe))
         return rules
-
+    
+    def _create_tests_not_parallel_rule(self, alltestsources):
+        prerequisites = " ".join([self.name.executable_pathname(tt) for tt in alltestsources])
+        return Rule(target=".NOTPARALLEL", prerequisites="", phony=True)
+    
     def _gather_root_sources(self):
         """ Gather all the source files listed on the command line 
             into one uber set 
@@ -493,6 +504,8 @@ class MakefileCreator:
 
         if self.args.tests:
             self.rules |= self._create_test_rules(realpath_tests)
+            if self.args.serialisetests:
+                self.rules |= self._create_tests_not_parallel(realpath_tests)
 
         if self.args.static:
             libraryname = self.namer.staticlibrary_pathname(
