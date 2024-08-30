@@ -32,6 +32,8 @@ class TestFindTargetsModule(unittest.TestCase):
             "numbers/test_direct_include.cpp",
             "numbers/test_library.cpp",
             "simple/test_cflags.c",
+            "serialise_tests/test_flock_1.cpp",
+            "serialise_tests/test_flock_2.cpp",
         }
 
         expectedexes = set()

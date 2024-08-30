@@ -21,7 +21,7 @@ void obtainlock()
     fl.l_len = 0; // Lock the entire file
 
     if (fcntl(fd, F_SETLK, &fl) == -1) {
-        throw std::runtime_error("Error: Could not acquire the file lock");
+        throw std::runtime_error("SerialiseTests Error: Could not acquire the file lock. This means the tests ran in parallel!");
     }
 
     std::this_thread::sleep_for(std::chrono::seconds(1));
