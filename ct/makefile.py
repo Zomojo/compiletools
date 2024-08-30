@@ -369,9 +369,9 @@ class MakefileCreator:
             rules.add(Rule(target=testresult, prerequisites=exename, recipe=recipe))
         return rules
 
-    def _create_tests_not_parallel_rule(self, alltestsources):
-        prerequisites = " ".join([self.namer.executable_pathname(tt) for tt in alltestsources])
-        return Rule(target=".NOTPARALLEL", prerequisites=prerequisites, phony=True)
+    @staticmethod
+    def _create_tests_not_parallel_rule():
+        return Rule(target=".NOTPARALLEL", prerequisites="runtests", phony=True)
 
     def _gather_root_sources(self):
         """Gather all the source files listed on the command line
@@ -450,9 +450,7 @@ class MakefileCreator:
         if self.args.tests:
             self.rules |= self._create_test_rules(realpath_tests)
             if self.args.serialisetests:
-                notparalleltestsrule = self._create_tests_not_parallel_rule(realpath_tests)
-                if notparalleltestsrule:
-                    self.rules.add(notparalleltestsrule)
+                self.rules.add(self._create_tests_not_parallel_rule())
 
         if self.args.static:
             libraryname = self.namer.staticlibrary_pathname(ct.wrappedos.realpath(self.args.static[0]))
