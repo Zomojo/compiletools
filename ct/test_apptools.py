@@ -42,9 +42,45 @@ class TestFuncs(unittest.TestCase):
         self.assertEqual(args.append_CXXFLAGS, ["-DNEWPROTOCOL -DV172"])
 
 
+
 class TestConfig(unittest.TestCase):
+    def setUp(self):
+        uth.reset()
+
+    def test_environment_overrides_config(self):
+        """ If append_environment_variables is not set to true (default as at 20240916) then 
+            command-line values override environment variables which override config file values which override defaults.
+        """
+        uthr.reload_ct(cache_home="None")
+
+        with uth.TempDirContext(), uth.EnvironmentContext(flagsdict={"CXXFLAGS": "-fdiagnostics-color=always -DVARFROMENV"}):
+            uth.create_temp_ct_conf(os.getcwd())
+            cfgfile = "foo.dbg.conf"
+            uth.create_temp_config(os.getcwd(), cfgfile, extralines=['CXXFLAGS="-DVARFROMFILE"'])
+            with open(cfgfile, "r") as ff:
+                print(ff.read())
+            argv = ["--config=foo.dbg.conf", "-vvvvvvvvvv"]
+            variant = ct.configutils.extract_variant(argv=argv)
+            config_files = ct.configutils.config_files_from_variant(variant=variant, argv=argv)
+
+            cap = configargparse.getArgumentParser(
+                description="Test environment overrides config",
+                formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+                auto_env_var_prefix="",
+                default_config_files=["ct.conf"],
+                args_for_setting_config_path=["-c", "--config"],
+                ignore_unknown_config_file_keys=True,
+            )
+            ct.apptools.add_common_arguments(cap)
+            ct.apptools.add_link_arguments(cap)
+            #print(cap.format_help())
+            args = ct.apptools.parseargs(cap, argv)
+            #print(args)
+            # Check that the environment variable overrode the config file
+            self.assertTrue("-DVARFROMENV" in args.CXXFLAGS)
+
     def test_user_config_append_cxxflags(self):
-        uthr.reload_ct("None")
+        uthr.reload_ct(cache_home="None")
 
         with uth.TempDirContext():
             uth.create_temp_ct_conf(os.getcwd())
