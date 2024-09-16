@@ -5,6 +5,7 @@ import shutil
 from io import open
 import tempfile
 import ct.apptools
+
 # The abbreviation "uth" is often used for this "unittesthelper"
 
 
@@ -14,10 +15,10 @@ def reset():
 
 
 def delete_existing_parsers():
-    """ The singleton parsers supplied by configargparse
-        don't play well with the unittest framework.
-        This function will delete them so you are
-        starting with a clean slate
+    """The singleton parsers supplied by configargparse
+    don't play well with the unittest framework.
+    This function will delete them so you are
+    starting with a clean slate
     """
     configargparse._parsers = {}
 
@@ -39,8 +40,8 @@ def ctconfdir():
 
 
 def create_temp_config(tempdir=None, filename=None, extralines=[]):
-    """ User is responsible for removing the config file when 
-        they are finished 
+    """User is responsible for removing the config file when
+    they are finished
     """
     try:
         CC = os.environ["CC"]
@@ -64,8 +65,8 @@ def create_temp_config(tempdir=None, filename=None, extralines=[]):
 
 
 def create_temp_ct_conf(tempdir, defaultvariant="debug", extralines=[]):
-    """ User is responsible for removing the config file when 
-        they are finished 
+    """User is responsible for removing the config file when
+    they are finished
     """
     with open(os.path.join(tempdir, "ct.conf"), "w") as ff:
         # ff.write('CTCACHE = ' + os.path.join(tempdir,'ct-unittest-cache' + '\n'))
@@ -76,6 +77,7 @@ def create_temp_ct_conf(tempdir, defaultvariant="debug", extralines=[]):
         ff.write("testmarkers = unit_test.hpp" + "\n")
         for line in extralines:
             ff.write(line + "\n")
+
 
 class TempDirContext:
     def __enter__(self):
@@ -88,3 +90,22 @@ class TempDirContext:
         os.chdir(self._origdir)  # Return to the original directory
         shutil.rmtree(self._tmpdir, ignore_errors=True)  # Cleanup the temporary directory
 
+
+class EnvironmentContext:
+    def __init__(self, flagsdict):
+        self._flagsdict = flagsdict
+        self._orig = {}
+
+    def __enter__(self):
+        for key, value in self._flagsdict.items():
+            if value:
+                self._orig[key] = os.getenv(key)
+                os.environ[key] = value
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        for key, value in self._orig.items():
+            if value:
+                os.environ[key] = value
+            else:
+                os.unsetenv(key)
