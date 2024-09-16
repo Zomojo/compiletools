@@ -584,6 +584,7 @@ def substitutions(args, verbose=None):
 
 def parseargs(cap, argv, verbose=None):
     """argv must be the logical equivalent of sys.argv[1:]"""
+    # command-line values override environment variables which override config file values which override defaults.
     args = cap.parse_args(args=argv)
     _strip_quotes(args)
 
