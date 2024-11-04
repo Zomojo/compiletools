@@ -132,24 +132,31 @@ def add_common_arguments(cap, argv=None, variant=None):
     add_base_arguments(cap, argv=argv, variant=variant)
     ct.dirnamer.add_arguments(cap)
     cap.add(
+        "--variable-handling-method",
+        dest="variable_handling_method",
+        help="Does specifing --<someflag> (say CXXFLAGS) mean override existing flags or append to the existing? Choices are override or append.",
+        default="override"
+    )
+    cap.add(
         "--ID",
         help="Compiler identification string.  The same string as CMake uses.",
         default=None,
     )
     cap.add(
-        "--CPP", help="C preprocessor (overwrite)", default="unsupplied_implies_use_CXX"
+        "--CPP", help="C preprocessor (override)", default="unsupplied_implies_use_CXX"
     )
-    cap.add("--CC", help="C compiler (overwrite)", default="gcc")
-    cap.add("--CXX", help="C++ compiler (overwrite)", default="g++")
+    cap.add("--CC", help="C compiler (override)", default="gcc")
+    cap.add("--CXX", help="C++ compiler (override)", default="g++")
     cap.add(
         "--CPPFLAGS",
-        help="C preprocessor flags (overwrite)",
+        nargs="+",
+        help="C preprocessor flags (override)",
         default="unsupplied_implies_use_CXXFLAGS",
     )
     cap.add(
-        "--CXXFLAGS", help="C++ compiler flags (overwrite)", default="-fPIC -g -Wall"
+        "--CXXFLAGS", nargs="+", help="C++ compiler flags (override)", default="-fPIC -g -Wall"
     )
-    cap.add("--CFLAGS", help="C compiler flags (overwrite)", default="-fPIC -g -Wall")
+    cap.add("--CFLAGS", help="C compiler flags (override)", default="-fPIC -g -Wall")
     ct.utils.add_flag_argument(
         parser=cap,
         name="git-root",
@@ -161,7 +168,7 @@ def add_common_arguments(cap, argv=None, variant=None):
         "--INCLUDE",
         "--include",
         dest="INCLUDE",
-        help="Extra path(s) to add to the list of include paths. (overwrite)",
+        help="Extra path(s) to add to the list of include paths. (override)",
         default="",
     )
     cap.add(
@@ -179,11 +186,11 @@ def add_common_arguments(cap, argv=None, variant=None):
 
 def add_link_arguments(cap):
     """Insert the link arguments into the configargparse singleton"""
-    cap.add("--LD", help="Linker (overwrite)", default="unsupplied_implies_use_CXX")
+    cap.add("--LD", help="Linker (override)", default="unsupplied_implies_use_CXX")
     cap.add(
         "--LDFLAGS",
         "--LINKFLAGS",
-        help="Linker flags (overwrite)",
+        help="Linker flags (override)",
         default="unsupplied_implies_use_CXXFLAGS",
     )
     _add_xxpend_argument(cap, "ldflags")
@@ -511,6 +518,13 @@ def _strip_quotes(args):
                 except:
                     pass
 
+def _flatten_variables(args):
+    """Most of the code base was written to expect CXXFLAGS are a single string with space separation.
+    However, around 20240920 we allowed some variables to be lists of those strings.  To allow this 
+    change to slip in with minimal code changes, we flatten out the list into a single string."""
+    for varname in ("CPPFLAGS","CFLAGS","CXXFLAGS"):
+        if isinstance(getattr(args,varname), list):
+            setattr(args, varname, " ".join(getattr(args,varname)))
 
 def _commonsubstitutions(args):
     """If certain arguments have not been specified but others have
@@ -581,12 +595,29 @@ def substitutions(args, verbose=None):
         print("Args after substitutions")
         verboseprintconfig(args)
 
+def _fix_variable_handling_method(cap, argv, verbose):
+    # TODO: FIXME: Correct fix is to have a PR into configargparse
+    verbose_print = verbose > 8
+    fix_keys = ["CXXFLAGS"]
+    for key in fix_keys:
+        value = os.getenv(key)
+        if value:
+            appendkey = f"APPEND_{key}"
+            if verbose_print:
+                print(f"Changing {key=} into {appendkey} with {value=}")
+            os.environ[appendkey] = value
+            os.environ.pop(key)
+
+    if verbose_print:
+        print(f"{os.environ=}")
+        print("_fix_variable_handling_method is forcing reparsing of cap.parse_args")
+    return cap.parse_args(args=argv)
+    
 
 def parseargs(cap, argv, verbose=None):
     """argv must be the logical equivalent of sys.argv[1:]"""
     # command-line values override environment variables which override config file values which override defaults.
     args = cap.parse_args(args=argv)
-    _strip_quotes(args)
 
     if "verbose" not in vars(args):
         raise ValueError(
@@ -595,6 +626,14 @@ def parseargs(cap, argv, verbose=None):
 
     if verbose is None:
         verbose = args.verbose
+
+    # TODO: if arg.variable_handling_method == "append" then fix up the environment
+    # Note that configargparse uses the "override" method, so we need to partially undo that.
+    # TODO: Write up a PR for configargparse to do override
+    if args.variable_handling_method == "append":
+        args = _fix_variable_handling_method(cap, argv, verbose)
+    _flatten_variables(args)
+    _strip_quotes(args)
 
     if verbose > 8:
         print(

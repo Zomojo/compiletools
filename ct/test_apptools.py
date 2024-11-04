@@ -47,14 +47,15 @@ class TestConfig(unittest.TestCase):
     def setUp(self):
         uth.reset()
 
-    def test_environment_overrides_config(self):
-        """ If append_environment_variables is not set to true (default as at 20240916) then 
+    def _test_variable_handling_method(self, variable_handling_method):
+        """ If variable_handling_method is set to "override" (default as at 20240917) then 
             command-line values override environment variables which override config file values which override defaults.
+            If variable_handling_method is set to "append" then variables are appended.
         """
         uthr.reload_ct(cache_home="None")
 
         with uth.TempDirContext(), uth.EnvironmentContext(flagsdict={"CXXFLAGS": "-fdiagnostics-color=always -DVARFROMENV"}):
-            uth.create_temp_ct_conf(os.getcwd())
+            uth.create_temp_ct_conf(os.getcwd(), extralines=[f'variable-handling-method={variable_handling_method}'])
             cfgfile = "foo.dbg.conf"
             uth.create_temp_config(os.getcwd(), cfgfile, extralines=['CXXFLAGS="-DVARFROMFILE"'])
             with open(cfgfile, "r") as ff:
@@ -77,7 +78,21 @@ class TestConfig(unittest.TestCase):
             args = ct.apptools.parseargs(cap, argv)
             #print(args)
             # Check that the environment variable overrode the config file
-            self.assertTrue("-DVARFROMENV" in args.CXXFLAGS)
+            self.assertEqual(variable_handling_method, args.variable_handling_method)
+            if variable_handling_method == "override":
+                self.assertTrue("-DVARFROMENV" in args.CXXFLAGS)
+                self.assertTrue("-DVARFROMFILE" not in args.CXXFLAGS)
+            elif variable_handling_method == "append":
+                self.assertTrue("-DVARFROMENV" in args.CXXFLAGS)
+                self.assertTrue("-DVARFROMFILE" in args.CXXFLAGS)
+            else:
+                self.assertFalse("Unknown variable handling method.  Must be override or append.")
+                
+    def test_environment_overrides_config(self):
+        self._test_variable_handling_method(variable_handling_method="override")
+
+    def test_environment_appends_config(self):
+        self._test_variable_handling_method(variable_handling_method="append")
 
     def test_user_config_append_cxxflags(self):
         uthr.reload_ct(cache_home="None")
@@ -88,7 +103,7 @@ class TestConfig(unittest.TestCase):
             uth.create_temp_config(os.getcwd(), cfgfile, extralines=['append-CXXFLAGS="-fdiagnostics-color=always"'])
             with open(cfgfile, "r") as ff:
                 print(ff.read())
-            argv = ["--config=foo.dbg.conf", "-vvvvvvvvvv"]
+            argv = ["--config="+cfgfile, "-vvvvvvvvvv"]
             variant = ct.configutils.extract_variant(argv=argv)
             config_files = ct.configutils.config_files_from_variant(variant=variant, argv=argv)
 
