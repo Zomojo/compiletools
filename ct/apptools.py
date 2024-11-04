@@ -567,7 +567,7 @@ def substitutions(args, verbose=None):
 def _fix_variable_handling_method(cap, argv, verbose):
     # TODO: FIXME: Correct fix is to have a PR into configargparse
     verbose_print = verbose > 8
-    fix_keys = ["CXXFLAGS"]
+    fix_keys = ["CPPFLAGS", "CFLAGS", "CXXFLAGS", "LDFLAGS", "INCLUDE"]
     for key in fix_keys:
         value = os.getenv(key)
         if value:
