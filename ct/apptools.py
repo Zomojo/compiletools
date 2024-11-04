@@ -38,12 +38,8 @@ if rich_rst_available and sys.version_info.major == 3 and sys.version_info.minor
             )
 
         def __call__(self, parser, namespace, values, option_string=None):
-            if option_string in self.option_strings and not option_string.startswith(
-                "--no-"
-            ):
-                this_dir = os.path.dirname(
-                    os.path.abspath(inspect.getsourcefile(lambda: 0))
-                )
+            if option_string in self.option_strings and not option_string.startswith("--no-"):
+                this_dir = os.path.dirname(os.path.abspath(inspect.getsourcefile(lambda: 0)))
                 doc_filename = os.path.join(this_dir, f"README.{parser.prog}.rst")
                 try:
                     with open(doc_filename, "r") as docfile:
@@ -65,8 +61,7 @@ def add_base_arguments(cap, argv=None, variant=None):
 
     cap.add(
         "--variant",
-        help="Specifies which variant of the config should be used. "
-        "Use the config name without the .conf",
+        help="Specifies which variant of the config should be used. " "Use the config name without the .conf",
         default=variant,
     )
     cap.add(
@@ -86,11 +81,7 @@ def add_base_arguments(cap, argv=None, variant=None):
     cap.add("--version", action="version", version=__version__)
     cap.add("-?", action="help", help="Help")
 
-    if (
-        rich_rst_available
-        and sys.version_info.major == 3
-        and sys.version_info.minor >= 9
-    ):
+    if rich_rst_available and sys.version_info.major == 3 and sys.version_info.minor >= 9:
         cap.add("--man", "--doc", action=DocumentationAction)
 
 
@@ -135,16 +126,14 @@ def add_common_arguments(cap, argv=None, variant=None):
         "--variable-handling-method",
         dest="variable_handling_method",
         help="Does specifing --<someflag> (say CXXFLAGS) mean override existing flags or append to the existing? Choices are override or append.",
-        default="override"
+        default="override",
     )
     cap.add(
         "--ID",
         help="Compiler identification string.  The same string as CMake uses.",
         default=None,
     )
-    cap.add(
-        "--CPP", help="C preprocessor (override)", default="unsupplied_implies_use_CXX"
-    )
+    cap.add("--CPP", help="C preprocessor (override)", default="unsupplied_implies_use_CXX")
     cap.add("--CC", help="C compiler (override)", default="gcc")
     cap.add("--CXX", help="C++ compiler (override)", default="g++")
     cap.add(
@@ -153,9 +142,7 @@ def add_common_arguments(cap, argv=None, variant=None):
         help="C preprocessor flags (override)",
         default="unsupplied_implies_use_CXXFLAGS",
     )
-    cap.add(
-        "--CXXFLAGS", nargs="+", help="C++ compiler flags (override)", default="-fPIC -g -Wall"
-    )
+    cap.add("--CXXFLAGS", nargs="+", help="C++ compiler flags (override)", default="-fPIC -g -Wall")
     cap.add("--CFLAGS", help="C compiler flags (override)", default="-fPIC -g -Wall")
     ct.utils.add_flag_argument(
         parser=cap,
@@ -179,9 +166,7 @@ def add_common_arguments(cap, argv=None, variant=None):
         default=[],
     )
     ct.git_utils.NameAdjuster.add_arguments(cap)
-    _add_xxpend_arguments(
-        cap, xxpendableargs=("include", "cppflags", "cflags", "cxxflags")
-    )
+    _add_xxpend_arguments(cap, xxpendableargs=("include", "cppflags", "cflags", "cxxflags"))
 
 
 def add_link_arguments(cap):
@@ -266,11 +251,7 @@ def unsupplied_replacement(variable, default_variable, verbose, variable_str):
     if "unsupplied" in variable:
         replacement = default_variable
         if verbose >= 6:
-            print(
-                " ".join(
-                    [variable_str, "was unsupplied. Changed to use ", default_variable]
-                )
-            )
+            print(" ".join([variable_str, "was unsupplied. Changed to use ", default_variable]))
     return replacement
 
 
@@ -281,17 +262,13 @@ def _substitute_CXX_for_missing(args):
     if args.verbose > 8:
         print("Using CXX variables as defaults for missing C, CPP, LD variables")
     args.CPP = unsupplied_replacement(args.CPP, args.CXX, args.verbose, "CPP")
-    args.CPPFLAGS = unsupplied_replacement(
-        args.CPPFLAGS, args.CXXFLAGS, args.verbose, "CPPFLAGS"
-    )
+    args.CPPFLAGS = unsupplied_replacement(args.CPPFLAGS, args.CXXFLAGS, args.verbose, "CPPFLAGS")
     try:
         args.LD = unsupplied_replacement(args.LD, args.CXX, args.verbose, "LD")
     except AttributeError:
         pass
     try:
-        args.LDFLAGS = unsupplied_replacement(
-            args.LDFLAGS, args.CXXFLAGS, args.verbose, "LDFLAGS"
-        )
+        args.LDFLAGS = unsupplied_replacement(args.LDFLAGS, args.CXXFLAGS, args.verbose, "LDFLAGS")
     except AttributeError:
         pass
 
@@ -301,10 +278,7 @@ def _extend_includes_using_git_root(args):
     to the list of include paths
     """
     if args.git_root and (
-        hasattr(args, "filename")
-        or hasattr(args, "static")
-        or hasattr(args, "dynamic")
-        or hasattr(args, "tests")
+        hasattr(args, "filename") or hasattr(args, "static") or hasattr(args, "dynamic") or hasattr(args, "tests")
     ):
 
         if args.verbose > 8:
@@ -402,11 +376,7 @@ def _set_project_version(args):
 
     try:
         args.projectversion = (
-            subprocess.check_output(
-                args.projectversioncmd.split(), universal_newlines=True
-            )
-            .strip("\n")
-            .split()[0]
+            subprocess.check_output(args.projectversioncmd.split(), universal_newlines=True).strip("\n").split()[0]
         )
         if args.verbose >= 6:
             print("Used projectversioncmd to set projectversion")
@@ -518,13 +488,15 @@ def _strip_quotes(args):
                 except:
                     pass
 
+
 def _flatten_variables(args):
     """Most of the code base was written to expect CXXFLAGS are a single string with space separation.
-    However, around 20240920 we allowed some variables to be lists of those strings.  To allow this 
+    However, around 20240920 we allowed some variables to be lists of those strings.  To allow this
     change to slip in with minimal code changes, we flatten out the list into a single string."""
-    for varname in ("CPPFLAGS","CFLAGS","CXXFLAGS"):
-        if isinstance(getattr(args,varname), list):
-            setattr(args, varname, " ".join(getattr(args,varname)))
+    for varname in ("CPPFLAGS", "CFLAGS", "CXXFLAGS"):
+        if isinstance(getattr(args, varname), list):
+            setattr(args, varname, " ".join(getattr(args, varname)))
+
 
 def _commonsubstitutions(args):
     """If certain arguments have not been specified but others have
@@ -549,17 +521,13 @@ def _commonsubstitutions(args):
 
     try:
         # If the user didn't explicitly supply a bindir then modify the bindir to use the variant name
-        args.bindir = unsupplied_replacement(
-            args.bindir, os.path.join("bin", args.variant), args.verbose, "bindir"
-        )
+        args.bindir = unsupplied_replacement(args.bindir, os.path.join("bin", args.variant), args.verbose, "bindir")
     except AttributeError:
         pass
 
     try:
         # Same idea as the bindir modification
-        args.objdir = unsupplied_replacement(
-            args.objdir, os.path.join(args.bindir, "obj"), args.verbose, "objdir"
-        )
+        args.objdir = unsupplied_replacement(args.objdir, os.path.join(args.bindir, "obj"), args.verbose, "objdir")
     except AttributeError:
         pass
 
@@ -595,6 +563,7 @@ def substitutions(args, verbose=None):
         print("Args after substitutions")
         verboseprintconfig(args)
 
+
 def _fix_variable_handling_method(cap, argv, verbose):
     # TODO: FIXME: Correct fix is to have a PR into configargparse
     verbose_print = verbose > 8
@@ -612,7 +581,7 @@ def _fix_variable_handling_method(cap, argv, verbose):
         print(f"{os.environ=}")
         print("_fix_variable_handling_method is forcing reparsing of cap.parse_args")
     return cap.parse_args(args=argv)
-    
+
 
 def parseargs(cap, argv, verbose=None):
     """argv must be the logical equivalent of sys.argv[1:]"""
@@ -636,9 +605,7 @@ def parseargs(cap, argv, verbose=None):
     _strip_quotes(args)
 
     if verbose > 8:
-        print(
-            f"Parsing commandline arguments has occured. Before substitutions args={args}"
-        )
+        print(f"Parsing commandline arguments has occured. Before substitutions args={args}")
 
     substitutions(args, verbose)
 

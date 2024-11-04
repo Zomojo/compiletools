@@ -29,8 +29,10 @@ class TestFuncs(unittest.TestCase):
 
     def test_parse_args_strips_quotes(self):
         cmdline = [
-            '--append-CPPFLAGS', '"-DNEWPROTOCOL -DV172"',
-            '--append-CXXFLAGS', '"-DNEWPROTOCOL -DV172"',
+            "--append-CPPFLAGS",
+            '"-DNEWPROTOCOL -DV172"',
+            "--append-CXXFLAGS",
+            '"-DNEWPROTOCOL -DV172"',
         ]
         ap = argparse.ArgumentParser()
         ap.add_argument("--append-CPPFLAGS", action="append")
@@ -42,20 +44,21 @@ class TestFuncs(unittest.TestCase):
         self.assertEqual(args.append_CXXFLAGS, ["-DNEWPROTOCOL -DV172"])
 
 
-
 class TestConfig(unittest.TestCase):
     def setUp(self):
         uth.reset()
 
     def _test_variable_handling_method(self, variable_handling_method):
-        """ If variable_handling_method is set to "override" (default as at 20240917) then 
-            command-line values override environment variables which override config file values which override defaults.
-            If variable_handling_method is set to "append" then variables are appended.
+        """If variable_handling_method is set to "override" (default as at 20240917) then
+        command-line values override environment variables which override config file values which override defaults.
+        If variable_handling_method is set to "append" then variables are appended.
         """
         uthr.reload_ct(cache_home="None")
 
-        with uth.TempDirContext(), uth.EnvironmentContext(flagsdict={"CXXFLAGS": "-fdiagnostics-color=always -DVARFROMENV"}):
-            uth.create_temp_ct_conf(os.getcwd(), extralines=[f'variable-handling-method={variable_handling_method}'])
+        with uth.TempDirContext(), uth.EnvironmentContext(
+            flagsdict={"CXXFLAGS": "-fdiagnostics-color=always -DVARFROMENV"}
+        ):
+            uth.create_temp_ct_conf(os.getcwd(), extralines=[f"variable-handling-method={variable_handling_method}"])
             cfgfile = "foo.dbg.conf"
             uth.create_temp_config(os.getcwd(), cfgfile, extralines=['CXXFLAGS="-DVARFROMFILE"'])
             with open(cfgfile, "r") as ff:
@@ -74,9 +77,9 @@ class TestConfig(unittest.TestCase):
             )
             ct.apptools.add_common_arguments(cap)
             ct.apptools.add_link_arguments(cap)
-            #print(cap.format_help())
+            # print(cap.format_help())
             args = ct.apptools.parseargs(cap, argv)
-            #print(args)
+            # print(args)
             # Check that the environment variable overrode the config file
             self.assertEqual(variable_handling_method, args.variable_handling_method)
             if variable_handling_method == "override":
@@ -87,7 +90,7 @@ class TestConfig(unittest.TestCase):
                 self.assertTrue("-DVARFROMFILE" in args.CXXFLAGS)
             else:
                 self.assertFalse("Unknown variable handling method.  Must be override or append.")
-                
+
     def test_environment_overrides_config(self):
         self._test_variable_handling_method(variable_handling_method="override")
 
@@ -103,7 +106,7 @@ class TestConfig(unittest.TestCase):
             uth.create_temp_config(os.getcwd(), cfgfile, extralines=['append-CXXFLAGS="-fdiagnostics-color=always"'])
             with open(cfgfile, "r") as ff:
                 print(ff.read())
-            argv = ["--config="+cfgfile, "-vvvvvvvvvv"]
+            argv = ["--config=" + cfgfile, "-vvvvvvvvvv"]
             variant = ct.configutils.extract_variant(argv=argv)
             config_files = ct.configutils.config_files_from_variant(variant=variant, argv=argv)
 
@@ -117,9 +120,9 @@ class TestConfig(unittest.TestCase):
             )
             ct.apptools.add_common_arguments(cap)
             ct.apptools.add_link_arguments(cap)
-            #print(cap.format_help())
+            # print(cap.format_help())
             args = ct.apptools.parseargs(cap, argv)
-            #print(args)
+            # print(args)
             # Check that the append-CXXFLAGS argument made its way into the CXXFLAGS
             self.assertTrue("-fdiagnostics-color=always" in args.CXXFLAGS)
 
