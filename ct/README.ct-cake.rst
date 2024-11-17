@@ -194,6 +194,12 @@ way then the following hierarchy is used
 
 * command line > environment variables > config file values > defaults 
 
+If you need to append values rather than replace values, this can be 
+done (currently only for environment variables) by specifying 
+--variable-handling-method append 
+or equivalently add an environment variable 
+VARIABLE_HANDLING_METHOD=append
+
 The example /etc/xdg/ct/gcc.release.conf file looks as follows: ::
 
     ID=GNU

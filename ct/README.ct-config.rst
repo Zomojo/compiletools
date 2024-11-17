@@ -67,9 +67,15 @@ following variables: ::
     LDFLAGS=-fPIC -Wall -Werror -Xlinker --build-id
 
 If any config value is specified in more than one way then the following 
-hierarchy is used
+hierarchy is used to overwrite the final value
 
 * command line > environment variables > config file values > defaults
+
+If you need to append values rather than replace values, this can be 
+done (currently only for environment variables) by specifying 
+--variable-handling-method append 
+or equivalently add an environment variable 
+VARIABLE_HANDLING_METHOD=append
 
 ct-config can be used to create a new config and write the config to file 
 simply by using the ``-w`` flag.
