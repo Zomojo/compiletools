@@ -125,7 +125,7 @@ def add_common_arguments(cap, argv=None, variant=None):
     cap.add(
         "--variable-handling-method",
         dest="variable_handling_method",
-        help="Does specifing --<someflag> (say CXXFLAGS) mean override existing flags or append to the existing? Choices are override or append.",
+        help="Does specifying --<someflag> (say CXXFLAGS) mean override existing flags or append to the existing? Choices are override or append.",
         default="override",
     )
     cap.add(
