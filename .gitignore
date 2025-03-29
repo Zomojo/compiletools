@@ -23,5 +23,6 @@ deps/
 # Ignore auto-generated files
 vgcore.*
 
-#Python precompiled files
+#Python files
 *.pyc
+compiletools.egg-info/
