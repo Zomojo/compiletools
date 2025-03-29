@@ -18,6 +18,7 @@ deps/
 # All hidden files except the .gitignore file
 \.*
 !.gitignore
+!.github
 
 # Ignore auto-generated files
 vgcore.*
