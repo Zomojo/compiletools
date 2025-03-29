@@ -20,5 +20,8 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
+      - name: Install nose
+        run: pip install nose
+
       - name: Run tests
         run: nosetests
