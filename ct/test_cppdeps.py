@@ -3,6 +3,8 @@ import sys
 import unittest
 import shutil
 import tempfile
+import io
+from contextlib import redirect_stdout
 
 try:
     # This call to reload is simply to test
@@ -28,20 +30,18 @@ class TestCPPDeps(unittest.TestCase):
     def setUp(self):
         uth.reset()
 
-    # This test needs to run in buffered mode.
-    # You can set buffer through unit2 command line flag -b, --buffer
-    # or in unittest.main options.
-    @unittest.skipIf(
-        not hasattr(sys.stdout, "getvalue"), "Skipping test since not in buffer mode"
-    )
     def test_cppdeps(self):
         tempdir = tempfile.mkdtemp()
         _reload_ct(tempdir)
         uth.reset()
-        ct.cppdeps.main(
-            [os.path.join(uth.samplesdir(), "numbers/test_direct_include.cpp")]
-        )
-        output = sys.stdout.getvalue().strip().split()
+        
+        output_buffer = io.StringIO()
+        with redirect_stdout(output_buffer):
+            ct.cppdeps.main(
+                [os.path.join(uth.samplesdir(), "numbers/test_direct_include.cpp")]
+            )
+        
+        output = output_buffer.getvalue().strip().split()
         expected_output = [
             os.path.join(uth.samplesdir(), "numbers/get_double.hpp"),
             os.path.join(uth.samplesdir(), "numbers/get_int.hpp"),
