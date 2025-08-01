@@ -3,8 +3,8 @@
 //#CXXFLAGS=-std=c++17
 #include <cstring>
 #include <zlib.h>
-// The libsystemd is here to make sure multiple packages on one line are OK
-//#PKG-CONFIG=zlib libsystemd
+// The libcrypto is here to make sure multiple packages on one line are OK
+//#PKG-CONFIG=zlib libcrypt
 
 int main(int argc, char* argv[])
 {
