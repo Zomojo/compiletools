@@ -23,7 +23,9 @@ SYNOPSIS
 DESCRIPTION
 ===========
 The various ct-* tools exist to build C/C++ executables with almost no 
-configuration. For example, to build a C or C++ program, type ::
+configuration. For example, to build a C or C++ program, type
+
+.. code-block:: bash
 
     ct-cake --auto
 
@@ -41,24 +43,32 @@ captilized. That is, a command line option of --magic=cpp is the equivalent of
 an environment variable MAGIC=cpp.
 
 If the option itself starts with a hypen then configargparse can fail to parse 
-it as you intended. For example, on many platforms, :: 
+it as you intended. For example, on many platforms,
+
+.. code-block:: bash
 
     --append-CXXFLAGS=-march=skylake
 
 will fail. To work around this, compiletools postprocesses the options to 
-understand quotes. For example, :: 
+understand quotes. For example,
+
+.. code-block:: bash
 
     --append-CXXFLAGS="-march=skylake" 
 
 will work on all platforms.  Note however that many shells (e.g., bash) will strip 
 quotes so you need to escape the quotes or single quote stop the shell preprocessing. 
-For example, ::
+For example,
+
+.. code-block:: bash
 
     --append-CXXFLAGS=\\"-march=skylake\\"  
     or 
     --append-CXXFLAGS='"-march=skylake"'
 
-Other notable tools are ::
+Other notable tools are
+
+.. code-block:: text
 
     * ct-headertree: provides information about structure of the include files
     * ct-filelist:   provides the list of files needed to be included in a tarball (e.g. for packaging)

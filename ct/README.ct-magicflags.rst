@@ -39,12 +39,16 @@ source code. For example, if you have written your own "compress.hpp" that
 requires linking against libzip you would normally specify "-lzip" in your 
 Makefile (or build system) on the link line.  However, compiletools based 
 applications add the following comment 
-in the first 8KB of the file the includes: ::
+in the first 8KB of the file the includes:
+
+.. code-block:: cpp
 
     //#LDFLAGS=-lzip
 
 For easy maintainence, it is convenient to put the magic flag directly after 
-the include: ::
+the include:
+
+.. code-block:: cpp
 
     #include <zip.h>
     //#LDFLAGS=-lzip
@@ -55,7 +59,9 @@ header, for a particular executable, compiletools will figure that out and
 stop linking against libzip.
 
 If you want to compile a cpp file with a particular optimization enabled you
-would add something like: ::
+would add something like:
+
+.. code-block:: cpp
 
     //#CXXFLAGS=-fstrict-aliasing 
 

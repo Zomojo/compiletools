@@ -200,7 +200,9 @@ done (currently only for environment variables) by specifying
 or equivalently add an environment variable 
 VARIABLE_HANDLING_METHOD=append
 
-The example /etc/xdg/ct/gcc.release.conf file looks as follows: ::
+The example /etc/xdg/ct/gcc.release.conf file looks as follows:
+
+.. code-block:: ini
 
     ID=GNU
     CC=gcc
@@ -266,7 +268,9 @@ or add test scripts to the regression directory to improve
 test coverage.
 
 Code generation steps can be added at the beginning of
-the build.sh, before cake runs. ::
+the build.sh, before cake runs.
+
+.. code-block:: bash
 
     #!/bin/sh
     set -e

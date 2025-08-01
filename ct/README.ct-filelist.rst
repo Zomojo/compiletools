@@ -24,7 +24,7 @@ environment variables, and most importantly one or more filenames to determine
 the list of files that are required to build the given filename(s). For example, 
 if myfile.cpp includes myfile.hpp and myfile.hpp in turn includes awesome.h
 
-::
+.. code-block:: text
 
   myfile.cpp
   |_ myfile.hpp
@@ -32,7 +32,7 @@ if myfile.cpp includes myfile.hpp and myfile.hpp in turn includes awesome.h
 
 then "ct-filelist myfile.cpp" will return
 
-::
+.. code-block:: text
 
   awesome.h
   myfile.cpp
