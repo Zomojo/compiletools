@@ -5,6 +5,8 @@
 */
 
 //#INCLUDE=subdir
+//#CPPFLAGS=-DMYMACRO=1
+
 #include "important.hpp"
 #include "important2.hpp"
 #include "important3.hpp"
