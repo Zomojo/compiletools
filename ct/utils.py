@@ -130,88 +130,100 @@ def removemount(absolutepath):
     return absolutepath[1:]
 
 
-class OrderedSet(collections.abc.MutableSet):
+def ordered_unique(iterable):
+    """Return unique items from iterable preserving insertion order.
+    
+    This replaces OrderedSet for the common case of deduplicating
+    while preserving order. Uses dict.fromkeys() which is guaranteed
+    to preserve insertion order in Python 3.7+.
+    """
+    return list(dict.fromkeys(iterable))
 
-    """ Set that remembers original insertion order.
-        See https://code.activestate.com/recipes/576694/
-        As of python 3.7, standard dict is guaranteed to preserve order so we can switch to something like
-        >>> keywords = ['foo', 'bar', 'bar', 'foo', 'baz', 'foo']
-        >>> list(dict.fromkeys(keywords).keys())
+
+class OrderedSet(collections.abc.MutableSet):
+    """Set that preserves insertion order using Python 3.7+ dict ordering.
+    
+    Much simpler than the previous implementation since we can rely on
+    dict.fromkeys() to handle ordering and uniqueness.
     """
 
     def __init__(self, iterable=None):
-        self.end = end = []
-        end += [None, end, end]  # sentinel node for doubly linked list
-        self.map = {}  # key --> [key, prev, next]
+        self._data = {}
         if iterable is not None:
-            self |= iterable
+            self.update(iterable)
 
     def __len__(self):
-        return len(self.map)
+        return len(self._data)
 
     def __contains__(self, key):
-        return key in self.map
-
-    def append(self, iterable):
-        for key in iterable:
-            self.add(key)
-
-    def add(self, key):
-        if key not in self.map:
-            end = self.end
-            curr = end[1]
-            curr[2] = end[1] = self.map[key] = [key, curr, end]
-
-    def update(self, iterable):
-        self.append(iterable)
-
-    def discard(self, key):
-        if key in self.map:
-            key, prev, next_ = self.map.pop(key)
-            prev[2] = next_
-            next_[1] = prev
-
-    def difference(self, iterable):
-        output = OrderedSet()
-        for key in self.map:
-            if key not in iterable:
-                output.add(key)
-        return output
-
-    def intersection(self, iterable):
-        output = OrderedSet()
-        for key in self.map:
-            if key in iterable:
-                output.add(key)
-        return output
+        return key in self._data
 
     def __iter__(self):
-        end = self.end
-        curr = end[2]
-        while curr is not end:
-            yield curr[0]
-            curr = curr[2]
+        return iter(self._data)
 
     def __reversed__(self):
-        end = self.end
-        curr = end[1]
-        while curr is not end:
-            yield curr[0]
-            curr = curr[1]
-
-    def pop(self, last=True):
-        if not self:
-            raise KeyError("set is empty")
-        key = self.end[1][0] if last else self.end[2][0]
-        self.discard(key)
-        return key
+        return reversed(list(self._data))
 
     def __repr__(self):
         if not self:
-            return "%s()" % (self.__class__.__name__,)
-        return "%s(%r)" % (self.__class__.__name__, list(self))
+            return f"{self.__class__.__name__}()"
+        return f"{self.__class__.__name__}({list(self)!r})"
+
+    def add(self, key):
+        self._data[key] = None
+
+    def discard(self, key):
+        self._data.pop(key, None)
+
+    def append(self, iterable):
+        """Add all items from iterable, maintaining order"""
+        for item in iterable:
+            self.add(item)
+
+    def update(self, iterable):
+        """Add all items from iterable (alias for append)"""
+        self.append(iterable)
+
+    def difference(self, iterable):
+        """Return new OrderedSet with items not in iterable"""
+        result = OrderedSet()
+        iterable_set = set(iterable) if not isinstance(iterable, set) else iterable
+        for key in self._data:
+            if key not in iterable_set:
+                result.add(key)
+        return result
+
+    def intersection(self, iterable):
+        """Return new OrderedSet with items also in iterable"""
+        result = OrderedSet()
+        iterable_set = set(iterable) if not isinstance(iterable, set) else iterable
+        for key in self._data:
+            if key in iterable_set:
+                result.add(key)
+        return result
 
     def __eq__(self, other):
         if isinstance(other, OrderedSet):
             return len(self) == len(other) and list(self) == list(other)
         return set(self) == set(other)
+
+    def __or__(self, other):
+        """Union operation (|)"""
+        result = OrderedSet(self)
+        result.update(other)
+        return result
+
+    def __ior__(self, other):
+        """In-place union operation (|=)"""
+        self.update(other)
+        return self
+
+    def __sub__(self, other):
+        """Difference operation (-)"""
+        return self.difference(other)
+
+    def __isub__(self, other):
+        """In-place difference operation (-=)"""
+        for item in other:
+            self.discard(item)
+        return self
