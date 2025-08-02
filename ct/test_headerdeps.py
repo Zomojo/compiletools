@@ -29,11 +29,11 @@ def _reload_ct(cache_home):
 
 
 def _callprocess(headerobj, filenames):
-    result = ct.utils.OrderedSet()
+    result = []
     for filename in filenames:
         realpath = ct.wrappedos.realpath(filename)
-        result |= headerobj.process(realpath)
-    return result
+        result.extend(headerobj.process(realpath))
+    return ct.utils.ordered_unique(result)
 
 
 def _generatecache(tempdir, name, realpaths, extraargs=None):
@@ -94,7 +94,7 @@ class TestHeaderDepsModule(unittest.TestCase):
         hcpp = ct.headerdeps.create(argscpp)
         hdirectresult = hdirect.process(realpath)
         hcppresult = hcpp.process(realpath)
-        self.assertSetEqual(hdirectresult, hcppresult)
+        self.assertSetEqual(set(hdirectresult), set(hcppresult))
         os.unlink(temp_config_name)
         _reload_ct(origcache)
 
@@ -136,7 +136,7 @@ class TestHeaderDepsModule(unittest.TestCase):
 
         # Check the returned python sets are the same regardless of methodology
         # used to create
-        self.assertSetEqual(directresults, cppresults)
+        self.assertSetEqual(set(directresults), set(cppresults))
 
         # Check the on-disk caches are the same
         comparator = filecmp.dircmp(directcache, cppcache)

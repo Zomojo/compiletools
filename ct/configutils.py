@@ -200,11 +200,10 @@ def default_config_directories(
 
     executable_config_dir = os.path.join(exedir, "ct", "ct.conf.d")
     gitroot = ct.git_utils.find_git_root()
-    results = ct.utils.OrderedSet(
-        [os.getcwd(), gitroot, os.path.join(gitroot, "ct.conf.d")]
-    )
+    results = [os.getcwd(), gitroot, os.path.join(gitroot, "ct.conf.d")]
     if not repoonly:
-        results.append([user_config_dir] + system_dirs + [executable_config_dir])
+        results.extend([user_config_dir] + system_dirs + [executable_config_dir])
+    results = ct.utils.ordered_unique(results)
     if verbose >= 9:
         print(" ".join(["Default config directories"] + list(results)))
 

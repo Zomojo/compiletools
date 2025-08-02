@@ -10,7 +10,7 @@ import ct.dirnamer
 import ct.apptools
 import ct.headerdeps
 import ct.magicflags
-from ct.utils import OrderedSet
+import ct.utils
 
 
 class TestMagicFlagsModule(unittest.TestCase):
@@ -108,11 +108,11 @@ class TestMagicFlagsModule(unittest.TestCase):
         magicparser = self._createmagicparser(["--magic", "cpp"], tempdir=tempdir)
 
         expected = {
-            "LDFLAGS": {"-lm"},
-            "F1": {"1"},
-            "LINKFLAGS": {"-lpcap"},
-            "F2": {"2"},
-            "F3": {"3"},
+            "LDFLAGS": ["-lm"],
+            "F1": ["1"],
+            "LINKFLAGS": ["-lpcap"],
+            "F2": ["2"],
+            "F3": ["3"],
         }
         self.assertEqual(magicparser.parse(realpath), expected)
 
@@ -129,15 +129,13 @@ class TestMagicFlagsModule(unittest.TestCase):
         realpath = os.path.join(samplesdir, relativepath)
         magicparser = self._createmagicparser(["--magic", "cpp"], tempdir=tempdir)
         expected = {
-            "LDFLAGS": OrderedSet(["-lm"]),
-            "SOURCE": OrderedSet(
-                [
-                    os.path.join(
-                        samplesdir,
-                        "magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp",
-                    )
-                ]
-            ),
+            "LDFLAGS": ["-lm"],
+            "SOURCE": [
+                os.path.join(
+                    samplesdir,
+                    "magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp",
+                )
+            ]
         }
         self.assertEqual(magicparser.parse(realpath), expected)
 

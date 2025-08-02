@@ -59,33 +59,39 @@ class TestImpliedSource(unittest.TestCase):
         self.assertEqual(expected, result)
 
 
-class TestOrderedSet(unittest.TestCase):
-    def test_initialization(self):
-        s1 = utils.OrderedSet([5, 4, 3, 2, 1])
-        self.assertEqual(len(s1), 5)
-        self.assertTrue(3 in s1)
-        self.assertFalse(6 in s1)
+class TestOrderedUnique(unittest.TestCase):
+    def test_ordered_unique_basic(self):
+        result = utils.ordered_unique([5, 4, 3, 2, 1])
+        self.assertEqual(len(result), 5)
+        self.assertIn(3, result)
+        self.assertNotIn(6, result)
+        self.assertEqual(result, [5, 4, 3, 2, 1])
 
-    def test_add_uniqueness(self):
-        # Create and test expected elements
-        s1 = utils.OrderedSet(["five", "four", "three", "two", "one"])
-        self.assertEqual(len(s1), 5)
-        self.assertIn("four", s1)
-        self.assertIn("two", s1)
+    def test_ordered_unique_duplicates(self):
+        # Test deduplication while preserving order
+        result = utils.ordered_unique(["five", "four", "three", "two", "one", "four", "two"])
+        expected = ["five", "four", "three", "two", "one"]
+        self.assertEqual(result, expected)
+        self.assertEqual(len(result), 5)
+        self.assertIn("four", result)
+        self.assertIn("two", result)
 
-        # Re-add existing elements and check that nothing occured
-        s1.add("four")
-        s1.add("two")
-        self.assertEqual(len(s1), 5)
-        self.assertIn("four", s1)
-        self.assertIn("two", s1)
+    def test_ordered_union(self):
+        # Test union functionality
+        list1 = ["a", "b", "c"]
+        list2 = ["c", "d", "e"]
+        list3 = ["e", "f", "g"]
+        result = utils.ordered_union(list1, list2, list3)
+        expected = ["a", "b", "c", "d", "e", "f", "g"]
+        self.assertEqual(result, expected)
 
-        # Add a new entry and verify it is at the end
-        s1.add("newentry")
-        self.assertEqual(len(s1), 6)
-        self.assertIn("newentry", s1)
-        s2 = utils.OrderedSet(["five", "four", "three", "two", "one", "newentry"])
-        self.assertEqual(s1, s2)
+    def test_ordered_difference(self):
+        # Test difference functionality
+        source = ["a", "b", "c", "d", "e"]
+        subtract = ["b", "d"]
+        result = utils.ordered_difference(source, subtract)
+        expected = ["a", "c", "e"]
+        self.assertEqual(result, expected)
 
 
 if __name__ == "__main__":

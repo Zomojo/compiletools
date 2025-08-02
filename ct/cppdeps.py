@@ -24,9 +24,10 @@ def main(argv=None):
         )
         return 1
 
-    results = ct.utils.OrderedSet()
+    results = []
     for fname in args.filename:
-        results |= hh.process(fname)
+        results.extend(hh.process(fname))
+    results = ct.utils.ordered_unique(results)
 
     for dep in results:
         print(dep)

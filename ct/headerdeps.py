@@ -198,9 +198,9 @@ class DirectHeaderDeps(HeaderDepsBase):
         if self.args.verbose >= 9:
             print("DirectHeaderDeps::_process_impl: " + realpath)
 
-        results = ct.utils.OrderedSet()
+        results = set()
         self._process_impl_recursive(realpath, results)
-        results.remove(realpath)
+        results.discard(realpath)
         return results
 
     @staticmethod
@@ -232,7 +232,7 @@ class CppHeaderDeps(HeaderDepsBase):
         system_paths = re.findall(regex, self.args.CPPFLAGS)
         system_paths = tuple(item for pth in system_paths for item in (pth, ct.wrappedos.realpath(pth)))
         if realpath.startswith(system_paths):
-            return ct.utils.OrderedSet()
+            return []
 
         output = self.preprocessor.process(realpath, extraargs="-MM")
 
@@ -248,7 +248,7 @@ class CppHeaderDeps(HeaderDepsBase):
         # Use a set to inherently remove any redundancies
         # Use realpath to get rid of  // and ../../ etc in paths (similar to normpath) and
         # to get the full path even to files in the current working directory
-        return ct.utils.OrderedSet(
+        return ct.utils.ordered_unique(
             [
                 ct.wrappedos.realpath(x)
                 for x in deplist.split()

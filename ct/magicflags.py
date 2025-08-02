@@ -107,15 +107,15 @@ class MagicFlagsBase:
 
     def _handle_include(self, flag):
         flagsforfilename = {}
-        flagsforfilename.setdefault("CPPFLAGS", ct.utils.OrderedSet()).add("-I " + flag)
-        flagsforfilename.setdefault("CFLAGS", ct.utils.OrderedSet()).add("-I " + flag)
-        flagsforfilename.setdefault("CXXFLAGS", ct.utils.OrderedSet()).add("-I " + flag)
+        flagsforfilename.setdefault("CPPFLAGS", []).append("-I " + flag)
+        flagsforfilename.setdefault("CFLAGS", []).append("-I " + flag)
+        flagsforfilename.setdefault("CXXFLAGS", []).append("-I " + flag)
         if self._args.verbose >= 9:
             print(f"Added -I {flag} to CPPFLAGS, CFLAGS, and CXXFLAGS")
         return flagsforfilename
 
     def _handle_pkg_config(self, flag):
-        flagsforfilename = defaultdict(ct.utils.OrderedSet)
+        flagsforfilename = defaultdict(list)
         for pkg in flag.split():
             # TODO: when we move to python 3.7, use text=True rather than universal_newlines=True and capture_output=True,
             cflags = (
@@ -132,10 +132,10 @@ class MagicFlagsBase:
                 stdout=subprocess.PIPE,
                 universal_newlines=True,
             ).stdout.rstrip()
-            flagsforfilename["CPPFLAGS"].add(cflags)
-            flagsforfilename["CFLAGS"].add(cflags)
-            flagsforfilename["CXXFLAGS"].add(cflags)
-            flagsforfilename["LDFLAGS"].add(libs)
+            flagsforfilename["CPPFLAGS"].append(cflags)
+            flagsforfilename["CFLAGS"].append(cflags)
+            flagsforfilename["CXXFLAGS"].append(cflags)
+            flagsforfilename["LDFLAGS"].append(libs)
             if self._args.verbose >= 9:
                 print(f"Magic PKG-CONFIG = {pkg}:")
                 print(f"\tadded {cflags} to CPPFLAGS, CFLAGS, and CXXFLAGS")
@@ -154,7 +154,7 @@ class MagicFlagsBase:
         self._headerdeps.process(filename)
 
         text = self.readfile(filename)
-        flagsforfilename = defaultdict(ct.utils.OrderedSet)
+        flagsforfilename = defaultdict(list)
 
         for match in self.magicpattern.finditer(text):
             magic, flag = match.groups()
@@ -168,22 +168,26 @@ class MagicFlagsBase:
                 extrafff = self._handle_include(flag)
                 for key, values in extrafff.items():
                     for value in values:
-                        flagsforfilename[key].add(value)
+                        flagsforfilename[key].append(value)
 
             # If the magic was PKG-CONFIG then call pkg-config
             if magic == "PKG-CONFIG":
                 extrafff = self._handle_pkg_config(flag)
                 for key, values in extrafff.items():
                     for value in values:
-                        flagsforfilename[key].add(value)
+                        flagsforfilename[key].append(value)
 
-            flagsforfilename[magic].add(flag)
+            flagsforfilename[magic].append(flag)
             if self._args.verbose >= 5:
                 print(
                     "Using magic flag {0}={1} extracted from {2}".format(
                         magic, flag, filename
                     )
                 )
+        
+        # Deduplicate all flags while preserving order
+        for key in flagsforfilename:
+            flagsforfilename[key] = ct.utils.ordered_unique(flagsforfilename[key])
 
         return flagsforfilename
 

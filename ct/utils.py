@@ -133,97 +133,26 @@ def removemount(absolutepath):
 def ordered_unique(iterable):
     """Return unique items from iterable preserving insertion order.
     
-    This replaces OrderedSet for the common case of deduplicating
-    while preserving order. Uses dict.fromkeys() which is guaranteed
-    to preserve insertion order in Python 3.7+.
+    Uses dict.fromkeys() which is guaranteed to preserve insertion 
+    order in Python 3.7+. This replaces OrderedSet for most use cases.
     """
     return list(dict.fromkeys(iterable))
 
 
-class OrderedSet(collections.abc.MutableSet):
-    """Set that preserves insertion order using Python 3.7+ dict ordering.
+def ordered_union(*iterables):
+    """Return union of multiple iterables preserving order.
     
-    Much simpler than the previous implementation since we can rely on
-    dict.fromkeys() to handle ordering and uniqueness.
+    Uses dict.fromkeys() to maintain insertion order and uniqueness.
+    This replaces OrderedSet union operations.
     """
+    import itertools
+    return list(dict.fromkeys(itertools.chain(*iterables)))
 
-    def __init__(self, iterable=None):
-        self._data = {}
-        if iterable is not None:
-            self.update(iterable)
 
-    def __len__(self):
-        return len(self._data)
-
-    def __contains__(self, key):
-        return key in self._data
-
-    def __iter__(self):
-        return iter(self._data)
-
-    def __reversed__(self):
-        return reversed(list(self._data))
-
-    def __repr__(self):
-        if not self:
-            return f"{self.__class__.__name__}()"
-        return f"{self.__class__.__name__}({list(self)!r})"
-
-    def add(self, key):
-        self._data[key] = None
-
-    def discard(self, key):
-        self._data.pop(key, None)
-
-    def append(self, iterable):
-        """Add all items from iterable, maintaining order"""
-        for item in iterable:
-            self.add(item)
-
-    def update(self, iterable):
-        """Add all items from iterable (alias for append)"""
-        self.append(iterable)
-
-    def difference(self, iterable):
-        """Return new OrderedSet with items not in iterable"""
-        result = OrderedSet()
-        iterable_set = set(iterable) if not isinstance(iterable, set) else iterable
-        for key in self._data:
-            if key not in iterable_set:
-                result.add(key)
-        return result
-
-    def intersection(self, iterable):
-        """Return new OrderedSet with items also in iterable"""
-        result = OrderedSet()
-        iterable_set = set(iterable) if not isinstance(iterable, set) else iterable
-        for key in self._data:
-            if key in iterable_set:
-                result.add(key)
-        return result
-
-    def __eq__(self, other):
-        if isinstance(other, OrderedSet):
-            return len(self) == len(other) and list(self) == list(other)
-        return set(self) == set(other)
-
-    def __or__(self, other):
-        """Union operation (|)"""
-        result = OrderedSet(self)
-        result.update(other)
-        return result
-
-    def __ior__(self, other):
-        """In-place union operation (|=)"""
-        self.update(other)
-        return self
-
-    def __sub__(self, other):
-        """Difference operation (-)"""
-        return self.difference(other)
-
-    def __isub__(self, other):
-        """In-place difference operation (-=)"""
-        for item in other:
-            self.discard(item)
-        return self
+def ordered_difference(iterable, subtract):
+    """Return items from iterable not in subtract, preserving order.
+    
+    This replaces OrderedSet difference operations.
+    """
+    subtract_set = set(subtract)
+    return [item for item in dict.fromkeys(iterable) if item not in subtract_set]

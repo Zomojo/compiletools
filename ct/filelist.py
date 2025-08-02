@@ -100,22 +100,22 @@ class Filelist(object):
     def process(self):
         filterclass = globals()[self.args.filter.title() + "PassFilter"]
         filterobject = filterclass()
-        extras = ct.utils.OrderedSet()
+        extras = []
 
         # Add all the command line specified extras
         if self.args.extrafile:
-            extras |= {ef for ef in self.args.extrafile}
+            extras.extend(self.args.extrafile)
         if self.args.extradir:
             for ed in self.args.extradir:
-                extras |= {
+                extras.extend([
                     os.path.join(ed, ff)
                     for ff in os.listdir(ed)
                     if ct.wrappedos.isfile(os.path.join(ed, ff))
-                }
+                ])
         if self.args.extrafilelist:
             for fname in self.args.extrafilelist:
                 with open(fname) as ff:
-                    extras |= {line.strip() for line in ff.readlines()}
+                    extras.extend([line.strip() for line in ff.readlines()])
 
         # Add all the files in the same directory as test files
         if self.args.tests:
@@ -127,18 +127,18 @@ class Filelist(object):
                     if ct.wrappedos.isfile(fileintestdir)
                 }
 
-        mergedfiles = ct.utils.OrderedSet()
+        mergedfiles = []
         if self.args.merge:
             filteredfiles = filterobject(
                 {ct.wrappedos.realpath(fname) for fname in extras}
             )
-            mergedfiles |= filteredfiles
+            mergedfiles.extend(filteredfiles)
         else:
             for fname in extras:
                 realpath = ct.wrappedos.realpath(fname)
                 print(self.styleobject.adjust(realpath))
 
-        followable = ct.utils.OrderedSet()
+        followable = []
         lists = [
             self.args.filename,
             self.args.static,
@@ -147,7 +147,8 @@ class Filelist(object):
         ]
         for ll in lists:
             if ll:
-                followable |= set(ll)
+                followable.extend(ll)
+        followable = ct.utils.ordered_unique(followable)
         for filename in followable:
             check_filename(filename)
             realpath = ct.wrappedos.realpath(filename)
@@ -155,18 +156,19 @@ class Filelist(object):
             filteredfiles = filterobject(files)
 
             if self.args.merge:
-                mergedfiles |= filteredfiles
+                mergedfiles.extend(filteredfiles)
             else:
                 try:
                     # Remove realpath from the list so that the style object
                     # doesn't have to worry about it.
-                    filteredfiles.remove(realpath)
+                    filteredfiles = [f for f in filteredfiles if f != realpath]
                 except KeyError:
                     pass
                 print(self.styleobject.adjust(realpath))
                 self.styleobject(sorted(filteredfiles))
 
         if self.args.merge:
+            mergedfiles = ct.utils.ordered_unique(mergedfiles)
             self.styleobject(sorted(mergedfiles))
 
 

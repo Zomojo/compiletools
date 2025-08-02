@@ -41,7 +41,7 @@ class Hunter(object):
         self.magicparser = magicparser
 
     def _extractSOURCE(self, realpath):
-        sources = self.magicparser.parse(realpath).get("SOURCE", ct.utils.OrderedSet())
+        sources = self.magicparser.parse(realpath).get("SOURCE", [])
         cwd = ct.wrappedos.dirname(realpath)
         ess = {ct.wrappedos.realpath(os.path.join(cwd, es)) for es in sources}
         if self.args.verbose >= 2 and ess:
@@ -55,19 +55,18 @@ class Hunter(object):
             It is a precondition that realpath actually is a realpath.
         """
         if not processed:
-            processed = ct.utils.OrderedSet()
+            processed = set()
         if self.args.verbose >= 7:
             print("Hunter::_required_files_impl. Finding header deps for ", realpath)
 
         # Don't try and collapse these lines.
         # We don't want todo as a handle to the headerdeps.process object.
-        todo = ct.utils.OrderedSet()
-        todo |= self.headerdeps.process(realpath)
+        todo = list(self.headerdeps.process(realpath))
 
         # One of the magic flags is SOURCE.  If that was present, add to the
         # file list.
         if self.args.allow_magic_source_in_header or ct.utils.issource(realpath):
-            todo |= self._extractSOURCE(realpath)
+            todo.extend(self._extractSOURCE(realpath))
 
         # The header deps and magic flags have been parsed at this point so it
         # is now safe to mark the realpath as processed.
@@ -76,23 +75,23 @@ class Hunter(object):
         # Note that the implied source file of an actual source file is itself
         implied = ct.utils.implied_source(realpath)
         if implied:
-            todo.add(implied)
-            todo |= self.headerdeps.process(implied)
+            todo.append(implied)
+            todo.extend(self.headerdeps.process(implied))
 
-        todo -= processed
+        todo = [f for f in ct.utils.ordered_unique(todo) if f not in processed]
         while todo:
             if self.args.verbose >= 9:
                 print(
                     "Hunter::_required_files_impl. ", realpath, " remaining todo:", todo
                 )
-            morefiles = ct.utils.OrderedSet()
+            morefiles = []
             for nextfile in todo:
-                morefiles |= self._required_files_impl(nextfile, processed)
-            todo = morefiles.difference(processed)
+                morefiles.extend(self._required_files_impl(nextfile, processed))
+            todo = [f for f in ct.utils.ordered_unique(morefiles) if f not in processed]
 
         if self.args.verbose >= 9:
             print("Hunter::_required_files_impl. ", realpath, " Returning ", processed)
-        return processed
+        return list(processed)
 
     @functools.lru_cache(maxsize=None)
     def required_source_files(self, filename):
@@ -103,7 +102,7 @@ class Hunter(object):
         """
         if self.args.verbose >= 9:
             print("Hunter::required_source_files for " + filename)
-        return ct.utils.OrderedSet(
+        return ct.utils.ordered_unique(
             [
                 filename
                 for filename in self.required_files(filename)
