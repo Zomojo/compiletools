@@ -1,5 +1,5 @@
-#include <libxml/parser.h>
+#include <zlib.h>
 
 void feature_x_function() {
-    // Implementation using libxml2
+    // Implementation using zlib
 }

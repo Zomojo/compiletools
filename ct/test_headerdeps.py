@@ -151,6 +151,56 @@ class TestHeaderDepsModule(unittest.TestCase):
     def test_direct_and_cpp_generate_same_results_ex(self):
         self._direct_and_cpp_generate_same_results_ex()
 
+    def test_conditional_includes(self):
+        """Test that DirectHeaderDeps correctly handles conditional includes"""
+        filename = os.path.join(uth.samplesdir(), "conditional_includes/main.cpp")
+        self._direct_cpp_tester(filename)
+
+    def test_user_defined_feature_headers(self):
+        """Test that DirectHeaderDeps correctly handles user-defined feature macros"""
+        filename = os.path.join(uth.samplesdir(), "feature_headers/main.cpp")
+        
+        # Test that both parsers give same results
+        self._direct_cpp_tester(filename)
+        
+        # Also verify specific behavior - should include database.h and logging.h 
+        # but not graphics.h or networking.h
+        temp_config_name = ct.unittesthelper.create_temp_config()
+        argv = ["--config=" + temp_config_name, "--headerdeps=direct"]
+        
+        origcache = ct.dirnamer.user_cache_dir()
+        _reload_ct("None")
+        cap = configargparse.getArgumentParser()
+        ct.headerdeps.add_arguments(cap)
+        args = ct.apptools.parseargs(cap, argv)
+        
+        hdirect = ct.headerdeps.create(args)
+        result = hdirect.process(filename)
+        
+        samplesdir = uth.samplesdir()
+        expected_includes = {
+            os.path.join(samplesdir, "feature_headers/feature_config.h"),
+            os.path.join(samplesdir, "feature_headers/database.h"),
+            os.path.join(samplesdir, "feature_headers/logging.h")
+        }
+        unexpected_includes = {
+            os.path.join(samplesdir, "feature_headers/graphics.h"),
+            os.path.join(samplesdir, "feature_headers/networking.h")
+        }
+        
+        result_set = set(result)
+        
+        # Should include the enabled features
+        for expected in expected_includes:
+            self.assertIn(expected, result_set, f"Should include {expected}")
+            
+        # Should NOT include the disabled features  
+        for unexpected in unexpected_includes:
+            self.assertNotIn(unexpected, result_set, f"Should NOT include {unexpected}")
+        
+        os.unlink(temp_config_name)
+        _reload_ct(origcache)
+
     def tearDown(self):
         uth.reset()
 

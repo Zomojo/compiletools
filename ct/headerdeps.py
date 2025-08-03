@@ -85,6 +85,17 @@ class DirectHeaderDeps(HeaderDepsBase):
 
         if self.args.verbose >= 3:
             print("Includes=" + str(self.includes))
+            
+        # Track defined macros during processing
+        self.defined_macros = set()
+        # Add basic platform macros
+        import sys
+        if sys.platform.startswith('linux'):
+            self.defined_macros.add('__linux__')
+        elif sys.platform.startswith('win'):
+            self.defined_macros.add('_WIN32')
+        elif sys.platform.startswith('darwin'):
+            self.defined_macros.add('__APPLE__')
 
     @functools.lru_cache(maxsize=None)
     def _search_project_includes(self, include):
@@ -113,6 +124,65 @@ class DirectHeaderDeps(HeaderDepsBase):
         else:
             return self._search_project_includes(include)
 
+    def _process_conditional_compilation(self, text):
+        """Process conditional compilation directives and return only active sections"""
+        lines = text.split('\n')
+        result_lines = []
+        
+        # Stack to track conditional compilation state
+        condition_stack = [(True, False)]  # (is_active, seen_else)
+        
+        for line in lines:
+            stripped = line.strip()
+            
+            # Track #define statements
+            if stripped.startswith('#define ') and condition_stack[-1][0]:
+                parts = stripped.split(' ', 2)
+                if len(parts) >= 2:
+                    macro_name = parts[1]
+                    self.defined_macros.add(macro_name)
+                    if self.args.verbose >= 9:
+                        print(f"DirectHeaderDeps: defined macro {macro_name}")
+            
+            # Handle conditional compilation directives
+            elif stripped.startswith('#ifdef '):
+                macro = stripped[7:].strip()
+                is_defined = macro in self.defined_macros
+                condition_stack.append((is_defined and condition_stack[-1][0], False))
+                if self.args.verbose >= 9:
+                    print(f"DirectHeaderDeps: #ifdef {macro} -> {is_defined}")
+                    
+            elif stripped.startswith('#ifndef '):
+                macro = stripped[8:].strip()
+                is_defined = macro in self.defined_macros
+                condition_stack.append((not is_defined and condition_stack[-1][0], False))
+                if self.args.verbose >= 9:
+                    print(f"DirectHeaderDeps: #ifndef {macro} -> {not is_defined}")
+                    
+            elif stripped.startswith('#else'):
+                if len(condition_stack) > 1:
+                    current_active, seen_else = condition_stack.pop()
+                    if not seen_else:
+                        parent_active = condition_stack[-1][0] if condition_stack else True
+                        new_active = not current_active and parent_active
+                        condition_stack.append((new_active, True))
+                        if self.args.verbose >= 9:
+                            print(f"DirectHeaderDeps: #else -> {new_active}")
+                    else:
+                        condition_stack.append((False, True))
+                        
+            elif stripped.startswith('#endif'):
+                if len(condition_stack) > 1:
+                    condition_stack.pop()
+                    if self.args.verbose >= 9:
+                        print("DirectHeaderDeps: #endif")
+            else:
+                # Only include this line if we're in an active context
+                if condition_stack[-1][0]:
+                    result_lines.append(line)
+        
+        return '\n'.join(result_lines)
+
     @functools.lru_cache(maxsize=None)
     def _create_include_list(self, realpath):
         """Internal use. Create the list of includes for the given file"""
@@ -120,15 +190,16 @@ class DirectHeaderDeps(HeaderDepsBase):
             # Assume that all includes occur at the top of the file
             text = ff.read(8192)
 
+        # Process conditional compilation first
+        processed_text = self._process_conditional_compilation(text)
+
         # The pattern is intended to match all include statements but
         # not the ones with either C or C++ commented out.
-        # Note that if you use the #if 0 #endif comment trick then
-        # this regex will erroneously find #includes
         pat = re.compile(
             r'/\*.*?\*/|//.*?$|^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]',
             re.MULTILINE | re.DOTALL,
         )
-        return [group for group in pat.findall(text) if group]
+        return [group for group in pat.findall(processed_text) if group]
 
     def _generate_tree_impl(self, realpath, node=None):
         """Return a tree that describes the header includes

@@ -176,7 +176,11 @@ class TestMagicFlagsModule(unittest.TestCase):
         magicparser_direct = self._createmagicparser(["--magic", "direct"], tempdir=tempdir)
         result_direct = magicparser_direct.parse(realpath)
         
-        # Should only contain feature X source, not feature Y
+        # Should only contain feature X dependencies, not feature Y
+        self.assertIn("PKG-CONFIG", result_direct)
+        self.assertIn("zlib", result_direct["PKG-CONFIG"])
+        self.assertNotIn("libcrypt", result_direct.get("PKG-CONFIG", []))
+        
         self.assertIn("SOURCE", result_direct)
         feature_x_source = os.path.join(samplesdir, "macro_deps/feature_x_impl.cpp")
         feature_y_source = os.path.join(samplesdir, "macro_deps/feature_y_impl.cpp")

@@ -281,21 +281,35 @@ class DirectMagicFlags(MagicFlagsBase):
             self.defined_macros.add('__APPLE__')
         
         headers = self._headerdeps.process(filename)
-        text = ""
         
-        # Process files in order, building up defined macros as we go
-        for fname in headers | {filename}:
+        # Process files iteratively until no new macros are discovered
+        # This handles cases where macros defined in one file affect conditional
+        # compilation in other files
+        previous_macros = set()
+        max_iterations = 5  # Prevent infinite loops
+        iteration = 0
+        
+        while previous_macros != self.defined_macros and iteration < max_iterations:
+            previous_macros = self.defined_macros.copy()
+            iteration += 1
+            
             if self._args.verbose >= 9:
-                print("DirectMagicFlags::readfile is processing " + fname)
-            with open(fname, encoding="utf-8", errors="ignore") as ff:
-                # To match the output of the C Pre Processor we insert
-                # the filename before the text
-                file_header = '# 1 "' + ct.wrappedos.realpath(fname) + '"\n'
-                file_content = ff.read(8192)
-                
-                # Process conditional compilation for this file
-                processed_content = self._process_conditional_compilation(file_content)
-                text += file_header + processed_content
+                print(f"DirectMagicFlags::readfile iteration {iteration}, known macros: {self.defined_macros}")
+            
+            text = ""
+            # Process files in dependency order
+            for fname in headers | {filename}:
+                if self._args.verbose >= 9:
+                    print("DirectMagicFlags::readfile is processing " + fname)
+                with open(fname, encoding="utf-8", errors="ignore") as ff:
+                    # To match the output of the C Pre Processor we insert
+                    # the filename before the text
+                    file_header = '# 1 "' + ct.wrappedos.realpath(fname) + '"\n'
+                    file_content = ff.read(8192)
+                    
+                    # Process conditional compilation for this file
+                    processed_content = self._process_conditional_compilation(file_content)
+                    text += file_header + processed_content
 
         return text
 

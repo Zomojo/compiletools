@@ -13,9 +13,12 @@ class TestFindTargetsModule(unittest.TestCase):
 
     def _find_samples_targets(self, disable_tests, disable_exes=False):
         relativeexpectedexes = {
+            "conditional_includes/main.cpp",
             "dottypaths/dottypaths.cpp",
+            "feature_headers/main.cpp",
             "library/main.cpp",
             "lotsofmagic/lotsofmagic.cpp",
+            "macro_deps/main.cpp",
             "magicinclude/main.cpp",
             "magicpkgconfig/main.cpp",
             "magicsourceinheader/main.cpp",

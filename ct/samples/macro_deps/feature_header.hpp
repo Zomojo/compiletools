@@ -1,9 +1,9 @@
 #ifdef USE_FEATURE_X
-//#PKG-CONFIG=libxml-2.0
+//#PKG-CONFIG=zlib
 //#SOURCE=feature_x_impl.cpp
 #endif
 
 #ifdef USE_FEATURE_Y
-//#PKG-CONFIG=libcurl
+//#PKG-CONFIG=libcrypt
 //#SOURCE=feature_y_impl.cpp
 #endif
