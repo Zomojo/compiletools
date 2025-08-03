@@ -26,13 +26,20 @@ class TestMagicFlagsModule(unittest.TestCase):
         config_files = ct.configutils.config_files_from_variant(
             argv=argv, exedir=uth.cakedir()
         )
-        cap = configargparse.getArgumentParser(
-            description="TestMagicFlagsModule",
-            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-            default_config_files=config_files,
-            args_for_setting_config_path=["-c", "--config"],
-            ignore_unknown_config_file_keys=True,
-        )
+        
+        # Check if parser already exists and use it, otherwise create new one
+        try:
+            cap = configargparse.getArgumentParser(
+                description="TestMagicFlagsModule",
+                formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+                default_config_files=config_files,
+                args_for_setting_config_path=["-c", "--config"],
+                ignore_unknown_config_file_keys=True,
+            )
+        except ValueError:
+            # Parser already exists, get it without parameters
+            cap = configargparse.getArgumentParser()
+            
         ct.apptools.add_common_arguments(cap)
         ct.dirnamer.add_arguments(cap)
         ct.headerdeps.add_arguments(cap)
@@ -40,6 +47,40 @@ class TestMagicFlagsModule(unittest.TestCase):
         args = ct.apptools.parseargs(cap, argv)
         headerdeps = ct.headerdeps.create(args)
         return ct.magicflags.create(args, headerdeps)
+
+    def _direct_cpp_magic_tester(self, relativepath, tempdir=None):
+        """Test that DirectMagicFlags and CppMagicFlags produce identical results"""
+        if tempdir is None:
+            tempdir = tempfile.mkdtemp()
+            cleanup_tempdir = True
+        else:
+            cleanup_tempdir = False
+            
+        origdir = os.getcwd()
+        os.chdir(tempdir)
+        
+        try:
+            samplesdir = uth.samplesdir()
+            realpath = os.path.join(samplesdir, relativepath)
+            
+            # Test direct parser
+            magicparser_direct = self._createmagicparser(["--magic", "direct"], tempdir=tempdir)
+            result_direct = magicparser_direct.parse(realpath)
+            
+            # Clear configargparse singleton state to allow second parser creation
+            configargparse._parsers.clear()
+            
+            # Test cpp parser  
+            magicparser_cpp = self._createmagicparser(["--magic", "cpp"], tempdir=tempdir)
+            result_cpp = magicparser_cpp.parse(realpath)
+            
+            # Results should be identical
+            self.assertEqual(result_direct, result_cpp, 
+                           f"DirectMagicFlags and CppMagicFlags gave different results for {relativepath}")
+        finally:
+            os.chdir(origdir)
+            if cleanup_tempdir:
+                shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_parsing_CFLAGS(self):
         origdir = os.getcwd()
@@ -162,6 +203,19 @@ class TestMagicFlagsModule(unittest.TestCase):
         os.chdir(origdir)
         shutil.rmtree(tempdir, ignore_errors=True)
 
+    def test_direct_and_cpp_magic_generate_same_results(self):
+        """Test that DirectMagicFlags and CppMagicFlags produce identical results on conditional compilation samples"""
+        # Test key conditional compilation samples
+        test_files = [
+            "cross_platform/cross_platform.cpp",
+            "magicsourceinheader/main.cpp", 
+            "macro_deps/main.cpp"
+        ]
+        
+        for filename in test_files:
+            with self.subTest(filename=filename):
+                self._direct_cpp_magic_tester(filename)
+
     def test_macro_deps_cross_file(self):
         """Test that macros defined in source files affect header magic flags"""
         origdir = os.getcwd()
@@ -172,7 +226,10 @@ class TestMagicFlagsModule(unittest.TestCase):
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
         
-        # Test direct parser - should pick up feature_x_impl.cpp because USE_FEATURE_X is defined
+        # First verify both parsers give same results
+        self._direct_cpp_magic_tester(relativepath, tempdir)
+        
+        # Then test specific behavior with direct parser
         magicparser_direct = self._createmagicparser(["--magic", "direct"], tempdir=tempdir)
         result_direct = magicparser_direct.parse(realpath)
         
