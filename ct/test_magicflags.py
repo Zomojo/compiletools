@@ -139,5 +139,52 @@ class TestMagicFlagsModule(unittest.TestCase):
         os.chdir(origdir)
         shutil.rmtree(tempdir, ignore_errors=True)
 
+    def test_SOURCE_in_header_direct(self):
+        origdir = os.getcwd()
+        tempdir = tempfile.mkdtemp()
+        os.chdir(tempdir)
+
+        relativepath = "magicsourceinheader/main.cpp"
+        samplesdir = uth.samplesdir()
+        realpath = os.path.join(samplesdir, relativepath)
+        magicparser = self._createmagicparser(["--magic", "direct"], tempdir=tempdir)
+        expected = {
+            "LDFLAGS": ["-lm"],
+            "SOURCE": [
+                os.path.join(
+                    samplesdir,
+                    "magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp",
+                )
+            ]
+        }
+        self.assertEqual(magicparser.parse(realpath), expected)
+
+        os.chdir(origdir)
+        shutil.rmtree(tempdir, ignore_errors=True)
+
+    def test_macro_deps_cross_file(self):
+        """Test that macros defined in source files affect header magic flags"""
+        origdir = os.getcwd()
+        tempdir = tempfile.mkdtemp()
+        os.chdir(tempdir)
+
+        relativepath = "macro_deps/main.cpp"
+        samplesdir = uth.samplesdir()
+        realpath = os.path.join(samplesdir, relativepath)
+        
+        # Test direct parser - should pick up feature_x_impl.cpp because USE_FEATURE_X is defined
+        magicparser_direct = self._createmagicparser(["--magic", "direct"], tempdir=tempdir)
+        result_direct = magicparser_direct.parse(realpath)
+        
+        # Should only contain feature X source, not feature Y
+        self.assertIn("SOURCE", result_direct)
+        feature_x_source = os.path.join(samplesdir, "macro_deps/feature_x_impl.cpp")
+        feature_y_source = os.path.join(samplesdir, "macro_deps/feature_y_impl.cpp")
+        self.assertIn(feature_x_source, result_direct["SOURCE"])
+        self.assertNotIn(feature_y_source, result_direct["SOURCE"])
+
+        os.chdir(origdir)
+        shutil.rmtree(tempdir, ignore_errors=True)
+
     def tearDown(self):
         uth.reset()
