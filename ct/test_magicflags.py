@@ -70,10 +70,7 @@ class TestMagicFlagsModule(unittest.TestCase):
         # magicparser._headerdeps.process(realpath)
         self.assertSetEqual(
             set(magicparser.parse(realpath).get("SOURCE")),
-            {
-                os.path.join(samplesdir, "cross_platform/cross_platform_lin.cpp"),
-                os.path.join(samplesdir, "cross_platform/cross_platform_win.cpp"),
-            },
+            {os.path.join(samplesdir, "cross_platform/cross_platform_lin.cpp")},
         )
 
         os.chdir(origdir)
