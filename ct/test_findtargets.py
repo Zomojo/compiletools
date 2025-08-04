@@ -13,9 +13,18 @@ class TestFindTargetsModule(unittest.TestCase):
 
     def _find_samples_targets(self, disable_tests, disable_exes=False):
         relativeexpectedexes = {
+            "conditional_includes/main.cpp",
+            "cppflags_macros/main.cpp",
+            "cppflags_macros/multi_flag_test.cpp",
+            "cppflags_macros/compiler_builtin_test.cpp",
+            "cppflags_macros/elif_test.cpp",
+            "cppflags_macros/advanced_preprocessor_test.cpp",
+            "cppflags_macros/nested_macros_test.cpp",
             "dottypaths/dottypaths.cpp",
+            "feature_headers/main.cpp",
             "library/main.cpp",
             "lotsofmagic/lotsofmagic.cpp",
+            "macro_deps/main.cpp",
             "magicinclude/main.cpp",
             "magicpkgconfig/main.cpp",
             "magicsourceinheader/main.cpp",

@@ -9,33 +9,14 @@ import ct.utils
 import ct.cake
 import ct.magicflags
 import ct.headerdeps
+import ct.test_base as tb
 
 # Although this is virtually identical to the test_cake.py, we can't merge
 # the tests due to memoized results.
 
 
-class TestMagicPKGCONFIG(unittest.TestCase):
-    def setUp(self):
-        try:
-            if self._tmpdir is not None:
-                shutil.rmtree(self._tmpdir, ignore_errors=True)
-        except AttributeError:
-            pass
-        self._tmpdir = tempfile.mkdtemp()
+class TestMagicPKGCONFIG(tb.BaseCompileToolsTestCase):
 
-    def _verify_one_exe_per_main(self, relativepaths):
-        actual_exes = set()
-        for root, dirs, files in os.walk(self._tmpdir):
-            for ff in files:
-                if ct.utils.isexecutable(os.path.join(root, ff)):
-                    actual_exes.add(ff)
-
-        expected_exes = {
-            os.path.splitext(os.path.split(filename)[1])[0]
-            for filename in relativepaths
-            if ct.utils.issource(filename)
-        }
-        self.assertSetEqual(expected_exes, actual_exes)
 
     def test_magicpkgconfig(self):
         # This test is to ensure that the //#PKG-CONFIG magic flag 
@@ -65,9 +46,7 @@ class TestMagicPKGCONFIG(unittest.TestCase):
         relativepaths = ["magicpkgconfig/main.cpp"]
         self._verify_one_exe_per_main(relativepaths)
 
-        # Cleanup
         os.chdir(origdir)
-        shutil.rmtree(self._tmpdir, ignore_errors=True)
 
     def test_cmdline_pkgconfig(self):
         # This test is to ensure that the "--pkg-config zlib" flag 
@@ -98,9 +77,7 @@ class TestMagicPKGCONFIG(unittest.TestCase):
         relativepaths = ["pkgconfig/main.cpp"]
         self._verify_one_exe_per_main(relativepaths)
 
-        # Cleanup
         os.chdir(origdir)
-        shutil.rmtree(self._tmpdir, ignore_errors=True)
 
     def test_magicpkgconfig_flags_discovery(self):
         origdir = os.getcwd()
@@ -194,12 +171,8 @@ class TestMagicPKGCONFIG(unittest.TestCase):
             # pkg-config might fail for missing packages
             pass
         
-        # Cleanup
         os.chdir(origdir)
-        shutil.rmtree(self._tmpdir, ignore_errors=True)
 
-    def tearDown(self):
-        uth.reset()
 
 
 if __name__ == "__main__":

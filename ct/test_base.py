@@ -1,0 +1,155 @@
+import os
+import unittest
+import shutil
+import tempfile
+import configargparse
+import ct.unittesthelper as uth
+import ct.uth_reload as uthr
+import ct.dirnamer
+import ct.apptools
+import ct.headerdeps
+import ct.magicflags
+import ct.utils
+import ct.configutils
+import ct.wrappedos
+
+
+class BaseCompileToolsTestCase(unittest.TestCase):
+    """Base test case with common setup/teardown for compiletools tests"""
+    
+    def setUp(self):
+        uth.reset()
+        self._tmpdir = tempfile.mkdtemp()
+        self._origdir = os.getcwd()
+        
+    def tearDown(self):
+        os.chdir(self._origdir)
+        if hasattr(self, '_tmpdir') and self._tmpdir:
+            shutil.rmtree(self._tmpdir, ignore_errors=True)
+        uth.reset()
+        
+    def _verify_one_exe_per_main(self, relativepaths):
+        """Common executable verification logic"""
+        actual_exes = set()
+        for root, dirs, files in os.walk(self._tmpdir):
+            for ff in files:
+                if ct.utils.isexecutable(os.path.join(root, ff)):
+                    actual_exes.add(ff)
+
+        expected_exes = {
+            os.path.splitext(os.path.split(filename)[1])[0]
+            for filename in relativepaths
+            if ct.utils.issource(filename)
+        }
+        self.assertSetEqual(expected_exes, actual_exes)
+
+
+def create_magic_parser(extraargs=None, cache_home="None", tempdir=None):
+    """Factory function for creating magic flag parsers"""
+    if not extraargs:
+        extraargs = []
+    temp_config_name = uth.create_temp_config(tempdir)
+    argv = ["--config=" + temp_config_name] + extraargs
+    uthr.reload_ct(cache_home)
+    config_files = ct.configutils.config_files_from_variant(
+        argv=argv, exedir=uth.cakedir()
+    )
+    
+    # Check if parser already exists and use it, otherwise create new one
+    try:
+        cap = configargparse.getArgumentParser(
+            description="TestMagicFlagsModule",
+            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+            default_config_files=config_files,
+            args_for_setting_config_path=["-c", "--config"],
+            ignore_unknown_config_file_keys=True,
+        )
+    except ValueError:
+        # Parser already exists, get it without parameters
+        cap = configargparse.getArgumentParser()
+        
+    ct.apptools.add_common_arguments(cap)
+    ct.dirnamer.add_arguments(cap)
+    ct.headerdeps.add_arguments(cap)
+    ct.magicflags.add_arguments(cap)
+    args = ct.apptools.parseargs(cap, argv)
+    headerdeps = ct.headerdeps.create(args)
+    return ct.magicflags.create(args, headerdeps)
+
+
+def create_header_deps_parser(extraargs=None, cache_home="None", tempdir=None):
+    """Factory function for creating header dependency parsers"""
+    if not extraargs:
+        extraargs = []
+    temp_config_name = uth.create_temp_config(tempdir)
+    argv = ["--config=" + temp_config_name] + extraargs
+    
+    origcache = ct.dirnamer.user_cache_dir()
+    uthr.reload_ct(cache_home)
+    cap = configargparse.getArgumentParser()
+    ct.headerdeps.add_arguments(cap)
+    args = ct.apptools.parseargs(cap, argv)
+    return ct.headerdeps.create(args), temp_config_name, origcache
+
+
+def compare_direct_cpp_magic(test_case, relativepath, tempdir=None):
+    """Utility to test that DirectMagicFlags and CppMagicFlags produce identical results"""
+    if tempdir is None:
+        tempdir = tempfile.mkdtemp()
+        cleanup_tempdir = True
+    else:
+        cleanup_tempdir = False
+        
+    origdir = os.getcwd()
+    os.chdir(tempdir)
+    
+    try:
+        samplesdir = uth.samplesdir()
+        realpath = os.path.join(samplesdir, relativepath)
+        
+        # Test direct parser
+        magicparser_direct = create_magic_parser(["--magic", "direct"], tempdir=tempdir)
+        result_direct = magicparser_direct.parse(realpath)
+        
+        # Clear configargparse singleton state to allow second parser creation
+        configargparse._parsers.clear()
+        
+        # Test cpp parser  
+        magicparser_cpp = create_magic_parser(["--magic", "cpp"], tempdir=tempdir)
+        result_cpp = magicparser_cpp.parse(realpath)
+        
+        # Results should be identical
+        test_case.assertEqual(result_direct, result_cpp, 
+                           f"DirectMagicFlags and CppMagicFlags gave different results for {relativepath}")
+    finally:
+        os.chdir(origdir)
+        if cleanup_tempdir:
+            shutil.rmtree(tempdir, ignore_errors=True)
+
+
+def compare_direct_cpp_headers(test_case, filename, extraargs=None):
+    """Utility to test that DirectHeaderDeps and CppHeaderDeps produce identical results"""
+    if extraargs is None:
+        extraargs = []
+    realpath = ct.wrappedos.realpath(filename)
+    temp_config_name = uth.create_temp_config()
+    argv = ["--config=" + temp_config_name] + extraargs
+
+    # Turn off diskcaching so that we can't just read up a prior result
+    origcache = ct.dirnamer.user_cache_dir()
+    uthr.reload_ct("None")
+    cap = configargparse.getArgumentParser()
+    ct.headerdeps.add_arguments(cap)
+    argvdirect = argv + ["--headerdeps=direct"]
+    argsdirect = ct.apptools.parseargs(cap, argvdirect)
+
+    argvcpp = argv + ["--headerdeps", "cpp"]
+    argscpp = ct.apptools.parseargs(cap, argvcpp)
+
+    hdirect = ct.headerdeps.create(argsdirect)
+    hcpp = ct.headerdeps.create(argscpp)
+    hdirectresult = hdirect.process(realpath)
+    hcppresult = hcpp.process(realpath)
+    test_case.assertSetEqual(set(hdirectresult), set(hcppresult))
+    os.unlink(temp_config_name)
+    uthr.reload_ct(origcache)

@@ -46,11 +46,11 @@ class MagicFlagsBase:
 
     This class is a map of filenames
     to the map of all magic flags for that file.
-    Each magic flag has an OrderedSet of values.
+    Each magic flag has a list of values preserving order.
     E.g., { '/somepath/libs/base/somefile.hpp':
-               {'CPPFLAGS':OrderedSet('-D MYMACRO','-D MACRO2'),
-                'CXXFLAGS':OrderedSet('-fsomeoption'),
-                'LDFLAGS':OrderedSet('-lsomelib')}}
+               {'CPPFLAGS':['-D', 'MYMACRO', '-D', 'MACRO2'],
+                'CXXFLAGS':['-fsomeoption'],
+                'LDFLAGS':['-lsomelib']}}
     This function will extract all the magics flags from the given
     source (and all its included headers).
     source_filename must be an absolute path
@@ -201,23 +201,117 @@ class MagicFlagsBase:
 
 
 class DirectMagicFlags(MagicFlagsBase):
+    def __init__(self, args, headerdeps):
+        MagicFlagsBase.__init__(self, args, headerdeps)
+        # Track defined macros during processing
+        self.defined_macros = set()
+
+    def _process_conditional_compilation(self, text):
+        """Process conditional compilation directives and return only active sections"""
+        lines = text.split('\n')
+        result_lines = []
+        
+        # Stack to track conditional compilation state
+        # Each entry is (is_active, seen_else)
+        condition_stack = [(True, False)]  # Start with active context
+        
+        for line in lines:
+            stripped = line.strip()
+            
+            # Track #define statements
+            if stripped.startswith('#define ') and condition_stack[-1][0]:
+                parts = stripped.split(' ', 2)
+                if len(parts) >= 2:
+                    macro_name = parts[1]
+                    self.defined_macros.add(macro_name)
+                    if self._args.verbose >= 9:
+                        print(f"DirectMagicFlags: defined macro {macro_name}")
+            
+            # Handle conditional compilation directives
+            elif stripped.startswith('#ifdef '):
+                macro = stripped[7:].strip()
+                is_defined = macro in self.defined_macros
+                condition_stack.append((is_defined and condition_stack[-1][0], False))
+                if self._args.verbose >= 9:
+                    print(f"DirectMagicFlags: #ifdef {macro} -> {is_defined}")
+                    
+            elif stripped.startswith('#ifndef '):
+                macro = stripped[8:].strip()
+                is_defined = macro in self.defined_macros
+                condition_stack.append((not is_defined and condition_stack[-1][0], False))
+                if self._args.verbose >= 9:
+                    print(f"DirectMagicFlags: #ifndef {macro} -> {not is_defined}")
+                    
+            elif stripped.startswith('#else'):
+                if len(condition_stack) > 1:
+                    current_active, seen_else = condition_stack.pop()
+                    if not seen_else:
+                        parent_active = condition_stack[-1][0] if condition_stack else True
+                        new_active = not current_active and parent_active
+                        condition_stack.append((new_active, True))
+                        if self._args.verbose >= 9:
+                            print(f"DirectMagicFlags: #else -> {new_active}")
+                    else:
+                        condition_stack.append((False, True))
+                        
+            elif stripped.startswith('#endif'):
+                if len(condition_stack) > 1:
+                    condition_stack.pop()
+                    if self._args.verbose >= 9:
+                        print("DirectMagicFlags: #endif")
+            else:
+                # Only include this line if we're in an active context
+                if condition_stack[-1][0]:
+                    result_lines.append(line)
+        
+        return '\n'.join(result_lines)
+
     def readfile(self, filename):
         """Read the first chunk of the file and all the headers it includes"""
-        # reading and handling as one string is slightly faster than
-        # handling a list of strings.
-        # Only read the top part of the files for speed
+        # Reset defined macros for each new parse
+        self.defined_macros = set()
+        
+        # Add some common predefined macros that are typically available
+        # These are basic ones that don't require a compiler invocation
+        if sys.platform.startswith('linux'):
+            self.defined_macros.add('__linux__')
+        elif sys.platform.startswith('win'):
+            self.defined_macros.add('_WIN32')
+        elif sys.platform.startswith('darwin'):
+            self.defined_macros.add('__APPLE__')
+        
         headers = self._headerdeps.process(filename)
-        text = ""
-        for filename in headers | {filename}:
+        
+        # Process files iteratively until no new macros are discovered
+        # This handles cases where macros defined in one file affect conditional
+        # compilation in other files
+        previous_macros = set()
+        max_iterations = 5  # Prevent infinite loops
+        iteration = 0
+        
+        while previous_macros != self.defined_macros and iteration < max_iterations:
+            previous_macros = self.defined_macros.copy()
+            iteration += 1
+            
             if self._args.verbose >= 9:
-                print("DirectMagicFlags::readfile is inserting # " + filename)
-            with open(filename, encoding="utf-8", errors="ignore") as ff:
-                # To match the output of the C Pre Processor we insert
-                # the filename before the text
-                text += '# 1 "'
-                text += ct.wrappedos.realpath(filename)
-                text += '"\n'
-                text += ff.read(8192)
+                print(f"DirectMagicFlags::readfile iteration {iteration}, known macros: {self.defined_macros}")
+            
+            text = ""
+            # Process files in dependency order
+            # Combine headers with filename, handling both list and set types
+            all_files = list(headers) + [filename] if filename not in headers else list(headers)
+            for fname in all_files:
+                if self._args.verbose >= 9:
+                    print("DirectMagicFlags::readfile is processing " + fname)
+                with open(fname, encoding="utf-8", errors="ignore") as ff:
+                    # To match the output of the C Pre Processor we insert
+                    # the filename before the text
+                    file_header = '# 1 "' + ct.wrappedos.realpath(fname) + '"\n'
+                    file_content = ff.read(8192)
+                    
+                    # Process conditional compilation for this file
+                    processed_content = self._process_conditional_compilation(file_content)
+                    text += file_header + processed_content
 
         return text
 
