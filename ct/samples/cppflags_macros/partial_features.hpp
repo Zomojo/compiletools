@@ -1,0 +1,4 @@
+#ifndef PARTIAL_FEATURES_HPP
+#define PARTIAL_FEATURES_HPP
+// Feature for FEATURE_A OR FEATURE_C
+#endif

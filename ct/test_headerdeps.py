@@ -444,6 +444,62 @@ class TestHeaderDepsModule(unittest.TestCase):
         os.unlink(temp_config_name)
         _reload_ct(origcache)
 
+    def test_advanced_preprocessor_features(self):
+        """Test advanced preprocessor directive support
+        
+        This test verifies comprehensive support for #if expressions, #undef, 
+        complex conditional logic, and alternative preprocessor forms that
+        are commonly used in real-world C/C++ code.
+        """
+        filename = os.path.join(uth.samplesdir(), "cppflags_macros/advanced_preprocessor_test.cpp")
+        
+        # Test with FEATURE_A and ALT_FORM_TEST defined
+        temp_config_name = ct.unittesthelper.create_temp_config()
+        argv = [
+            "--config=" + temp_config_name,
+            "--headerdeps=direct",
+            "--include", uth.samplesdir(),
+            "--CPPFLAGS", f"-I{uth.samplesdir()} -DFEATURE_A -DALT_FORM_TEST"
+        ]
+        
+        origcache = ct.dirnamer.user_cache_dir()
+        _reload_ct("None")
+        cap = configargparse.getArgumentParser()
+        ct.headerdeps.add_arguments(cap)
+        args = ct.apptools.parseargs(cap, argv)
+        
+        hdirect = ct.headerdeps.create(args)
+        result = hdirect.process(filename)
+        result_set = set(result)
+        
+        # Expected headers that should be included with advanced preprocessor support
+        expected_included_features = [
+            "version_ge_2_feature.hpp",     # #if VERSION >= 2 (VERSION=3, so >= 2 is true)
+            "partial_features.hpp",         # #elif with OR logic (FEATURE_A is defined)
+            "temp_defined.hpp",             # Should be included before #undef
+            "alt_form_feature.hpp",         # #if defined() form (ALT_FORM_TEST is defined)
+            "version_205_plus.hpp"          # Complex numeric expressions (2*100+5 >= 205)
+        ]
+        
+        # Verify all expected features are included
+        for feature in expected_included_features:
+            feature_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{feature}")
+            self.assertIn(feature_path, result_set, 
+                         f"{feature} should be included with advanced preprocessor support")
+        
+        # Verify that temp_still_defined.hpp is NOT included (should be excluded after #undef)
+        temp_still_defined_path = os.path.join(uth.samplesdir(), "cppflags_macros/temp_still_defined.hpp")
+        self.assertNotIn(temp_still_defined_path, result_set, 
+                        "temp_still_defined.hpp should NOT be included after #undef TEMP_MACRO")
+        
+        # Verify combined_features.hpp is NOT included (requires both FEATURE_A AND FEATURE_B)
+        combined_features_path = os.path.join(uth.samplesdir(), "cppflags_macros/combined_features.hpp")
+        self.assertNotIn(combined_features_path, result_set,
+                        "combined_features.hpp should NOT be included (FEATURE_B not defined)")
+        
+        os.unlink(temp_config_name)
+        _reload_ct(origcache)
+
     def tearDown(self):
         uth.reset()
 

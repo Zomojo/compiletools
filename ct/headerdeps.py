@@ -13,6 +13,298 @@ import ct.preprocessor
 from ct.diskcache import diskcache
 
 
+class SimplePreprocessor:
+    """A simple C preprocessor for handling conditional compilation directives"""
+    
+    def __init__(self, defined_macros, verbose=0):
+        # Use a dict to store macro values, not just existence
+        self.macros = {}
+        # Initialize with existing defined macros (legacy compatibility)
+        for macro in defined_macros:
+            self.macros[macro] = "1"  # Default value for macros without explicit values
+        self.verbose = verbose
+        
+    def process(self, text):
+        """Process text and return only active sections"""
+        lines = text.split('\n')
+        result_lines = []
+        
+        # Stack to track conditional compilation state
+        # Each entry: (is_active, seen_else, any_condition_met)
+        condition_stack = [(True, False, False)]
+        
+        for line_num, line in enumerate(lines, 1):
+            stripped = line.strip()
+            
+            # Handle preprocessor directives
+            if stripped.startswith('#'):
+                directive = self._parse_directive(stripped)
+                if directive:
+                    handled = self._handle_directive(directive, condition_stack, line_num)
+                    # If directive wasn't handled (like #include), treat it as a regular line
+                    if handled is False and condition_stack[-1][0]:
+                        result_lines.append(line)
+                # If no directive was parsed, treat as regular line
+                elif condition_stack[-1][0]:
+                    result_lines.append(line)
+            else:
+                # Only include non-directive lines if we're in an active context
+                if condition_stack[-1][0]:
+                    result_lines.append(line)
+        
+        return '\n'.join(result_lines)
+    
+    def _parse_directive(self, line):
+        """Parse a preprocessor directive line"""
+        # Remove leading # and split into parts
+        content = line[1:].strip()
+        parts = content.split(None, 1)
+        if not parts:
+            return None
+            
+        directive_name = parts[0]
+        directive_args = parts[1] if len(parts) > 1 else ""
+        
+        return {
+            'name': directive_name,
+            'args': directive_args,
+            'raw': line
+        }
+    
+    def _handle_directive(self, directive, condition_stack, line_num):
+        """Handle a specific preprocessor directive"""
+        name = directive['name']
+        args = directive['args']
+        
+        if name == 'define':
+            self._handle_define(args, condition_stack)
+            return True
+        elif name == 'undef':
+            self._handle_undef(args, condition_stack)
+            return True
+        elif name == 'ifdef':
+            self._handle_ifdef(args, condition_stack)
+            return True
+        elif name == 'ifndef':
+            self._handle_ifndef(args, condition_stack)
+            return True
+        elif name == 'if':
+            self._handle_if(args, condition_stack)
+            return True
+        elif name == 'elif':
+            self._handle_elif(args, condition_stack)
+            return True
+        elif name == 'else':
+            self._handle_else(condition_stack)
+            return True
+        elif name == 'endif':
+            self._handle_endif(condition_stack)
+            return True
+        else:
+            # Unknown directive - ignore but don't consume the line
+            # This allows #include and other directives to be processed normally
+            if self.verbose >= 8:
+                print(f"SimplePreprocessor: Ignoring unknown directive #{name}")
+            return False  # Indicate that this directive wasn't handled
+    
+    def _handle_define(self, args, condition_stack):
+        """Handle #define directive"""
+        if not condition_stack[-1][0]:
+            return  # Not in active context
+            
+        parts = args.split(None, 1)
+        if not parts:
+            return
+            
+        macro_name = parts[0]
+        macro_value = parts[1] if len(parts) > 1 else "1"
+        
+        # Handle function-like macros by extracting just the name part
+        if '(' in macro_name:
+            macro_name = macro_name.split('(')[0]
+            
+        self.macros[macro_name] = macro_value
+        if self.verbose >= 9:
+            print(f"SimplePreprocessor: defined macro {macro_name} = {macro_value}")
+    
+    def _handle_undef(self, args, condition_stack):
+        """Handle #undef directive"""
+        if not condition_stack[-1][0]:
+            return  # Not in active context
+            
+        macro_name = args.strip()
+        if macro_name in self.macros:
+            del self.macros[macro_name]
+            if self.verbose >= 9:
+                print(f"SimplePreprocessor: undefined macro {macro_name}")
+    
+    def _handle_ifdef(self, args, condition_stack):
+        """Handle #ifdef directive"""
+        macro_name = args.strip()
+        is_defined = macro_name in self.macros
+        is_active = is_defined and condition_stack[-1][0]
+        condition_stack.append((is_active, False, is_active))
+        if self.verbose >= 9:
+            print(f"SimplePreprocessor: #ifdef {macro_name} -> {is_defined}")
+    
+    def _handle_ifndef(self, args, condition_stack):
+        """Handle #ifndef directive"""
+        macro_name = args.strip()
+        is_defined = macro_name in self.macros
+        is_active = (not is_defined) and condition_stack[-1][0]
+        condition_stack.append((is_active, False, is_active))
+        if self.verbose >= 9:
+            print(f"SimplePreprocessor: #ifndef {macro_name} -> {not is_defined}")
+    
+    def _handle_if(self, args, condition_stack):
+        """Handle #if directive"""
+        try:
+            result = self._evaluate_expression(args.strip())
+            is_active = bool(result) and condition_stack[-1][0]
+            condition_stack.append((is_active, False, is_active))
+            if self.verbose >= 9:
+                print(f"SimplePreprocessor: #if {args} -> {result} ({is_active})")
+        except Exception as e:
+            # If evaluation fails, assume false
+            if self.verbose >= 8:
+                print(f"SimplePreprocessor: #if evaluation failed for '{args}': {e}")
+            condition_stack.append((False, False, False))
+    
+    def _handle_elif(self, args, condition_stack):
+        """Handle #elif directive"""
+        if len(condition_stack) <= 1:
+            return
+            
+        current_active, seen_else, any_condition_met = condition_stack.pop()
+        if not seen_else and not any_condition_met:
+            parent_active = condition_stack[-1][0] if condition_stack else True
+            try:
+                result = self._evaluate_expression(args.strip())
+                new_active = bool(result) and parent_active
+                new_any_condition_met = any_condition_met or new_active
+                condition_stack.append((new_active, False, new_any_condition_met))
+                if self.verbose >= 9:
+                    print(f"SimplePreprocessor: #elif {args} -> {result} ({new_active})")
+            except Exception as e:
+                if self.verbose >= 8:
+                    print(f"SimplePreprocessor: #elif evaluation failed for '{args}': {e}")
+                condition_stack.append((False, False, any_condition_met))
+        else:
+            # Either we already found a true condition or seen_else is True
+            condition_stack.append((False, seen_else, any_condition_met))
+    
+    def _handle_else(self, condition_stack):
+        """Handle #else directive"""
+        if len(condition_stack) <= 1:
+            return
+            
+        current_active, seen_else, any_condition_met = condition_stack.pop()
+        if not seen_else:
+            parent_active = condition_stack[-1][0] if condition_stack else True
+            new_active = not any_condition_met and parent_active
+            condition_stack.append((new_active, True, any_condition_met or new_active))
+            if self.verbose >= 9:
+                print(f"SimplePreprocessor: #else -> {new_active}")
+        else:
+            condition_stack.append((False, True, any_condition_met))
+    
+    def _handle_endif(self, condition_stack):
+        """Handle #endif directive"""
+        if len(condition_stack) > 1:
+            condition_stack.pop()
+            if self.verbose >= 9:
+                print("SimplePreprocessor: #endif")
+    
+    def _evaluate_expression(self, expr):
+        """Evaluate a C preprocessor expression"""
+        # This is a simplified expression evaluator
+        # Handle common cases: defined(MACRO), numeric comparisons, logical operations
+        
+        expr = expr.strip()
+        
+        # Handle defined(MACRO) and defined MACRO
+        expr = self._expand_defined(expr)
+        
+        # Replace macro names with their values
+        expr = self._expand_macros(expr)
+        
+        # Evaluate the expression safely
+        return self._safe_eval(expr)
+    
+    def _expand_defined(self, expr):
+        """Expand defined(MACRO) expressions"""
+        import re
+        
+        # Handle defined(MACRO)
+        def replace_defined_paren(match):
+            macro_name = match.group(1)
+            return "1" if macro_name in self.macros else "0"
+        
+        expr = re.sub(r'defined\s*\(\s*([A-Za-z_][A-Za-z0-9_]*)\s*\)', replace_defined_paren, expr)
+        
+        # Handle defined MACRO (without parentheses)
+        def replace_defined_space(match):
+            macro_name = match.group(1)
+            return "1" if macro_name in self.macros else "0"
+        
+        expr = re.sub(r'defined\s+([A-Za-z_][A-Za-z0-9_]*)', replace_defined_space, expr)
+        
+        return expr
+    
+    def _expand_macros(self, expr):
+        """Replace macro names with their values"""
+        import re
+        
+        def replace_macro(match):
+            macro_name = match.group(0)
+            if macro_name in self.macros:
+                value = self.macros[macro_name]
+                # Try to convert to int if possible
+                try:
+                    return str(int(value))
+                except ValueError:
+                    return value
+            else:
+                # Undefined macro defaults to 0
+                return "0"
+        
+        # Replace macro names (identifiers) with their values
+        expr = re.sub(r'\b[A-Za-z_][A-Za-z0-9_]*\b', replace_macro, expr)
+        
+        return expr
+    
+    def _safe_eval(self, expr):
+        """Safely evaluate a numeric expression"""
+        # Convert C operators to Python equivalents
+        expr = expr.replace('&&', ' and ')
+        expr = expr.replace('||', ' or ')
+        expr = expr.replace('!', ' not ')
+        
+        # Handle comparison operators
+        expr = expr.replace('==', '==')
+        expr = expr.replace('!=', '!=')
+        expr = expr.replace('>=', '>=')
+        expr = expr.replace('<=', '<=')
+        expr = expr.replace('>', '>')
+        expr = expr.replace('<', '<')
+        
+        # Only allow safe characters and words
+        import re
+        if not re.match(r'^[0-9\s\+\-\*\/\%\(\)\<\>\=\!andortnot ]+$', expr):
+            raise ValueError(f"Unsafe expression: {expr}")
+        
+        try:
+            # Use eval with a restricted environment
+            allowed_names = {"__builtins__": {}}
+            result = eval(expr, allowed_names, {})
+            return int(result) if isinstance(result, (int, bool)) else 0
+        except Exception as e:
+            # If evaluation fails, return 0
+            if self.verbose >= 8:
+                print(f"SimplePreprocessor: Expression evaluation failed for '{expr}': {e}")
+            return 0
+
+
 def create(args):
     """HeaderDeps Factory"""
     classname = args.headerdeps.title() + "HeaderDeps"
@@ -141,87 +433,14 @@ class DirectHeaderDeps(HeaderDepsBase):
 
     def _process_conditional_compilation(self, text):
         """Process conditional compilation directives and return only active sections"""
-        lines = text.split('\n')
-        result_lines = []
+        preprocessor = SimplePreprocessor(self.defined_macros, self.args.verbose)
+        processed_text = preprocessor.process(text)
         
-        # Stack to track conditional compilation state
-        condition_stack = [(True, False, False)]  # (is_active, seen_else, any_condition_met)
+        # Update our defined_macros set with any changes from the preprocessor
+        self.defined_macros.clear()
+        self.defined_macros.update(preprocessor.macros.keys())
         
-        for line in lines:
-            stripped = line.strip()
-            
-            # Track #define statements
-            if stripped.startswith('#define ') and condition_stack[-1][0]:
-                parts = stripped.split(' ', 2)
-                if len(parts) >= 2:
-                    macro_name = parts[1]
-                    self.defined_macros.add(macro_name)
-                    if self.args.verbose >= 9:
-                        print(f"DirectHeaderDeps: defined macro {macro_name}")
-            
-            # Handle conditional compilation directives
-            elif stripped.startswith('#ifdef '):
-                macro = stripped[7:].strip()
-                is_defined = macro in self.defined_macros
-                is_active = is_defined and condition_stack[-1][0]
-                condition_stack.append((is_active, False, is_active))
-                if self.args.verbose >= 9:
-                    print(f"DirectHeaderDeps: #ifdef {macro} -> {is_defined}")
-                    
-            elif stripped.startswith('#ifndef '):
-                macro = stripped[8:].strip()
-                is_defined = macro in self.defined_macros
-                is_active = (not is_defined) and condition_stack[-1][0]
-                condition_stack.append((is_active, False, is_active))
-                if self.args.verbose >= 9:
-                    print(f"DirectHeaderDeps: #ifndef {macro} -> {not is_defined}")
-                    
-            elif stripped.startswith('#elif '):
-                if len(condition_stack) > 1:
-                    current_active, seen_else, any_condition_met = condition_stack.pop()
-                    if not seen_else and not any_condition_met:
-                        parent_active = condition_stack[-1][0] if condition_stack else True
-                        # Parse #elif condition - support both #elif MACRO and #elif defined(MACRO)
-                        condition_text = stripped[6:].strip()
-                        if condition_text.startswith('defined(') and condition_text.endswith(')'):
-                            macro = condition_text[8:-1].strip()
-                            is_defined = macro in self.defined_macros
-                        else:
-                            # Simple macro check
-                            macro = condition_text
-                            is_defined = macro in self.defined_macros
-                        new_active = is_defined and parent_active
-                        new_any_condition_met = any_condition_met or new_active
-                        condition_stack.append((new_active, False, new_any_condition_met))
-                        if self.args.verbose >= 9:
-                            print(f"DirectHeaderDeps: #elif {condition_text} -> {new_active}")
-                    else:
-                        # Either we already found a true condition or seen_else is True
-                        condition_stack.append((False, seen_else, any_condition_met))
-                        
-            elif stripped.startswith('#else'):
-                if len(condition_stack) > 1:
-                    current_active, seen_else, any_condition_met = condition_stack.pop()
-                    if not seen_else:
-                        parent_active = condition_stack[-1][0] if condition_stack else True
-                        new_active = not any_condition_met and parent_active
-                        condition_stack.append((new_active, True, any_condition_met or new_active))
-                        if self.args.verbose >= 9:
-                            print(f"DirectHeaderDeps: #else -> {new_active}")
-                    else:
-                        condition_stack.append((False, True, any_condition_met))
-                        
-            elif stripped.startswith('#endif'):
-                if len(condition_stack) > 1:
-                    condition_stack.pop()
-                    if self.args.verbose >= 9:
-                        print("DirectHeaderDeps: #endif")
-            else:
-                # Only include this line if we're in an active context
-                if condition_stack[-1][0]:
-                    result_lines.append(line)
-        
-        return '\n'.join(result_lines)
+        return processed_text
 
     @functools.lru_cache(maxsize=None)
     def _create_include_list(self, realpath):
