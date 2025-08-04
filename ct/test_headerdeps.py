@@ -399,6 +399,51 @@ class TestHeaderDepsModule(unittest.TestCase):
         os.unlink(temp_config_name)
         _reload_ct(origcache)
 
+    def test_elif_conditional_compilation_support(self):
+        """Test that DirectHeaderDeps correctly handles #elif preprocessor directives
+        
+        This test ensures #elif directives are properly handled in conditional 
+        compilation logic, correctly analyzing header dependencies when using 
+        #elif defined() constructs in complex conditional compilation chains.
+        """
+        filename = os.path.join(uth.samplesdir(), "cppflags_macros/elif_test.cpp")
+        
+        # Test VERSION_2 macro defined via CPPFLAGS - should include version2_feature.hpp
+        temp_config_name = ct.unittesthelper.create_temp_config()
+        argv = [
+            "--config=" + temp_config_name,
+            "--headerdeps=direct",
+            "--include", uth.samplesdir(),
+            "--CPPFLAGS", f"-I{uth.samplesdir()} -DVERSION_2"
+        ]
+        
+        origcache = ct.dirnamer.user_cache_dir()
+        _reload_ct("None")
+        cap = configargparse.getArgumentParser()
+        ct.headerdeps.add_arguments(cap)
+        args = ct.apptools.parseargs(cap, argv)
+        
+        hdirect = ct.headerdeps.create(args)
+        result = hdirect.process(filename)
+        result_set = set(result)
+        
+        # Should include version2_feature.hpp when VERSION_2 is defined
+        version2_path = os.path.join(uth.samplesdir(), "cppflags_macros/version2_feature.hpp")
+        self.assertIn(version2_path, result_set, 
+                     "version2_feature.hpp should be included when VERSION_2 is defined via #elif")
+        
+        # Should NOT include other version files
+        version1_path = os.path.join(uth.samplesdir(), "cppflags_macros/version1_feature.hpp")
+        version3_path = os.path.join(uth.samplesdir(), "cppflags_macros/version3_feature.hpp")
+        default_path = os.path.join(uth.samplesdir(), "cppflags_macros/default_feature.hpp")
+        
+        self.assertNotIn(version1_path, result_set, "Should NOT include version1_feature.hpp")
+        self.assertNotIn(version3_path, result_set, "Should NOT include version3_feature.hpp") 
+        self.assertNotIn(default_path, result_set, "Should NOT include default_feature.hpp")
+        
+        os.unlink(temp_config_name)
+        _reload_ct(origcache)
+
     def tearDown(self):
         uth.reset()
 

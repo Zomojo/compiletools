@@ -145,7 +145,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         result_lines = []
         
         # Stack to track conditional compilation state
-        condition_stack = [(True, False)]  # (is_active, seen_else)
+        condition_stack = [(True, False, False)]  # (is_active, seen_else, any_condition_met)
         
         for line in lines:
             stripped = line.strip()
@@ -163,28 +163,53 @@ class DirectHeaderDeps(HeaderDepsBase):
             elif stripped.startswith('#ifdef '):
                 macro = stripped[7:].strip()
                 is_defined = macro in self.defined_macros
-                condition_stack.append((is_defined and condition_stack[-1][0], False))
+                is_active = is_defined and condition_stack[-1][0]
+                condition_stack.append((is_active, False, is_active))
                 if self.args.verbose >= 9:
                     print(f"DirectHeaderDeps: #ifdef {macro} -> {is_defined}")
                     
             elif stripped.startswith('#ifndef '):
                 macro = stripped[8:].strip()
                 is_defined = macro in self.defined_macros
-                condition_stack.append((not is_defined and condition_stack[-1][0], False))
+                is_active = (not is_defined) and condition_stack[-1][0]
+                condition_stack.append((is_active, False, is_active))
                 if self.args.verbose >= 9:
                     print(f"DirectHeaderDeps: #ifndef {macro} -> {not is_defined}")
                     
+            elif stripped.startswith('#elif '):
+                if len(condition_stack) > 1:
+                    current_active, seen_else, any_condition_met = condition_stack.pop()
+                    if not seen_else and not any_condition_met:
+                        parent_active = condition_stack[-1][0] if condition_stack else True
+                        # Parse #elif condition - support both #elif MACRO and #elif defined(MACRO)
+                        condition_text = stripped[6:].strip()
+                        if condition_text.startswith('defined(') and condition_text.endswith(')'):
+                            macro = condition_text[8:-1].strip()
+                            is_defined = macro in self.defined_macros
+                        else:
+                            # Simple macro check
+                            macro = condition_text
+                            is_defined = macro in self.defined_macros
+                        new_active = is_defined and parent_active
+                        new_any_condition_met = any_condition_met or new_active
+                        condition_stack.append((new_active, False, new_any_condition_met))
+                        if self.args.verbose >= 9:
+                            print(f"DirectHeaderDeps: #elif {condition_text} -> {new_active}")
+                    else:
+                        # Either we already found a true condition or seen_else is True
+                        condition_stack.append((False, seen_else, any_condition_met))
+                        
             elif stripped.startswith('#else'):
                 if len(condition_stack) > 1:
-                    current_active, seen_else = condition_stack.pop()
+                    current_active, seen_else, any_condition_met = condition_stack.pop()
                     if not seen_else:
                         parent_active = condition_stack[-1][0] if condition_stack else True
-                        new_active = not current_active and parent_active
-                        condition_stack.append((new_active, True))
+                        new_active = not any_condition_met and parent_active
+                        condition_stack.append((new_active, True, any_condition_met or new_active))
                         if self.args.verbose >= 9:
                             print(f"DirectHeaderDeps: #else -> {new_active}")
                     else:
-                        condition_stack.append((False, True))
+                        condition_stack.append((False, True, any_condition_met))
                         
             elif stripped.startswith('#endif'):
                 if len(condition_stack) > 1:
