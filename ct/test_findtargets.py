@@ -19,6 +19,7 @@ class TestFindTargetsModule(unittest.TestCase):
             "cppflags_macros/compiler_builtin_test.cpp",
             "cppflags_macros/elif_test.cpp",
             "cppflags_macros/advanced_preprocessor_test.cpp",
+            "cppflags_macros/nested_macros_test.cpp",
             "dottypaths/dottypaths.cpp",
             "feature_headers/main.cpp",
             "library/main.cpp",

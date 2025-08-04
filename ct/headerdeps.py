@@ -19,9 +19,14 @@ class SimplePreprocessor:
     def __init__(self, defined_macros, verbose=0):
         # Use a dict to store macro values, not just existence
         self.macros = {}
-        # Initialize with existing defined macros (legacy compatibility)
-        for macro in defined_macros:
-            self.macros[macro] = "1"  # Default value for macros without explicit values
+        # Initialize with existing defined macros
+        if isinstance(defined_macros, dict):
+            # defined_macros is already a dict of name->value
+            self.macros.update(defined_macros)
+        else:
+            # Legacy compatibility: defined_macros is a set of names
+            for macro in defined_macros:
+                self.macros[macro] = "1"  # Default value for macros without explicit values
         self.verbose = verbose
         
     def process(self, text):
@@ -316,17 +321,22 @@ class SimplePreprocessor:
         expr = re.sub(r'(\d+)[LlUu]+\b', r'\1', expr)
         
         # Convert C operators to Python equivalents
+        # Handle comparison operators first (before replacing ! with not)
+        # Use temporary placeholders to protect != from being affected by ! replacement
+        expr = expr.replace('!=', '__NE__')  # Temporarily replace != with placeholder
+        expr = expr.replace('>=', '__GE__')  # Also protect >= from > replacement
+        expr = expr.replace('<=', '__LE__')  # Also protect <= from < replacement
+        
+        # Now handle logical operators (! is safe to replace now)
         expr = expr.replace('&&', ' and ')
         expr = expr.replace('||', ' or ')
         expr = expr.replace('!', ' not ')
         
-        # Handle comparison operators (these are already correct but explicit)
-        expr = expr.replace('==', '==')
-        expr = expr.replace('!=', '!=')
-        expr = expr.replace('>=', '>=')
-        expr = expr.replace('<=', '<=')
-        expr = expr.replace('>', '>')
-        expr = expr.replace('<', '<')
+        # Now restore comparison operators as Python equivalents
+        expr = expr.replace('__NE__', '!=')
+        expr = expr.replace('__GE__', '>=')
+        expr = expr.replace('__LE__', '<=')
+        # Note: ==, >, < are already correct for Python and need no conversion
         
         # Clean up any remaining whitespace issues
         expr = expr.strip()
@@ -423,8 +433,8 @@ class DirectHeaderDeps(HeaderDepsBase):
         if self.args.verbose >= 3:
             print("Includes=" + str(self.includes))
             
-        # Track defined macros during processing
-        self.defined_macros = set()
+        # Track defined macros during processing - use dict to store name-value pairs
+        self.defined_macros = {}
         
         # Extract -D macro definitions from CPPFLAGS, CFLAGS, and CXXFLAGS
         define_pat = re.compile(r"-D([\S]+)")
@@ -438,11 +448,15 @@ class DirectHeaderDeps(HeaderDepsBase):
             if flag_value:  # Only process if flag_value is not empty
                 flag_macros = define_pat.findall(flag_value)
                 for macro in flag_macros:
-                    # Handle -DMACRO=value by taking only the macro name part
-                    macro_name = macro.split('=')[0]
-                    self.defined_macros.add(macro_name)
+                    # Handle -DMACRO=value by splitting on first = to get name and value
+                    if '=' in macro:
+                        macro_name, macro_value = macro.split('=', 1)
+                    else:
+                        macro_name = macro
+                        macro_value = "1"  # Default value for macros without explicit values
+                    self.defined_macros[macro_name] = macro_value
                     if self.args.verbose >= 3:
-                        print(f"Added macro from {flag_name}: {macro_name}")
+                        print(f"Added macro from {flag_name}: {macro_name} = {macro_value}")
         
         # Add platform, compiler, and architecture built-in macros
         self._add_platform_macros()
@@ -481,9 +495,9 @@ class DirectHeaderDeps(HeaderDepsBase):
         preprocessor = SimplePreprocessor(self.defined_macros, self.args.verbose)
         processed_text = preprocessor.process(text)
         
-        # Update our defined_macros set with any changes from the preprocessor
+        # Update our defined_macros dict with any changes from the preprocessor
         self.defined_macros.clear()
-        self.defined_macros.update(preprocessor.macros.keys())
+        self.defined_macros.update(preprocessor.macros)
         
         return processed_text
 
@@ -582,11 +596,14 @@ class DirectHeaderDeps(HeaderDepsBase):
         """Add platform-specific built-in macros"""
         import sys
         if sys.platform.startswith('linux'):
-            self.defined_macros.update(['__linux__', '__unix__', 'unix'])
+            for macro in ['__linux__', '__unix__', 'unix']:
+                self.defined_macros[macro] = "1"
         elif sys.platform.startswith('win'):
-            self.defined_macros.update(['_WIN32', 'WIN32'])
+            for macro in ['_WIN32', 'WIN32']:
+                self.defined_macros[macro] = "1"
         elif sys.platform.startswith('darwin'):
-            self.defined_macros.update(['__APPLE__', '__MACH__', '__unix__', 'unix'])
+            for macro in ['__APPLE__', '__MACH__', '__unix__', 'unix']:
+                self.defined_macros[macro] = "1"
             
         if self.args.verbose >= 3:
             print(f"Added platform macros for {sys.platform}")
@@ -596,55 +613,49 @@ class DirectHeaderDeps(HeaderDepsBase):
         compiler = getattr(self.args, 'CXX', 'g++').lower()
         
         if 'armcc' in compiler or 'armclang' in compiler:
-            self.defined_macros.update([
-                '__ARMCC_VERSION', '__arm__'
-            ])
+            for macro in ['__ARMCC_VERSION', '__arm__']:
+                self.defined_macros[macro] = "1"
             # ARM Compiler 6+ is based on clang
             if 'armclang' in compiler:
-                self.defined_macros.update(['__clang__', '__GNUC__'])
+                for macro in ['__clang__', '__GNUC__']:
+                    self.defined_macros[macro] = "1"
             if self.args.verbose >= 3:
                 print("Added ARM compiler built-in macros")
                 
         elif 'clang' in compiler:
-            self.defined_macros.update([
-                '__clang__', '__clang_major__', '__clang_minor__', '__clang_patchlevel__',
-                '__GNUC__', '__GNUC_MINOR__'  # Clang compatibility macros
-            ])
+            for macro in ['__clang__', '__clang_major__', '__clang_minor__', '__clang_patchlevel__',
+                         '__GNUC__', '__GNUC_MINOR__']:  # Clang compatibility macros
+                self.defined_macros[macro] = "1"
             if self.args.verbose >= 3:
                 print("Added Clang compiler built-in macros")
                 
         elif 'gcc' in compiler or 'g++' in compiler:
-            self.defined_macros.update([
-                '__GNUC__', '__GNUG__', '__GNUC_MINOR__', '__GNUC_PATCHLEVEL__'
-            ])
+            for macro in ['__GNUC__', '__GNUG__', '__GNUC_MINOR__', '__GNUC_PATCHLEVEL__']:
+                self.defined_macros[macro] = "1"
             if self.args.verbose >= 3:
                 print("Added GCC compiler built-in macros")
                 
         elif 'tcc' in compiler:
-            self.defined_macros.update([
-                '__TINYC__', '__GNUC__'  # TCC compatibility macros
-            ])
+            for macro in ['__TINYC__', '__GNUC__']:  # TCC compatibility macros
+                self.defined_macros[macro] = "1"
             if self.args.verbose >= 3:
                 print("Added TCC compiler built-in macros")
                 
         elif 'cl' in compiler or 'msvc' in compiler:
-            self.defined_macros.update([
-                '_MSC_VER', '_MSC_FULL_VER', '_WIN32'
-            ])
+            for macro in ['_MSC_VER', '_MSC_FULL_VER', '_WIN32']:
+                self.defined_macros[macro] = "1"
             if self.args.verbose >= 3:
                 print("Added MSVC compiler built-in macros")
                 
         elif 'icc' in compiler or 'icx' in compiler or 'intel' in compiler:
-            self.defined_macros.update([
-                '__INTEL_COMPILER', '__ICC', '__GNUC__'  # Intel + GCC compatibility
-            ])
+            for macro in ['__INTEL_COMPILER', '__ICC', '__GNUC__']:  # Intel + GCC compatibility
+                self.defined_macros[macro] = "1"
             if self.args.verbose >= 3:
                 print("Added Intel compiler built-in macros")
                 
         elif 'emcc' in compiler or 'emscripten' in compiler:
-            self.defined_macros.update([
-                '__EMSCRIPTEN__', '__clang__', '__GNUC__'  # Emscripten is based on clang
-            ])
+            for macro in ['__EMSCRIPTEN__', '__clang__', '__GNUC__']:  # Emscripten is based on clang
+                self.defined_macros[macro] = "1"
             if self.args.verbose >= 3:
                 print("Added Emscripten compiler built-in macros")
 
@@ -654,19 +665,23 @@ class DirectHeaderDeps(HeaderDepsBase):
         arch = platform.machine().lower()
         
         if arch in ['x86_64', 'amd64']:
-            self.defined_macros.update(['__x86_64__', '__amd64__', '__LP64__'])
+            for macro in ['__x86_64__', '__amd64__', '__LP64__']:
+                self.defined_macros[macro] = "1"
         elif arch in ['i386', 'i686', 'x86']:
-            self.defined_macros.update(['__i386__', '__i386'])
+            for macro in ['__i386__', '__i386']:
+                self.defined_macros[macro] = "1"
         elif arch.startswith('arm'):
-            self.defined_macros.add('__arm__')
+            self.defined_macros['__arm__'] = "1"
             if '64' in arch:
-                self.defined_macros.update(['__aarch64__', '__LP64__'])
+                for macro in ['__aarch64__', '__LP64__']:
+                    self.defined_macros[macro] = "1"
         elif arch.startswith('riscv') or 'riscv' in arch:
-            self.defined_macros.add('__riscv')
+            self.defined_macros['__riscv'] = "1"
             if '64' in arch:
-                self.defined_macros.update(['__riscv64__', '__LP64__'])
+                for macro in ['__riscv64__', '__LP64__']:
+                    self.defined_macros[macro] = "1"
             elif '32' in arch:
-                self.defined_macros.add('__riscv32__')
+                self.defined_macros['__riscv32__'] = "1"
                 
         if self.args.verbose >= 3:
             print(f"Added architecture macros for {arch}")

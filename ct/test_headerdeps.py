@@ -623,6 +623,114 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                 os.unlink(temp_config_name)
                 _reload_ct(origcache)
 
+    def test_multiply_nested_macros_with_complex_logic(self):
+        """Test that DirectHeaderDeps correctly handles multiply nested macros with complex logic
+        
+        This test verifies that the SimplePreprocessor can handle deeply nested conditional
+        compilation blocks with complex interdependencies between multiple macros,
+        including platform-specific logic, feature flags, and optimization settings.
+        """
+        filename = os.path.join(uth.samplesdir(), "cppflags_macros/nested_macros_test.cpp")
+        
+        # Test scenario with BUILD_CONFIG=2, Linux platform, threading enabled, NUMA support
+        test_scenarios = [
+            {
+                "name": "level2_linux_threading_numa",
+                "cppflags": f"-I{uth.samplesdir()} -DBUILD_CONFIG=2 -D__linux__ -DUSE_EPOLL=1 -DENABLE_THREADING -DTHREAD_COUNT=4 -DNUMA_SUPPORT=1"
+            },
+            {
+                "name": "level3_expert_mode_with_profiling",
+                "cppflags": f"-I{uth.samplesdir()} -DBUILD_CONFIG=3 -DENABLE_EXPERT_MODE=1 -DCUSTOM_ALLOCATOR -DALLOCATOR_TYPE=2 -DMEMORY_TRACKING=1 -DLEAK_DETECTION=1 -DSTACK_TRACE=1 -DENABLE_PROFILING=1 -DPROFILING_LEVEL=3 -DMEMORY_PROFILING=1 -DCPU_PROFILING=1 -DCACHE_PROFILING=1"
+            },
+            {
+                "name": "level1_basic_only",
+                "cppflags": f"-I{uth.samplesdir()} -DBUILD_CONFIG=1"
+            }
+        ]
+        
+        for scenario in test_scenarios:
+            with self.subTest(scenario=scenario["name"]):
+                temp_config_name = ct.unittesthelper.create_temp_config()
+                
+                # Test DirectHeaderDeps (our custom preprocessor)
+                argv_direct = [
+                    "--config=" + temp_config_name,
+                    "--headerdeps=direct",
+                    "--include", uth.samplesdir(),
+                    f"--CPPFLAGS={scenario['cppflags']}"
+                ]
+                
+                # Test CppHeaderDeps (actual C preprocessor)
+                argv_cpp = [
+                    "--config=" + temp_config_name,
+                    "--headerdeps=cpp",
+                    "--include", uth.samplesdir(),
+                    f"--CPPFLAGS={scenario['cppflags']}"
+                ]
+                
+                origcache = ct.dirnamer.user_cache_dir()
+                _reload_ct("None")
+                cap = configargparse.getArgumentParser()
+                ct.headerdeps.add_arguments(cap)
+                
+                # Get results from both approaches
+                args_direct = ct.apptools.parseargs(cap, argv_direct)
+                hdirect = ct.headerdeps.create(args_direct)
+                direct_result = hdirect.process(filename)
+                direct_set = set(direct_result)
+                
+                args_cpp = ct.apptools.parseargs(cap, argv_cpp)
+                hcpp = ct.headerdeps.create(args_cpp)
+                cpp_result = hcpp.process(filename)
+                cpp_set = set(cpp_result)
+                
+                # Compare the results - they should be identical
+                self.assertSetEqual(direct_set, cpp_set,
+                    f"DirectHeaderDeps and CppHeaderDeps should produce identical results for nested macros in scenario: {scenario['name']}\n"
+                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n"
+                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}")
+                
+                # Verify specific inclusions based on the scenario
+                if scenario["name"] == "level2_linux_threading_numa":
+                    expected_files = [
+                        "basic_feature.hpp",
+                        "advanced_feature.hpp", 
+                        "linux_advanced.hpp",
+                        "linux_epoll_threading.hpp",
+                        "numa_threading.hpp"
+                    ]
+                    for expected_file in expected_files:
+                        expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
+                        self.assertIn(expected_path, direct_set,
+                            f"{expected_file} should be included in level2_linux_threading_numa scenario")
+                
+                elif scenario["name"] == "level3_expert_mode_with_profiling":
+                    expected_files = [
+                        "basic_feature.hpp",
+                        "advanced_feature.hpp",
+                        "expert_feature.hpp"
+                    ]
+                    for expected_file in expected_files:
+                        expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
+                        self.assertIn(expected_path, direct_set,
+                            f"{expected_file} should be included in level3_expert_mode_with_profiling scenario")
+                
+                elif scenario["name"] == "level1_basic_only":
+                    expected_files = ["basic_feature.hpp"]
+                    unexpected_files = ["advanced_feature.hpp", "expert_feature.hpp"]
+                    
+                    for expected_file in expected_files:
+                        expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
+                        self.assertIn(expected_path, direct_set,
+                            f"{expected_file} should be included in level1_basic_only scenario")
+                    
+                    for unexpected_file in unexpected_files:
+                        unexpected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{unexpected_file}")
+                        self.assertNotIn(unexpected_path, direct_set,
+                            f"{unexpected_file} should NOT be included in level1_basic_only scenario")
+                
+                os.unlink(temp_config_name)
+                _reload_ct(origcache)
 
 
 if __name__ == "__main__":
