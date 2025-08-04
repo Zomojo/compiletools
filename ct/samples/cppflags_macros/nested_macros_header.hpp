@@ -33,6 +33,8 @@
     
     #ifdef BASIC_FEATURES
         #include "basic_feature.hpp"
+        // #include "red_herring_cpp_style.hpp"  
+        /* #include "red_herring_c_style.hpp" */
     #endif
     
     #ifdef ADVANCED_FEATURES
