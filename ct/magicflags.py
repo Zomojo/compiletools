@@ -298,7 +298,9 @@ class DirectMagicFlags(MagicFlagsBase):
             
             text = ""
             # Process files in dependency order
-            for fname in headers | {filename}:
+            # Combine headers with filename, handling both list and set types
+            all_files = list(headers) + [filename] if filename not in headers else list(headers)
+            for fname in all_files:
                 if self._args.verbose >= 9:
                     print("DirectMagicFlags::readfile is processing " + fname)
                 with open(fname, encoding="utf-8", errors="ignore") as ff:
