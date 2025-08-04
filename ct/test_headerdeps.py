@@ -444,6 +444,80 @@ class TestHeaderDepsModule(unittest.TestCase):
         os.unlink(temp_config_name)
         _reload_ct(origcache)
 
+    def test_elif_matches_cpp_preprocessor(self):
+        """Test that DirectHeaderDeps #elif handling matches actual C preprocessor results
+        
+        This test ensures our #elif implementation produces identical results to the
+        real C preprocessor when processing complex elif chains with different macro
+        combinations.
+        """
+        filename = os.path.join(uth.samplesdir(), "cppflags_macros/elif_test.cpp")
+        
+        # Test different elif scenarios
+        elif_scenarios = [
+            {
+                "name": "VERSION_1_defined",
+                "cppflags": f"-I{uth.samplesdir()} -DVERSION_1"
+            },
+            {
+                "name": "VERSION_2_defined", 
+                "cppflags": f"-I{uth.samplesdir()} -DVERSION_2"
+            },
+            {
+                "name": "VERSION_3_defined",
+                "cppflags": f"-I{uth.samplesdir()} -DVERSION_3"
+            },
+            {
+                "name": "no_version_defined",
+                "cppflags": f"-I{uth.samplesdir()}"
+            }
+        ]
+        
+        for scenario in elif_scenarios:
+            with self.subTest(scenario=scenario["name"]):
+                temp_config_name = ct.unittesthelper.create_temp_config()
+                
+                # Test DirectHeaderDeps (our custom preprocessor)
+                argv_direct = [
+                    "--config=" + temp_config_name,
+                    "--headerdeps=direct",
+                    "--include", uth.samplesdir(),
+                    f"--CPPFLAGS={scenario['cppflags']}"
+                ]
+                
+                # Test CppHeaderDeps (actual C preprocessor)
+                argv_cpp = [
+                    "--config=" + temp_config_name,
+                    "--headerdeps=cpp",
+                    "--include", uth.samplesdir(), 
+                    f"--CPPFLAGS={scenario['cppflags']}"
+                ]
+                
+                origcache = ct.dirnamer.user_cache_dir()
+                _reload_ct("None")
+                cap = configargparse.getArgumentParser()
+                ct.headerdeps.add_arguments(cap)
+                
+                # Get results from both approaches
+                args_direct = ct.apptools.parseargs(cap, argv_direct)
+                hdirect = ct.headerdeps.create(args_direct)
+                direct_result = hdirect.process(filename)
+                direct_set = set(direct_result)
+                
+                args_cpp = ct.apptools.parseargs(cap, argv_cpp)
+                hcpp = ct.headerdeps.create(args_cpp)
+                cpp_result = hcpp.process(filename)
+                cpp_set = set(cpp_result)
+                
+                # Compare the results - they should be identical
+                self.assertSetEqual(direct_set, cpp_set,
+                    f"DirectHeaderDeps and CppHeaderDeps should produce identical #elif results for scenario: {scenario['name']}\n"
+                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n"
+                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}")
+                
+                os.unlink(temp_config_name)
+                _reload_ct(origcache)
+
     def test_advanced_preprocessor_features(self):
         """Test advanced preprocessor directive support
         
@@ -499,6 +573,80 @@ class TestHeaderDepsModule(unittest.TestCase):
         
         os.unlink(temp_config_name)
         _reload_ct(origcache)
+
+    def test_advanced_preprocessor_matches_cpp_preprocessor(self):
+        """Test that DirectHeaderDeps advanced preprocessor matches actual C preprocessor results
+        
+        This test ensures our custom SimplePreprocessor implementation produces identical
+        results to the real C preprocessor (via CppHeaderDeps) when handling advanced
+        features like #if expressions, #undef, and complex conditional logic.
+        """
+        filename = os.path.join(uth.samplesdir(), "cppflags_macros/advanced_preprocessor_test.cpp")
+        
+        # Test multiple scenarios with different macro combinations
+        test_scenarios = [
+            {
+                "name": "FEATURE_A_and_ALT_FORM_TEST",
+                "cppflags": f"-I{uth.samplesdir()} -DFEATURE_A -DALT_FORM_TEST"
+            },
+            {
+                "name": "FEATURE_A_and_FEATURE_B", 
+                "cppflags": f"-I{uth.samplesdir()} -DFEATURE_A -DFEATURE_B"
+            },
+            {
+                "name": "FEATURE_C_only",
+                "cppflags": f"-I{uth.samplesdir()} -DFEATURE_C"
+            },
+            {
+                "name": "no_feature_macros",
+                "cppflags": f"-I{uth.samplesdir()}"
+            }
+        ]
+        
+        for scenario in test_scenarios:
+            with self.subTest(scenario=scenario["name"]):
+                temp_config_name = ct.unittesthelper.create_temp_config()
+                
+                # Test DirectHeaderDeps (our custom preprocessor)
+                argv_direct = [
+                    "--config=" + temp_config_name,
+                    "--headerdeps=direct",
+                    "--include", uth.samplesdir(),
+                    f"--CPPFLAGS={scenario['cppflags']}"
+                ]
+                
+                # Test CppHeaderDeps (actual C preprocessor)
+                argv_cpp = [
+                    "--config=" + temp_config_name,
+                    "--headerdeps=cpp", 
+                    "--include", uth.samplesdir(),
+                    f"--CPPFLAGS={scenario['cppflags']}"
+                ]
+                
+                origcache = ct.dirnamer.user_cache_dir()
+                _reload_ct("None")
+                cap = configargparse.getArgumentParser()
+                ct.headerdeps.add_arguments(cap)
+                
+                # Get results from both approaches
+                args_direct = ct.apptools.parseargs(cap, argv_direct)
+                hdirect = ct.headerdeps.create(args_direct)
+                direct_result = hdirect.process(filename)
+                direct_set = set(direct_result)
+                
+                args_cpp = ct.apptools.parseargs(cap, argv_cpp)
+                hcpp = ct.headerdeps.create(args_cpp)
+                cpp_result = hcpp.process(filename)  
+                cpp_set = set(cpp_result)
+                
+                # Compare the results - they should be identical
+                self.assertSetEqual(direct_set, cpp_set,
+                    f"DirectHeaderDeps and CppHeaderDeps should produce identical results for scenario: {scenario['name']}\n"
+                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n"
+                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}")
+                
+                os.unlink(temp_config_name)
+                _reload_ct(origcache)
 
     def tearDown(self):
         uth.reset()
