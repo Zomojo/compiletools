@@ -269,18 +269,27 @@ class SimplePreprocessor:
                 return "0"
         
         # Replace macro names (identifiers) with their values
-        expr = re.sub(r'\b[A-Za-z_][A-Za-z0-9_]*\b', replace_macro, expr)
+        # Use word boundaries to avoid replacing parts of numbers or other tokens
+        expr = re.sub(r'(?<![0-9])\b[A-Za-z_][A-Za-z0-9_]*\b(?![0-9])', replace_macro, expr)
         
         return expr
     
     def _safe_eval(self, expr):
         """Safely evaluate a numeric expression"""
+        # First clean up any malformed expressions from macro replacement
+        # Fix cases like "0(0)" which occur when macros expand to adjacent numbers
+        import re
+        expr = re.sub(r'(\d+)\s*\(\s*(\d+)\s*\)', r'\1 * \2', expr)
+        
+        # Remove C-style integer suffixes (L, UL, LL, ULL, etc.)
+        expr = re.sub(r'(\d+)[LlUu]+\b', r'\1', expr)
+        
         # Convert C operators to Python equivalents
         expr = expr.replace('&&', ' and ')
         expr = expr.replace('||', ' or ')
         expr = expr.replace('!', ' not ')
         
-        # Handle comparison operators
+        # Handle comparison operators (these are already correct but explicit)
         expr = expr.replace('==', '==')
         expr = expr.replace('!=', '!=')
         expr = expr.replace('>=', '>=')
@@ -289,7 +298,6 @@ class SimplePreprocessor:
         expr = expr.replace('<', '<')
         
         # Only allow safe characters and words
-        import re
         if not re.match(r'^[0-9\s\+\-\*\/\%\(\)\<\>\=\!andortnot ]+$', expr):
             raise ValueError(f"Unsafe expression: {expr}")
         
@@ -372,7 +380,7 @@ class DirectHeaderDeps(HeaderDepsBase):
         self.ancestor_paths = []
 
         # Grab the include paths from the CPPFLAGS
-        pat = re.compile(r"-I ([\S]*)")
+        pat = re.compile(r"-(?:I|isystem)\s+([\S]+)")
         self.includes = pat.findall(self.args.CPPFLAGS)
 
         if self.args.verbose >= 3:
