@@ -414,7 +414,10 @@ class DirectHeaderDeps(HeaderDepsBase):
         self.ancestor_paths = []
 
         # Grab the include paths from the CPPFLAGS
-        pat = re.compile(r"-(?:I|isystem)\s+([\S]+)")
+        # By default, exclude system paths
+        # TODO: include system paths if the user sets (the currently nonexistent) "use-system" flag
+        #pat = re.compile(r"-(?:I|isystem)\s+([\S]+)")
+        pat = re.compile(r"-(?:I)\s+([\S]+)")
         self.includes = pat.findall(self.args.CPPFLAGS)
 
         if self.args.verbose >= 3:
