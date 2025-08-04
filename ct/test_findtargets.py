@@ -15,6 +15,8 @@ class TestFindTargetsModule(unittest.TestCase):
         relativeexpectedexes = {
             "conditional_includes/main.cpp",
             "cppflags_macros/main.cpp",
+            "cppflags_macros/multi_flag_test.cpp",
+            "cppflags_macros/compiler_builtin_test.cpp",
             "dottypaths/dottypaths.cpp",
             "feature_headers/main.cpp",
             "library/main.cpp",

@@ -89,24 +89,28 @@ class DirectHeaderDeps(HeaderDepsBase):
         # Track defined macros during processing
         self.defined_macros = set()
         
-        # Extract -D macro definitions from CPPFLAGS
+        # Extract -D macro definitions from CPPFLAGS, CFLAGS, and CXXFLAGS
         define_pat = re.compile(r"-D([\S]+)")
-        cppflags_macros = define_pat.findall(self.args.CPPFLAGS)
-        for macro in cppflags_macros:
-            # Handle -DMACRO=value by taking only the macro name part
-            macro_name = macro.split('=')[0]
-            self.defined_macros.add(macro_name)
-            if self.args.verbose >= 3:
-                print(f"Added macro from CPPFLAGS: {macro_name}")
+        flag_sources = [
+            ('CPPFLAGS', getattr(self.args, 'CPPFLAGS', '')),
+            ('CFLAGS', getattr(self.args, 'CFLAGS', '')), 
+            ('CXXFLAGS', getattr(self.args, 'CXXFLAGS', ''))
+        ]
         
-        # Add basic platform macros
-        import sys
-        if sys.platform.startswith('linux'):
-            self.defined_macros.add('__linux__')
-        elif sys.platform.startswith('win'):
-            self.defined_macros.add('_WIN32')
-        elif sys.platform.startswith('darwin'):
-            self.defined_macros.add('__APPLE__')
+        for flag_name, flag_value in flag_sources:
+            if flag_value:  # Only process if flag_value is not empty
+                flag_macros = define_pat.findall(flag_value)
+                for macro in flag_macros:
+                    # Handle -DMACRO=value by taking only the macro name part
+                    macro_name = macro.split('=')[0]
+                    self.defined_macros.add(macro_name)
+                    if self.args.verbose >= 3:
+                        print(f"Added macro from {flag_name}: {macro_name}")
+        
+        # Add platform, compiler, and architecture built-in macros
+        self._add_platform_macros()
+        self._add_compiler_macros()
+        self._add_architecture_macros()
 
     @functools.lru_cache(maxsize=None)
     def _search_project_includes(self, include):
@@ -284,6 +288,99 @@ class DirectHeaderDeps(HeaderDepsBase):
         self._process_impl_recursive(realpath, results)
         results.discard(realpath)
         return results
+
+    def _add_platform_macros(self):
+        """Add platform-specific built-in macros"""
+        import sys
+        if sys.platform.startswith('linux'):
+            self.defined_macros.update(['__linux__', '__unix__', 'unix'])
+        elif sys.platform.startswith('win'):
+            self.defined_macros.update(['_WIN32', 'WIN32'])
+        elif sys.platform.startswith('darwin'):
+            self.defined_macros.update(['__APPLE__', '__MACH__', '__unix__', 'unix'])
+            
+        if self.args.verbose >= 3:
+            print(f"Added platform macros for {sys.platform}")
+
+    def _add_compiler_macros(self):
+        """Add compiler-specific built-in macros"""
+        compiler = getattr(self.args, 'CXX', 'g++').lower()
+        
+        if 'armcc' in compiler or 'armclang' in compiler:
+            self.defined_macros.update([
+                '__ARMCC_VERSION', '__arm__'
+            ])
+            # ARM Compiler 6+ is based on clang
+            if 'armclang' in compiler:
+                self.defined_macros.update(['__clang__', '__GNUC__'])
+            if self.args.verbose >= 3:
+                print("Added ARM compiler built-in macros")
+                
+        elif 'clang' in compiler:
+            self.defined_macros.update([
+                '__clang__', '__clang_major__', '__clang_minor__', '__clang_patchlevel__',
+                '__GNUC__', '__GNUC_MINOR__'  # Clang compatibility macros
+            ])
+            if self.args.verbose >= 3:
+                print("Added Clang compiler built-in macros")
+                
+        elif 'gcc' in compiler or 'g++' in compiler:
+            self.defined_macros.update([
+                '__GNUC__', '__GNUG__', '__GNUC_MINOR__', '__GNUC_PATCHLEVEL__'
+            ])
+            if self.args.verbose >= 3:
+                print("Added GCC compiler built-in macros")
+                
+        elif 'tcc' in compiler:
+            self.defined_macros.update([
+                '__TINYC__', '__GNUC__'  # TCC compatibility macros
+            ])
+            if self.args.verbose >= 3:
+                print("Added TCC compiler built-in macros")
+                
+        elif 'cl' in compiler or 'msvc' in compiler:
+            self.defined_macros.update([
+                '_MSC_VER', '_MSC_FULL_VER', '_WIN32'
+            ])
+            if self.args.verbose >= 3:
+                print("Added MSVC compiler built-in macros")
+                
+        elif 'icc' in compiler or 'icx' in compiler or 'intel' in compiler:
+            self.defined_macros.update([
+                '__INTEL_COMPILER', '__ICC', '__GNUC__'  # Intel + GCC compatibility
+            ])
+            if self.args.verbose >= 3:
+                print("Added Intel compiler built-in macros")
+                
+        elif 'emcc' in compiler or 'emscripten' in compiler:
+            self.defined_macros.update([
+                '__EMSCRIPTEN__', '__clang__', '__GNUC__'  # Emscripten is based on clang
+            ])
+            if self.args.verbose >= 3:
+                print("Added Emscripten compiler built-in macros")
+
+    def _add_architecture_macros(self):
+        """Add architecture-specific built-in macros"""
+        import platform
+        arch = platform.machine().lower()
+        
+        if arch in ['x86_64', 'amd64']:
+            self.defined_macros.update(['__x86_64__', '__amd64__', '__LP64__'])
+        elif arch in ['i386', 'i686', 'x86']:
+            self.defined_macros.update(['__i386__', '__i386'])
+        elif arch.startswith('arm'):
+            self.defined_macros.add('__arm__')
+            if '64' in arch:
+                self.defined_macros.update(['__aarch64__', '__LP64__'])
+        elif arch.startswith('riscv') or 'riscv' in arch:
+            self.defined_macros.add('__riscv')
+            if '64' in arch:
+                self.defined_macros.update(['__riscv64__', '__LP64__'])
+            elif '32' in arch:
+                self.defined_macros.add('__riscv32__')
+                
+        if self.args.verbose >= 3:
+            print(f"Added architecture macros for {arch}")
 
     @staticmethod
     def clear_cache():

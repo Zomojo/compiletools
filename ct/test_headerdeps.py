@@ -241,6 +241,164 @@ class TestHeaderDepsModule(unittest.TestCase):
         os.unlink(temp_config_name)
         _reload_ct(origcache)
 
+    def test_macro_extraction_from_all_flag_sources(self):
+        """Test that DirectHeaderDeps extracts -D macros from CPPFLAGS, CFLAGS, and CXXFLAGS
+        
+        This comprehensive test ensures DirectHeaderDeps extracts macro definitions
+        from all possible compiler flag sources to prevent users from slipping in
+        macros through alternative flag variables.
+        """
+        filename = os.path.join(uth.samplesdir(), "cppflags_macros/multi_flag_test.cpp")
+        
+        # Test CPPFLAGS macro extraction
+        temp_config_name = ct.unittesthelper.create_temp_config()
+        argv = [
+            "--config=" + temp_config_name,
+            "--headerdeps=direct",
+            "--include", uth.samplesdir(),
+            "--CPPFLAGS", f"-I{uth.samplesdir()} -DFROM_CPPFLAGS -DFROM_CFLAGS -DFROM_CXXFLAGS"
+        ]
+        
+        origcache = ct.dirnamer.user_cache_dir()
+        _reload_ct("None")
+        cap = configargparse.getArgumentParser()
+        ct.headerdeps.add_arguments(cap)
+        args = ct.apptools.parseargs(cap, argv)
+        
+        hdirect = ct.headerdeps.create(args)
+        result = hdirect.process(filename)
+        result_set = set(result)
+        
+        # All three feature headers should be included since macros are defined in CPPFLAGS
+        expected_headers = [
+            os.path.join(uth.samplesdir(), "cppflags_macros/cppflags_feature.hpp"),
+            os.path.join(uth.samplesdir(), "cppflags_macros/cflags_feature.hpp"), 
+            os.path.join(uth.samplesdir(), "cppflags_macros/cxxflags_feature.hpp")
+        ]
+        
+        for expected_header in expected_headers:
+            self.assertIn(expected_header, result_set, 
+                         f"{os.path.basename(expected_header)} should be included when its macro is defined")
+        
+        os.unlink(temp_config_name)
+        _reload_ct(origcache)
+
+    def test_compiler_builtin_macro_recognition(self):
+        """Test that DirectHeaderDeps recognizes compiler and platform built-in macros
+        
+        This test ensures DirectHeaderDeps automatically detects compiler-specific,
+        platform-specific, and architecture-specific macros that are typically
+        defined by the compiler itself.
+        """
+        filename = os.path.join(uth.samplesdir(), "cppflags_macros/compiler_builtin_test.cpp")
+        
+        temp_config_name = ct.unittesthelper.create_temp_config()
+        argv = [
+            "--config=" + temp_config_name,
+            "--headerdeps=direct",
+            "--include", uth.samplesdir()
+        ]
+        
+        origcache = ct.dirnamer.user_cache_dir()
+        _reload_ct("None")
+        cap = configargparse.getArgumentParser()
+        ct.headerdeps.add_arguments(cap)
+        args = ct.apptools.parseargs(cap, argv)
+        
+        hdirect = ct.headerdeps.create(args)
+        result = hdirect.process(filename)
+        result_set = set(result)
+        
+        # Expected headers based on typical GCC on Linux x86_64
+        expected_headers = [
+            os.path.join(uth.samplesdir(), "cppflags_macros/gcc_feature.hpp"),       # __GNUC__
+            os.path.join(uth.samplesdir(), "cppflags_macros/x86_64_feature.hpp"),   # __x86_64__
+            os.path.join(uth.samplesdir(), "cppflags_macros/linux_feature.hpp")     # __linux__
+        ]
+        
+        for expected_header in expected_headers:
+            self.assertIn(expected_header, result_set, 
+                         f"{os.path.basename(expected_header)} should be included due to built-in macros")
+        
+        os.unlink(temp_config_name)
+        _reload_ct(origcache)
+
+    def test_riscv_architecture_macro_recognition(self):
+        """Test that DirectHeaderDeps recognizes RISC-V architecture macros
+        
+        This test verifies that RISC-V specific macros are properly detected
+        when passed via CPPFLAGS to simulate a RISC-V compilation environment.
+        """
+        filename = os.path.join(uth.samplesdir(), "cppflags_macros/compiler_builtin_test.cpp")
+        
+        temp_config_name = ct.unittesthelper.create_temp_config()
+        argv = [
+            "--config=" + temp_config_name,
+            "--headerdeps=direct",
+            "--include", uth.samplesdir(),
+            "--CPPFLAGS", f"-I{uth.samplesdir()} -D__riscv -D__riscv64__"
+        ]
+        
+        origcache = ct.dirnamer.user_cache_dir()
+        _reload_ct("None")
+        cap = configargparse.getArgumentParser()
+        ct.headerdeps.add_arguments(cap)
+        args = ct.apptools.parseargs(cap, argv)
+        
+        hdirect = ct.headerdeps.create(args)
+        result = hdirect.process(filename)
+        result_set = set(result)
+        
+        # RISC-V feature header should be included due to __riscv macro
+        riscv_feature_path = os.path.join(uth.samplesdir(), "cppflags_macros/riscv_feature.hpp")
+        self.assertIn(riscv_feature_path, result_set, 
+                     "riscv_feature.hpp should be included when __riscv macro is defined")
+        
+        os.unlink(temp_config_name)
+        _reload_ct(origcache)
+
+    def test_additional_compiler_macro_recognition(self):
+        """Test that DirectHeaderDeps recognizes additional compiler built-in macros
+        
+        This test verifies support for MSVC, Intel, Emscripten, and ARM compilers
+        by simulating their macro definitions via CPPFLAGS.
+        """
+        filename = os.path.join(uth.samplesdir(), "cppflags_macros/compiler_builtin_test.cpp")
+        
+        # Test MSVC macros
+        temp_config_name = ct.unittesthelper.create_temp_config()
+        argv = [
+            "--config=" + temp_config_name,
+            "--headerdeps=direct",
+            "--include", uth.samplesdir(),
+            "--CPPFLAGS", f"-I{uth.samplesdir()} -D_MSC_VER -D__INTEL_COMPILER -D__EMSCRIPTEN__ -D__ARMCC_VERSION"
+        ]
+        
+        origcache = ct.dirnamer.user_cache_dir()
+        _reload_ct("None")
+        cap = configargparse.getArgumentParser()
+        ct.headerdeps.add_arguments(cap)
+        args = ct.apptools.parseargs(cap, argv)
+        
+        hdirect = ct.headerdeps.create(args)
+        result = hdirect.process(filename)
+        result_set = set(result)
+        
+        # All compiler-specific headers should be included
+        expected_headers = [
+            os.path.join(uth.samplesdir(), "cppflags_macros/msvc_feature.hpp"),
+            os.path.join(uth.samplesdir(), "cppflags_macros/intel_feature.hpp"),
+            os.path.join(uth.samplesdir(), "cppflags_macros/emscripten_feature.hpp"),
+            os.path.join(uth.samplesdir(), "cppflags_macros/armcc_feature.hpp")
+        ]
+        
+        for expected_header in expected_headers:
+            self.assertIn(expected_header, result_set, 
+                         f"{os.path.basename(expected_header)} should be included when its compiler macro is defined")
+        
+        os.unlink(temp_config_name)
+        _reload_ct(origcache)
+
     def tearDown(self):
         uth.reset()
 
