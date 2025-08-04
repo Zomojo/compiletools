@@ -33,24 +33,45 @@ class SimplePreprocessor:
         # Each entry: (is_active, seen_else, any_condition_met)
         condition_stack = [(True, False, False)]
         
-        for line_num, line in enumerate(lines, 1):
+        i = 0
+        while i < len(lines):
+            line = lines[i]
             stripped = line.strip()
             
             # Handle preprocessor directives
             if stripped.startswith('#'):
-                directive = self._parse_directive(stripped)
+                # Handle multiline preprocessor directives
+                full_directive = stripped
+                line_continuation_count = 0
+                while full_directive.rstrip().endswith('\\') and i + line_continuation_count + 1 < len(lines):
+                    line_continuation_count += 1
+                    next_line = lines[i + line_continuation_count].strip()
+                    # Remove the trailing backslash and any trailing whitespace, then add the next line
+                    full_directive = full_directive.rstrip().rstrip('\\').rstrip() + ' ' + next_line
+                
+                directive = self._parse_directive(full_directive)
                 if directive:
-                    handled = self._handle_directive(directive, condition_stack, line_num)
+                    handled = self._handle_directive(directive, condition_stack, i + 1)
                     # If directive wasn't handled (like #include), treat it as a regular line
                     if handled is False and condition_stack[-1][0]:
                         result_lines.append(line)
+                        # Add continuation lines too if not handled
+                        for j in range(line_continuation_count):
+                            result_lines.append(lines[i + j + 1])
                 # If no directive was parsed, treat as regular line
                 elif condition_stack[-1][0]:
                     result_lines.append(line)
+                    # Add continuation lines too
+                    for j in range(line_continuation_count):
+                        result_lines.append(lines[i + j + 1])
+                
+                # Skip the continuation lines we've already processed
+                i += line_continuation_count + 1
             else:
                 # Only include non-directive lines if we're in an active context
                 if condition_stack[-1][0]:
                     result_lines.append(line)
+                i += 1
         
         return '\n'.join(result_lines)
     
@@ -276,6 +297,16 @@ class SimplePreprocessor:
     
     def _safe_eval(self, expr):
         """Safely evaluate a numeric expression"""
+        # Clean up the expression
+        expr = expr.strip()
+        
+        # Remove trailing backslashes from multiline directives and normalize whitespace
+        import re
+        # Remove backslashes followed by whitespace (multiline continuations)
+        expr = re.sub(r'\\\s*', ' ', expr)
+        # Remove any remaining trailing backslashes
+        expr = expr.rstrip('\\').strip()
+        
         # First clean up any malformed expressions from macro replacement
         # Fix cases like "0(0)" which occur when macros expand to adjacent numbers
         import re
@@ -296,6 +327,9 @@ class SimplePreprocessor:
         expr = expr.replace('<=', '<=')
         expr = expr.replace('>', '>')
         expr = expr.replace('<', '<')
+        
+        # Clean up any remaining whitespace issues
+        expr = expr.strip()
         
         # Only allow safe characters and words
         if not re.match(r'^[0-9\s\+\-\*\/\%\(\)\<\>\=\!andortnot ]+$', expr):
