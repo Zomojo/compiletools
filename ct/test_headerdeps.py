@@ -201,6 +201,46 @@ class TestHeaderDepsModule(unittest.TestCase):
         os.unlink(temp_config_name)
         _reload_ct(origcache)
 
+    def test_cppflags_macro_extraction(self):
+        """Test that DirectHeaderDeps correctly extracts -D macro definitions from CPPFLAGS
+        
+        This test ensures DirectHeaderDeps properly parses -D flags from CPPFLAGS
+        and uses them in conditional compilation logic to correctly identify header
+        dependencies when macros are passed via compiler flags rather than defined
+        in source files.
+        """
+        filename = os.path.join(uth.samplesdir(), "cppflags_macros/main.cpp")
+        
+        # Test with -DENABLE_ADVANCED_FEATURES in CPPFLAGS
+        temp_config_name = ct.unittesthelper.create_temp_config()
+        argv = [
+            "--config=" + temp_config_name,
+            "--headerdeps=direct",
+            "--include", uth.samplesdir(),
+            "--CPPFLAGS", f"-I{uth.samplesdir()} -DENABLE_ADVANCED_FEATURES"
+        ]
+        
+        origcache = ct.dirnamer.user_cache_dir()
+        _reload_ct("None")
+        cap = configargparse.getArgumentParser()
+        ct.headerdeps.add_arguments(cap)
+        args = ct.apptools.parseargs(cap, argv)
+        
+        hdirect = ct.headerdeps.create(args)
+        result = hdirect.process(filename)
+        result_set = set(result)
+        
+        # advanced_feature.hpp should be included because ENABLE_ADVANCED_FEATURES
+        # is defined in CPPFLAGS and DirectHeaderDeps extracts -D flags
+        advanced_feature_path = os.path.join(uth.samplesdir(), "cppflags_macros/advanced_feature.hpp")
+        
+        # This ensures DirectHeaderDeps correctly recognizes macros from CPPFLAGS
+        self.assertIn(advanced_feature_path, result_set, 
+                     "advanced_feature.hpp should be included when ENABLE_ADVANCED_FEATURES is defined in CPPFLAGS")
+        
+        os.unlink(temp_config_name)
+        _reload_ct(origcache)
+
     def tearDown(self):
         uth.reset()
 

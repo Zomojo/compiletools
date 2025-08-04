@@ -14,6 +14,7 @@ class TestFindTargetsModule(unittest.TestCase):
     def _find_samples_targets(self, disable_tests, disable_exes=False):
         relativeexpectedexes = {
             "conditional_includes/main.cpp",
+            "cppflags_macros/main.cpp",
             "dottypaths/dottypaths.cpp",
             "feature_headers/main.cpp",
             "library/main.cpp",

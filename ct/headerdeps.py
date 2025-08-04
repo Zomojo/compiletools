@@ -88,6 +88,17 @@ class DirectHeaderDeps(HeaderDepsBase):
             
         # Track defined macros during processing
         self.defined_macros = set()
+        
+        # Extract -D macro definitions from CPPFLAGS
+        define_pat = re.compile(r"-D([\S]+)")
+        cppflags_macros = define_pat.findall(self.args.CPPFLAGS)
+        for macro in cppflags_macros:
+            # Handle -DMACRO=value by taking only the macro name part
+            macro_name = macro.split('=')[0]
+            self.defined_macros.add(macro_name)
+            if self.args.verbose >= 3:
+                print(f"Added macro from CPPFLAGS: {macro_name}")
+        
         # Add basic platform macros
         import sys
         if sys.platform.startswith('linux'):
