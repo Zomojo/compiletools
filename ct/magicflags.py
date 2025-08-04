@@ -46,11 +46,11 @@ class MagicFlagsBase:
 
     This class is a map of filenames
     to the map of all magic flags for that file.
-    Each magic flag has an OrderedSet of values.
+    Each magic flag has a list of values preserving order.
     E.g., { '/somepath/libs/base/somefile.hpp':
-               {'CPPFLAGS':OrderedSet('-D MYMACRO','-D MACRO2'),
-                'CXXFLAGS':OrderedSet('-fsomeoption'),
-                'LDFLAGS':OrderedSet('-lsomelib')}}
+               {'CPPFLAGS':['-D', 'MYMACRO', '-D', 'MACRO2'],
+                'CXXFLAGS':['-fsomeoption'],
+                'LDFLAGS':['-lsomelib']}}
     This function will extract all the magics flags from the given
     source (and all its included headers).
     source_filename must be an absolute path
