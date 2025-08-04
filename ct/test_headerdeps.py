@@ -6,6 +6,7 @@ import unittest
 import filecmp
 import configargparse
 import ct.unittesthelper
+import ct.test_base as tb
 
 try:
     # This call to reload is simply to test
@@ -60,9 +61,9 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
     return cachename, temp_config_name, _callprocess(headerdeps, realpaths)
 
 
-class TestHeaderDepsModule(unittest.TestCase):
+class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
     def setUp(self):
-        uth.reset()
+        super().setUp()
         cap = configargparse.getArgumentParser(
             description="Configargparser in test code",
             formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
@@ -71,32 +72,6 @@ class TestHeaderDepsModule(unittest.TestCase):
         )
         ct.headerdeps.add_arguments(cap)
 
-    def _direct_cpp_tester(self, filename, extraargs=None):
-        """ For a given filename call HeaderTree.process() and HeaderDependencies.process """
-        if extraargs is None:
-            extraargs = []
-        realpath = ct.wrappedos.realpath(filename)
-        temp_config_name = ct.unittesthelper.create_temp_config()
-        argv = ["--config=" + temp_config_name] + extraargs
-
-        # Turn off diskcaching so that we can't just read up a prior result
-        origcache = ct.dirnamer.user_cache_dir()
-        _reload_ct("None")
-        cap = configargparse.getArgumentParser()
-        ct.headerdeps.add_arguments(cap)
-        argvdirect = argv + ["--headerdeps=direct"]
-        argsdirect = ct.apptools.parseargs(cap, argvdirect)
-
-        argvcpp = argv + ["--headerdeps", "cpp"]
-        argscpp = ct.apptools.parseargs(cap, argvcpp)
-
-        hdirect = ct.headerdeps.create(argsdirect)
-        hcpp = ct.headerdeps.create(argscpp)
-        hdirectresult = hdirect.process(realpath)
-        hcppresult = hcpp.process(realpath)
-        self.assertSetEqual(set(hdirectresult), set(hcppresult))
-        os.unlink(temp_config_name)
-        _reload_ct(origcache)
 
     def test_direct_and_cpp_generate_same_results(self):
         filenames = [
@@ -105,7 +80,7 @@ class TestHeaderDepsModule(unittest.TestCase):
             "dottypaths/dottypaths.cpp",
         ]
         for filename in filenames:
-            self._direct_cpp_tester(os.path.join(uth.samplesdir(), filename))
+            tb.compare_direct_cpp_headers(self, os.path.join(uth.samplesdir(), filename))
 
     def _direct_and_cpp_generate_same_results_ex(self, extraargs=None):
         """ Test that HeaderTree and HeaderDependencies give the same results.
@@ -154,14 +129,14 @@ class TestHeaderDepsModule(unittest.TestCase):
     def test_conditional_includes(self):
         """Test that DirectHeaderDeps correctly handles conditional includes"""
         filename = os.path.join(uth.samplesdir(), "conditional_includes/main.cpp")
-        self._direct_cpp_tester(filename)
+        tb.compare_direct_cpp_headers(self, filename)
 
     def test_user_defined_feature_headers(self):
         """Test that DirectHeaderDeps correctly handles user-defined feature macros"""
         filename = os.path.join(uth.samplesdir(), "feature_headers/main.cpp")
         
         # Test that both parsers give same results
-        self._direct_cpp_tester(filename)
+        tb.compare_direct_cpp_headers(self, filename)
         
         # Also verify specific behavior - should include database.h and logging.h 
         # but not graphics.h or networking.h
@@ -648,8 +623,6 @@ class TestHeaderDepsModule(unittest.TestCase):
                 os.unlink(temp_config_name)
                 _reload_ct(origcache)
 
-    def tearDown(self):
-        uth.reset()
 
 
 if __name__ == "__main__":

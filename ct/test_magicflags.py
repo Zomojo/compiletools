@@ -5,145 +5,55 @@ import configargparse
 import tempfile
 
 import ct.unittesthelper as uth
-import ct.uth_reload as uthr
-import ct.dirnamer
-import ct.apptools
-import ct.headerdeps
-import ct.magicflags
-import ct.utils
+import ct.test_base as tb
 
 
-class TestMagicFlagsModule(unittest.TestCase):
-    def setUp(self):
-        uth.reset()
+class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
 
-    def _createmagicparser(self, extraargs=None, cache_home="None", tempdir=None):
-        if not extraargs:
-            extraargs = []
-        temp_config_name = ct.unittesthelper.create_temp_config(tempdir)
-        argv = ["--config=" + temp_config_name] + extraargs
-        uthr.reload_ct(cache_home)
-        config_files = ct.configutils.config_files_from_variant(
-            argv=argv, exedir=uth.cakedir()
-        )
-        
-        # Check if parser already exists and use it, otherwise create new one
-        try:
-            cap = configargparse.getArgumentParser(
-                description="TestMagicFlagsModule",
-                formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-                default_config_files=config_files,
-                args_for_setting_config_path=["-c", "--config"],
-                ignore_unknown_config_file_keys=True,
-            )
-        except ValueError:
-            # Parser already exists, get it without parameters
-            cap = configargparse.getArgumentParser()
-            
-        ct.apptools.add_common_arguments(cap)
-        ct.dirnamer.add_arguments(cap)
-        ct.headerdeps.add_arguments(cap)
-        ct.magicflags.add_arguments(cap)
-        args = ct.apptools.parseargs(cap, argv)
-        headerdeps = ct.headerdeps.create(args)
-        return ct.magicflags.create(args, headerdeps)
 
-    def _direct_cpp_magic_tester(self, relativepath, tempdir=None):
-        """Test that DirectMagicFlags and CppMagicFlags produce identical results"""
-        if tempdir is None:
-            tempdir = tempfile.mkdtemp()
-            cleanup_tempdir = True
-        else:
-            cleanup_tempdir = False
-            
-        origdir = os.getcwd()
-        os.chdir(tempdir)
-        
-        try:
-            samplesdir = uth.samplesdir()
-            realpath = os.path.join(samplesdir, relativepath)
-            
-            # Test direct parser
-            magicparser_direct = self._createmagicparser(["--magic", "direct"], tempdir=tempdir)
-            result_direct = magicparser_direct.parse(realpath)
-            
-            # Clear configargparse singleton state to allow second parser creation
-            configargparse._parsers.clear()
-            
-            # Test cpp parser  
-            magicparser_cpp = self._createmagicparser(["--magic", "cpp"], tempdir=tempdir)
-            result_cpp = magicparser_cpp.parse(realpath)
-            
-            # Results should be identical
-            self.assertEqual(result_direct, result_cpp, 
-                           f"DirectMagicFlags and CppMagicFlags gave different results for {relativepath}")
-        finally:
-            os.chdir(origdir)
-            if cleanup_tempdir:
-                shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_parsing_CFLAGS(self):
-        origdir = os.getcwd()
-        tempdir = tempfile.mkdtemp()
-        os.chdir(tempdir)
+        os.chdir(self._tmpdir)
 
         relativepath = "simple/test_cflags.c"
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(tempdir=tempdir)
-        # magicparser._headerdeps.process(realpath)
+        magicparser = tb.create_magic_parser(tempdir=self._tmpdir)
         self.assertSetEqual(
             set(magicparser.parse(realpath).get("CFLAGS")), set(["-std=gnu99"])
         )
 
-        os.chdir(origdir)
-        shutil.rmtree(tempdir, ignore_errors=True)
-
     def test_SOURCE_direct(self):
-        origdir = os.getcwd()
-        tempdir = tempfile.mkdtemp()
-        os.chdir(tempdir)
+        os.chdir(self._tmpdir)
 
         relativepath = "cross_platform/cross_platform.cpp"
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(["--magic", "direct"], tempdir=tempdir)
-        # magicparser._headerdeps.process(realpath)
+        magicparser = tb.create_magic_parser(["--magic", "direct"], tempdir=self._tmpdir)
         self.assertSetEqual(
             set(magicparser.parse(realpath).get("SOURCE")),
             {os.path.join(samplesdir, "cross_platform/cross_platform_lin.cpp")},
         )
-
-        os.chdir(origdir)
-        shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_SOURCE_cpp(self):
-        origdir = os.getcwd()
-        tempdir = tempfile.mkdtemp()
-        os.chdir(tempdir)
+        os.chdir(self._tmpdir)
 
         relativepath = "cross_platform/cross_platform.cpp"
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(["--magic", "cpp"], tempdir=tempdir)
-        # magicparser._headerdeps.process(realpath)
+        magicparser = tb.create_magic_parser(["--magic", "cpp"], tempdir=self._tmpdir)
         self.assertSetEqual(
             set(magicparser.parse(realpath).get("SOURCE")),
             {os.path.join(samplesdir, "cross_platform/cross_platform_lin.cpp")},
         )
 
-        os.chdir(origdir)
-        shutil.rmtree(tempdir, ignore_errors=True)
-
     def test_lotsofmagic(self):
-        origdir = os.getcwd()
-        tempdir = tempfile.mkdtemp()
-        os.chdir(tempdir)
+        os.chdir(self._tmpdir)
 
         relativepath = "lotsofmagic/lotsofmagic.cpp"
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(["--magic", "cpp"], tempdir=tempdir)
+        magicparser = tb.create_magic_parser(["--magic", "cpp"], tempdir=self._tmpdir)
 
         expected = {
             "LDFLAGS": ["-lm"],
@@ -154,18 +64,13 @@ class TestMagicFlagsModule(unittest.TestCase):
         }
         self.assertEqual(magicparser.parse(realpath), expected)
 
-        os.chdir(origdir)
-        shutil.rmtree(tempdir, ignore_errors=True)
-
     def test_SOURCE_in_header(self):
-        origdir = os.getcwd()
-        tempdir = tempfile.mkdtemp()
-        os.chdir(tempdir)
+        os.chdir(self._tmpdir)
 
         relativepath = "magicsourceinheader/main.cpp"
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(["--magic", "cpp"], tempdir=tempdir)
+        magicparser = tb.create_magic_parser(["--magic", "cpp"], tempdir=self._tmpdir)
         expected = {
             "LDFLAGS": ["-lm"],
             "SOURCE": [
@@ -176,19 +81,14 @@ class TestMagicFlagsModule(unittest.TestCase):
             ]
         }
         self.assertEqual(magicparser.parse(realpath), expected)
-
-        os.chdir(origdir)
-        shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_SOURCE_in_header_direct(self):
-        origdir = os.getcwd()
-        tempdir = tempfile.mkdtemp()
-        os.chdir(tempdir)
+        os.chdir(self._tmpdir)
 
         relativepath = "magicsourceinheader/main.cpp"
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
-        magicparser = self._createmagicparser(["--magic", "direct"], tempdir=tempdir)
+        magicparser = tb.create_magic_parser(["--magic", "direct"], tempdir=self._tmpdir)
         expected = {
             "LDFLAGS": ["-lm"],
             "SOURCE": [
@@ -199,9 +99,6 @@ class TestMagicFlagsModule(unittest.TestCase):
             ]
         }
         self.assertEqual(magicparser.parse(realpath), expected)
-
-        os.chdir(origdir)
-        shutil.rmtree(tempdir, ignore_errors=True)
 
     def test_direct_and_cpp_magic_generate_same_results(self):
         """Test that DirectMagicFlags and CppMagicFlags produce identical results on conditional compilation samples"""
@@ -214,23 +111,21 @@ class TestMagicFlagsModule(unittest.TestCase):
         
         for filename in test_files:
             with self.subTest(filename=filename):
-                self._direct_cpp_magic_tester(filename)
+                tb.compare_direct_cpp_magic(self, filename, self._tmpdir)
 
     def test_macro_deps_cross_file(self):
         """Test that macros defined in source files affect header magic flags"""
-        origdir = os.getcwd()
-        tempdir = tempfile.mkdtemp()
-        os.chdir(tempdir)
+        os.chdir(self._tmpdir)
 
         relativepath = "macro_deps/main.cpp"
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
         
         # First verify both parsers give same results
-        self._direct_cpp_magic_tester(relativepath, tempdir)
+        tb.compare_direct_cpp_magic(self, relativepath, self._tmpdir)
         
         # Then test specific behavior with direct parser
-        magicparser_direct = self._createmagicparser(["--magic", "direct"], tempdir=tempdir)
+        magicparser_direct = tb.create_magic_parser(["--magic", "direct"], tempdir=self._tmpdir)
         result_direct = magicparser_direct.parse(realpath)
         
         # Should only contain feature X dependencies, not feature Y
@@ -244,8 +139,3 @@ class TestMagicFlagsModule(unittest.TestCase):
         self.assertIn(feature_x_source, result_direct["SOURCE"])
         self.assertNotIn(feature_y_source, result_direct["SOURCE"])
 
-        os.chdir(origdir)
-        shutil.rmtree(tempdir, ignore_errors=True)
-
-    def tearDown(self):
-        uth.reset()
