@@ -270,7 +270,7 @@ def signal_handler(signal, frame):
     sys.exit(0)
 
 
-def main(argv):
+def main(argv=None):
     variant = compiletools.configutils.extract_variant(argv=argv)
     config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv)
     cap = configargparse.getArgumentParser(

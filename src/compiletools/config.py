@@ -3,6 +3,8 @@ import sys
 import configargparse
 import compiletools.utils
 import compiletools.cake
+import compiletools.apptools
+import compiletools.configutils
 
 
 def main(argv=None):
