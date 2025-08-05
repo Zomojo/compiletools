@@ -20,8 +20,11 @@ jobs:
       - name: Install system dependencies
         run: sudo apt-get update && sudo apt-get install -y build-essential pkg-config libsystemd-dev
 
+      - name: Install UV
+        run: pip install uv
+
       - name: Install dependencies
-        run: pip install -r requirements.txt
+        run: uv pip install -e ".[dev]"
 
       - name: Run tests
-        run: python3 -m unittest discover
+        run: PYTHONPATH=src python -m unittest discover src/compiletools
