@@ -29,17 +29,14 @@ Variant aliases are:
 From highest to lowest priority configuration directories, the possible variants are:
 {0}
     ct
-{1}
-    None found
 /home/dummy/.config/ct
     None found
 /usr/lib
     None found
-{2}
+{1}
     None found
 """.format(
             tempdir,
-            os.path.join(tempdir, "src", "compiletools", "ct.conf.d"),
             os.path.join(ecd, "ct", "ct.conf.d"),
         )
 
