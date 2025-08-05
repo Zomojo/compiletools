@@ -354,15 +354,18 @@ def _add_flags_from_pkg_config(args):
             if args.verbose >= 6:
                 print(f"pkg-config --cflags {pkg} added FLAGS={cflags}")
 
-        libs = subprocess.run(
-            ["pkg-config", "--libs", pkg],
-            stdout=subprocess.PIPE,
-            universal_newlines=True,
-        ).stdout.rstrip()
-        if libs:
-            args.LDFLAGS += f" {libs}"
-            if args.verbose >= 6:
-                print(f"pkg-config --libs {pkg} added LDFLAGS={libs}")
+        # Only query pkg-config for libs if LDFLAGS is defined in the args namespace.
+        # Some tools (like ct-magicflags) don't call add_link_arguments() so LDFLAGS won't exist.
+        if hasattr(args, 'LDFLAGS'):
+            libs = subprocess.run(
+                ["pkg-config", "--libs", pkg],
+                stdout=subprocess.PIPE,
+                universal_newlines=True,
+            ).stdout.rstrip()
+            if libs:
+                args.LDFLAGS += f" {libs}"
+                if args.verbose >= 6:
+                    print(f"pkg-config --libs {pkg} added LDFLAGS={libs}")
 
 
 def _set_project_version(args):
