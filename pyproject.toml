@@ -42,8 +42,20 @@ Download = "https://github.com/Zomojo/compiletools/archive/v{version}.tar.gz"
 [project.scripts]
 # Python-based scripts (entry points to Python modules)
 ct-cake = "compiletools.cake:main"
-ct-doc = "compiletools.doc:main" 
+ct-cache = "compiletools.dirnamer:main"
+ct-cache-clean = "ct-cache-clean:main"
+ct-config = "ct-config:main"
+ct-cppdeps = "compiletools.cppdeps:main"
+ct-create-cmakelists = "ct-create-cmakelists:main"
+ct-create-makefile = "compiletools.makefile:main"
+ct-doc = "compiletools.doc:main"
+ct-filelist = "compiletools.filelist:main"
+ct-findtargets = "compiletools.findtargets:main"
+ct-gitroot = "compiletools.git_utils:main"
+ct-headertree = "ct-headertree:main"
+ct-jobs = "compiletools.jobs:main"
 ct-list-variants = "compiletools.listvariants:main"
+ct-magicflags = "compiletools.magicflags:main"
 
 [build-system]
 requires = ["uv_build>=0.8.4,<0.9.0"]
