@@ -1,33 +1,41 @@
-This files contains notes to coders who want to contribute to the project
+This file contains notes to coders who want to contribute to the project
 
 #
 # Code Style
 #
-The code must run under python 3.4->
+The code must run under Python 3.9+
 
-Aspirationally, write code following the PEP 8 style guide.  
-While I dislike some of PEP 8, making it the convention avoids bike shed arguments.
-Before check-in you should format the code using
+Follow the PEP 8 style guide. Use modern Python tooling for formatting:
 
-autopep8 --in-place --aggressive --aggressive somefile.py
-or 
-black somefile.py
+# Format code
+black src/compiletools/
+# or
+ruff format src/compiletools/
+
+# Lint code  
+ruff check src/compiletools/
 
 
 
 #
 # Running unittests
 #
-The unit tests are written using the python unittest framework.  They can be run using
-python3 -m unittest discover -b
-nosetests
-noestests-3.x  (where is is appropriate to your machine)
+The unit tests are written using the Python unittest framework. They can be run using:
+
+# Set PYTHONPATH to include src directory
+PYTHONPATH=src python -m unittest discover src/compiletools
+# or specific test modules
+PYTHONPATH=src python -m unittest compiletools.test_utils
+# or with verbose output
+PYTHONPATH=src python -m unittest discover src/compiletools -v
 
 #
 # Running coverage tests
 #
-pytest --cov=ct ct/test_*
-nosetests-3 --with-coverage
+PYTHONPATH=src pytest --cov=compiletools src/compiletools/test_*
+# or
+PYTHONPATH=src coverage run -m unittest discover src/compiletools
+coverage report
 
 #
 # Caches/Performance
@@ -47,48 +55,47 @@ When you are doing performance testing there are 3 caches you need to be aware o
 #
 # Gotchas
 #
-If you encounter
+If you encounter cache-related issues, clear the cache using:
+ct-cache-clean
 
-    ValueError: unsupported pickle protocol: 3
+#
+# Package Structure
+#
+src/compiletools/     - Main package code (moved from ct/)
+ct-*                  - Command-line scripts  
+pyproject.toml        - Modern Python packaging configuration
+CLAUDE.md            - Project documentation and build instructions
 
-its because you are doing python2/3 testing and the pickled cache is in python3 format 
-and you are currently testing in python2.  Solution is to remove the ct cache (ct-cache-clean).
+#
+# Development Setup
+#
+# Install development dependencies
+uv pip install -e ".[dev]"
+
+# or manually install dev tools
+pip install bump-my-version twine
 
 #
 # Making a release
 #
-There is now a ct-release script that should do all the following steps
+The ct-release script automates the release process, or you can do it manually:
 
-# Zeroth: Make sure all *.rst files have been added to .bumpversion.cfg
-
-# First increase the version number using bumpversion.
-# The currently actively developed bumpversion is https://github.com/c4urself/bump2version
-# The .bumpversion.cfg has been set to tag and commit (but not push)
-bumpversion patch
-or
-bumpversion minor
-or 
-bumpversion major
+# Increase the version number using bump-my-version
+# Configuration is in pyproject.toml [tool.bumpversion] section
+bump-my-version bump patch
+# or
+bump-my-version bump minor  
+# or
+bump-my-version bump major
 
 git push
 git push --tags
 
-# Based off https://wiki.python.org/moin/TestPyPI
-# Note: Using python setup register is not recommended anymore
-# https://packaging.python.org/distributing/#uploading-your-project-to-pypi
-# Note: You have to create user accounts at pypi and pypitest separately
-# You probably wont need to do the twine register since the project already is registered
-python setup.py sdist
-twine register dist/compiletools-*.tar.gz -r pypitest
-twine upload dist/*  -r pypitest
+# Build and upload to PyPI
+uv build
+twine upload dist/* -r pypi
 
-# Test all is well
-pip install -i https://testpypi.python.org/pypi compiletools
-pip uninstall compiletools
-
-# Rinse and repeat with the live PyPI
-twine register dist/compiletools-*.tar.gz -r pypi 
-twine upload dist/*  -r pypi 
+# Test installation
 pip install compiletools
 
 

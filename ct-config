@@ -1,17 +1,17 @@
 #!/usr/bin/env python3
 import sys
 import configargparse
-import ct.utils
-import ct.cake
+import compiletools.utils
+import compiletools.cake
 
 
 def main(argv=None):
     cap = configargparse.getArgumentParser()
-    ct.cake.Cake.add_arguments(cap)
+    compiletools.cake.Cake.add_arguments(cap)
     if argv is None:
         # Output of stdout is done via increasing the verbosity
         sys.argv.append("-vvv")
-    args = ct.apptools.parseargs(cap, argv)
+    args = compiletools.apptools.parseargs(cap, argv)
 
     # Note that when the "--write-out-config-file" is in effect that
     # we never get to this print.  configargparse exits before this which is
@@ -21,7 +21,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    config_files = ct.configutils.config_files_from_variant()
+    config_files = compiletools.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description="Helper tool for examining how config files, command line "
         "arguments and environment variables are combined. "

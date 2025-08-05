@@ -4,19 +4,19 @@ from collections import defaultdict
 from collections import Counter
 import math
 import configargparse
-import ct.wrappedos
-import ct.headerdeps
-import ct.git_utils as git_utils
-import ct.utils as utils
-import ct.tree as tree
+import compiletools.wrappedos
+import compiletools.headerdeps
+import compiletools.git_utils as git_utils
+import compiletools.utils as utils
+import compiletools.tree as tree
 
 
-class FlatStyle(ct.git_utils.NameAdjuster):
+class FlatStyle(compiletools.git_utils.NameAdjuster):
 
     """ Print a newline delimited list of header files """
 
     def __init__(self, tree_, args):
-        ct.git_utils.NameAdjuster.__init__(self, args)
+        compiletools.git_utils.NameAdjuster.__init__(self, args)
         tree.depth_first_traverse(node=tree_, pre_traverse_function=self.print_wrapper)
 
     def print_wrapper(self, key):
@@ -24,12 +24,12 @@ class FlatStyle(ct.git_utils.NameAdjuster):
         print(self.adjust(key))
 
 
-class DepthStyle(ct.git_utils.NameAdjuster):
+class DepthStyle(compiletools.git_utils.NameAdjuster):
 
     """ Print the include tree with some sort of indicator of depth """
 
     def __init__(self, tree_, args, indicator="--"):
-        ct.git_utils.NameAdjuster.__init__(self, args)
+        compiletools.git_utils.NameAdjuster.__init__(self, args)
         self.indicator = indicator
         tree.depth_first_traverse(
             node=tree_, pre_traverse_function=self.depth_indicator_print
@@ -40,12 +40,12 @@ class DepthStyle(ct.git_utils.NameAdjuster):
         print(self.indicator * depth + self.adjust(key))
 
 
-class DotStyle(ct.git_utils.NameAdjuster):
+class DotStyle(compiletools.git_utils.NameAdjuster):
 
     """ Print the include tree in graphviz dot format. """
 
     def __init__(self, tree_, args):
-        ct.git_utils.NameAdjuster.__init__(self, args)
+        compiletools.git_utils.NameAdjuster.__init__(self, args)
         for key in tree_:
             # TODO: Take care of the case where there are multiple top level
             # nodes
@@ -68,7 +68,7 @@ class DotStyle(ct.git_utils.NameAdjuster):
             print('"' + self.adjust(key) + '"->"' + self.adjust(child_key) + '"')
 
 
-class TreeStyle(ct.git_utils.NameAdjuster):
+class TreeStyle(compiletools.git_utils.NameAdjuster):
 
     """ Show the cumulative cost and self cost of including the header files """
 
@@ -80,7 +80,7 @@ class TreeStyle(ct.git_utils.NameAdjuster):
     #       you want
 
     def __init__(self, tree_, args):
-        ct.git_utils.NameAdjuster.__init__(self, args)
+        compiletools.git_utils.NameAdjuster.__init__(self, args)
         self.verbose = args.verbose
 
         # The various max_* variables are used to figure out the number of
@@ -222,11 +222,11 @@ def main(argv=None):
     styles = [st[:-5].lower() for st in dict(globals()) if st.endswith("Style")]
     cap.add("--style", choices=styles, default="tree", help="Output formatting style")
 
-    ct.headerdeps.add_arguments(cap)
-    args = ct.apptools.parseargs(cap, argv)
-    ht = ct.headerdeps.DirectHeaderDeps(args)
+    compiletools.headerdeps.add_arguments(cap)
+    args = compiletools.apptools.parseargs(cap, argv)
+    ht = compiletools.headerdeps.DirectHeaderDeps(args)
 
-    if not ct.wrappedos.isfile(args.filename[0]):
+    if not compiletools.wrappedos.isfile(args.filename[0]):
         sys.stderr.write(
             "The supplied filename ({0}) isn't a file.  Did you spell it correctly?  Another possible reason is that you didn't supply a filename and that configargparse has picked an unused positional argument from the config file.\n".format(
                 args.filename[0]
@@ -249,7 +249,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    config_files = ct.configutils.config_files_from_variant()
+    config_files = compiletools.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description="Create a tree of header dependencies starting at a given C/C++ file. ",
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,

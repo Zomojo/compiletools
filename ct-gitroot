@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import sys
 import configargparse
-import ct.apptools
-import ct.git_utils
+import compiletools.apptools
+import compiletools.git_utils
 
 if __name__ == "__main__":
     cap = configargparse.getArgumentParser(
@@ -10,4 +10,4 @@ if __name__ == "__main__":
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
         auto_env_var_prefix="",
     )
-    sys.exit(ct.git_utils.main())
+    sys.exit(compiletools.git_utils.main())

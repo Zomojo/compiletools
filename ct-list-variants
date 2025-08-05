@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import sys
 import configargparse
-import ct.configutils
-import ct.listvariants
+import compiletools.configutils
+import compiletools.listvariants
 
 
 if __name__ == "__main__":
-    variant = ct.configutils.extract_variant()
-    config_files = ct.configutils.config_files_from_variant()
+    variant = compiletools.configutils.extract_variant()
+    config_files = compiletools.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description="Find the possible variants by looking in the local repository, system config files, user config files and the executable's directory.",
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
@@ -16,4 +16,4 @@ if __name__ == "__main__":
         args_for_setting_config_path=["-c", "--config"],
         ignore_unknown_config_file_keys=True,
     )
-    sys.exit(ct.listvariants.main())
+    sys.exit(compiletools.listvariants.main())

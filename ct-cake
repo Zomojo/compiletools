@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 import sys
-import ct.cake
+import compiletools.cake
 
 if __name__ == "__main__":
     # Output of stdout is done via increasing the verbosity
     # Developers seem to be "default happy" when verbosity defaults to 1
     sys.argv.append("-v")
-    sys.exit(ct.cake.main(sys.argv[1::]))
+    sys.exit(compiletools.cake.main(sys.argv[1::]))
