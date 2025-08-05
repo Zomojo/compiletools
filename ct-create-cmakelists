@@ -5,12 +5,12 @@ from io import open
 
 import configargparse
 
-import ct.apptools
-import ct.wrappedos
-import ct.headerdeps
-import ct.magicflags
-import ct.hunter
-import ct.namer
+import compiletools.apptools
+import compiletools.wrappedos
+import compiletools.headerdeps
+import compiletools.magicflags
+import compiletools.hunter
+import compiletools.namer
 
 
 class CMakefileCreator:
@@ -19,20 +19,20 @@ class CMakefileCreator:
 
     def __init__(self, args):
         self.args = args
-        self.namer = ct.namer.Namer(args)
-        headerdeps = ct.headerdeps.create(args)
-        magicparser = ct.magicflags.create(args, headerdeps)
-        self.hunter = ct.hunter.Hunter(args, headerdeps, magicparser)
+        self.namer = compiletools.namer.Namer(args)
+        headerdeps = compiletools.headerdeps.create(args)
+        magicparser = compiletools.magicflags.create(args, headerdeps)
+        self.hunter = compiletools.hunter.Hunter(args, headerdeps, magicparser)
 
     @staticmethod
     def add_arguments(cap):
-        ct.apptools.add_target_arguments_ex(cap)
-        ct.apptools.add_link_arguments(cap)
+        compiletools.apptools.add_target_arguments_ex(cap)
+        compiletools.apptools.add_link_arguments(cap)
         # Don't add the output directory arguments
         # The Namer will do it and get the hash correct
-        # ct.utils.add_output_directory_arguments(cap, variant)
-        ct.namer.Namer.add_arguments(cap)
-        ct.hunter.add_arguments(cap)
+        # compiletools.utils.add_output_directory_arguments(cap, variant)
+        compiletools.namer.Namer.add_arguments(cap)
+        compiletools.hunter.add_arguments(cap)
 
     def create(self):
         with open("CMakeLists.txt", mode="w", encoding="utf-8") as cmf:
@@ -57,7 +57,7 @@ class CMakefileCreator:
             cmf.write("\n)\n")
 
             for source_filename in self.args.filename:
-                src_realpath = ct.wrappedos.realpath(source_filename)
+                src_realpath = compiletools.wrappedos.realpath(source_filename)
                 complete_sources = self.hunter.required_source_files(src_realpath)
                 exe_name = self.namer.executable_name(src_realpath)
                 exe_source_files_cmake_name = exe_name.upper() + "_SOURCE_FILES"
@@ -81,7 +81,7 @@ class CMakefileCreator:
                             "target_include_directories(",
                             exe_name,
                             "PUBLIC",
-                            ct.wrappedos.dirname(src_realpath),
+                            compiletools.wrappedos.dirname(src_realpath),
                             ")\n",
                         ]
                     )
@@ -103,8 +103,8 @@ class CMakefileCreator:
 def main(argv=None):
     if argv is None:
         argv = sys.argv
-    variant = ct.configutils.extract_variant(argv)
-    config_files = ct.configutils.config_files_from_variant()
+    variant = compiletools.configutils.extract_variant(argv)
+    config_files = compiletools.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description="Create a CMakefile.txt that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.",
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
@@ -115,7 +115,7 @@ def main(argv=None):
     )
 
     CMakefileCreator.add_arguments(cap)
-    args = ct.apptools.parseargs(cap, argv)
+    args = compiletools.apptools.parseargs(cap, argv)
     cmakefile_creator = CMakefileCreator(args)
     cmakefile_creator.create()
 

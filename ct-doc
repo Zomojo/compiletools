@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 import sys
 import configargparse
-import ct.configutils
-import ct.doc
+import compiletools.configutils
+import compiletools.doc
 
 
 if __name__ == "__main__":
-    variant = ct.configutils.extract_variant()
-    config_files = ct.configutils.config_files_from_variant()
+    variant = compiletools.configutils.extract_variant()
+    config_files = compiletools.configutils.config_files_from_variant()
     cap = configargparse.getArgumentParser(
         description=f"Compiletools documentation reader. Try using {sys.argv[0]} --man",
         formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
@@ -16,4 +16,4 @@ if __name__ == "__main__":
         args_for_setting_config_path=["-c", "--config"],
         ignore_unknown_config_file_keys=True,
     )
-    sys.exit(ct.doc.main())
+    sys.exit(compiletools.doc.main())

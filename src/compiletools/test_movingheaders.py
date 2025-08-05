@@ -1,0 +1,96 @@
+import unittest
+import os
+import shutil
+import tempfile
+import configargparse
+import compiletools.unittesthelper as uth
+import compiletools.cake
+import compiletools.utils
+
+# Although this is virtually identical to the test_cake.py, we can't merge the tests due to memoized results.
+class TestMovingHeaders(unittest.TestCase):
+    def setUp(self):
+        try:
+            if self._tmpdir is not None:
+                shutil.rmtree(self._tmpdir, ignore_errors=True)
+        except AttributeError:
+            pass
+        self._tmpdir = tempfile.mkdtemp()
+        uth.reset()
+        cap = configargparse.getArgumentParser(
+            description="Configargparser in test code",
+            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+            args_for_setting_config_path=["-c", "--config"],
+            ignore_unknown_config_file_keys=False,
+        )
+        # compiletools.cake.Cake.add_arguments(cap)
+        # compiletools.cake.Cake.registercallback()
+
+    def _verify_one_exe_per_main(self, relativepaths):
+        actual_exes = set()
+        for root, dirs, files in os.walk(self._tmpdir):
+            for ff in files:
+                if compiletools.utils.isexecutable(os.path.join(root, ff)):
+                    actual_exes.add(ff)
+
+        expected_exes = {
+            os.path.splitext(os.path.split(filename)[1])[0]
+            for filename in relativepaths
+            if compiletools.utils.issource(filename)
+        }
+        self.assertSetEqual(expected_exes, actual_exes)
+
+    def test_moving_headers(self):
+        # The concept of this test is to check that ct-cake copes with header files being changed directory
+
+        # Setup
+        origdir = os.getcwd()
+        os.mkdir(os.path.join(self._tmpdir, "subdir"))
+
+        # Copy the movingheaders test files to the temp directory and compile using cake
+        relativepaths = ["movingheaders/main.cpp", "movingheaders/someheader.hpp"]
+        realpaths = [
+            os.path.join(uth.samplesdir(), filename) for filename in relativepaths
+        ]
+        for ff in realpaths:
+            shutil.copy2(ff, self._tmpdir)
+
+        os.chdir(self._tmpdir)
+        temp_config_name = compiletools.unittesthelper.create_temp_config(self._tmpdir)
+        argv = [
+            "--exemarkers=main",
+            "--testmarkers=unittest.hpp",
+            "--CTCACHE=" + os.path.join(self._tmpdir, "ctcache"),
+            "--quiet",
+            "--auto",
+            "--include=subdir",
+            "--config=" + temp_config_name,
+        ]
+        uth.reset()
+        compiletools.cake.main(argv)
+
+        self._verify_one_exe_per_main(relativepaths)
+
+        # Now move the header file to "subdir"  since it is already included in the path, all should be well
+        os.rename(
+            os.path.join(self._tmpdir, "someheader.hpp"),
+            os.path.join(self._tmpdir, "subdir/someheader.hpp"),
+        )
+        shutil.rmtree(os.path.join(self._tmpdir, "bin"), ignore_errors=True)
+        uth.reset()
+        compiletools.cake.main(argv)
+
+        self._verify_one_exe_per_main(relativepaths)
+
+        # Cleanup
+        os.chdir(origdir)
+        shutil.rmtree(self._tmpdir, ignore_errors=True)
+
+    def tearDown(self):
+        uth.reset()
+        if self._tmpdir and os.path.exists(self._tmpdir):
+            shutil.rmtree(self._tmpdir, ignore_errors=True)
+
+
+if __name__ == "__main__":
+    unittest.main()

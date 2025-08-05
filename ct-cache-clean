@@ -2,7 +2,7 @@
 import shutil
 import argparse
 import os
-import ct.dirnamer
+import compiletools.dirnamer
 
 """ Remove the cache used by the ct-* programs. """
 
@@ -18,7 +18,7 @@ def main():
     )
     args = parser.parse_args()
 
-    cachedir = ct.dirnamer.user_cache_dir(args=args)
+    cachedir = compiletools.dirnamer.user_cache_dir(args=args)
     if args.verbose >= 1:
         print(" ".join(["Removing cache directory =", cachedir]))
 

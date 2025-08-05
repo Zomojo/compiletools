@@ -1,1 +1,1 @@
-ct/README.ct-doc.rst
+src/compiletools/README.ct-doc.rst

@@ -27,7 +27,7 @@ fi
 
 # Bump the version of the vanilla compiletools
 if [[ -z "$zeromeansbump" ]]; then
-    bumpversion patch
+    bump-my-version bump minor
     git push
     git push --tags
     echo Pausing to give github time to generate the archive
@@ -55,7 +55,6 @@ version=${tag#*v}
 
 #popd >/dev/null
 
-# Push to PyPI
-python3 setup.py sdist
-twine upload dist/*  -r pypi 
-# or should it be twine upload --repository compiletools
+# Build and push to PyPI using UV
+uv build
+twine upload dist/* -r pypi
