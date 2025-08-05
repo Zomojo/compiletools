@@ -1,0 +1,110 @@
+[project]
+name = "compiletools"
+version = "4.1.98"
+description = "Tools to make compiling C/C++ projects easy"
+readme = "ct/README.ct-doc.rst"
+requires-python = ">=3.9"
+license = "GPL-3.0-or-later"
+keywords = ["c++", "make", "development"]
+authors = [
+    {name = "Zomojo Pty Ltd", email = "drgeoffathome@gmail.com"},
+]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers", 
+    "Topic :: Software Development :: Build Tools",
+    "License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+dependencies = [
+    "configargparse>=1.5.3",
+    "appdirs>=1.4.4",
+    "psutil>=5.9.0", 
+    "rich>=12.0.0",
+    "rich_rst>=1.1.7",
+]
+
+[project.optional-dependencies]
+dev = [
+    "bump-my-version>=0.26.0",
+    "twine>=5.0.0",
+]
+
+[project.urls]
+Homepage = "http://zomojo.github.io/compiletools/"
+Download = "https://github.com/Zomojo/compiletools/archive/v{version}.tar.gz"
+
+[project.scripts]
+# Python-based scripts (entry points to Python modules)
+ct-cake = "ct.cake:main"
+ct-doc = "ct.doc:main" 
+ct-list-variants = "ct.listvariants:main"
+
+[build-system]
+requires = ["uv_build>=0.8.4,<0.9.0"]
+build-backend = "uv_build"
+
+[tool.uv_build.sources]
+"ct" = "ct"
+"ct-*" = "."
+
+[tool.bumpversion]
+current_version = "4.1.98"
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+search = "{current_version}"
+replace = "{new_version}"
+commit = true
+tag = true
+message = "Bump version: {current_version} → {new_version}"
+
+[[tool.bumpversion.files]]
+filename = "ct/version.py"
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-doc.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-cache.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-cache-clean.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-cake.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-commandline.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-config.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-findtargets.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-filelist.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-gitroot.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-headertree.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-jobs.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-list-variants.rst"
+
+[[tool.bumpversion.files]]
+filename = "ct/README.ct-magicflags.rst"
+
