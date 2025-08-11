@@ -33,6 +33,14 @@
 #include "x86_64_feature.hpp"
 #endif
 
+#ifdef __arm__
+#include "arm_feature.hpp"
+#endif
+
+#ifdef __aarch64__
+#include "aarch64_feature.hpp"
+#endif
+
 #ifdef __linux__
 #include "linux_feature.hpp"
 #endif

@@ -284,16 +284,33 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         result = hdirect.process(filename)
         result_set = set(result)
         
-        # Expected headers based on typical GCC on Linux x86_64
+        # Expected headers based on compiler and platform built-in macros
+        import platform
+        import sys
+        
         expected_headers = [
             os.path.join(uth.samplesdir(), "cppflags_macros/gcc_feature.hpp"),       # __GNUC__
-            os.path.join(uth.samplesdir(), "cppflags_macros/x86_64_feature.hpp"),   # __x86_64__
-            os.path.join(uth.samplesdir(), "cppflags_macros/linux_feature.hpp")     # __linux__
         ]
+        
+        # Add platform-specific header based on current platform
+        if sys.platform.startswith('linux'):
+            expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/linux_feature.hpp"))
+        # Note: For other platforms (Windows, macOS), we'd need corresponding feature files
+        
+        # Add architecture-specific header based on current platform
+        arch = platform.machine().lower()
+        if arch in ['x86_64', 'amd64']:
+            expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/x86_64_feature.hpp"))
+        elif arch.startswith('arm') and not ('64' in arch or arch.startswith('aarch')):
+            expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/arm_feature.hpp"))
+        elif arch.startswith('aarch') or (arch.startswith('arm') and '64' in arch):
+            expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/aarch64_feature.hpp"))
+        elif arch.startswith('riscv') or 'riscv' in arch:
+            expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/riscv_feature.hpp"))
         
         for expected_header in expected_headers:
             self.assertIn(expected_header, result_set, 
-                         f"{os.path.basename(expected_header)} should be included due to built-in macros")
+                         f"{os.path.basename(expected_header)} should be included due to built-in macros for {arch}")
         
         os.unlink(temp_config_name)
         _reload_ct(origcache)
