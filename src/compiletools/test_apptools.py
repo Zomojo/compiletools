@@ -63,7 +63,7 @@ class TestConfig(unittest.TestCase):
             uth.create_temp_config(os.getcwd(), cfgfile, extralines=['CXXFLAGS="-DVARFROMFILE"'])
             with open(cfgfile, "r") as ff:
                 print(ff.read())
-            argv = ["--config=foo.dbg.conf", "-vvvvvvvvvv"]
+            argv = ["--config=foo.dbg.conf", "-v"]
             variant = compiletools.configutils.extract_variant(argv=argv, gitroot=os.getcwd())
             config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv, gitroot=os.getcwd())
 
@@ -106,7 +106,7 @@ class TestConfig(unittest.TestCase):
             uth.create_temp_config(os.getcwd(), cfgfile, extralines=['append-CXXFLAGS="-fdiagnostics-color=always"'])
             with open(cfgfile, "r") as ff:
                 print(ff.read())
-            argv = ["--config=" + cfgfile, "-vvvvvvvvvv"]
+            argv = ["--config=" + cfgfile, "-v"]
             variant = compiletools.configutils.extract_variant(argv=argv, gitroot=os.getcwd())
             config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv, gitroot=os.getcwd())
 

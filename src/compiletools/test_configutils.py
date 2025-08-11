@@ -16,7 +16,7 @@ class TestVariant(unittest.TestCase):
         self._tmpdir = None
 
     def test_extract_value_from_argv(self):
-        argv = ['/usr/bin/ct-config', '--pkg-config=fig', '-vvvvv']
+        argv = ['/usr/bin/ct-config', '--pkg-config=fig', '-v']
 
         value = compiletools.configutils.extract_value_from_argv("pkg-config", argv)
         self.assertEqual(value, "fig")

@@ -18,24 +18,35 @@ ruff check src/compiletools/
 
 
 #
-# Running unittests
+# Running tests
 #
-The unit tests are written using the Python unittest framework. They can be run using:
+Tests use pytest. First install development dependencies:
 
-# Set PYTHONPATH to include src directory
-PYTHONPATH=src python -m unittest discover src/compiletools
-# or specific test modules
-PYTHONPATH=src python -m unittest compiletools.test_utils
-# or with verbose output
-PYTHONPATH=src python -m unittest discover src/compiletools -v
+uv pip install -e ".[dev]"
+
+Then run tests:
+
+# Run all tests
+pytest src/compiletools
+
+# Run tests in parallel (faster)
+pytest src/compiletools -n auto
+
+# Run specific test file
+pytest src/compiletools/test_utils.py
+
+# Run with verbose output
+pytest src/compiletools -v
 
 #
 # Running coverage tests
 #
-PYTHONPATH=src pytest --cov=compiletools src/compiletools/test_*
-# or
-PYTHONPATH=src coverage run -m unittest discover src/compiletools
-coverage report
+pytest --cov=compiletools src/compiletools
+
+#
+# Legacy unittest commands (if pytest not available)
+#
+PYTHONPATH=src python -m unittest discover src/compiletools
 
 #
 # Caches/Performance
