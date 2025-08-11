@@ -1,5 +1,4 @@
 import os
-import unittest
 import configargparse
 
 import compiletools.unittesthelper as uth
@@ -7,8 +6,8 @@ import compiletools.utils
 import compiletools.findtargets
 
 
-class TestFindTargetsModule(unittest.TestCase):
-    def setUp(self):
+class TestFindTargetsModule:
+    def setup_method(self):
         uth.reset()
 
     def _find_samples_targets(self, disable_tests, disable_exes=False):
@@ -89,5 +88,5 @@ class TestFindTargetsModule(unittest.TestCase):
     def test_tests_only(self):
         self._find_samples_targets(disable_tests=False, disable_exes=True)
 
-    def tearDown(self):
+    def teardown_method(self):
         uth.reset()

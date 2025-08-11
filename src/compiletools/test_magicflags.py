@@ -1,5 +1,4 @@
 import os
-import unittest
 import shutil
 import configargparse
 import tempfile
@@ -104,8 +103,7 @@ class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
         ]
         
         for filename in test_files:
-            with self.subTest(filename=filename):
-                tb.compare_direct_cpp_magic(self, filename, self._tmpdir)
+            tb.compare_direct_cpp_magic(self, filename, self._tmpdir)
 
     def test_macro_deps_cross_file(self):
         """Test that macros defined in source files affect header magic flags"""

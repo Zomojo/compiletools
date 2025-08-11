@@ -1,6 +1,5 @@
 import os
 import sys
-import unittest
 import shutil
 import tempfile
 import io
@@ -26,12 +25,11 @@ def _reload_ct(cache_home):
     reload(compiletools.cppdeps)
 
 
-class TestCPPDeps(unittest.TestCase):
-    def setUp(self):
-        uth.reset()
-
-    def test_cppdeps(self):
-        tempdir = tempfile.mkdtemp()
+def test_cppdeps():
+    uth.reset()
+    
+    tempdir = tempfile.mkdtemp()
+    try:
         _reload_ct(tempdir)
         uth.reset()
         
@@ -48,11 +46,8 @@ class TestCPPDeps(unittest.TestCase):
             os.path.join(uth.samplesdir(), "numbers/get_numbers.hpp"),
         ]
         assert sorted(expected_output) == sorted(output)
+    finally:
         shutil.rmtree(tempdir)
-
-    def tearDown(self):
         uth.reset()
 
 
-if __name__ == "__main__":
-    unittest.main(module=__name__, buffer=True)

@@ -1,4 +1,3 @@
-import unittest
 import os
 import shutil
 import tempfile
@@ -175,5 +174,3 @@ class TestMagicPKGCONFIG(tb.BaseCompileToolsTestCase):
 
 
 
-if __name__ == "__main__":
-    unittest.main()

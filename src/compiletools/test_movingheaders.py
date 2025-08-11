@@ -1,4 +1,3 @@
-import unittest
 import os
 import shutil
 import tempfile
@@ -8,8 +7,8 @@ import compiletools.cake
 import compiletools.utils
 
 # Although this is virtually identical to the test_cake.py, we can't merge the tests due to memoized results.
-class TestMovingHeaders(unittest.TestCase):
-    def setUp(self):
+class TestMovingHeaders:
+    def setup_method(self):
         try:
             if self._tmpdir is not None:
                 shutil.rmtree(self._tmpdir, ignore_errors=True)
@@ -86,11 +85,9 @@ class TestMovingHeaders(unittest.TestCase):
         os.chdir(origdir)
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
-    def tearDown(self):
+    def teardown_method(self):
         uth.reset()
         if self._tmpdir and os.path.exists(self._tmpdir):
             shutil.rmtree(self._tmpdir, ignore_errors=True)
 
 
-if __name__ == "__main__":
-    unittest.main()

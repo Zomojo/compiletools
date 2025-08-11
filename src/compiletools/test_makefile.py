@@ -3,7 +3,6 @@ import shutil
 import subprocess
 import tempfile
 import filecmp
-import unittest
 import configargparse
 
 import compiletools.utils
@@ -15,8 +14,8 @@ import compiletools.unittesthelper as uth
 _moduletmpdir = None
 
 
-class TestMakefile(unittest.TestCase):
-    def setUp(self):
+class TestMakefile:
+    def setup_method(self):
         uth.reset()
         global _moduletmpdir
         if not _moduletmpdir or not os.path.exists(_moduletmpdir):
@@ -92,7 +91,7 @@ class TestMakefile(unittest.TestCase):
     def test_dynamic_library(self):
         _test_library("--dynamic")
 
-    def tearDown(self):
+    def teardown_method(self):
         shutil.rmtree(_moduletmpdir, ignore_errors=True)
         uth.reset()
 
@@ -133,5 +132,3 @@ def _test_library(static_dynamic):
     shutil.rmtree(tempdir, ignore_errors=True)
 
 
-if __name__ == "__main__":
-    unittest.main()

@@ -2,7 +2,6 @@ import sys
 import os
 import shutil
 import tempfile
-import unittest
 import configargparse
 
 import compiletools.unittesthelper as uth
@@ -10,8 +9,8 @@ import compiletools.configutils
 import compiletools.apptools
 
 
-class TestVariant(unittest.TestCase):
-    def setUp(self):
+class TestVariant:
+    def setup_method(self):
         uth.reset()
         self._tmpdir = None
 
@@ -135,9 +134,7 @@ class TestVariant(unittest.TestCase):
         os.chdir(origdir)
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
-    def tearDown(self):
+    def teardown_method(self):
         uth.reset()
 
 
-if __name__ == "__main__":
-    unittest.main()

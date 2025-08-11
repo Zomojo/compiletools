@@ -1,4 +1,3 @@
-import unittest
 
 import configargparse
 
@@ -31,11 +30,10 @@ def add_to_parser_in_func(recursion_depth=0):
         parsed_args = cap.parse_known_args(args=["-v"])
 
 
-class TestConfigArgParse(unittest.TestCase):
-    def setUp(self):
-        uth.reset()
-
-    def test_multiple_parse_known_args(self):
+def test_multiple_parse_known_args():
+    uth.reset()
+    
+    try:
         non_existent_config_files = ["/blah/foo.conf", "/usr/bin/ba.conf"]
         cap = configargparse.getArgumentParser(
             prog="UnitTest",
@@ -61,10 +59,7 @@ class TestConfigArgParse(unittest.TestCase):
             help="Manually specify the config file path if you want to override the variant default",
         )
         parsed_args = cap.parse_known_args(args=["--variant", "release"])
-
-    def tearDown(self):
+    finally:
         uth.reset()
 
 
-if __name__ == "__main__":
-    unittest.main()

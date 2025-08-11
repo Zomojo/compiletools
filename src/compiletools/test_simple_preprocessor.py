@@ -1,4 +1,3 @@
-import unittest
 import sys
 import os
 
@@ -8,10 +7,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from compiletools.headerdeps import SimplePreprocessor
 
 
-class TestSimplePreprocessor(unittest.TestCase):
+class TestSimplePreprocessor:
     """Unit tests for the SimplePreprocessor class"""
 
-    def setUp(self):
+    def setup_method(self):
         """Set up test fixtures before each test method."""
         self.macros = {
             'TEST_MACRO': '1',
@@ -238,5 +237,3 @@ class TestSimplePreprocessor(unittest.TestCase):
         assert '#include "numa_threading.hpp"' in result
 
 
-if __name__ == '__main__':
-    unittest.main()

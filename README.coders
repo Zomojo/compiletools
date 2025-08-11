@@ -20,7 +20,7 @@ ruff check src/compiletools/
 #
 # Running tests
 #
-Tests use pytest. First install development dependencies:
+Tests use pytest. The codebase has been migrated from unittest to pytest style. First install development dependencies:
 
 uv pip install -e ".[dev]"
 
@@ -39,14 +39,24 @@ pytest src/compiletools/test_utils.py
 pytest src/compiletools -v
 
 #
-# Running coverage tests
+# Test Style Guidelines
 #
-pytest --cov=compiletools src/compiletools
+For new tests, prefer function-based pytest style over class-based:
 
-#
-# Legacy unittest commands (if pytest not available)
-#
-PYTHONPATH=src python -m unittest discover src/compiletools
+# Preferred (function-based)
+def test_something():
+    assert my_function() == expected_result
+
+# Acceptable (class-based for complex tests with shared setup)
+class TestComplexFeature:
+    def setup_method(self):
+        # setup code
+        
+    def test_feature_behavior(self):
+        assert feature.behavior() == expected
+
+Simple tests with single test methods should use function-based style.
+Use class-based style only when tests share complex setup/teardown logic.
 
 #
 # Caches/Performance

@@ -1,4 +1,3 @@
-import unittest
 import os
 import shutil
 import tempfile
@@ -6,13 +5,13 @@ import compiletools.unittesthelper as uth
 import compiletools.listvariants
 
 
-class TestListVariants(unittest.TestCase):
-    def setUp(self):
-        uth.reset()
-
-    def test_none_found(self):
-        origdir = os.getcwd()
-        tempdir = tempfile.mkdtemp()
+def test_none_found():
+    uth.reset()
+    
+    origdir = os.getcwd()
+    tempdir = tempfile.mkdtemp()
+    
+    try:
         os.chdir(tempdir)
         
         # Create temp config with variant aliases
@@ -44,13 +43,10 @@ From highest to lowest priority configuration directories, the possible variants
             user_config_dir=ucd, system_config_dir=scd, exedir=ecd, verbose=9, gitroot=tempdir
         )
         assert expected_output == output
-
+        
+    finally:
         os.chdir(origdir)
         shutil.rmtree(tempdir, ignore_errors=True)
-
-    def tearDown(self):
         uth.reset()
 
 
-if __name__ == "__main__":
-    unittest.main()

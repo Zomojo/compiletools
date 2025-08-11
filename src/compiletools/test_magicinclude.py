@@ -1,4 +1,3 @@
-import unittest
 import os
 import shutil
 import tempfile
@@ -86,5 +85,3 @@ class TestMagicInclude(tb.BaseCompileToolsTestCase):
 
 
 
-if __name__ == "__main__":
-    unittest.main()

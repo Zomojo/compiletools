@@ -4,7 +4,6 @@ import shutil
 import sys
 import tempfile
 import configargparse
-import unittest
 import compiletools.unittesthelper
 
 try:
@@ -39,8 +38,8 @@ def _reload_ct(cache_home):
     reload(compiletools.hunter)
 
 
-class TestHunterModule(unittest.TestCase):
-    def setUp(self):
+class TestHunterModule:
+    def setup_method(self):
         uth.reset()
         cap = configargparse.getArgumentParser(
             description="Configargparser in test code",
@@ -123,9 +122,7 @@ class TestHunterModule(unittest.TestCase):
         shutil.rmtree(tempdir)
         _reload_ct(origcache)
 
-    def tearDown(self):
+    def teardown_method(self):
         uth.reset()
 
 
-if __name__ == "__main__":
-    unittest.main()

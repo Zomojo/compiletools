@@ -1,4 +1,3 @@
-import unittest
 import os
 import os.path
 import time
@@ -18,8 +17,8 @@ def _touch(fname):
         os.utime(fname, None)
 
 
-class TestCake(unittest.TestCase):
-    def setUp(self):
+class TestCake:
+    def setup_method(self):
         self._tmpdir = None
         self._config_name = None
 
@@ -288,9 +287,7 @@ class TestCake(unittest.TestCase):
         )
         pass
 
-    def tearDown(self):
+    def teardown_method(self):
         uth.reset()
 
 
-if __name__ == "__main__":
-    unittest.main()

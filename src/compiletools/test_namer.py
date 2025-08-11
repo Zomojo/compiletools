@@ -1,6 +1,5 @@
 import sys
 import os
-import unittest
 import configargparse
 import compiletools.unittesthelper as uth
 import compiletools.namer
@@ -8,11 +7,10 @@ import compiletools.configutils
 import compiletools.apptools
 
 
-class TestNamer(unittest.TestCase):
-    def setUp(self):
-        uth.reset()
-
-    def test_executable_pathname(self):
+def test_executable_pathname():
+    uth.reset()
+    
+    try:
         config_dir = os.path.join(uth.cakedir(), "ct.conf.d")
         config_files = [os.path.join(config_dir, "gcc.debug.conf")]
         cap = configargparse.getArgumentParser(
@@ -29,10 +27,7 @@ class TestNamer(unittest.TestCase):
         namer = compiletools.namer.Namer(args, argv=argv, variant="gcc.debug")
         exename = namer.executable_pathname("/home/user/code/my.cpp")
         assert exename == "bin/gcc.debug/my"
-
-    def tearDown(self):
+    finally:
         uth.reset()
 
 
-if __name__ == "__main__":
-    unittest.main()

@@ -1,4 +1,3 @@
-import unittest
 import os
 import shutil
 import tempfile
@@ -7,8 +6,8 @@ import compiletools.unittesthelper as uth
 import compiletools.cake
 
 
-class TestLibrary(unittest.TestCase):
-    def setUp(self):
+class TestLibrary:
+    def setup_method(self):
         pass
 
     def test_build_and_link_static_library(self):
@@ -67,9 +66,7 @@ class TestLibrary(unittest.TestCase):
         os.chdir(origdir)
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
-    def tearDown(self):
+    def teardown_method(self):
         uth.reset()
 
 
-if __name__ == "__main__":
-    unittest.main()

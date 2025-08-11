@@ -1,5 +1,4 @@
 import os
-import unittest
 import shutil
 import tempfile
 import configargparse
@@ -14,15 +13,15 @@ import compiletools.configutils
 import compiletools.wrappedos
 
 
-class BaseCompileToolsTestCase(unittest.TestCase):
+class BaseCompileToolsTestCase:
     """Base test case with common setup/teardown for compiletools tests"""
     
-    def setUp(self):
+    def setup_method(self):
         uth.reset()
         self._tmpdir = tempfile.mkdtemp()
         self._origdir = os.getcwd()
         
-    def tearDown(self):
+    def teardown_method(self):
         os.chdir(self._origdir)
         if hasattr(self, '_tmpdir') and self._tmpdir:
             shutil.rmtree(self._tmpdir, ignore_errors=True)
@@ -119,8 +118,8 @@ def compare_direct_cpp_magic(test_case, relativepath, tempdir=None):
         result_cpp = magicparser_cpp.parse(realpath)
         
         # Results should be identical
-        test_case.assertEqual(result_direct, result_cpp, 
-                           f"DirectMagicFlags and CppMagicFlags gave different results for {relativepath}")
+        assert result_direct == result_cpp, \
+                           f"DirectMagicFlags and CppMagicFlags gave different results for {relativepath}"
     finally:
         os.chdir(origdir)
         if cleanup_tempdir:
@@ -150,6 +149,6 @@ def compare_direct_cpp_headers(test_case, filename, extraargs=None):
     hcpp = compiletools.headerdeps.create(argscpp)
     hdirectresult = hdirect.process(realpath)
     hcppresult = hcpp.process(realpath)
-    test_case.assertSetEqual(set(hdirectresult), set(hcppresult))
+    assert set(hdirectresult) == set(hcppresult)
     os.unlink(temp_config_name)
     uthr.reload_ct(origcache)

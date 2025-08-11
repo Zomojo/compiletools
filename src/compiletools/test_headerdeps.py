@@ -2,7 +2,6 @@ import os
 import shutil
 import sys
 import tempfile
-import unittest
 import filecmp
 import configargparse
 import compiletools.unittesthelper
@@ -62,8 +61,8 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
 
 
 class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
-    def setUp(self):
-        super().setUp()
+    def setup_method(self):
+        super().setup_method()
         cap = configargparse.getArgumentParser(
             description="Configargparser in test code",
             formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
@@ -466,49 +465,49 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         for scenario in elif_scenarios:
-            with self.subTest(scenario=scenario["name"]):
-                temp_config_name = compiletools.unittesthelper.create_temp_config()
-                
-                # Test DirectHeaderDeps (our custom preprocessor)
-                argv_direct = [
-                    "--config=" + temp_config_name,
-                    "--headerdeps=direct",
-                    "--include", uth.samplesdir(),
-                    f"--CPPFLAGS={scenario['cppflags']}"
-                ]
-                
-                # Test CppHeaderDeps (actual C preprocessor)
-                argv_cpp = [
-                    "--config=" + temp_config_name,
-                    "--headerdeps=cpp",
-                    "--include", uth.samplesdir(), 
-                    f"--CPPFLAGS={scenario['cppflags']}"
-                ]
-                
-                origcache = compiletools.dirnamer.user_cache_dir()
-                _reload_ct("None")
-                cap = configargparse.getArgumentParser()
-                compiletools.headerdeps.add_arguments(cap)
-                
-                # Get results from both approaches
-                args_direct = compiletools.apptools.parseargs(cap, argv_direct)
-                hdirect = compiletools.headerdeps.create(args_direct)
-                direct_result = hdirect.process(filename)
-                direct_set = set(direct_result)
-                
-                args_cpp = compiletools.apptools.parseargs(cap, argv_cpp)
-                hcpp = compiletools.headerdeps.create(args_cpp)
-                cpp_result = hcpp.process(filename)
-                cpp_set = set(cpp_result)
-                
-                # Compare the results - they should be identical
-                assert direct_set == cpp_set, \
-                    f"DirectHeaderDeps and CppHeaderDeps should produce identical #elif results for scenario: {scenario['name']}\n" \
-                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
-                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
-                
-                os.unlink(temp_config_name)
-                _reload_ct(origcache)
+            # pytest handles this automatically
+            temp_config_name = compiletools.unittesthelper.create_temp_config()
+            
+            # Test DirectHeaderDeps (our custom preprocessor)
+            argv_direct = [
+                "--config=" + temp_config_name,
+                "--headerdeps=direct",
+                "--include", uth.samplesdir(),
+                f"--CPPFLAGS={scenario['cppflags']}"
+            ]
+            
+            # Test CppHeaderDeps (actual C preprocessor)
+            argv_cpp = [
+                "--config=" + temp_config_name,
+                "--headerdeps=cpp",
+                "--include", uth.samplesdir(), 
+                f"--CPPFLAGS={scenario['cppflags']}"
+            ]
+            
+            origcache = compiletools.dirnamer.user_cache_dir()
+            _reload_ct("None")
+            cap = configargparse.getArgumentParser()
+            compiletools.headerdeps.add_arguments(cap)
+            
+            # Get results from both approaches
+            args_direct = compiletools.apptools.parseargs(cap, argv_direct)
+            hdirect = compiletools.headerdeps.create(args_direct)
+            direct_result = hdirect.process(filename)
+            direct_set = set(direct_result)
+            
+            args_cpp = compiletools.apptools.parseargs(cap, argv_cpp)
+            hcpp = compiletools.headerdeps.create(args_cpp)
+            cpp_result = hcpp.process(filename)
+            cpp_set = set(cpp_result)
+            
+            # Compare the results - they should be identical
+            assert direct_set == cpp_set, \
+                f"DirectHeaderDeps and CppHeaderDeps should produce identical #elif results for scenario: {scenario['name']}\n" \
+                f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
+                f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
+            
+            os.unlink(temp_config_name)
+            _reload_ct(origcache)
 
     def test_advanced_preprocessor_features(self):
         """Test advanced preprocessor directive support
@@ -596,49 +595,49 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         for scenario in test_scenarios:
-            with self.subTest(scenario=scenario["name"]):
-                temp_config_name = compiletools.unittesthelper.create_temp_config()
-                
-                # Test DirectHeaderDeps (our custom preprocessor)
-                argv_direct = [
-                    "--config=" + temp_config_name,
-                    "--headerdeps=direct",
-                    "--include", uth.samplesdir(),
-                    f"--CPPFLAGS={scenario['cppflags']}"
-                ]
-                
-                # Test CppHeaderDeps (actual C preprocessor)
-                argv_cpp = [
-                    "--config=" + temp_config_name,
-                    "--headerdeps=cpp", 
-                    "--include", uth.samplesdir(),
-                    f"--CPPFLAGS={scenario['cppflags']}"
-                ]
-                
-                origcache = compiletools.dirnamer.user_cache_dir()
-                _reload_ct("None")
-                cap = configargparse.getArgumentParser()
-                compiletools.headerdeps.add_arguments(cap)
-                
-                # Get results from both approaches
-                args_direct = compiletools.apptools.parseargs(cap, argv_direct)
-                hdirect = compiletools.headerdeps.create(args_direct)
-                direct_result = hdirect.process(filename)
-                direct_set = set(direct_result)
-                
-                args_cpp = compiletools.apptools.parseargs(cap, argv_cpp)
-                hcpp = compiletools.headerdeps.create(args_cpp)
-                cpp_result = hcpp.process(filename)  
-                cpp_set = set(cpp_result)
-                
-                # Compare the results - they should be identical
-                assert direct_set == cpp_set, \
-                    f"DirectHeaderDeps and CppHeaderDeps should produce identical results for scenario: {scenario['name']}\n" \
-                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
-                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
-                
-                os.unlink(temp_config_name)
-                _reload_ct(origcache)
+            # pytest handles this automatically
+            temp_config_name = compiletools.unittesthelper.create_temp_config()
+            
+            # Test DirectHeaderDeps (our custom preprocessor)
+            argv_direct = [
+                "--config=" + temp_config_name,
+                "--headerdeps=direct",
+                "--include", uth.samplesdir(),
+                f"--CPPFLAGS={scenario['cppflags']}"
+            ]
+            
+            # Test CppHeaderDeps (actual C preprocessor)
+            argv_cpp = [
+                "--config=" + temp_config_name,
+                "--headerdeps=cpp", 
+                "--include", uth.samplesdir(),
+                f"--CPPFLAGS={scenario['cppflags']}"
+            ]
+            
+            origcache = compiletools.dirnamer.user_cache_dir()
+            _reload_ct("None")
+            cap = configargparse.getArgumentParser()
+            compiletools.headerdeps.add_arguments(cap)
+            
+            # Get results from both approaches
+            args_direct = compiletools.apptools.parseargs(cap, argv_direct)
+            hdirect = compiletools.headerdeps.create(args_direct)
+            direct_result = hdirect.process(filename)
+            direct_set = set(direct_result)
+            
+            args_cpp = compiletools.apptools.parseargs(cap, argv_cpp)
+            hcpp = compiletools.headerdeps.create(args_cpp)
+            cpp_result = hcpp.process(filename)  
+            cpp_set = set(cpp_result)
+            
+            # Compare the results - they should be identical
+            assert direct_set == cpp_set, \
+                f"DirectHeaderDeps and CppHeaderDeps should produce identical results for scenario: {scenario['name']}\n" \
+                f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
+                f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
+            
+            os.unlink(temp_config_name)
+            _reload_ct(origcache)
 
     def test_multiply_nested_macros_with_complex_logic(self):
         """Test that DirectHeaderDeps correctly handles multiply nested macros with complex logic
@@ -666,89 +665,87 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         for scenario in test_scenarios:
-            with self.subTest(scenario=scenario["name"]):
-                temp_config_name = compiletools.unittesthelper.create_temp_config()
-                
-                # Test DirectHeaderDeps (our custom preprocessor)
-                argv_direct = [
-                    "--config=" + temp_config_name,
-                    "--headerdeps=direct",
-                    "--include", uth.samplesdir(),
-                    f"--CPPFLAGS={scenario['cppflags']}"
+            # pytest handles this automatically
+            temp_config_name = compiletools.unittesthelper.create_temp_config()
+            
+            # Test DirectHeaderDeps (our custom preprocessor)
+            argv_direct = [
+                "--config=" + temp_config_name,
+                "--headerdeps=direct",
+                "--include", uth.samplesdir(),
+                f"--CPPFLAGS={scenario['cppflags']}"
+            ]
+            
+            # Test CppHeaderDeps (actual C preprocessor)
+            argv_cpp = [
+                "--config=" + temp_config_name,
+                "--headerdeps=cpp",
+                "--include", uth.samplesdir(),
+                f"--CPPFLAGS={scenario['cppflags']}"
+            ]
+            
+            origcache = compiletools.dirnamer.user_cache_dir()
+            _reload_ct("None")
+            cap = configargparse.getArgumentParser()
+            compiletools.headerdeps.add_arguments(cap)
+            
+            # Get results from both approaches
+            args_direct = compiletools.apptools.parseargs(cap, argv_direct)
+            hdirect = compiletools.headerdeps.create(args_direct)
+            direct_result = hdirect.process(filename)
+            direct_set = set(direct_result)
+            
+            args_cpp = compiletools.apptools.parseargs(cap, argv_cpp)
+            hcpp = compiletools.headerdeps.create(args_cpp)
+            cpp_result = hcpp.process(filename)
+            cpp_set = set(cpp_result)
+            
+            # Compare the results - they should be identical
+            assert direct_set == cpp_set, \
+                f"DirectHeaderDeps and CppHeaderDeps should produce identical results for nested macros in scenario: {scenario['name']}\n" \
+                f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
+                f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
+            
+            # Verify specific inclusions based on the scenario
+            if scenario["name"] == "level2_linux_threading_numa":
+                expected_files = [
+                    "basic_feature.hpp",
+                    "advanced_feature.hpp", 
+                    "linux_advanced.hpp",
+                    "linux_epoll_threading.hpp",
+                    "numa_threading.hpp"
                 ]
-                
-                # Test CppHeaderDeps (actual C preprocessor)
-                argv_cpp = [
-                    "--config=" + temp_config_name,
-                    "--headerdeps=cpp",
-                    "--include", uth.samplesdir(),
-                    f"--CPPFLAGS={scenario['cppflags']}"
+                for expected_file in expected_files:
+                    expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
+                    assert expected_path in direct_set, \
+                        f"{expected_file} should be included in level2_linux_threading_numa scenario"
+            
+            elif scenario["name"] == "level3_expert_mode_with_profiling":
+                expected_files = [
+                    "basic_feature.hpp",
+                    "advanced_feature.hpp",
+                    "expert_feature.hpp"
                 ]
+                for expected_file in expected_files:
+                    expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
+                    assert expected_path in direct_set, \
+                        f"{expected_file} should be included in level3_expert_mode_with_profiling scenario"
+            
+            elif scenario["name"] == "level1_basic_only":
+                expected_files = ["basic_feature.hpp"]
+                unexpected_files = ["advanced_feature.hpp", "expert_feature.hpp"]
                 
-                origcache = compiletools.dirnamer.user_cache_dir()
-                _reload_ct("None")
-                cap = configargparse.getArgumentParser()
-                compiletools.headerdeps.add_arguments(cap)
+                for expected_file in expected_files:
+                    expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
+                    assert expected_path in direct_set, \
+                        f"{expected_file} should be included in level1_basic_only scenario"
                 
-                # Get results from both approaches
-                args_direct = compiletools.apptools.parseargs(cap, argv_direct)
-                hdirect = compiletools.headerdeps.create(args_direct)
-                direct_result = hdirect.process(filename)
-                direct_set = set(direct_result)
-                
-                args_cpp = compiletools.apptools.parseargs(cap, argv_cpp)
-                hcpp = compiletools.headerdeps.create(args_cpp)
-                cpp_result = hcpp.process(filename)
-                cpp_set = set(cpp_result)
-                
-                # Compare the results - they should be identical
-                assert direct_set == cpp_set, \
-                    f"DirectHeaderDeps and CppHeaderDeps should produce identical results for nested macros in scenario: {scenario['name']}\n" \
-                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
-                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
-                
-                # Verify specific inclusions based on the scenario
-                if scenario["name"] == "level2_linux_threading_numa":
-                    expected_files = [
-                        "basic_feature.hpp",
-                        "advanced_feature.hpp", 
-                        "linux_advanced.hpp",
-                        "linux_epoll_threading.hpp",
-                        "numa_threading.hpp"
-                    ]
-                    for expected_file in expected_files:
-                        expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
-                        assert expected_path in direct_set, \
-                            f"{expected_file} should be included in level2_linux_threading_numa scenario"
-                
-                elif scenario["name"] == "level3_expert_mode_with_profiling":
-                    expected_files = [
-                        "basic_feature.hpp",
-                        "advanced_feature.hpp",
-                        "expert_feature.hpp"
-                    ]
-                    for expected_file in expected_files:
-                        expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
-                        assert expected_path in direct_set, \
-                            f"{expected_file} should be included in level3_expert_mode_with_profiling scenario"
-                
-                elif scenario["name"] == "level1_basic_only":
-                    expected_files = ["basic_feature.hpp"]
-                    unexpected_files = ["advanced_feature.hpp", "expert_feature.hpp"]
-                    
-                    for expected_file in expected_files:
-                        expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
-                        assert expected_path in direct_set, \
-                            f"{expected_file} should be included in level1_basic_only scenario"
-                    
-                    for unexpected_file in unexpected_files:
-                        unexpected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{unexpected_file}")
-                        assert unexpected_path not in direct_set, \
-                            f"{unexpected_file} should NOT be included in level1_basic_only scenario"
-                
-                os.unlink(temp_config_name)
-                _reload_ct(origcache)
+                for unexpected_file in unexpected_files:
+                    unexpected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{unexpected_file}")
+                    assert unexpected_path not in direct_set, \
+                        f"{unexpected_file} should NOT be included in level1_basic_only scenario"
+            
+            os.unlink(temp_config_name)
+            _reload_ct(origcache)
 
 
-if __name__ == "__main__":
-    unittest.main()

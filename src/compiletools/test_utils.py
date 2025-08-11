@@ -1,13 +1,12 @@
 import sys
 import os
-import unittest
 import configargparse
 
 import compiletools.unittesthelper as uth
 import compiletools.utils as utils
 
 
-class TestIsFuncs(unittest.TestCase):
+class TestIsFuncs:
     def test_isheader(self):
         assert utils.isheader("myfile.h")
         assert utils.isheader("/home/user/myfile.h")
@@ -47,7 +46,7 @@ class TestIsFuncs(unittest.TestCase):
         assert not utils.issource("/home/user/myfile.with.dots.hpp")
 
 
-class TestImpliedSource(unittest.TestCase):
+class TestImpliedSource:
     def test_implied_source_nonexistent_file(self):
         assert utils.implied_source("nonexistent_file.hpp") is None
 
@@ -59,7 +58,7 @@ class TestImpliedSource(unittest.TestCase):
         assert expected == result
 
 
-class TestOrderedUnique(unittest.TestCase):
+class TestOrderedUnique:
     def test_ordered_unique_basic(self):
         result = utils.ordered_unique([5, 4, 3, 2, 1])
         assert len(result) == 5
@@ -94,5 +93,3 @@ class TestOrderedUnique(unittest.TestCase):
         assert result == expected
 
 
-if __name__ == "__main__":
-    unittest.main()

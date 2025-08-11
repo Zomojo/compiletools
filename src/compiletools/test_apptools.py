@@ -1,4 +1,3 @@
-import unittest
 import compiletools.apptools
 import compiletools.unittesthelper as uth
 import compiletools.uth_reload as uthr
@@ -18,7 +17,7 @@ class FakeNamespace(object):
         return str(self.__class__) + ": " + str(self.__dict__)
 
 
-class TestFuncs(unittest.TestCase):
+class TestFuncs:
     def test_strip_quotes(self):
         fns = FakeNamespace()
         compiletools.apptools._strip_quotes(fns)
@@ -44,8 +43,8 @@ class TestFuncs(unittest.TestCase):
         assert args.append_CXXFLAGS == ["-DNEWPROTOCOL -DV172"]
 
 
-class TestConfig(unittest.TestCase):
-    def setUp(self):
+class TestConfig:
+    def setup_method(self):
         uth.reset()
 
     def _test_variable_handling_method(self, variable_handling_method):
@@ -127,5 +126,3 @@ class TestConfig(unittest.TestCase):
             assert "-fdiagnostics-color=always" in args.CXXFLAGS
 
 
-if __name__ == "__main__":
-    unittest.main()

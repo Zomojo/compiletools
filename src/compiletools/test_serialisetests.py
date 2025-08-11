@@ -1,4 +1,3 @@
-import unittest
 import os
 import shutil
 import tempfile
@@ -11,8 +10,8 @@ import compiletools.cake
 # the tests due to memoized results.
 
 
-class TestSerialiseTests(unittest.TestCase):
-    def setUp(self):
+class TestSerialiseTests:
+    def setup_method(self):
         try:
             if self._tmpdir is not None:
                 shutil.rmtree(self._tmpdir, ignore_errors=True)
@@ -48,9 +47,7 @@ class TestSerialiseTests(unittest.TestCase):
         os.chdir(origdir)
         shutil.rmtree(self._tmpdir, ignore_errors=True)
 
-    def tearDown(self):
+    def teardown_method(self):
         uth.reset()
 
 
-if __name__ == "__main__":
-    unittest.main()
