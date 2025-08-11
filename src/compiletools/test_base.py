@@ -41,7 +41,7 @@ class BaseCompileToolsTestCase(unittest.TestCase):
             for filename in relativepaths
             if compiletools.utils.issource(filename)
         }
-        self.assertSetEqual(expected_exes, actual_exes)
+        assert expected_exes == actual_exes
 
 
 def create_magic_parser(extraargs=None, cache_home="None", tempdir=None):

@@ -43,7 +43,7 @@ From highest to lowest priority configuration directories, the possible variants
         output = compiletools.listvariants.find_possible_variants(
             user_config_dir=ucd, system_config_dir=scd, exedir=ecd, verbose=9, gitroot=tempdir
         )
-        self.assertEqual(expected_output, output)
+        assert expected_output == output
 
         os.chdir(origdir)
         shutil.rmtree(tempdir, ignore_errors=True)

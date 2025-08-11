@@ -67,7 +67,7 @@ class TestHunterModule(unittest.TestCase):
         realpath = os.path.join(uth.samplesdir(), relativepath)
         filesfromheader = hntr.required_source_files(realpath)
         filesfromsource = hntr.required_source_files(compiletools.utils.implied_source(realpath))
-        self.assertSetEqual(set(filesfromheader), set(filesfromsource))
+        assert set(filesfromheader) == set(filesfromsource)
 
         # Cleanup
         os.unlink(temp_config)
@@ -115,9 +115,9 @@ class TestHunterModule(unittest.TestCase):
         result3 = self._hunter_is_not_order_dependent(False)
         result4 = self._hunter_is_not_order_dependent(True)
 
-        self.assertSetEqual(set(result1), set(result2))
-        self.assertSetEqual(set(result3), set(result2))
-        self.assertSetEqual(set(result4), set(result2))
+        assert set(result1) == set(result2)
+        assert set(result3) == set(result2)
+        assert set(result4) == set(result2)
 
         # Cleanup
         shutil.rmtree(tempdir)

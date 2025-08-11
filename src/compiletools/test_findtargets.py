@@ -77,8 +77,8 @@ class TestFindTargetsModule(unittest.TestCase):
         args = compiletools.apptools.parseargs(cap, argv=argv)
         findtargets = compiletools.findtargets.FindTargets(args, exedir=uth.cakedir())
         executabletargets, testtargets = findtargets(path=uth.cakedir())
-        self.assertSetEqual(expectedexes, set(executabletargets))
-        self.assertSetEqual(expectedtests, set(testtargets))
+        assert expectedexes == set(executabletargets)
+        assert expectedtests == set(testtargets)
 
     def test_samples(self):
         self._find_samples_targets(disable_tests=False)

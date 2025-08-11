@@ -61,7 +61,7 @@ class TestLibrary(unittest.TestCase):
             os.path.splitext(os.path.split(filename)[1])[0]
             for filename in relativepaths
         }
-        self.assertSetEqual(expected_exes, actual_exes)
+        assert expected_exes == actual_exes
 
         # Cleanup
         os.chdir(origdir)

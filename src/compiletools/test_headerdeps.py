@@ -111,11 +111,11 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
 
         # Check the returned python sets are the same regardless of methodology
         # used to create
-        self.assertSetEqual(set(directresults), set(cppresults))
+        assert set(directresults) == set(cppresults)
 
         # Check the on-disk caches are the same
         comparator = filecmp.dircmp(directcache, cppcache)
-        self.assertEqual(len(comparator.diff_files), 0)
+        assert len(comparator.diff_files) == 0
 
         # Cleanup
         os.unlink(config1)
@@ -167,11 +167,11 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         
         # Should include the enabled features
         for expected in expected_includes:
-            self.assertIn(expected, result_set, f"Should include {expected}")
+            assert expected in result_set, f"Should include {expected}"
             
         # Should NOT include the disabled features  
         for unexpected in unexpected_includes:
-            self.assertNotIn(unexpected, result_set, f"Should NOT include {unexpected}")
+            assert unexpected not in result_set, f"Should NOT include {unexpected}"
         
         os.unlink(temp_config_name)
         _reload_ct(origcache)
@@ -210,8 +210,8 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         advanced_feature_path = os.path.join(uth.samplesdir(), "cppflags_macros/advanced_feature.hpp")
         
         # This ensures DirectHeaderDeps correctly recognizes macros from CPPFLAGS
-        self.assertIn(advanced_feature_path, result_set, 
-                     "advanced_feature.hpp should be included when ENABLE_ADVANCED_FEATURES is defined in CPPFLAGS")
+        assert advanced_feature_path in result_set, \
+                     "advanced_feature.hpp should be included when ENABLE_ADVANCED_FEATURES is defined in CPPFLAGS"
         
         os.unlink(temp_config_name)
         _reload_ct(origcache)
@@ -252,8 +252,8 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         for expected_header in expected_headers:
-            self.assertIn(expected_header, result_set, 
-                         f"{os.path.basename(expected_header)} should be included when its macro is defined")
+            assert expected_header in result_set, \
+                         f"{os.path.basename(expected_header)} should be included when its macro is defined"
         
         os.unlink(temp_config_name)
         _reload_ct(origcache)
@@ -309,8 +309,8 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
             expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/riscv_feature.hpp"))
         
         for expected_header in expected_headers:
-            self.assertIn(expected_header, result_set, 
-                         f"{os.path.basename(expected_header)} should be included due to built-in macros for {arch}")
+            assert expected_header in result_set, \
+                         f"{os.path.basename(expected_header)} should be included due to built-in macros for {arch}"
         
         os.unlink(temp_config_name)
         _reload_ct(origcache)
@@ -343,8 +343,8 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         
         # RISC-V feature header should be included due to __riscv macro
         riscv_feature_path = os.path.join(uth.samplesdir(), "cppflags_macros/riscv_feature.hpp")
-        self.assertIn(riscv_feature_path, result_set, 
-                     "riscv_feature.hpp should be included when __riscv macro is defined")
+        assert riscv_feature_path in result_set, \
+                     "riscv_feature.hpp should be included when __riscv macro is defined"
         
         os.unlink(temp_config_name)
         _reload_ct(origcache)
@@ -385,8 +385,8 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         for expected_header in expected_headers:
-            self.assertIn(expected_header, result_set, 
-                         f"{os.path.basename(expected_header)} should be included when its compiler macro is defined")
+            assert expected_header in result_set, \
+                         f"{os.path.basename(expected_header)} should be included when its compiler macro is defined"
         
         os.unlink(temp_config_name)
         _reload_ct(origcache)
@@ -421,17 +421,17 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         
         # Should include version2_feature.hpp when VERSION_2 is defined
         version2_path = os.path.join(uth.samplesdir(), "cppflags_macros/version2_feature.hpp")
-        self.assertIn(version2_path, result_set, 
-                     "version2_feature.hpp should be included when VERSION_2 is defined via #elif")
+        assert version2_path in result_set, \
+                     "version2_feature.hpp should be included when VERSION_2 is defined via #elif"
         
         # Should NOT include other version files
         version1_path = os.path.join(uth.samplesdir(), "cppflags_macros/version1_feature.hpp")
         version3_path = os.path.join(uth.samplesdir(), "cppflags_macros/version3_feature.hpp")
         default_path = os.path.join(uth.samplesdir(), "cppflags_macros/default_feature.hpp")
         
-        self.assertNotIn(version1_path, result_set, "Should NOT include version1_feature.hpp")
-        self.assertNotIn(version3_path, result_set, "Should NOT include version3_feature.hpp") 
-        self.assertNotIn(default_path, result_set, "Should NOT include default_feature.hpp")
+        assert version1_path not in result_set, "Should NOT include version1_feature.hpp"
+        assert version3_path not in result_set, "Should NOT include version3_feature.hpp" 
+        assert default_path not in result_set, "Should NOT include default_feature.hpp"
         
         os.unlink(temp_config_name)
         _reload_ct(origcache)
@@ -502,10 +502,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                 cpp_set = set(cpp_result)
                 
                 # Compare the results - they should be identical
-                self.assertSetEqual(direct_set, cpp_set,
-                    f"DirectHeaderDeps and CppHeaderDeps should produce identical #elif results for scenario: {scenario['name']}\n"
-                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n"
-                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}")
+                assert direct_set == cpp_set, \
+                    f"DirectHeaderDeps and CppHeaderDeps should produce identical #elif results for scenario: {scenario['name']}\n" \
+                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
+                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
                 
                 os.unlink(temp_config_name)
                 _reload_ct(origcache)
@@ -550,18 +550,18 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         # Verify all expected features are included
         for feature in expected_included_features:
             feature_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{feature}")
-            self.assertIn(feature_path, result_set, 
-                         f"{feature} should be included with advanced preprocessor support")
+            assert feature_path in result_set, \
+                         f"{feature} should be included with advanced preprocessor support"
         
         # Verify that temp_still_defined.hpp is NOT included (should be excluded after #undef)
         temp_still_defined_path = os.path.join(uth.samplesdir(), "cppflags_macros/temp_still_defined.hpp")
-        self.assertNotIn(temp_still_defined_path, result_set, 
-                        "temp_still_defined.hpp should NOT be included after #undef TEMP_MACRO")
+        assert temp_still_defined_path not in result_set, \
+                        "temp_still_defined.hpp should NOT be included after #undef TEMP_MACRO"
         
         # Verify combined_features.hpp is NOT included (requires both FEATURE_A AND FEATURE_B)
         combined_features_path = os.path.join(uth.samplesdir(), "cppflags_macros/combined_features.hpp")
-        self.assertNotIn(combined_features_path, result_set,
-                        "combined_features.hpp should NOT be included (FEATURE_B not defined)")
+        assert combined_features_path not in result_set, \
+                        "combined_features.hpp should NOT be included (FEATURE_B not defined)"
         
         os.unlink(temp_config_name)
         _reload_ct(origcache)
@@ -632,10 +632,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                 cpp_set = set(cpp_result)
                 
                 # Compare the results - they should be identical
-                self.assertSetEqual(direct_set, cpp_set,
-                    f"DirectHeaderDeps and CppHeaderDeps should produce identical results for scenario: {scenario['name']}\n"
-                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n"
-                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}")
+                assert direct_set == cpp_set, \
+                    f"DirectHeaderDeps and CppHeaderDeps should produce identical results for scenario: {scenario['name']}\n" \
+                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
+                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
                 
                 os.unlink(temp_config_name)
                 _reload_ct(origcache)
@@ -702,10 +702,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                 cpp_set = set(cpp_result)
                 
                 # Compare the results - they should be identical
-                self.assertSetEqual(direct_set, cpp_set,
-                    f"DirectHeaderDeps and CppHeaderDeps should produce identical results for nested macros in scenario: {scenario['name']}\n"
-                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n"
-                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}")
+                assert direct_set == cpp_set, \
+                    f"DirectHeaderDeps and CppHeaderDeps should produce identical results for nested macros in scenario: {scenario['name']}\n" \
+                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
+                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
                 
                 # Verify specific inclusions based on the scenario
                 if scenario["name"] == "level2_linux_threading_numa":
@@ -718,8 +718,8 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                     ]
                     for expected_file in expected_files:
                         expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
-                        self.assertIn(expected_path, direct_set,
-                            f"{expected_file} should be included in level2_linux_threading_numa scenario")
+                        assert expected_path in direct_set, \
+                            f"{expected_file} should be included in level2_linux_threading_numa scenario"
                 
                 elif scenario["name"] == "level3_expert_mode_with_profiling":
                     expected_files = [
@@ -729,8 +729,8 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                     ]
                     for expected_file in expected_files:
                         expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
-                        self.assertIn(expected_path, direct_set,
-                            f"{expected_file} should be included in level3_expert_mode_with_profiling scenario")
+                        assert expected_path in direct_set, \
+                            f"{expected_file} should be included in level3_expert_mode_with_profiling scenario"
                 
                 elif scenario["name"] == "level1_basic_only":
                     expected_files = ["basic_feature.hpp"]
@@ -738,13 +738,13 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                     
                     for expected_file in expected_files:
                         expected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{expected_file}")
-                        self.assertIn(expected_path, direct_set,
-                            f"{expected_file} should be included in level1_basic_only scenario")
+                        assert expected_path in direct_set, \
+                            f"{expected_file} should be included in level1_basic_only scenario"
                     
                     for unexpected_file in unexpected_files:
                         unexpected_path = os.path.join(uth.samplesdir(), f"cppflags_macros/{unexpected_file}")
-                        self.assertNotIn(unexpected_path, direct_set,
-                            f"{unexpected_file} should NOT be included in level1_basic_only scenario")
+                        assert unexpected_path not in direct_set, \
+                            f"{unexpected_file} should NOT be included in level1_basic_only scenario"
                 
                 os.unlink(temp_config_name)
                 _reload_ct(origcache)

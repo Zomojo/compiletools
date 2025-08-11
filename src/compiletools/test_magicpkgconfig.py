@@ -115,13 +115,13 @@ class TestMagicPKGCONFIG(tb.BaseCompileToolsTestCase):
         parsed_flags = magicparser.parse(sample_file)
         
         # Verify PKG-CONFIG flag was found
-        self.assertIn("PKG-CONFIG", parsed_flags)
+        assert "PKG-CONFIG" in parsed_flags
         pkgconfig_flags = list(parsed_flags["PKG-CONFIG"])
-        self.assertEqual(len(pkgconfig_flags), 1)
-        self.assertEqual(pkgconfig_flags[0], "zlib libcrypt")
+        assert len(pkgconfig_flags) == 1
+        assert pkgconfig_flags[0] == "zlib libcrypt"
         
         # Verify CXXFLAGS were extracted (should contain zlib and libcrypt cflags)
-        self.assertIn("CXXFLAGS", parsed_flags)
+        assert "CXXFLAGS" in parsed_flags
         cxxflags = " ".join(parsed_flags["CXXFLAGS"])
         
         # Check that pkg-config results are present (basic validation)
@@ -138,16 +138,16 @@ class TestMagicPKGCONFIG(tb.BaseCompileToolsTestCase):
             
             # Verify the parsed flags contain the expected pkg-config results
             if zlib_cflags:
-                self.assertIn(zlib_cflags, cxxflags)
+                assert zlib_cflags in cxxflags
             if libcrypt_cflags:
-                self.assertIn(libcrypt_cflags, cxxflags)
+                assert libcrypt_cflags in cxxflags
                 
         except subprocess.CalledProcessError:
             # pkg-config might fail for missing packages, but the test should still parse the PKG-CONFIG directive
             pass
         
         # Verify LDFLAGS were extracted 
-        self.assertIn("LDFLAGS", parsed_flags)
+        assert "LDFLAGS" in parsed_flags
         ldflags = " ".join(parsed_flags["LDFLAGS"])
         
         try:
@@ -163,9 +163,9 @@ class TestMagicPKGCONFIG(tb.BaseCompileToolsTestCase):
             
             # Verify the parsed flags contain the expected pkg-config results
             if zlib_libs:
-                self.assertIn(zlib_libs, ldflags)
+                assert zlib_libs in ldflags
             if libcrypt_libs:
-                self.assertIn(libcrypt_libs, ldflags)
+                assert libcrypt_libs in ldflags
                 
         except subprocess.CalledProcessError:
             # pkg-config might fail for missing packages

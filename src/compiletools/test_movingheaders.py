@@ -38,7 +38,7 @@ class TestMovingHeaders(unittest.TestCase):
             for filename in relativepaths
             if compiletools.utils.issource(filename)
         }
-        self.assertSetEqual(expected_exes, actual_exes)
+        assert expected_exes == actual_exes
 
     def test_moving_headers(self):
         # The concept of this test is to check that ct-cake copes with header files being changed directory

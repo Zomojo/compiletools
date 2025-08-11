@@ -77,7 +77,7 @@ class TestCake(unittest.TestCase):
                 os.path.splitext(os.path.split(filename)[1])[0]
                 for filename in relativepaths
             }
-            self.assertSetEqual(expected_exes, actual_exes)
+            assert expected_exes == actual_exes
 
     def _create_deeper_cpp(self):
         data = """
@@ -217,10 +217,10 @@ class TestCake(unittest.TestCase):
                     expected_to_change = True
 
             if expected_to_change:
-                self.assertGreater(postts[fname], prets[fname])
+                assert postts[fname] > prets[fname]
             else:
                 print("verify " + fname)
-                self.assertAlmostEqual(postts[fname], prets[fname])
+                assert round(abs(postts[fname]-prets[fname]), 7) == 0
 
     def _compile_edit_compile(
         self, files_to_edit, expected_changes, deeper_is_included=False

@@ -24,63 +24,63 @@ class TestSimplePreprocessor(unittest.TestCase):
     def test_expression_evaluation_basic(self):
         """Test basic expression evaluation"""
         # Test simple numeric expressions
-        self.assertEqual(self.processor._evaluate_expression('1'), 1)
-        self.assertEqual(self.processor._evaluate_expression('0'), 0)
-        self.assertEqual(self.processor._evaluate_expression('1 + 1'), 2)
+        assert self.processor._evaluate_expression('1') == 1
+        assert self.processor._evaluate_expression('0') == 0
+        assert self.processor._evaluate_expression('1 + 1') == 2
         
     def test_expression_evaluation_comparisons(self):
         """Test comparison operators"""
         # Test == operator
-        self.assertEqual(self.processor._evaluate_expression('1 == 1'), 1)
-        self.assertEqual(self.processor._evaluate_expression('1 == 0'), 0)
+        assert self.processor._evaluate_expression('1 == 1') == 1
+        assert self.processor._evaluate_expression('1 == 0') == 0
         
         # Test != operator (this is the problematic one)
-        self.assertEqual(self.processor._evaluate_expression('1 != 0'), 1)
-        self.assertEqual(self.processor._evaluate_expression('1 != 1'), 0)
+        assert self.processor._evaluate_expression('1 != 0') == 1
+        assert self.processor._evaluate_expression('1 != 1') == 0
         
         # Test > operator
-        self.assertEqual(self.processor._evaluate_expression('2 > 1'), 1)
-        self.assertEqual(self.processor._evaluate_expression('1 > 2'), 0)
+        assert self.processor._evaluate_expression('2 > 1') == 1
+        assert self.processor._evaluate_expression('1 > 2') == 0
         
     def test_expression_evaluation_logical(self):
         """Test logical operators"""
         # Test && operator
-        self.assertEqual(self.processor._evaluate_expression('1 && 1'), 1)
-        self.assertEqual(self.processor._evaluate_expression('1 && 0'), 0)
-        self.assertEqual(self.processor._evaluate_expression('0 && 1'), 0)
+        assert self.processor._evaluate_expression('1 && 1') == 1
+        assert self.processor._evaluate_expression('1 && 0') == 0
+        assert self.processor._evaluate_expression('0 && 1') == 0
         
         # Test || operator  
-        self.assertEqual(self.processor._evaluate_expression('1 || 0'), 1)
-        self.assertEqual(self.processor._evaluate_expression('0 || 1'), 1)
-        self.assertEqual(self.processor._evaluate_expression('0 || 0'), 0)
+        assert self.processor._evaluate_expression('1 || 0') == 1
+        assert self.processor._evaluate_expression('0 || 1') == 1
+        assert self.processor._evaluate_expression('0 || 0') == 0
         
     def test_expression_evaluation_complex(self):
         """Test complex expressions combining operators"""
         # Test combinations
-        self.assertEqual(self.processor._evaluate_expression('1 != 0 && 2 > 1'), 1)
-        self.assertEqual(self.processor._evaluate_expression('1 == 0 || 2 == 2'), 1)
-        self.assertEqual(self.processor._evaluate_expression('(1 + 1) == 2'), 1)
+        assert self.processor._evaluate_expression('1 != 0 && 2 > 1') == 1
+        assert self.processor._evaluate_expression('1 == 0 || 2 == 2') == 1
+        assert self.processor._evaluate_expression('(1 + 1) == 2') == 1
         
     def test_macro_expansion(self):
         """Test macro expansion in expressions"""
         # Test simple macro expansion
-        self.assertEqual(self.processor._evaluate_expression('TEST_MACRO'), 1)
-        self.assertEqual(self.processor._evaluate_expression('VERSION'), 3)
+        assert self.processor._evaluate_expression('TEST_MACRO') == 1
+        assert self.processor._evaluate_expression('VERSION') == 3
         
         # Test macro in comparisons
-        self.assertEqual(self.processor._evaluate_expression('VERSION == 3'), 1)
-        self.assertEqual(self.processor._evaluate_expression('VERSION != 2'), 1)
-        self.assertEqual(self.processor._evaluate_expression('COUNT > 3'), 1)
+        assert self.processor._evaluate_expression('VERSION == 3') == 1
+        assert self.processor._evaluate_expression('VERSION != 2') == 1
+        assert self.processor._evaluate_expression('COUNT > 3') == 1
         
     def test_defined_expressions(self):
         """Test defined() expressions"""
         # Test defined() function
-        self.assertEqual(self.processor._evaluate_expression('defined(TEST_MACRO)'), 1)
-        self.assertEqual(self.processor._evaluate_expression('defined(UNDEFINED_MACRO)'), 0)
+        assert self.processor._evaluate_expression('defined(TEST_MACRO)') == 1
+        assert self.processor._evaluate_expression('defined(UNDEFINED_MACRO)') == 0
         
         # Test defined() in complex expressions
-        self.assertEqual(self.processor._evaluate_expression('defined(TEST_MACRO) && TEST_MACRO == 1'), 1)
-        self.assertEqual(self.processor._evaluate_expression('defined(VERSION) && VERSION > 2'), 1)
+        assert self.processor._evaluate_expression('defined(TEST_MACRO) && TEST_MACRO == 1') == 1
+        assert self.processor._evaluate_expression('defined(VERSION) && VERSION > 2') == 1
         
     def test_conditional_compilation_ifdef(self):
         """Test #ifdef handling"""
@@ -90,7 +90,7 @@ class TestSimplePreprocessor(unittest.TestCase):
 #endif
 '''
         result = self.processor.process(text)
-        self.assertIn('#include "test.h"', result)
+        assert '#include "test.h"' in result
         
     def test_conditional_compilation_ifndef(self):
         """Test #ifndef handling"""
@@ -100,7 +100,7 @@ class TestSimplePreprocessor(unittest.TestCase):
 #endif
 '''
         result = self.processor.process(text)
-        self.assertIn('#include "test.h"', result)
+        assert '#include "test.h"' in result
         
     def test_conditional_compilation_if_simple(self):
         """Test simple #if handling"""
@@ -110,7 +110,7 @@ class TestSimplePreprocessor(unittest.TestCase):
 #endif
 '''
         result = self.processor.process(text)
-        self.assertIn('#include "version3.h"', result)
+        assert '#include "version3.h"' in result
         
     def test_conditional_compilation_if_complex(self):
         """Test complex #if expressions"""
@@ -120,7 +120,7 @@ class TestSimplePreprocessor(unittest.TestCase):
 #endif
 '''
         result = self.processor.process(text)
-        self.assertIn('#include "advanced.h"', result)
+        assert '#include "advanced.h"' in result
         
     def test_conditional_compilation_if_with_not_equal(self):
         """Test #if with != operator (the problematic case)"""
@@ -130,7 +130,7 @@ class TestSimplePreprocessor(unittest.TestCase):
 #endif
 '''
         result = self.processor.process(text)
-        self.assertIn('#include "nonzero.h"', result)
+        assert '#include "nonzero.h"' in result
         
     def test_conditional_compilation_nested(self):
         """Test nested conditional compilation"""
@@ -142,7 +142,7 @@ class TestSimplePreprocessor(unittest.TestCase):
 #endif
 '''
         result = self.processor.process(text)
-        self.assertIn('#include "test_v3.h"', result)
+        assert '#include "test_v3.h"' in result
         
     def test_conditional_compilation_else(self):
         """Test #else handling"""
@@ -154,8 +154,8 @@ class TestSimplePreprocessor(unittest.TestCase):
 #endif
 '''
         result = self.processor.process(text)
-        self.assertIn('#include "defined.h"', result)
-        self.assertNotIn('#include "undefined.h"', result)
+        assert '#include "defined.h"' in result
+        assert '#include "undefined.h"' not in result
         
     def test_conditional_compilation_elif(self):
         """Test #elif handling"""
@@ -171,10 +171,10 @@ class TestSimplePreprocessor(unittest.TestCase):
 #endif
 '''
         result = self.processor.process(text)
-        self.assertIn('#include "version3.h"', result)
-        self.assertNotIn('#include "version1.h"', result)
-        self.assertNotIn('#include "version2.h"', result)
-        self.assertNotIn('#include "default.h"', result)
+        assert '#include "version3.h"' in result
+        assert '#include "version1.h"' not in result
+        assert '#include "version2.h"' not in result
+        assert '#include "default.h"' not in result
         
     def test_macro_define_and_use(self):
         """Test #define and subsequent use"""
@@ -185,7 +185,7 @@ class TestSimplePreprocessor(unittest.TestCase):
 #endif
 '''
         result = self.processor.process(text)
-        self.assertIn('#include "forty_two.h"', result)
+        assert '#include "forty_two.h"' in result
         
     def test_macro_undef(self):
         """Test #undef functionality"""
@@ -199,8 +199,8 @@ class TestSimplePreprocessor(unittest.TestCase):
 #endif
 '''
         result = self.processor.process(text)
-        self.assertIn('#include "before_undef.h"', result)
-        self.assertNotIn('#include "after_undef.h"', result)
+        assert '#include "before_undef.h"' in result
+        assert '#include "after_undef.h"' not in result
 
 
     def test_failing_scenario_use_epoll(self):
@@ -234,8 +234,8 @@ class TestSimplePreprocessor(unittest.TestCase):
         result = processor.process(text)
         
         # These should be included
-        self.assertIn('#include "linux_epoll_threading.hpp"', result)
-        self.assertIn('#include "numa_threading.hpp"', result)
+        assert '#include "linux_epoll_threading.hpp"' in result
+        assert '#include "numa_threading.hpp"' in result
 
 
 if __name__ == '__main__':

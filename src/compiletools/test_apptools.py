@@ -22,10 +22,10 @@ class TestFuncs(unittest.TestCase):
     def test_strip_quotes(self):
         fns = FakeNamespace()
         compiletools.apptools._strip_quotes(fns)
-        self.assertEqual(fns.n1, "v1_noquotes")
-        self.assertEqual(fns.n2, "v2_doublequotes")
-        self.assertEqual(fns.n3, "v3_singlequotes")
-        self.assertEqual(fns.n4, "v4_lotsofquotes")
+        assert fns.n1 == "v1_noquotes"
+        assert fns.n2 == "v2_doublequotes"
+        assert fns.n3 == "v3_singlequotes"
+        assert fns.n4 == "v4_lotsofquotes"
 
     def test_parse_args_strips_quotes(self):
         cmdline = [
@@ -40,8 +40,8 @@ class TestFuncs(unittest.TestCase):
         args = ap.parse_args(cmdline)
 
         compiletools.apptools._strip_quotes(args)
-        self.assertEqual(args.append_CPPFLAGS, ["-DNEWPROTOCOL -DV172"])
-        self.assertEqual(args.append_CXXFLAGS, ["-DNEWPROTOCOL -DV172"])
+        assert args.append_CPPFLAGS == ["-DNEWPROTOCOL -DV172"]
+        assert args.append_CXXFLAGS == ["-DNEWPROTOCOL -DV172"]
 
 
 class TestConfig(unittest.TestCase):
@@ -81,15 +81,15 @@ class TestConfig(unittest.TestCase):
             args = compiletools.apptools.parseargs(cap, argv)
             # print(args)
             # Check that the environment variable overrode the config file
-            self.assertEqual(variable_handling_method, args.variable_handling_method)
+            assert variable_handling_method == args.variable_handling_method
             if variable_handling_method == "override":
-                self.assertTrue("-DVARFROMENV" in args.CXXFLAGS)
-                self.assertTrue("-DVARFROMFILE" not in args.CXXFLAGS)
+                assert "-DVARFROMENV" in args.CXXFLAGS
+                assert "-DVARFROMFILE" not in args.CXXFLAGS
             elif variable_handling_method == "append":
-                self.assertTrue("-DVARFROMENV" in args.CXXFLAGS)
-                self.assertTrue("-DVARFROMFILE" in args.CXXFLAGS)
+                assert "-DVARFROMENV" in args.CXXFLAGS
+                assert "-DVARFROMFILE" in args.CXXFLAGS
             else:
-                self.assertFalse("Unknown variable handling method.  Must be override or append.")
+                assert not "Unknown variable handling method.  Must be override or append."
 
     def test_environment_overrides_config(self):
         self._test_variable_handling_method(variable_handling_method="override")
@@ -124,7 +124,7 @@ class TestConfig(unittest.TestCase):
             args = compiletools.apptools.parseargs(cap, argv)
             # print(args)
             # Check that the append-CXXFLAGS argument made its way into the CXXFLAGS
-            self.assertTrue("-fdiagnostics-color=always" in args.CXXFLAGS)
+            assert "-fdiagnostics-color=always" in args.CXXFLAGS
 
 
 if __name__ == "__main__":

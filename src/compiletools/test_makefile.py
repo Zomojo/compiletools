@@ -64,7 +64,7 @@ class TestMakefile(unittest.TestCase):
             os.path.splitext(os.path.split(filename)[1])[0]
             for filename in relativepaths
         }
-        self.assertSetEqual(expected_exes, actual_exes)
+        assert expected_exes == actual_exes
         os.chdir(origdir)
 
     def test_makefile(self):
@@ -80,7 +80,7 @@ class TestMakefile(unittest.TestCase):
             os.path.join(tempdir1, "bin"), os.path.join(tempdir2, "bin")
         )
         # print(comparator.diff_files)
-        self.assertEqual(len(comparator.diff_files), 0)
+        assert len(comparator.diff_files) == 0
 
         # Cleanup
         shutil.rmtree(tempdir1, ignore_errors=True)

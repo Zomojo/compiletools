@@ -28,7 +28,7 @@ class TestNamer(unittest.TestCase):
         args = compiletools.apptools.parseargs(cap, argv)
         namer = compiletools.namer.Namer(args, argv=argv, variant="gcc.debug")
         exename = namer.executable_pathname("/home/user/code/my.cpp")
-        self.assertEqual(exename, "bin/gcc.debug/my")
+        assert exename == "bin/gcc.debug/my"
 
     def tearDown(self):
         uth.reset()

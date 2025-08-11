@@ -19,35 +19,29 @@ class TestVariant(unittest.TestCase):
         argv = ['/usr/bin/ct-config', '--pkg-config=fig', '-v']
 
         value = compiletools.configutils.extract_value_from_argv("pkg-config", argv)
-        self.assertEqual(value, "fig")
+        assert value == "fig"
 
         value = compiletools.configutils.extract_value_from_argv("config", argv)
-        self.assertEqual(value, None)
+        assert value == None
 
 
     def test_extract_variant(self):
-        self.assertEqual("abc", compiletools.configutils.extract_variant("--variant=abc".split()))
-        self.assertEqual("abc", compiletools.configutils.extract_variant("--variant abc".split()))
-        self.assertEqual(
-            "abc.123",
+        assert "abc" == compiletools.configutils.extract_variant("--variant=abc".split())
+        assert "abc" == compiletools.configutils.extract_variant("--variant abc".split())
+        assert "abc.123" == \
             compiletools.configutils.extract_variant(
                 "-a -b -x --blah --variant=abc.123 -a -b -z --blah".split()
-            ),
-        )
-        self.assertEqual(
-            "abc.123",
+            )
+        assert "abc.123" == \
             compiletools.configutils.extract_variant(
                 "-a -b -x --blah --variant abc.123 -a -b -cz--blah".split()
-            ),
-        )
+            )
 
         # Note the -c overrides the --variant
-        self.assertEqual(
-            "blah",
+        assert "blah" == \
             compiletools.configutils.extract_variant(
                 "-a -b -c blah.conf --variant abc.123 -a -b -cz--blah".split()
-            ),
-        )
+            )
 
     def test_extract_variant_from_ct_conf(self):
         # Should find the one in the temp directory ct.conf
@@ -60,7 +54,7 @@ class TestVariant(unittest.TestCase):
             exedir=uth.cakedir(),
             gitroot=self._tmpdir,
         )
-        self.assertEqual("debug", variant)
+        assert "debug" == variant
 
         # Cleanup
         os.chdir(origdir)
@@ -77,7 +71,7 @@ class TestVariant(unittest.TestCase):
             verbose=0,
             gitroot=self._tmpdir,
         )
-        self.assertEqual("debug", variant)
+        assert "debug" == variant
 
         # Cleanup
         os.chdir(origdir)
@@ -103,12 +97,10 @@ class TestVariant(unittest.TestCase):
             gitroot=self._tmpdir,
         )
 
-        self.assertListEqual(
-            [
+        assert [
                 os.path.join(self._tmpdir, "ct.conf"),
-            ],
-            configs,
-        )
+            ] == \
+            configs
 
         # Cleanup
         os.chdir(origdir)
@@ -133,13 +125,11 @@ class TestVariant(unittest.TestCase):
             gitroot=self._tmpdir,
         )
 
-        self.assertListEqual(
-            [
+        assert [
                 os.path.join(self._tmpdir, "ct.conf"),
                 os.path.join(self._tmpdir, "gcc.debug.conf"),
-            ],
-            configs,
-        )
+            ] == \
+            configs
 
         # Cleanup
         os.chdir(origdir)

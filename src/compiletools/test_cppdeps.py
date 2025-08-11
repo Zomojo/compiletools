@@ -47,7 +47,7 @@ class TestCPPDeps(unittest.TestCase):
             os.path.join(uth.samplesdir(), "numbers/get_int.hpp"),
             os.path.join(uth.samplesdir(), "numbers/get_numbers.hpp"),
         ]
-        self.assertEqual(sorted(expected_output), sorted(output))
+        assert sorted(expected_output) == sorted(output)
         shutil.rmtree(tempdir)
 
     def tearDown(self):
