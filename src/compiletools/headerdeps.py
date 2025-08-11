@@ -670,11 +670,14 @@ class DirectHeaderDeps(HeaderDepsBase):
         elif arch in ['i386', 'i686', 'x86']:
             for macro in ['__i386__', '__i386']:
                 self.defined_macros[macro] = "1"
-        elif arch.startswith('arm'):
-            self.defined_macros['__arm__'] = "1"
-            if '64' in arch:
+        elif arch.startswith('arm') or arch.startswith('aarch'):
+            if arch.startswith('aarch') or '64' in arch:
+                # 64-bit ARM (aarch64, arm64)
                 for macro in ['__aarch64__', '__LP64__']:
                     self.defined_macros[macro] = "1"
+            else:
+                # 32-bit ARM (armv6l, armv7l, etc.)
+                self.defined_macros['__arm__'] = "1"
         elif arch.startswith('riscv') or 'riscv' in arch:
             self.defined_macros['__riscv'] = "1"
             if '64' in arch:
