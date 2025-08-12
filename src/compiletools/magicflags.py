@@ -10,6 +10,8 @@ import compiletools.utils
 import compiletools.git_utils
 import compiletools.headerdeps
 import compiletools.wrappedos
+import compiletools.configutils
+import compiletools.apptools
 
 
 def create(args, headerdeps):
@@ -369,7 +371,16 @@ class PrettyStyle(compiletools.git_utils.NameAdjuster):
 
 
 def main(argv=None):
-    cap = configargparse.getArgumentParser()
+    variant = compiletools.configutils.extract_variant(argv=argv)
+    config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv)
+    cap = configargparse.getArgumentParser(
+        description="Parse a file and show the magicflags it exports",
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+        auto_env_var_prefix="",
+        default_config_files=config_files,
+        args_for_setting_config_path=["-c", "--config"],
+        ignore_unknown_config_file_keys=True,
+    )
     compiletools.headerdeps.add_arguments(cap)
     add_arguments(cap)
     cap.add("filename", help='File/s to extract magicflags from"', nargs="+")

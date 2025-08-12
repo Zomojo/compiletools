@@ -3,10 +3,21 @@ import configargparse
 import compiletools.wrappedos
 import compiletools.utils
 import compiletools.headerdeps
+import compiletools.configutils
+import compiletools.apptools
 
 
 def main(argv=None):
-    cap = configargparse.getArgumentParser()
+    variant = compiletools.configutils.extract_variant(argv=argv)
+    config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv)
+    cap = configargparse.getArgumentParser(
+        description="Show C/C++ header dependencies using cpp -MM",
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+        auto_env_var_prefix="",
+        default_config_files=config_files,
+        args_for_setting_config_path=["-c", "--config"],
+        ignore_unknown_config_file_keys=True,
+    )
     cap.add("filename", help='File to use in "$CPP $CPPFLAGS -MM filename"', nargs="+")
 
     # This will add the common arguments as a side effect

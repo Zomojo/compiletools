@@ -9,6 +9,8 @@ import compiletools.headerdeps
 import compiletools.git_utils as git_utils
 import compiletools.utils as utils
 import compiletools.tree as tree
+import compiletools.configutils
+import compiletools.apptools
 
 
 class FlatStyle(compiletools.git_utils.NameAdjuster):
@@ -214,7 +216,16 @@ def main(argv=None):
         UTF8Writer = codecs.getwriter("utf8")
         sys.stdout = UTF8Writer(sys.stdout)
 
-    cap = configargparse.getArgumentParser()
+    variant = compiletools.configutils.extract_variant(argv=argv)
+    config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv)
+    cap = configargparse.getArgumentParser(
+        description="Create a tree of header dependencies starting at a given C/C++ file",
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+        auto_env_var_prefix="",
+        default_config_files=config_files,
+        args_for_setting_config_path=["-c", "--config"],
+        ignore_unknown_config_file_keys=True,
+    )
     cap.add("filename", help="File to start tracing headers from", nargs="+")
 
     # Figure out what style classes are available and add them to the command
