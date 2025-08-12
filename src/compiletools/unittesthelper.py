@@ -109,3 +109,15 @@ class EnvironmentContext:
                 os.environ[key] = value
             else:
                 os.unsetenv(key)
+
+
+class ParserContext:
+    def __enter__(self):
+        self._saved_parsers = configargparse._parsers.copy()
+        delete_existing_parsers()
+        compiletools.apptools.resetcallbacks()
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        configargparse._parsers = self._saved_parsers
+        compiletools.apptools.resetcallbacks()

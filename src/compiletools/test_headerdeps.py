@@ -19,13 +19,14 @@ import compiletools.headerdeps
 import compiletools.unittesthelper as uth
 
 
-def _reload_ct(cache_home):
+def _reload_ct_with_cache(cache_home):
     """ Set the CTCACHE environment variable to cache_home
         and reload the compiletools.hunter module
     """
-    os.environ["CTCACHE"] = cache_home
-    reload(compiletools.dirnamer)
-    reload(compiletools.headerdeps)
+    with uth.EnvironmentContext({"CTCACHE": cache_home}):
+        reload(compiletools.dirnamer)
+        reload(compiletools.headerdeps)
+        return cache_home
 
 
 def _callprocess(headerobj, filenames):
@@ -50,7 +51,9 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
         temp_config_name,
     ] + extraargs
     cachename = os.path.join(tempdir, name)
-    _reload_ct(cachename)
+    with uth.EnvironmentContext({"CTCACHE": cachename}):
+        reload(compiletools.dirnamer)
+        reload(compiletools.headerdeps)
 
     cap = configargparse.getArgumentParser()
     compiletools.headerdeps.add_arguments(cap)
@@ -120,7 +123,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         os.unlink(config1)
         os.unlink(config2)
         shutil.rmtree(tempdir)
-        _reload_ct(origcache)
+        with uth.EnvironmentContext({"CTCACHE": origcache}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
 
     def test_direct_and_cpp_generate_same_results_ex(self):
         self._direct_and_cpp_generate_same_results_ex()
@@ -143,8 +148,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         argv = ["--config=" + temp_config_name, "--headerdeps=direct"]
         
         origcache = compiletools.dirnamer.user_cache_dir()
-        _reload_ct("None")
-        cap = configargparse.getArgumentParser()
+        with uth.EnvironmentContext({"CTCACHE": "None"}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
+            cap = configargparse.getArgumentParser()
         compiletools.headerdeps.add_arguments(cap)
         args = compiletools.apptools.parseargs(cap, argv)
         
@@ -173,7 +180,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
             assert unexpected not in result_set, f"Should NOT include {unexpected}"
         
         os.unlink(temp_config_name)
-        _reload_ct(origcache)
+        with uth.EnvironmentContext({"CTCACHE": origcache}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
 
     def test_cppflags_macro_extraction(self):
         """Test that DirectHeaderDeps correctly extracts -D macro definitions from CPPFLAGS
@@ -195,8 +204,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         origcache = compiletools.dirnamer.user_cache_dir()
-        _reload_ct("None")
-        cap = configargparse.getArgumentParser()
+        with uth.EnvironmentContext({"CTCACHE": "None"}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
+            cap = configargparse.getArgumentParser()
         compiletools.headerdeps.add_arguments(cap)
         args = compiletools.apptools.parseargs(cap, argv)
         
@@ -213,7 +224,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                      "advanced_feature.hpp should be included when ENABLE_ADVANCED_FEATURES is defined in CPPFLAGS"
         
         os.unlink(temp_config_name)
-        _reload_ct(origcache)
+        with uth.EnvironmentContext({"CTCACHE": origcache}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
 
     def test_macro_extraction_from_all_flag_sources(self):
         """Test that DirectHeaderDeps extracts -D macros from CPPFLAGS, CFLAGS, and CXXFLAGS
@@ -234,8 +247,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         origcache = compiletools.dirnamer.user_cache_dir()
-        _reload_ct("None")
-        cap = configargparse.getArgumentParser()
+        with uth.EnvironmentContext({"CTCACHE": "None"}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
+            cap = configargparse.getArgumentParser()
         compiletools.headerdeps.add_arguments(cap)
         args = compiletools.apptools.parseargs(cap, argv)
         
@@ -255,7 +270,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                          f"{os.path.basename(expected_header)} should be included when its macro is defined"
         
         os.unlink(temp_config_name)
-        _reload_ct(origcache)
+        with uth.EnvironmentContext({"CTCACHE": origcache}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
 
     def test_compiler_builtin_macro_recognition(self):
         """Test that DirectHeaderDeps recognizes compiler and platform built-in macros
@@ -274,8 +291,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         origcache = compiletools.dirnamer.user_cache_dir()
-        _reload_ct("None")
-        cap = configargparse.getArgumentParser()
+        with uth.EnvironmentContext({"CTCACHE": "None"}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
+            cap = configargparse.getArgumentParser()
         compiletools.headerdeps.add_arguments(cap)
         args = compiletools.apptools.parseargs(cap, argv)
         
@@ -312,7 +331,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                          f"{os.path.basename(expected_header)} should be included due to built-in macros for {arch}"
         
         os.unlink(temp_config_name)
-        _reload_ct(origcache)
+        with uth.EnvironmentContext({"CTCACHE": origcache}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
 
     def test_riscv_architecture_macro_recognition(self):
         """Test that DirectHeaderDeps recognizes RISC-V architecture macros
@@ -331,8 +352,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         origcache = compiletools.dirnamer.user_cache_dir()
-        _reload_ct("None")
-        cap = configargparse.getArgumentParser()
+        with uth.EnvironmentContext({"CTCACHE": "None"}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
+            cap = configargparse.getArgumentParser()
         compiletools.headerdeps.add_arguments(cap)
         args = compiletools.apptools.parseargs(cap, argv)
         
@@ -346,7 +369,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                      "riscv_feature.hpp should be included when __riscv macro is defined"
         
         os.unlink(temp_config_name)
-        _reload_ct(origcache)
+        with uth.EnvironmentContext({"CTCACHE": origcache}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
 
     def test_additional_compiler_macro_recognition(self):
         """Test that DirectHeaderDeps recognizes additional compiler built-in macros
@@ -366,8 +391,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         origcache = compiletools.dirnamer.user_cache_dir()
-        _reload_ct("None")
-        cap = configargparse.getArgumentParser()
+        with uth.EnvironmentContext({"CTCACHE": "None"}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
+            cap = configargparse.getArgumentParser()
         compiletools.headerdeps.add_arguments(cap)
         args = compiletools.apptools.parseargs(cap, argv)
         
@@ -388,7 +415,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                          f"{os.path.basename(expected_header)} should be included when its compiler macro is defined"
         
         os.unlink(temp_config_name)
-        _reload_ct(origcache)
+        with uth.EnvironmentContext({"CTCACHE": origcache}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
 
     def test_elif_conditional_compilation_support(self):
         """Test that DirectHeaderDeps correctly handles #elif preprocessor directives
@@ -409,8 +438,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         origcache = compiletools.dirnamer.user_cache_dir()
-        _reload_ct("None")
-        cap = configargparse.getArgumentParser()
+        with uth.EnvironmentContext({"CTCACHE": "None"}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
+            cap = configargparse.getArgumentParser()
         compiletools.headerdeps.add_arguments(cap)
         args = compiletools.apptools.parseargs(cap, argv)
         
@@ -433,7 +464,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         assert default_path not in result_set, "Should NOT include default_feature.hpp"
         
         os.unlink(temp_config_name)
-        _reload_ct(origcache)
+        with uth.EnvironmentContext({"CTCACHE": origcache}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
 
     def test_elif_matches_cpp_preprocessor(self):
         """Test that DirectHeaderDeps #elif handling matches actual C preprocessor results
@@ -485,7 +518,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
             ]
             
             origcache = compiletools.dirnamer.user_cache_dir()
-            _reload_ct("None")
+            with uth.EnvironmentContext({"CTCACHE": "None"}):
+                reload(compiletools.dirnamer)
+                reload(compiletools.headerdeps)
             cap = configargparse.getArgumentParser()
             compiletools.headerdeps.add_arguments(cap)
             
@@ -507,7 +542,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                 f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
             
             os.unlink(temp_config_name)
-            _reload_ct(origcache)
+            with uth.EnvironmentContext({"CTCACHE": origcache}):
+                reload(compiletools.dirnamer)
+                reload(compiletools.headerdeps)
 
     def test_advanced_preprocessor_features(self):
         """Test advanced preprocessor directive support
@@ -528,8 +565,10 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         origcache = compiletools.dirnamer.user_cache_dir()
-        _reload_ct("None")
-        cap = configargparse.getArgumentParser()
+        with uth.EnvironmentContext({"CTCACHE": "None"}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
+            cap = configargparse.getArgumentParser()
         compiletools.headerdeps.add_arguments(cap)
         args = compiletools.apptools.parseargs(cap, argv)
         
@@ -563,7 +602,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                         "combined_features.hpp should NOT be included (FEATURE_B not defined)"
         
         os.unlink(temp_config_name)
-        _reload_ct(origcache)
+        with uth.EnvironmentContext({"CTCACHE": origcache}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
 
     def test_advanced_preprocessor_matches_cpp_preprocessor(self):
         """Test that DirectHeaderDeps advanced preprocessor matches actual C preprocessor results
@@ -615,7 +656,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
             ]
             
             origcache = compiletools.dirnamer.user_cache_dir()
-            _reload_ct("None")
+            with uth.EnvironmentContext({"CTCACHE": "None"}):
+                reload(compiletools.dirnamer)
+                reload(compiletools.headerdeps)
             cap = configargparse.getArgumentParser()
             compiletools.headerdeps.add_arguments(cap)
             
@@ -637,7 +680,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                 f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
             
             os.unlink(temp_config_name)
-            _reload_ct(origcache)
+            with uth.EnvironmentContext({"CTCACHE": origcache}):
+                reload(compiletools.dirnamer)
+                reload(compiletools.headerdeps)
 
     def test_multiply_nested_macros_with_complex_logic(self):
         """Test that DirectHeaderDeps correctly handles multiply nested macros with complex logic
@@ -685,7 +730,9 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
             ]
             
             origcache = compiletools.dirnamer.user_cache_dir()
-            _reload_ct("None")
+            with uth.EnvironmentContext({"CTCACHE": "None"}):
+                reload(compiletools.dirnamer)
+                reload(compiletools.headerdeps)
             cap = configargparse.getArgumentParser()
             compiletools.headerdeps.add_arguments(cap)
             
@@ -746,6 +793,8 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
                         f"{unexpected_file} should NOT be included in level1_basic_only scenario"
             
             os.unlink(temp_config_name)
-            _reload_ct(origcache)
+            with uth.EnvironmentContext({"CTCACHE": origcache}):
+                reload(compiletools.dirnamer)
+                reload(compiletools.headerdeps)
 
 

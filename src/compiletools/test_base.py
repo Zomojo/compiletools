@@ -17,15 +17,17 @@ class BaseCompileToolsTestCase:
     """Base test case with common setup/teardown for compiletools tests"""
     
     def setup_method(self):
-        uth.reset()
         self._tmpdir = tempfile.mkdtemp()
         self._origdir = os.getcwd()
+        uth.delete_existing_parsers()
+        compiletools.apptools.resetcallbacks()
         
     def teardown_method(self):
         os.chdir(self._origdir)
         if hasattr(self, '_tmpdir') and self._tmpdir:
             shutil.rmtree(self._tmpdir, ignore_errors=True)
-        uth.reset()
+        uth.delete_existing_parsers()
+        compiletools.apptools.resetcallbacks()
         
     def _verify_one_exe_per_main(self, relativepaths):
         """Common executable verification logic"""
@@ -93,37 +95,27 @@ def create_header_deps_parser(extraargs=None, cache_home="None", tempdir=None):
 
 def compare_direct_cpp_magic(test_case, relativepath, tempdir=None):
     """Utility to test that DirectMagicFlags and CppMagicFlags produce identical results"""
-    if tempdir is None:
-        tempdir = tempfile.mkdtemp()
-        cleanup_tempdir = True
-    else:
-        cleanup_tempdir = False
-        
-    origdir = os.getcwd()
-    os.chdir(tempdir)
-    
-    try:
+    with uth.TempDirContext() as temp_ctx:
+        if tempdir is not None:
+            # If specific tempdir provided, copy current working dir content there
+            os.chdir(tempdir)
+            
         samplesdir = uth.samplesdir()
         realpath = os.path.join(samplesdir, relativepath)
         
-        # Test direct parser
-        magicparser_direct = create_magic_parser(["--magic", "direct"], tempdir=tempdir)
-        result_direct = magicparser_direct.parse(realpath)
+        # Test direct parser with isolated context
+        with uth.ParserContext():
+            magicparser_direct = create_magic_parser(["--magic", "direct"], tempdir=os.getcwd())
+            result_direct = magicparser_direct.parse(realpath)
         
-        # Clear configargparse singleton state to allow second parser creation
-        configargparse._parsers.clear()
-        
-        # Test cpp parser  
-        magicparser_cpp = create_magic_parser(["--magic", "cpp"], tempdir=tempdir)
-        result_cpp = magicparser_cpp.parse(realpath)
+        # Test cpp parser with fresh isolated context
+        with uth.ParserContext():
+            magicparser_cpp = create_magic_parser(["--magic", "cpp"], tempdir=os.getcwd())
+            result_cpp = magicparser_cpp.parse(realpath)
         
         # Results should be identical
         assert result_direct == result_cpp, \
                            f"DirectMagicFlags and CppMagicFlags gave different results for {relativepath}"
-    finally:
-        os.chdir(origdir)
-        if cleanup_tempdir:
-            shutil.rmtree(tempdir, ignore_errors=True)
 
 
 def compare_direct_cpp_headers(test_case, filename, extraargs=None):

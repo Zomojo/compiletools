@@ -37,14 +37,6 @@ class TestCake:
         uth.reset()
         compiletools.cake.main(self._create_argv(cache_home) + extraargv)
 
-    def _setup_and_chdir_temp_dir(self):
-        """ Returns the original working directory so you can chdir back to that at the end """
-        #TODO Migrate all usage of this to uth.TempDirContext()
-        origdir = os.getcwd()
-        self._tmpdir = tempfile.mkdtemp()
-        os.chdir(self._tmpdir)
-
-        return origdir
 
     def test_no_git_root(self):
         with uth.TempDirContext():
@@ -154,15 +146,11 @@ class TestCake:
             This will allow us to test that editing any of those files 
             triggers a recompile.
         """
-        origdir = self._setup_and_chdir_temp_dir()
-
         self._create_main_cpp()
         self._create_extra_hpp()
         self._create_extra_cpp()
         self._create_deeper_hpp()
         self._create_deeper_cpp()
-
-        os.chdir(origdir)
 
     def _grab_timestamps(self, deeper_is_included=False):
         """ There are 8 files we want timestamps for.  
@@ -225,42 +213,37 @@ class TestCake:
         self, files_to_edit, expected_changes, deeper_is_included=False
     ):
         """ Test that the compile, edit, compile cycle works as you expect """
-        # print(self._tmpdir)
-        origdir = os.getcwd()
-        self._create_recompile_test_files(deeper_is_included)
-        os.chdir(self._tmpdir)
+        with uth.TempDirContext() as ctx:
+            self._tmpdir = os.getcwd()
+            self._create_recompile_test_files(deeper_is_included)
 
-        # Do an initial build
-        self._config_name = uth.create_temp_config(self._tmpdir)
-        uth.create_temp_ct_conf(
-            tempdir=self._tmpdir,
-            defaultvariant=os.path.basename(self._config_name)[:-5],
-        )
-        self._call_ct_cake(extraargv=[])
+            # Do an initial build
+            self._config_name = uth.create_temp_config(self._tmpdir)
+            uth.create_temp_ct_conf(
+                tempdir=self._tmpdir,
+                defaultvariant=os.path.basename(self._config_name)[:-5],
+            )
+            self._call_ct_cake(extraargv=[])
 
-        # Grab the timestamps on the build products so that later we can test that only the expected ones changed
-        # deeper_is_included must be false at this point becuase the option to inject it comes later/ver
-        prets = self._grab_timestamps(deeper_is_included=False)
+            # Grab the timestamps on the build products so that later we can test that only the expected ones changed
+            # deeper_is_included must be false at this point becuase the option to inject it comes later/ver
+            prets = self._grab_timestamps(deeper_is_included=False)
 
-        # Edit the files for this test
-        if deeper_is_included:
-            self._inject_deeper_hpp_into_extra_hpp()
+            # Edit the files for this test
+            if deeper_is_included:
+                self._inject_deeper_hpp_into_extra_hpp()
 
-        for fname in files_to_edit:
-            _touch(fname)
+            for fname in files_to_edit:
+                _touch(fname)
 
-        # Rebuild
-        self._call_ct_cake(extraargv=[])
+            # Rebuild
+            self._call_ct_cake(extraargv=[])
 
-        # Grab the timestamps on the build products for comparison
-        postts = self._grab_timestamps(deeper_is_included)
+            # Grab the timestamps on the build products for comparison
+            postts = self._grab_timestamps(deeper_is_included)
 
-        # Check that only the expected timestamps have changed
-        self._verify_timestamps(expected_changes, prets, postts)
-
-        # Cleanup
-        os.chdir(origdir)
-        shutil.rmtree(self._tmpdir, ignore_errors=True)
+            # Check that only the expected timestamps have changed
+            self._verify_timestamps(expected_changes, prets, postts)
 
     def test_source_edit_recompiles(self):
         """ Make sure that when the source file is altered that a rebuild occurs """
