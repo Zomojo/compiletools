@@ -4,6 +4,8 @@ from io import open
 import configargparse
 import compiletools.utils
 import compiletools.namer
+import compiletools.configutils
+import compiletools.apptools
 
 
 def add_arguments(cap):
@@ -125,6 +127,21 @@ class FindTargets(object):
         """ Do the file system search and
             return the tuple ([executabletargets], [testtargets])
         """
+        if self._args.exemarkers is None:
+            variant = getattr(self._args, 'variant', 'unknown')
+            config_file = getattr(self._args, 'config', None)
+            
+            print(f"Error: No exemarkers configured.", file=sys.stderr)
+            print(f"  Variant: {variant}", file=sys.stderr)
+            if config_file:
+                print(f"  Config file: {config_file}", file=sys.stderr)
+            print(f"  exemarkers value: {self._args.exemarkers}", file=sys.stderr)
+            print("", file=sys.stderr)
+            print("This is unexpected and hints at other issues. Potential solutions:", file=sys.stderr)
+            print(f"  1. Configure exemarkers in your {variant}.conf file", file=sys.stderr)
+            print("  2. Specify exemarkers on command line: --exemarkers='main('", file=sys.stderr)
+            sys.exit(1)
+            
         if path is None:
             path = "."
         executabletargets = []
@@ -167,7 +184,16 @@ class FindTargets(object):
 
 
 def main(argv=None):
-    cap = configargparse.getArgumentParser()
+    variant = compiletools.configutils.extract_variant(argv=argv)
+    config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv)
+    cap = configargparse.getArgumentParser(
+        description="Find C/C++ files with main functions and unit tests",
+        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+        auto_env_var_prefix="",
+        default_config_files=config_files,
+        args_for_setting_config_path=["-c", "--config"],
+        ignore_unknown_config_file_keys=True,
+    )
     compiletools.findtargets.add_arguments(cap)
 
     args = compiletools.apptools.parseargs(cap, argv)
