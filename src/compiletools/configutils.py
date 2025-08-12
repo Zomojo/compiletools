@@ -34,7 +34,8 @@ def extract_value_from_argv(key, argv=None, default=None, verbose=0):
                     keywithhyphens = "".join([hh, key])
                     if arg.startswith(keywithhyphens):
                         index = argv.index(keywithhyphens)
-                        value = argv[index + 1]
+                        if index + 1 < len(argv):
+                            value = argv[index + 1]
             except ValueError:
                 pass
 
