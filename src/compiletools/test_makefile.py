@@ -21,13 +21,6 @@ class TestMakefile:
         if not _moduletmpdir or not os.path.exists(_moduletmpdir):
             _moduletmpdir = tempfile.mkdtemp()
 
-        cap = configargparse.getArgumentParser(
-            description="Configargparser in test code",
-            formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-            args_for_setting_config_path=["-c", "--config"],
-            ignore_unknown_config_file_keys=False,
-        )
-
     def _create_makefile_and_make(self, tempdir):
         origdir = uth.ctdir()
         print("origdir=" + origdir)
@@ -44,6 +37,7 @@ class TestMakefile:
             "dottypaths/dottypaths.cpp",
         ]
         realpaths = [os.path.join(samplesdir, filename) for filename in relativepaths]
+        uth.reset()  # Clear any existing parsers before calling main()
         compiletools.makefile.main(["--config=" + temp_config_name] + realpaths)
 
         filelist = os.listdir(".")

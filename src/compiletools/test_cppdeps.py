@@ -30,6 +30,18 @@ def test_cppdeps():
     uth.reset()
     
     with uth.TempDirContext() as ctx:
+        # Copy config files to test environment so cppdeps can find its configuration
+        ct_conf_dir = os.path.join(os.getcwd(), "ct.conf.d")
+        os.makedirs(ct_conf_dir, exist_ok=True)
+        
+        # Copy the essential config files from the real config directory
+        src_config_dir = uth.ctconfdir()
+        for config_file in ["ct.conf", "gcc.debug.conf"]:
+            src_path = os.path.join(src_config_dir, config_file)
+            dst_path = os.path.join(ct_conf_dir, config_file)
+            if os.path.exists(src_path):
+                shutil.copy2(src_path, dst_path)
+        
         with uth.EnvironmentContext({"CTCACHE": os.getcwd()}):
             reload(compiletools.headerdeps)
             reload(compiletools.cppdeps)
