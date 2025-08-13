@@ -14,10 +14,6 @@ import compiletools.dirnamer
 import compiletools.namer
 
 
-def _touch(fname):
-    """ Update the modification time of the given file """
-    with open(fname, "a"):
-        os.utime(fname, None)
 
 
 class TestCake:
@@ -240,8 +236,7 @@ class TestCake:
             if deeper_is_included:
                 self._inject_deeper_hpp_into_extra_hpp()
 
-            for fname in files_to_edit:
-                _touch(fname)
+            uth.touch(*files_to_edit)
 
             # Rebuild
             self._call_ct_cake(extraargv=[])

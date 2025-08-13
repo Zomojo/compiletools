@@ -465,6 +465,17 @@ def compare_headerdeps_kinds(filename, cppflags=None, kinds=("direct", "cpp"), i
     return results
 
 
+def touch(*paths):
+    """Touch multiple files using os.utime.
+    
+    Args:
+        *paths: Variable number of file paths to touch
+    """
+    for path in paths:
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        Path(path).touch()
+
+
 def write_sources(mapping, target_dir=None):
     """Central utility for temp source file creation.
     
