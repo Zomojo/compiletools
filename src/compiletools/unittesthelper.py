@@ -4,6 +4,8 @@ import contextlib
 import shutil
 from io import open
 import tempfile
+import textwrap
+from pathlib import Path
 import compiletools.apptools
 
 # The abbreviation "uth" is often used for this "unittesthelper"
@@ -461,3 +463,43 @@ def compare_headerdeps_kinds(filename, cppflags=None, kinds=("direct", "cpp"), i
                     f"{kind}={sorted(os.path.basename(f) for f in results[kind])}"
                 )
     return results
+
+
+def write_sources(mapping, target_dir=None):
+    """Central utility for temp source file creation.
+    
+    Args:
+        mapping: Dictionary of {relative_path: content} for files to create
+        target_dir: Directory to create files in (defaults to current directory)
+        
+    Returns:
+        Dictionary of {relative_path: Path} for created files
+        
+    Usage:
+        files = uth.write_sources({
+            "main.cpp": '''
+                #include <iostream>
+                int main() { return 0; }
+            ''',
+            "extra.hpp": '''
+                #pragma once
+                void helper();
+            '''
+        })
+        # files["main.cpp"] is a Path object to the created file
+        
+        # Or write to specific directory:
+        files = uth.write_sources(mapping, target_dir="/tmp/test")
+    """
+    if target_dir is None:
+        base_path = Path(os.getcwd())
+    else:
+        base_path = Path(target_dir)
+        
+    paths = {}
+    for rel, text in mapping.items():
+        p = base_path / rel
+        p.parent.mkdir(parents=True, exist_ok=True)
+        p.write_text(textwrap.dedent(text).lstrip())
+        paths[rel] = p
+    return paths

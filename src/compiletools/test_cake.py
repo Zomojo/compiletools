@@ -73,74 +73,82 @@ class TestCake:
             }
             assert expected_exes == actual_exes
 
-    def _create_deeper_cpp(self):
-        data = """
-        #include "deeper.hpp"
+    def _get_file_contents(self):
+        """Define all available source file contents"""
+        return {
+            "deeper.cpp": """
+                #include "deeper.hpp"
 
-        int deeper_func(const int value)
-        {
-            return 42;
+                int deeper_func(const int value)
+                {
+                    return 42;
+                }
+            """,
+            "deeper.hpp": """
+                int deeper_func(const int value);
+            """,
+            "extra.cpp": """
+                #include "extra.hpp"
+
+                int extra_func(const int value)
+                {
+                    return 24;
+                }
+            """,
+            "extra.hpp": """
+                int extra_func(const int value);
+            """,
+            "main.cpp": """
+                #include "extra.hpp"
+                
+                int main(int argc, char* argv[])
+                {
+                    return extra_func(42);
+                }
+            """
         }
 
+    def _create_source_files(self, files=None):
+        """Create source files, optionally selecting which ones
+        
+        Args:
+            files: List of filenames to create. If None, creates all available files.
+        
+        Returns:
+            Dictionary of {relative_path: Path} for created files
         """
+        file_contents = self._get_file_contents()
+        
+        if files is None:
+            files = list(file_contents.keys())
+        
+        # Validate that all requested files are available
+        unavailable = set(files) - set(file_contents.keys())
+        if unavailable:
+            raise ValueError(f"Unavailable files requested: {unavailable}")
+        
+        return uth.write_sources({f: file_contents[f] for f in files})
 
-        with open("deeper.cpp", "w") as output:
-            output.write(data)
+    # Convenience methods for individual file creation
+    def _create_main_cpp(self):
+        """Create just main.cpp"""
+        return self._create_source_files(["main.cpp"])
 
-    def _create_deeper_hpp(self):
-        data = """
-        int deeper_func(const int value);
+    def _create_extra_files(self):
+        """Create extra.cpp and extra.hpp"""
+        return self._create_source_files(["extra.cpp", "extra.hpp"])
 
-        """
-
-        with open("deeper.hpp", "w") as output:
-            output.write(data)
-
-    def _create_extra_cpp(self):
-        extracpp = """
-        #include "extra.hpp"
-
-        int extra_func(const int value)
-        {
-            return 24;
-        }
-
-        """
-
-        with open("extra.cpp", "w") as output:
-            output.write(extracpp)
-
-    def _create_extra_hpp(self):
-        extrahpp = """
-        int extra_func(const int value);
-
-        """
-
-        with open("extra.hpp", "w") as output:
-            output.write(extrahpp)
+    def _create_deeper_files(self):
+        """Create deeper.cpp and deeper.hpp"""
+        return self._create_source_files(["deeper.cpp", "deeper.hpp"])
 
     def _inject_deeper_hpp_into_extra_hpp(self):
         data = []
         with open("extra.hpp", "r") as infile:
-            data = ['#include "deeper.hpp"'] + infile.readlines()
+            data = ['#include "deeper.hpp"\n'] + infile.readlines()
 
         with open("extra.hpp", "w") as outfile:
             outfile.writelines(data)
-
-    def _create_main_cpp(self):
-        # Write main.cpp
-        maincpp = """
-        #include "extra.hpp"
-        
-        int main(int argc, char* argv[])
-        {
-            return extra_func(42);
-        }
-
-        """
-
-        with open("main.cpp", "w") as output:
-            output.write(maincpp)
 
     def _create_recompile_test_files(self, deeper_is_included=False):
         """ Create a simple C++ program containing a main.cpp, extra.hpp, 
@@ -149,11 +157,7 @@ class TestCake:
             This will allow us to test that editing any of those files 
             triggers a recompile.
         """
-        self._create_main_cpp()
-        self._create_extra_hpp()
-        self._create_extra_cpp()
-        self._create_deeper_hpp()
-        self._create_deeper_cpp()
+        return self._create_source_files()
 
     def _grab_timestamps(self, deeper_is_included=False):
         """ There are 8 files we want timestamps for.  
@@ -257,12 +261,10 @@ class TestCake:
         self._compile_edit_compile(
             ["extra.hpp"], ["extra.hpp", "extra.o", "main.o", "main"]
         )
-        pass
 
     def test_dependent_source_edit_recompiles(self):
         """ Make sure that when an implied source file is altered that a rebuild occurs """
         self._compile_edit_compile(["extra.cpp"], ["extra.cpp", "extra.o", "main"])
-        pass
 
     def test_deeper_include_edit_recompiles(self):
         """ Make sure that when a deeper include file is put into extra.hpp that a rebuild occurs """
@@ -271,7 +273,6 @@ class TestCake:
             ["extra.hpp", "deeper.hpp", "deeper.o", "extra.o", "main.o", "main"],
             deeper_is_included=True,
         )
-        pass
 
     def teardown_method(self):
         uth.reset()
