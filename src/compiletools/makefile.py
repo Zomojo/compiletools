@@ -653,15 +653,8 @@ class MakefileCreator:
 
 
 def main(argv=None):
-    variant = compiletools.configutils.extract_variant(argv=argv)
-    config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv)
-    cap = configargparse.getArgumentParser(
-        description="Create a Makefile that will compile the given source file into an executable (or library)",
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        auto_env_var_prefix="",
-        default_config_files=config_files,
-        args_for_setting_config_path=["-c", "--config"],
-        ignore_unknown_config_file_keys=True,
+    cap = compiletools.apptools.create_parser(
+        "Create a Makefile that will compile the given source file into an executable (or library)", argv=argv
     )
     MakefileCreator.add_arguments(cap)
     compiletools.hunter.add_arguments(cap)

@@ -271,15 +271,8 @@ def signal_handler(signal, frame):
 
 
 def main(argv=None):
-    variant = compiletools.configutils.extract_variant(argv=argv)
-    config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv)
-    cap = configargparse.getArgumentParser(
-        description="A convenience tool to aid migration from cake to the ct-* tools",
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        auto_env_var_prefix="",
-        default_config_files=config_files,
-        args_for_setting_config_path=["-c", "--config"],
-        ignore_unknown_config_file_keys=True,
+    cap = compiletools.apptools.create_parser(
+        "A convenience tool to aid migration from cake to the ct-* tools", argv=argv
     )
     Cake.add_arguments(cap)
     Cake.registercallback()

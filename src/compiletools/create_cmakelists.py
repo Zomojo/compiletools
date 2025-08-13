@@ -103,15 +103,9 @@ class CMakefileCreator:
 def main(argv=None):
     if argv is None:
         argv = sys.argv
-    variant = compiletools.configutils.extract_variant(argv)
-    config_files = compiletools.configutils.config_files_from_variant()
-    cap = configargparse.getArgumentParser(
-        description="Create a CMakefile.txt that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.",
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        auto_env_var_prefix="",
-        default_config_files=config_files,
-        args_for_setting_config_path=["-c", "--config"],
-        ignore_unknown_config_file_keys=True,
+    cap = compiletools.apptools.create_parser(
+        "Create a CMakefile.txt that will compile the given source file into an executable (or library). Each given file is assumed to be compiled into a separate executable and/or library.", 
+        argv=argv
     )
 
     CMakefileCreator.add_arguments(cap)

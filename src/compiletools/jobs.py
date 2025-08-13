@@ -70,8 +70,7 @@ def add_arguments(cap):
 
 
 def main(argv=None):
-    cap = configargparse.getArgumentParser()
-    compiletools.apptools.add_base_arguments(cap)
+    cap = compiletools.apptools.create_parser("Determine optimal number of parallel jobs", argv=argv, include_config=False)
     add_arguments(cap)
     args = cap.parse_args(args=argv)
     if args.verbose >= 2:

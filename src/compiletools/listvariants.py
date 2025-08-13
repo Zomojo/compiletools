@@ -156,8 +156,7 @@ def find_possible_variants(
     return style.output
 
 def main(argv=None):
-    cap = configargparse.getArgumentParser()
-    compiletools.apptools.add_base_arguments(cap)
+    cap = compiletools.apptools.create_parser("List available build variants", argv=argv, include_config=False)
     add_arguments(cap)
     args = cap.parse_args(args=argv)
     print(compiletools.listvariants.find_possible_variants(args=args, verbose=args.verbose))

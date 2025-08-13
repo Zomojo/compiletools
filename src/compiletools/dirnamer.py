@@ -98,8 +98,7 @@ def user_cache_dir(
 
 
 def main(argv=None):
-    cap = configargparse.getArgumentParser()
-    compiletools.apptools.add_base_arguments(cap)
+    cap = compiletools.apptools.create_parser("Cache directory naming tool", argv=argv, include_config=False)
     add_arguments(cap)
     args = cap.parse_args(args=argv)
     print(compiletools.dirnamer.user_cache_dir(args=args))

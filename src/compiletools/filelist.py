@@ -173,7 +173,7 @@ class Filelist(object):
 
 
 def main(argv=None):
-    cap = configargparse.getArgumentParser()
+    cap = compiletools.apptools.create_parser("Generate file lists for packaging", argv=argv, include_config=False)
     Filelist.add_arguments(cap)
     args = compiletools.apptools.parseargs(cap, argv)
     headerdeps = compiletools.headerdeps.create(args)

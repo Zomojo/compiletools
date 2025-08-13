@@ -586,6 +586,39 @@ def _fix_variable_handling_method(cap, argv, verbose):
     return cap.parse_args(args=argv)
 
 
+def create_parser(description, argv=None, include_config=True, include_write_config=False):
+    """Create a standardized configargparse parser with common settings
+    
+    Args:
+        description: Parser description string
+        argv: Command line arguments (default: None)
+        include_config: If True, use full config setup with variant extraction.
+                       If False, use simple setup with base arguments only.
+        include_write_config: If True, add config file writing options.
+    
+    Returns:
+        Configured configargparse.ArgumentParser instance
+    """
+    if include_config:
+        variant = compiletools.configutils.extract_variant(argv=argv)
+        config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv)
+        kwargs = {
+            "description": description,
+            "formatter_class": configargparse.ArgumentDefaultsHelpFormatter,
+            "auto_env_var_prefix": "",
+            "default_config_files": config_files,
+            "args_for_setting_config_path": ["-c", "--config"],
+            "ignore_unknown_config_file_keys": True,
+        }
+        if include_write_config:
+            kwargs["args_for_writing_out_config_file"] = ["-w", "--write-out-config-file"]
+        return configargparse.getArgumentParser(**kwargs)
+    else:
+        cap = configargparse.getArgumentParser(description=description)
+        add_base_arguments(cap, argv=argv)
+        return cap
+
+
 def parseargs(cap, argv, verbose=None):
     """argv must be the logical equivalent of sys.argv[1:]"""
     # command-line values override environment variables which override config file values which override defaults.

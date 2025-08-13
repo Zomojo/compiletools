@@ -216,15 +216,8 @@ def main(argv=None):
         UTF8Writer = codecs.getwriter("utf8")
         sys.stdout = UTF8Writer(sys.stdout)
 
-    variant = compiletools.configutils.extract_variant(argv=argv)
-    config_files = compiletools.configutils.config_files_from_variant(variant=variant, argv=argv)
-    cap = configargparse.getArgumentParser(
-        description="Create a tree of header dependencies starting at a given C/C++ file",
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        auto_env_var_prefix="",
-        default_config_files=config_files,
-        args_for_setting_config_path=["-c", "--config"],
-        ignore_unknown_config_file_keys=True,
+    cap = compiletools.apptools.create_parser(
+        "Create a tree of header dependencies starting at a given C/C++ file", argv=argv
     )
     cap.add("filename", help="File to start tracing headers from", nargs="+")
 
@@ -260,13 +253,7 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
-    config_files = compiletools.configutils.config_files_from_variant()
-    cap = configargparse.getArgumentParser(
-        description="Create a tree of header dependencies starting at a given C/C++ file. ",
-        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
-        auto_env_var_prefix="",
-        default_config_files=config_files,
-        args_for_setting_config_path=["-c", "--config"],
-        ignore_unknown_config_file_keys=True,
+    cap = compiletools.apptools.create_parser(
+        "Create a tree of header dependencies starting at a given C/C++ file."
     )
     sys.exit(main())
