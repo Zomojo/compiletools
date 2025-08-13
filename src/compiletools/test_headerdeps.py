@@ -41,24 +41,33 @@ def _generatecache(tempdir, name, realpaths, extraargs=None):
     if extraargs is None:
         extraargs = []
     
-    with uth.TempConfigContext(tempdir=tempdir) as temp_config_name:
-        argv = [
-            "--headerdeps",
-            name,
-            "--include",
-            uth.ctdir(),
-            "-c",
-            temp_config_name,
-        ] + extraargs
-        cachename = os.path.join(tempdir, name)
-        with uth.EnvironmentContext({"CTCACHE": cachename}):
+    # Save original cache state for proper cleanup
+    origcache = compiletools.dirnamer.user_cache_dir()
+    
+    try:
+        with uth.TempConfigContext(tempdir=tempdir) as temp_config_name:
+            argv = [
+                "--headerdeps",
+                name,
+                "--include",
+                uth.ctdir(),
+                "-c",
+                temp_config_name,
+            ] + extraargs
+            cachename = os.path.join(tempdir, name)
+            with uth.EnvironmentContext({"CTCACHE": cachename}):
+                reload(compiletools.dirnamer)
+                reload(compiletools.headerdeps)
+            cap = configargparse.getArgumentParser()
+            compiletools.headerdeps.add_arguments(cap)
+            args = compiletools.apptools.parseargs(cap, argv)
+            headerdeps = compiletools.headerdeps.create(args)
+            return cachename, _callprocess(headerdeps, realpaths)
+    finally:
+        # Properly restore module state
+        with uth.EnvironmentContext({"CTCACHE": origcache}):
             reload(compiletools.dirnamer)
             reload(compiletools.headerdeps)
-        cap = configargparse.getArgumentParser()
-        compiletools.headerdeps.add_arguments(cap)
-        args = compiletools.apptools.parseargs(cap, argv)
-        headerdeps = compiletools.headerdeps.create(args)
-        return cachename, _callprocess(headerdeps, realpaths)
 
 
 class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
@@ -90,7 +99,6 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         if extraargs is None:
             extraargs = []
 
-        origcache = compiletools.dirnamer.user_cache_dir()
         with uth.TempDirContextNoChange() as tempdir:
             samplesdir = uth.samplesdir()
             relativepaths = [
@@ -116,10 +124,6 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
             # Check the on-disk caches are the same
             comparator = filecmp.dircmp(directcache, cppcache)
             assert len(comparator.diff_files) == 0
-            
-        with uth.EnvironmentContext({"CTCACHE": origcache}):
-            reload(compiletools.dirnamer)
-            reload(compiletools.headerdeps)
 
     def test_direct_and_cpp_generate_same_results_ex(self):
         self._direct_and_cpp_generate_same_results_ex()
@@ -176,37 +180,15 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         filename = os.path.join(uth.samplesdir(), "cppflags_macros/main.cpp")
         
         # Test with -DENABLE_ADVANCED_FEATURES in CPPFLAGS
-        with uth.TempConfigContext() as temp_config_name:
-            argv = [
-                "--config=" + temp_config_name,
-                "--headerdeps=direct",
-                "--include", uth.samplesdir(),
-                "--CPPFLAGS", f"-I{uth.samplesdir()} -DENABLE_ADVANCED_FEATURES"
-            ]
-            
-            origcache = compiletools.dirnamer.user_cache_dir()
-            with uth.EnvironmentContext({"CTCACHE": "None"}):
-                reload(compiletools.dirnamer)
-                reload(compiletools.headerdeps)
-                cap = configargparse.getArgumentParser()
-            compiletools.headerdeps.add_arguments(cap)
-            args = compiletools.apptools.parseargs(cap, argv)
-            
-            hdirect = compiletools.headerdeps.create(args)
-            result = hdirect.process(filename)
-            result_set = set(result)
-            
-            # advanced_feature.hpp should be included because ENABLE_ADVANCED_FEATURES
-            # is defined in CPPFLAGS and DirectHeaderDeps extracts -D flags
-            advanced_feature_path = os.path.join(uth.samplesdir(), "cppflags_macros/advanced_feature.hpp")
-            
-            # This ensures DirectHeaderDeps correctly recognizes macros from CPPFLAGS
-            assert advanced_feature_path in result_set, \
-                         "advanced_feature.hpp should be included when ENABLE_ADVANCED_FEATURES is defined in CPPFLAGS"
-            
-            with uth.EnvironmentContext({"CTCACHE": origcache}):
-                reload(compiletools.dirnamer)
-                reload(compiletools.headerdeps)
+        result_set = uth.run_headerdeps("direct", filename, cppflags="-DENABLE_ADVANCED_FEATURES")
+        
+        # advanced_feature.hpp should be included because ENABLE_ADVANCED_FEATURES
+        # is defined in CPPFLAGS and DirectHeaderDeps extracts -D flags
+        advanced_feature_path = os.path.join(uth.samplesdir(), "cppflags_macros/advanced_feature.hpp")
+        
+        # This ensures DirectHeaderDeps correctly recognizes macros from CPPFLAGS
+        assert advanced_feature_path in result_set, \
+                     "advanced_feature.hpp should be included when ENABLE_ADVANCED_FEATURES is defined in CPPFLAGS"
 
     def test_macro_extraction_from_all_flag_sources(self):
         """Test that DirectHeaderDeps extracts -D macros from CPPFLAGS, CFLAGS, and CXXFLAGS
@@ -218,40 +200,17 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         filename = os.path.join(uth.samplesdir(), "cppflags_macros/multi_flag_test.cpp")
         
         # Test CPPFLAGS macro extraction
-        with uth.TempConfigContext() as temp_config_name:
-            argv = [
-                "--config=" + temp_config_name,
-                "--headerdeps=direct",
-                "--include", uth.samplesdir(),
-                "--CPPFLAGS", f"-I{uth.samplesdir()} -DFROM_CPPFLAGS -DFROM_CFLAGS -DFROM_CXXFLAGS"
-            ]
-            
-            origcache = compiletools.dirnamer.user_cache_dir()
-            with uth.EnvironmentContext({"CTCACHE": "None"}):
-                reload(compiletools.dirnamer)
-                reload(compiletools.headerdeps)
-                cap = configargparse.getArgumentParser()
-            compiletools.headerdeps.add_arguments(cap)
-            args = compiletools.apptools.parseargs(cap, argv)
-            
-            hdirect = compiletools.headerdeps.create(args)
-            result = hdirect.process(filename)
-            result_set = set(result)
-            
-            # All three feature headers should be included since macros are defined in CPPFLAGS
-            expected_headers = [
-                os.path.join(uth.samplesdir(), "cppflags_macros/cppflags_feature.hpp"),
-                os.path.join(uth.samplesdir(), "cppflags_macros/cflags_feature.hpp"), 
-                os.path.join(uth.samplesdir(), "cppflags_macros/cxxflags_feature.hpp")
-            ]
-            
-            for expected_header in expected_headers:
-                assert expected_header in result_set, \
-                             f"{os.path.basename(expected_header)} should be included when its macro is defined"
-            
-            with uth.EnvironmentContext({"CTCACHE": origcache}):
-                reload(compiletools.dirnamer)
-                reload(compiletools.headerdeps)
+        result_set = uth.run_headerdeps("direct", filename, cppflags="-DFROM_CPPFLAGS -DFROM_CFLAGS -DFROM_CXXFLAGS")
+        
+        # All three feature headers should be included since macros are defined in CPPFLAGS
+        expected_headers = {
+            os.path.join(uth.samplesdir(), "cppflags_macros/cppflags_feature.hpp"),
+            os.path.join(uth.samplesdir(), "cppflags_macros/cflags_feature.hpp"), 
+            os.path.join(uth.samplesdir(), "cppflags_macros/cxxflags_feature.hpp")
+        }
+        
+        # Use set comparison instead of loop - more concise and better error messages
+        assert expected_headers <= result_set, f"Missing headers: {expected_headers - result_set}"
 
     def test_compiler_builtin_macro_recognition(self):
         """Test that DirectHeaderDeps recognizes compiler and platform built-in macros
@@ -262,56 +221,35 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         """
         filename = os.path.join(uth.samplesdir(), "cppflags_macros/compiler_builtin_test.cpp")
         
-        with uth.TempConfigContext() as temp_config_name:
-            argv = [
-                "--config=" + temp_config_name,
-                "--headerdeps=direct",
-                "--include", uth.samplesdir()
-            ]
-            
-            origcache = compiletools.dirnamer.user_cache_dir()
-            with uth.EnvironmentContext({"CTCACHE": "None"}):
-                reload(compiletools.dirnamer)
-                reload(compiletools.headerdeps)
-                cap = configargparse.getArgumentParser()
-            compiletools.headerdeps.add_arguments(cap)
-            args = compiletools.apptools.parseargs(cap, argv)
-            
-            hdirect = compiletools.headerdeps.create(args)
-            result = hdirect.process(filename)
-            result_set = set(result)
-            
-            # Expected headers based on compiler and platform built-in macros
-            import platform
-            import sys
-            
-            expected_headers = [
-                os.path.join(uth.samplesdir(), "cppflags_macros/gcc_feature.hpp"),       # __GNUC__
-            ]
-            
-            # Add platform-specific header based on current platform
-            if sys.platform.startswith('linux'):
-                expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/linux_feature.hpp"))
-            # Note: For other platforms (Windows, macOS), we'd need corresponding feature files
-            
-            # Add architecture-specific header based on current platform
-            arch = platform.machine().lower()
-            if arch in ['x86_64', 'amd64']:
-                expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/x86_64_feature.hpp"))
-            elif arch.startswith('arm') and not ('64' in arch or arch.startswith('aarch')):
-                expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/arm_feature.hpp"))
-            elif arch.startswith('aarch') or (arch.startswith('arm') and '64' in arch):
-                expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/aarch64_feature.hpp"))
-            elif arch.startswith('riscv') or 'riscv' in arch:
-                expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/riscv_feature.hpp"))
-            
-            for expected_header in expected_headers:
-                assert expected_header in result_set, \
-                             f"{os.path.basename(expected_header)} should be included due to built-in macros for {arch}"
-            
-            with uth.EnvironmentContext({"CTCACHE": origcache}):
-                reload(compiletools.dirnamer)
-                reload(compiletools.headerdeps)
+        result_set = uth.run_headerdeps("direct", filename, extra_args=["--include", uth.samplesdir()])
+        
+        # Expected headers based on compiler and platform built-in macros
+        import platform
+        import sys
+        
+        expected_headers = [
+            os.path.join(uth.samplesdir(), "cppflags_macros/gcc_feature.hpp"),       # __GNUC__
+        ]
+        
+        # Add platform-specific header based on current platform
+        if sys.platform.startswith('linux'):
+            expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/linux_feature.hpp"))
+        # Note: For other platforms (Windows, macOS), we'd need corresponding feature files
+        
+        # Add architecture-specific header based on current platform
+        arch = platform.machine().lower()
+        if arch in ['x86_64', 'amd64']:
+            expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/x86_64_feature.hpp"))
+        elif arch.startswith('arm') and not ('64' in arch or arch.startswith('aarch')):
+            expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/arm_feature.hpp"))
+        elif arch.startswith('aarch') or (arch.startswith('arm') and '64' in arch):
+            expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/aarch64_feature.hpp"))
+        elif 'riscv' in arch:
+            expected_headers.append(os.path.join(uth.samplesdir(), "cppflags_macros/riscv_feature.hpp"))
+        
+        for expected_header in expected_headers:
+            assert expected_header in result_set, \
+                         f"{os.path.basename(expected_header)} should be included due to built-in macros for {arch}"
 
     def test_riscv_architecture_macro_recognition(self):
         """Test that DirectHeaderDeps recognizes RISC-V architecture macros
@@ -321,34 +259,12 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         """
         filename = os.path.join(uth.samplesdir(), "cppflags_macros/compiler_builtin_test.cpp")
         
-        with uth.TempConfigContext() as temp_config_name:
-            argv = [
-                "--config=" + temp_config_name,
-                "--headerdeps=direct",
-                "--include", uth.samplesdir(),
-                "--CPPFLAGS", f"-I{uth.samplesdir()} -D__riscv -D__riscv64__"
-            ]
-            
-            origcache = compiletools.dirnamer.user_cache_dir()
-            with uth.EnvironmentContext({"CTCACHE": "None"}):
-                reload(compiletools.dirnamer)
-                reload(compiletools.headerdeps)
-                cap = configargparse.getArgumentParser()
-            compiletools.headerdeps.add_arguments(cap)
-            args = compiletools.apptools.parseargs(cap, argv)
-            
-            hdirect = compiletools.headerdeps.create(args)
-            result = hdirect.process(filename)
-            result_set = set(result)
-            
-            # RISC-V feature header should be included due to __riscv macro
-            riscv_feature_path = os.path.join(uth.samplesdir(), "cppflags_macros/riscv_feature.hpp")
-            assert riscv_feature_path in result_set, \
-                         "riscv_feature.hpp should be included when __riscv macro is defined"
-            
-            with uth.EnvironmentContext({"CTCACHE": origcache}):
-                reload(compiletools.dirnamer)
-                reload(compiletools.headerdeps)
+        result_set = uth.run_headerdeps("direct", filename, cppflags="-D__riscv -D__riscv64__")
+        
+        # RISC-V feature header should be included due to __riscv macro
+        riscv_feature_path = os.path.join(uth.samplesdir(), "cppflags_macros/riscv_feature.hpp")
+        assert riscv_feature_path in result_set, \
+                     "riscv_feature.hpp should be included when __riscv macro is defined"
 
     def test_additional_compiler_macro_recognition(self):
         """Test that DirectHeaderDeps recognizes additional compiler built-in macros
@@ -358,42 +274,19 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         """
         filename = os.path.join(uth.samplesdir(), "cppflags_macros/compiler_builtin_test.cpp")
         
-        # Test MSVC macros
-        with uth.TempConfigContext() as temp_config_name:
-            argv = [
-                "--config=" + temp_config_name,
-                "--headerdeps=direct",
-                "--include", uth.samplesdir(),
-                "--CPPFLAGS", f"-I{uth.samplesdir()} -D_MSC_VER -D__INTEL_COMPILER -D__EMSCRIPTEN__ -D__ARMCC_VERSION"
-            ]
-            
-            origcache = compiletools.dirnamer.user_cache_dir()
-            with uth.EnvironmentContext({"CTCACHE": "None"}):
-                reload(compiletools.dirnamer)
-                reload(compiletools.headerdeps)
-                cap = configargparse.getArgumentParser()
-            compiletools.headerdeps.add_arguments(cap)
-            args = compiletools.apptools.parseargs(cap, argv)
-            
-            hdirect = compiletools.headerdeps.create(args)
-            result = hdirect.process(filename)
-            result_set = set(result)
-            
-            # All compiler-specific headers should be included
-            expected_headers = [
-                os.path.join(uth.samplesdir(), "cppflags_macros/msvc_feature.hpp"),
-                os.path.join(uth.samplesdir(), "cppflags_macros/intel_feature.hpp"),
-                os.path.join(uth.samplesdir(), "cppflags_macros/emscripten_feature.hpp"),
-                os.path.join(uth.samplesdir(), "cppflags_macros/armcc_feature.hpp")
-            ]
-            
-            for expected_header in expected_headers:
-                assert expected_header in result_set, \
-                             f"{os.path.basename(expected_header)} should be included when its compiler macro is defined"
-            
-            with uth.EnvironmentContext({"CTCACHE": origcache}):
-                reload(compiletools.dirnamer)
-                reload(compiletools.headerdeps)
+        # Test all compiler macros together
+        result_set = uth.run_headerdeps("direct", filename, cppflags="-D_MSC_VER -D__INTEL_COMPILER -D__EMSCRIPTEN__ -D__ARMCC_VERSION")
+        
+        # All compiler-specific headers should be included  
+        expected_headers = {
+            os.path.join(uth.samplesdir(), "cppflags_macros/msvc_feature.hpp"),
+            os.path.join(uth.samplesdir(), "cppflags_macros/intel_feature.hpp"),
+            os.path.join(uth.samplesdir(), "cppflags_macros/emscripten_feature.hpp"),
+            os.path.join(uth.samplesdir(), "cppflags_macros/armcc_feature.hpp")
+        }
+        
+        # Use set comparison for better error messages
+        assert expected_headers <= result_set, f"Missing headers: {expected_headers - result_set}"
 
     def test_elif_conditional_compilation_support(self):
         """Test that DirectHeaderDeps correctly handles #elif preprocessor directives
@@ -473,52 +366,20 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         ]
         
         for scenario in elif_scenarios:
-            # pytest handles this automatically
-            with uth.TempConfigContext() as temp_config_name:
+            # Extract CPPFLAGS part after -I{samplesdir()}
+            cppflags_part = scenario['cppflags'].replace(f"-I{uth.samplesdir()}", "").strip()
+            if not cppflags_part:
+                cppflags_part = None
                 
-                # Test DirectHeaderDeps (our custom preprocessor)
-                argv_direct = [
-                    "--config=" + temp_config_name,
-                    "--headerdeps=direct",
-                    "--include", uth.samplesdir(),
-                    f"--CPPFLAGS={scenario['cppflags']}"
-                ]
-                
-                # Test CppHeaderDeps (actual C preprocessor)
-                argv_cpp = [
-                    "--config=" + temp_config_name,
-                    "--headerdeps=cpp",
-                    "--include", uth.samplesdir(), 
-                    f"--CPPFLAGS={scenario['cppflags']}"
-                ]
-                
-                origcache = compiletools.dirnamer.user_cache_dir()
-                with uth.EnvironmentContext({"CTCACHE": "None"}):
-                    reload(compiletools.dirnamer)
-                    reload(compiletools.headerdeps)
-                cap = configargparse.getArgumentParser()
-                compiletools.headerdeps.add_arguments(cap)
-                
-                # Get results from both approaches
-                args_direct = compiletools.apptools.parseargs(cap, argv_direct)
-                hdirect = compiletools.headerdeps.create(args_direct)
-                direct_result = hdirect.process(filename)
-                direct_set = set(direct_result)
-                
-                args_cpp = compiletools.apptools.parseargs(cap, argv_cpp)
-                hcpp = compiletools.headerdeps.create(args_cpp)
-                cpp_result = hcpp.process(filename)
-                cpp_set = set(cpp_result)
-                
-                # Compare the results - they should be identical
-                assert direct_set == cpp_set, \
-                    f"DirectHeaderDeps and CppHeaderDeps should produce identical #elif results for scenario: {scenario['name']}\n" \
-                    f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
-                    f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
-                
-                with uth.EnvironmentContext({"CTCACHE": origcache}):
-                    reload(compiletools.dirnamer)
-                    reload(compiletools.headerdeps)
+            # Test both direct and cpp approaches with minimal code
+            direct_set = uth.run_headerdeps("direct", filename, cppflags=cppflags_part)
+            cpp_set = uth.run_headerdeps("cpp", filename, cppflags=cppflags_part)
+            
+            # Compare the results - they should be identical
+            assert direct_set == cpp_set, \
+                f"DirectHeaderDeps and CppHeaderDeps should produce identical #elif results for scenario: {scenario['name']}\n" \
+                f"DirectHeaderDeps found: {sorted([os.path.basename(f) for f in direct_set])}\n" \
+                f"CppHeaderDeps found: {sorted([os.path.basename(f) for f in cpp_set])}"
 
     def test_advanced_preprocessor_features(self):
         """Test advanced preprocessor directive support

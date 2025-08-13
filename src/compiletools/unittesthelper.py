@@ -249,6 +249,43 @@ def CompileToolsTestContext(ctcache=None, reload_modules=None, config_extralines
                     yield (tempdir, config_path)
 
 
+def run_headerdeps(kind, filename, cppflags=None, cache="None", extra_args=None):
+    """Helper function to run headerdeps analysis and return result set.
+    
+    Eliminates the repetitive pattern of:
+    - Creating config
+    - Setting up environment  
+    - Creating parser
+    - Running analysis
+    - Converting to set
+    
+    Args:
+        kind: HeaderDeps kind ("direct" or "cpp")
+        filename: File to analyze
+        cppflags: Optional CPPFLAGS string
+        cache: CTCACHE value (default "None")
+        extra_args: Additional command line arguments
+        
+    Returns:
+        set: Set of header dependencies found
+    """
+    with TempConfigContext() as temp_config_name:
+        argv = [
+            "--config=" + temp_config_name,
+            f"--headerdeps={kind}",
+            "--include", samplesdir(),
+        ]
+        
+        if cppflags:
+            argv.extend(["--CPPFLAGS", f"-I{samplesdir()} {cppflags}"])
+            
+        if extra_args:
+            argv.extend(extra_args)
+            
+        with HeaderDepsTestContext(argv, cache=cache) as hdeps:
+            return set(hdeps.process(filename))
+
+
 @contextlib.contextmanager
 def HeaderDepsTestContext(argv, cache="None", config_extralines=None):
     """Context manager for headerdeps tests that handles the common boilerplate pattern.
