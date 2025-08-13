@@ -115,4 +115,3 @@ class TestVariant:
     def teardown_method(self):
         uth.reset()
 
-

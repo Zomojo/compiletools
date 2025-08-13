@@ -1,4 +1,5 @@
 import os
+import textwrap
 import compiletools.unittesthelper as uth
 import compiletools.listvariants
 
@@ -16,19 +17,19 @@ def test_none_found():
             ucd = "/home/dummy/.config/ct"
             scd = "/usr/lib"
             ecd = uth.cakedir()
-            expected_output = """\
-Variant aliases are:
-{{'dbg':'foo.debug', 'rls':'foo.release'}}
-From highest to lowest priority configuration directories, the possible variants are:
-{0}
-    ct
-/home/dummy/.config/ct
-    None found
-/usr/lib
-    None found
-{1}
-    None found
-""".format(
+            expected_output = textwrap.dedent("""\
+                Variant aliases are:
+                {{'dbg':'foo.debug', 'rls':'foo.release'}}
+                From highest to lowest priority configuration directories, the possible variants are:
+                {0}
+                    ct
+                /home/dummy/.config/ct
+                    None found
+                /usr/lib
+                    None found
+                {1}
+                    None found
+                """).format(
                 tempdir,
                 os.path.join(ecd, "ct", "ct.conf.d"),
             )
@@ -37,5 +38,4 @@ From highest to lowest priority configuration directories, the possible variants
                 user_config_dir=ucd, system_config_dir=scd, exedir=ecd, verbose=9, gitroot=tempdir
             )
             assert expected_output == output
-
 

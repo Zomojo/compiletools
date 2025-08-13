@@ -130,5 +130,3 @@ class TestConfig:
             # print(args)
             # Check that the append-CXXFLAGS argument made its way into the CXXFLAGS
             assert "-fdiagnostics-color=always" in args.CXXFLAGS
-
-
