@@ -121,3 +121,71 @@ class ParserContext:
     def __exit__(self, exc_type, exc_value, traceback):
         configargparse._parsers = self._saved_parsers
         compiletools.apptools.resetcallbacks()
+
+
+class CPPDepsTestContext:
+    """A context manager for tests that call main() functions requiring configuration.
+    
+    Currently used by test_cppdeps. This combines:
+    - TempDirContext: Creates temp directory and changes to it
+    - Config file setup: Copies ct.conf and specified variant config files
+    - EnvironmentContext: Sets CTCACHE to current directory or custom value
+    - Module reloads: Reloads specified modules to pick up new cache
+    - Parser cleanup: Resets configargparse state
+    
+    TODO: Rename to CompileToolsTestContext once proven to work with more tests.
+    """
+    
+    def __init__(self, variant_configs=None, reload_modules=None, ctcache=None):
+        """
+        Args:
+            variant_configs: List of config files to copy (e.g., ['gcc.debug.conf'])
+            reload_modules: List of modules to reload (e.g., [compiletools.headerdeps])
+            ctcache: Override CTCACHE value (default: current working directory, can be "None" to disable)
+        """
+        self.variant_configs = variant_configs or ['gcc.debug.conf']
+        self.reload_modules = reload_modules or []
+        self.ctcache = ctcache
+        self._temp_context = None
+        self._env_context = None
+        
+    def __enter__(self):
+        import importlib
+        
+        # Create temp directory and change to it
+        self._temp_context = TempDirContext()
+        self._temp_context.__enter__()
+        
+        # Copy config files to test environment
+        ct_conf_dir = os.path.join(os.getcwd(), "ct.conf.d")
+        os.makedirs(ct_conf_dir, exist_ok=True)
+        
+        src_config_dir = ctconfdir()
+        # Always copy ct.conf
+        config_files = ['ct.conf'] + self.variant_configs
+        for config_file in config_files:
+            src_path = os.path.join(src_config_dir, config_file)
+            dst_path = os.path.join(ct_conf_dir, config_file)
+            if os.path.exists(src_path):
+                shutil.copy2(src_path, dst_path)
+        
+        # Set up environment with CTCACHE
+        ctcache_value = self.ctcache if self.ctcache is not None else os.getcwd()
+        self._env_context = EnvironmentContext({"CTCACHE": ctcache_value})
+        self._env_context.__enter__()
+        
+        # Reload specified modules
+        for module in self.reload_modules:
+            importlib.reload(module)
+            
+        # Reset parser state
+        reset()
+        
+        return self
+        
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self._env_context:
+            self._env_context.__exit__(exc_type, exc_value, traceback)
+        if self._temp_context:
+            self._temp_context.__exit__(exc_type, exc_value, traceback)
+        reset()
