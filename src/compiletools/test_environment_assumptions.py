@@ -1,7 +1,6 @@
 import subprocess
 import shutil
 import os
-import tempfile
 import pytest
 
 import compiletools.unittesthelper as uth
@@ -13,11 +12,9 @@ import compiletools.apptools
 def temp_dir():
     """Provide a temporary directory for test files."""
     uth.reset()
-    tmpdir = tempfile.mkdtemp()
-    yield tmpdir
+    with uth.TempDirContextNoChange() as tmpdir:
+        yield tmpdir
     uth.reset()
-    if tmpdir:
-        shutil.rmtree(tmpdir, ignore_errors=True)
 
 
 def test_gcc_compiler_available(temp_dir):
@@ -134,10 +131,7 @@ def test_fPIC_support(temp_dir):
 def test_configuration_defaults_valid(temp_dir):
     """Test that default configuration variants are valid and accessible."""
     # Test that default config files can be loaded
-    origdir = os.getcwd()
-    os.chdir(temp_dir)
-    
-    try:
+    with uth.DirectoryContext(temp_dir):
         # Test default variant extraction with explicit empty argv
         variant = compiletools.configutils.extract_variant(
             argv=[],
@@ -149,9 +143,6 @@ def test_configuration_defaults_valid(temp_dir):
         )
         # Should fall back to system defaults when no local config
         assert variant is not None, "Failed to extract default variant"
-        
-    finally:
-        os.chdir(origdir)
 
 
 def test_standard_libraries_linkable(temp_dir):

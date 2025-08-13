@@ -9,6 +9,9 @@ import configargparse
 
 import compiletools.unittesthelper as uth
 import compiletools.cake
+import compiletools.apptools
+import compiletools.dirnamer
+import compiletools.namer
 
 
 def _touch(fname):

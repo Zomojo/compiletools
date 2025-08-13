@@ -5,6 +5,11 @@ import os
 import argparse  # Used for the parse_args test
 import configargparse
 
+try:
+    reload(unittest)
+except NameError:
+    from importlib import reload
+
 
 class FakeNamespace(object):
     def __init__(self):
@@ -52,10 +57,12 @@ class TestConfig:
         command-line values override environment variables which override config file values which override defaults.
         If variable_handling_method is set to "append" then variables are appended.
         """
-        uthr.reload_ct(cache_home="None")
+        with uth.EnvironmentContext({"CTCACHE": "None"}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.apptools)
 
         with uth.TempDirContext(), uth.EnvironmentContext(
-            flagsdict={"CXXFLAGS": "-fdiagnostics-color=always -DVARFROMENV"}
+            {"CXXFLAGS": "-fdiagnostics-color=always -DVARFROMENV"}
         ):
             uth.create_temp_ct_conf(os.getcwd(), extralines=[f"variable-handling-method={variable_handling_method}"])
             cfgfile = "foo.dbg.conf"
@@ -97,7 +104,9 @@ class TestConfig:
         self._test_variable_handling_method(variable_handling_method="append")
 
     def test_user_config_append_cxxflags(self):
-        uthr.reload_ct(cache_home="None")
+        with uth.EnvironmentContext({"CTCACHE": "None"}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.apptools)
 
         with uth.TempDirContext():
             uth.create_temp_ct_conf(os.getcwd())

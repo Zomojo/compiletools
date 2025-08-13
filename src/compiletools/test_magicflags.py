@@ -8,9 +8,6 @@ import compiletools.test_base as tb
 
 
 class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
-
-
-
     def test_parsing_CFLAGS(self):
         os.chdir(self._tmpdir)
 

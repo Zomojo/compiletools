@@ -51,30 +51,27 @@ class TestHunterModule:
 
     def test_hunter_follows_source_files_from_header(self):
         origcache = compiletools.dirnamer.user_cache_dir("ct")
-        tempdir = tempfile.mkdtemp()
-        with uth.EnvironmentContext({"CTCACHE": tempdir}):
-            reload(compiletools.headerdeps)
-            reload(compiletools.magicflags)
-            reload(compiletools.hunter)
+        with uth.TempDirContextNoChange() as tempdir:
+            with uth.EnvironmentContext({"CTCACHE": tempdir}):
+                reload(compiletools.headerdeps)
+                reload(compiletools.magicflags)
+                reload(compiletools.hunter)
 
-        temp_config = compiletools.unittesthelper.create_temp_config()
-        argv = ["-c", temp_config, "--include", uth.ctdir()]
-        cap = configargparse.getArgumentParser()
-        compiletools.hunter.add_arguments(cap)
-        args = compiletools.apptools.parseargs(cap, argv)
-        headerdeps = compiletools.headerdeps.create(args)
-        magicparser = compiletools.magicflags.create(args, headerdeps)
-        hntr = compiletools.hunter.Hunter(args, headerdeps, magicparser)
+            with uth.TempConfigContext() as temp_config:
+                argv = ["-c", temp_config, "--include", uth.ctdir()]
+                cap = configargparse.getArgumentParser()
+                compiletools.hunter.add_arguments(cap)
+                args = compiletools.apptools.parseargs(cap, argv)
+                headerdeps = compiletools.headerdeps.create(args)
+                magicparser = compiletools.magicflags.create(args, headerdeps)
+                hntr = compiletools.hunter.Hunter(args, headerdeps, magicparser)
 
-        relativepath = "factory/widget_factory.hpp"
-        realpath = os.path.join(uth.samplesdir(), relativepath)
-        filesfromheader = hntr.required_source_files(realpath)
-        filesfromsource = hntr.required_source_files(compiletools.utils.implied_source(realpath))
-        assert set(filesfromheader) == set(filesfromsource)
-
-        # Cleanup
-        os.unlink(temp_config)
-        shutil.rmtree(tempdir)
+                relativepath = "factory/widget_factory.hpp"
+                realpath = os.path.join(uth.samplesdir(), relativepath)
+                filesfromheader = hntr.required_source_files(realpath)
+                filesfromsource = hntr.required_source_files(compiletools.utils.implied_source(realpath))
+                assert set(filesfromheader) == set(filesfromsource)
+        
         with uth.EnvironmentContext({"CTCACHE": origcache}):
             reload(compiletools.headerdeps)
             reload(compiletools.magicflags)
@@ -91,15 +88,14 @@ class TestHunterModule:
             "simple/test_cflags.c",
         ]
         bulkpaths = [os.path.join(samplesdir, filename) for filename in relativepaths]
-        temp_config = compiletools.unittesthelper.create_temp_config()
-        argv = ["--config", temp_config, "--include", uth.ctdir()]
-        cap = configargparse.getArgumentParser()
-        compiletools.hunter.add_arguments(cap)
-        args = compiletools.apptools.parseargs(cap, argv)
-        headerdeps = compiletools.headerdeps.create(args)
-        magicparser = compiletools.magicflags.create(args, headerdeps)
-        hntr = compiletools.hunter.Hunter(args, headerdeps, magicparser)
-        os.unlink(temp_config)
+        with uth.TempConfigContext() as temp_config:
+            argv = ["--config", temp_config, "--include", uth.ctdir()]
+            cap = configargparse.getArgumentParser()
+            compiletools.hunter.add_arguments(cap)
+            args = compiletools.apptools.parseargs(cap, argv)
+            headerdeps = compiletools.headerdeps.create(args)
+            magicparser = compiletools.magicflags.create(args, headerdeps)
+            hntr = compiletools.hunter.Hunter(args, headerdeps, magicparser)
 
         realpath = os.path.join(samplesdir, "dottypaths/dottypaths.cpp")
         if precall:
@@ -113,23 +109,21 @@ class TestHunterModule:
 
     def test_hunter_is_not_order_dependent(self):
         origcache = compiletools.dirnamer.user_cache_dir("ct")
-        tempdir = tempfile.mkdtemp()
-        with uth.EnvironmentContext({"CTCACHE": tempdir}):
-            reload(compiletools.headerdeps)
-            reload(compiletools.magicflags)
-            reload(compiletools.hunter)
+        with uth.TempDirContextNoChange() as tempdir:
+            with uth.EnvironmentContext({"CTCACHE": tempdir}):
+                reload(compiletools.headerdeps)
+                reload(compiletools.magicflags)
+                reload(compiletools.hunter)
 
-        result2 = self._hunter_is_not_order_dependent(True)
-        result1 = self._hunter_is_not_order_dependent(False)
-        result3 = self._hunter_is_not_order_dependent(False)
-        result4 = self._hunter_is_not_order_dependent(True)
+            result2 = self._hunter_is_not_order_dependent(True)
+            result1 = self._hunter_is_not_order_dependent(False)
+            result3 = self._hunter_is_not_order_dependent(False)
+            result4 = self._hunter_is_not_order_dependent(True)
 
-        assert set(result1) == set(result2)
-        assert set(result3) == set(result2)
-        assert set(result4) == set(result2)
+            assert set(result1) == set(result2)
+            assert set(result3) == set(result2)
+            assert set(result4) == set(result2)
 
-        # Cleanup
-        shutil.rmtree(tempdir)
         with uth.EnvironmentContext({"CTCACHE": origcache}):
             reload(compiletools.headerdeps)
             reload(compiletools.magicflags)
