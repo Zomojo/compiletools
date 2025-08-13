@@ -388,3 +388,76 @@ def CPPDepsTestContext(variant_configs=None, reload_modules=None, ctcache=None):
                 yield temp_context
             finally:
                 reset()
+
+
+def headerdeps_result(filename, kind="direct", cppflags=None, include=None, extra_args=None, cache="None"):
+    """Return set of headers for given filename using specified headerdeps kind.
+    Provides full isolation (TempConfig, Environment, Parser).
+    Args:
+        filename: Path to file to analyse (can be relative; will be realpathed by headerdeps)
+        kind: 'direct' or 'cpp'
+        cppflags: Raw CPPFLAGS string (pass full string, do NOT auto-prepend -I)
+        include: Directory to use with --include (defaults to samplesdir())
+        extra_args: List of extra CLI args (e.g., ["--something", "value"])
+        cache: CTCACHE value (default 'None' for disabling disk cache)
+    Returns: set of header paths
+    """
+    include = include or samplesdir()
+    if extra_args is None:
+        extra_args = []
+    from importlib import reload
+    import compiletools.headerdeps
+    import compiletools.dirnamer
+    
+    # Save original cache setting
+    origcache = compiletools.dirnamer.user_cache_dir()
+    
+    try:
+        # Create config with custom CPPFLAGS if needed
+        config_extralines = []
+        if cppflags:
+            config_extralines.append(f'CPPFLAGS="-std=c++20 {cppflags}"')
+        
+        with TempConfigContext(extralines=config_extralines) as temp_config_name:
+            with EnvironmentContext({"CTCACHE": cache}):
+                reload(compiletools.dirnamer)
+                reload(compiletools.headerdeps)
+                
+                # Create fresh parser with complete isolation
+                with ParserContext():
+                    cap = configargparse.ArgumentParser(
+                        description="HeaderDeps test parser",
+                        formatter_class=configargparse.ArgumentDefaultsHelpFormatter,
+                        args_for_setting_config_path=["-c", "--config"],
+                        ignore_unknown_config_file_keys=False,
+                    )
+                    compiletools.headerdeps.add_arguments(cap)
+                    argv = ["--config=" + temp_config_name, f"--headerdeps={kind}", "--include", include] + extra_args
+                    args = compiletools.apptools.parseargs(cap, argv)
+                    h = compiletools.headerdeps.create(args)
+                    return set(h.process(filename))
+    finally:
+        # Restore original cache
+        with EnvironmentContext({"CTCACHE": origcache}):
+            reload(compiletools.dirnamer)
+            reload(compiletools.headerdeps)
+
+
+def compare_headerdeps_kinds(filename, cppflags=None, kinds=("direct", "cpp"), include=None, extra_args=None, cache="None", scenario_name=None):
+    """Run multiple headerdeps kinds and assert their results match (if >1 kinds).
+    Returns dict kind->set.
+    scenario_name included in assertion message if provided.
+    """
+    results = {}
+    for kind in kinds:
+        results[kind] = headerdeps_result(filename, kind=kind, cppflags=cppflags, include=include, extra_args=extra_args, cache=cache)
+    if len(kinds) > 1:
+        baseline = results[kinds[0]]
+        for kind in kinds[1:]:
+            if results[kind] != baseline:
+                raise AssertionError(
+                    f"HeaderDeps results differ{(' for ' + scenario_name) if scenario_name else ''}: "
+                    f"{kinds[0]}={sorted(os.path.basename(f) for f in baseline)} vs "
+                    f"{kind}={sorted(os.path.basename(f) for f in results[kind])}"
+                )
+    return results

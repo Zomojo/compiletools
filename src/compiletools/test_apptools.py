@@ -5,10 +5,7 @@ import os
 import argparse  # Used for the parse_args test
 import configargparse
 
-try:
-    reload(unittest)
-except NameError:
-    from importlib import reload
+from importlib import reload
 
 
 class FakeNamespace(object):

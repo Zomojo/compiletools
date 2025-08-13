@@ -10,10 +10,7 @@ import compiletools.utils
 import compiletools.configutils
 import compiletools.wrappedos
 
-try:
-    reload(unittest)
-except NameError:
-    from importlib import reload
+from importlib import reload
 
 
 class BaseCompileToolsTestCase:

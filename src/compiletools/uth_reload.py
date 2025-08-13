@@ -4,12 +4,7 @@ import compiletools.headerdeps
 import compiletools.magicflags
 import os
 
-try:
-    # This call to reload is simply to test
-    # that reload is in the current namespace
-    reload(unittest)
-except NameError:
-    from importlib import reload
+from importlib import reload
 
 
 def reload_ct(cache_home):

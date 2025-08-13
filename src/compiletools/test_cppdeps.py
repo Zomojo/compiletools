@@ -5,12 +5,7 @@ import tempfile
 import io
 from contextlib import redirect_stdout
 
-try:
-    # This call to reload is simply to test
-    # that reload is in the current namespace
-    reload(unittest)
-except NameError:
-    from importlib import reload
+from importlib import reload
 
 import compiletools.cppdeps
 import compiletools.unittesthelper as uth
