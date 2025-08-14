@@ -128,3 +128,44 @@ class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
         assert feature_x_source in result_direct["SOURCE"]
         assert feature_y_source not in result_direct["SOURCE"]
 
+    def test_conditional_ldflags_with_command_line_macro(self):
+        """Test that conditional LDFLAGS work with command-line defined macros"""
+        os.chdir(self._tmpdir)
+
+        realpath = os.path.join(uth.samplesdir(), "ldflags/conditional_ldflags_test.cpp")
+        debug_flags = ["-ldebug_library", "-ltest_framework"]
+        production_flags = ["-lproduction_library", "-loptimized_framework"]
+        
+        def check_ldflags(result, expected_flags, unexpected_flags):
+            ldflags_str = " ".join(result["LDFLAGS"])
+            return (all(flag in ldflags_str for flag in expected_flags) and
+                    not any(flag in ldflags_str for flag in unexpected_flags))
+        
+        # Without macro - should get debug LDFLAGS
+        result_debug = tb.create_magic_parser(["--magic", "direct"], tempdir=self._tmpdir).parse(realpath)
+        assert check_ldflags(result_debug, debug_flags, production_flags)
+        
+        # With macro using direct magic - should get production LDFLAGS (currently fails due to bug)
+        result_direct = tb.create_magic_parser(
+            ["--magic", "direct", "--append-CPPFLAGS=-DUSE_PRODUCTION_LIBS"], 
+            tempdir=self._tmpdir
+        ).parse(realpath)
+        assert check_ldflags(result_direct, production_flags, debug_flags), \
+            "Direct magic should handle command-line macros correctly"
+        
+        # With macro using cpp magic - should work correctly
+        result_cpp = tb.create_magic_parser(
+            ["--magic", "cpp", "--append-CPPFLAGS=-DUSE_PRODUCTION_LIBS"],
+            tempdir=self._tmpdir
+        ).parse(realpath)
+        assert check_ldflags(result_cpp, production_flags, debug_flags), \
+            "CPP magic should handle command-line macros correctly"
+        
+        # Test that direct magic also works with CXXFLAGS (alternate way users might define macros)
+        result_direct_cxx = tb.create_magic_parser(
+            ["--magic", "direct", "--append-CXXFLAGS=-DUSE_PRODUCTION_LIBS"],
+            tempdir=self._tmpdir
+        ).parse(realpath)
+        assert check_ldflags(result_direct_cxx, production_flags, debug_flags), \
+            "Direct magic should handle macros from CXXFLAGS correctly"
+

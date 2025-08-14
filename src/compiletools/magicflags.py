@@ -208,6 +208,29 @@ class DirectMagicFlags(MagicFlagsBase):
         # Track defined macros during processing
         self.defined_macros = set()
 
+    def _add_macros_from_command_line_flags(self):
+        """Extract -D macros from command-line CPPFLAGS and CXXFLAGS and add them to defined_macros"""
+        import shlex
+        
+        # Check both CPPFLAGS and CXXFLAGS for macro definitions
+        flag_sources = []
+        if hasattr(self._args, 'CPPFLAGS') and self._args.CPPFLAGS:
+            flag_sources.append(('CPPFLAGS', self._args.CPPFLAGS))
+        if hasattr(self._args, 'CXXFLAGS') and self._args.CXXFLAGS:
+            flag_sources.append(('CXXFLAGS', self._args.CXXFLAGS))
+            
+        for source_name, flag_string in flag_sources:
+            flags = shlex.split(flag_string)
+            for flag in flags:
+                if flag.startswith('-D'):
+                    # Extract macro name (handle both -DMACRO and -DMACRO=value)
+                    macro_def = flag[2:]  # Remove the -D
+                    macro_name = macro_def.split('=')[0] if '=' in macro_def else macro_def
+                    if macro_name:
+                        self.defined_macros.add(macro_name)
+                        if self._args.verbose >= 9:
+                            print(f"DirectMagicFlags: added command-line macro {macro_name} from {source_name}")
+
     def _process_conditional_compilation(self, text):
         """Process conditional compilation directives and return only active sections"""
         lines = text.split('\n')
@@ -272,6 +295,9 @@ class DirectMagicFlags(MagicFlagsBase):
         """Read the first chunk of the file and all the headers it includes"""
         # Reset defined macros for each new parse
         self.defined_macros = set()
+        
+        # Add macros from command-line CPPFLAGS and CXXFLAGS (e.g., from --append-CPPFLAGS/--append-CXXFLAGS)
+        self._add_macros_from_command_line_flags()
         
         # Add some common predefined macros that are typically available
         # These are basic ones that don't require a compiler invocation
