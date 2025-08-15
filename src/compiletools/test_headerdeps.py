@@ -4,7 +4,6 @@ import sys
 import tempfile
 import filecmp
 import configargparse
-import compiletools.unittesthelper
 import compiletools.test_base as tb
 
 from importlib import reload
@@ -124,7 +123,7 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
             "dottypaths/dottypaths.cpp",
         ]
         for filename in filenames:
-            tb.compare_direct_cpp_headers(self, os.path.join(uth.samplesdir(), filename))
+            tb.compare_direct_cpp_headers(self, self._get_sample_path(filename))
 
     def _direct_and_cpp_generate_same_results_ex(self, extraargs=None):
         """ Test that HeaderTree and HeaderDependencies give the same results.
@@ -161,29 +160,28 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
 
     def test_conditional_includes(self):
         """Test that DirectHeaderDeps correctly handles conditional includes"""
-        filename = os.path.join(uth.samplesdir(), "conditional_includes/main.cpp")
+        filename = self._get_sample_path("conditional_includes/main.cpp")
         tb.compare_direct_cpp_headers(self, filename)
 
     def test_user_defined_feature_headers(self):
         """Test that DirectHeaderDeps correctly handles user-defined feature macros"""
-        filename = os.path.join(uth.samplesdir(), "feature_headers/main.cpp")
+        filename = self._get_sample_path("feature_headers/main.cpp")
         tb.compare_direct_cpp_headers(self, filename)
         result_set = uth.headerdeps_result(filename, "direct")
-        samplesdir = uth.samplesdir()
         expected = {
-            os.path.join(samplesdir, "feature_headers/feature_config.h"),
-            os.path.join(samplesdir, "feature_headers/database.h"),
-            os.path.join(samplesdir, "feature_headers/logging.h"),
+            self._get_sample_path("feature_headers/feature_config.h"),
+            self._get_sample_path("feature_headers/database.h"),
+            self._get_sample_path("feature_headers/logging.h"),
         }
         unexpected = {
-            os.path.join(samplesdir, "feature_headers/graphics.h"),
-            os.path.join(samplesdir, "feature_headers/networking.h"),
+            self._get_sample_path("feature_headers/graphics.h"),
+            self._get_sample_path("feature_headers/networking.h"),
         }
         assert expected <= result_set
         assert not (unexpected & result_set)
 
     def test_cppflags_macro_extraction(self):
-        filename = os.path.join(uth.samplesdir(), "cppflags_macros/main.cpp")
+        filename = self._get_sample_path("cppflags_macros/main.cpp")
         result_set = uth.headerdeps_result(
             filename,
             "direct",
@@ -192,7 +190,7 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         assert _make_cppflags_path("advanced_feature.hpp") in result_set
 
     def test_macro_extraction_from_all_flag_sources(self):
-        filename = os.path.join(uth.samplesdir(), "cppflags_macros/multi_flag_test.cpp")
+        filename = self._get_sample_path("cppflags_macros/multi_flag_test.cpp")
         result_set = uth.headerdeps_result(
             filename,
             "direct",
@@ -202,7 +200,7 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         _assert_headers_present(result_set, expected_headers)
 
     def test_compiler_builtin_macro_recognition(self):
-        filename = os.path.join(uth.samplesdir(), "cppflags_macros/compiler_builtin_test.cpp")
+        filename = self._get_sample_path("cppflags_macros/compiler_builtin_test.cpp")
         result_set = uth.headerdeps_result(
             filename,
             "direct"
@@ -223,7 +221,7 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         _assert_headers_present(result_set, expected_headers)
 
     def test_riscv_architecture_macro_recognition(self):
-        filename = os.path.join(uth.samplesdir(), "cppflags_macros/compiler_builtin_test.cpp")
+        filename = self._get_sample_path("cppflags_macros/compiler_builtin_test.cpp")
         result_set = uth.headerdeps_result(
             filename,
             "direct",
@@ -232,7 +230,7 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         assert _make_cppflags_path("riscv_feature.hpp") in result_set
 
     def test_additional_compiler_macro_recognition(self):
-        filename = os.path.join(uth.samplesdir(), "cppflags_macros/compiler_builtin_test.cpp")
+        filename = self._get_sample_path("cppflags_macros/compiler_builtin_test.cpp")
         result_set = uth.headerdeps_result(
             filename,
             "direct",
@@ -242,7 +240,7 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         _assert_headers_present(result_set, expected_headers)
 
     def test_elif_conditional_compilation_support(self):
-        filename = os.path.join(uth.samplesdir(), "cppflags_macros/elif_test.cpp")
+        filename = self._get_sample_path("cppflags_macros/elif_test.cpp")
         result_set = uth.headerdeps_result(
             filename,
             "direct",
@@ -252,7 +250,7 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         _assert_headers_absent(result_set, ["version1_feature.hpp", "version3_feature.hpp", "default_feature.hpp"])
 
     def test_elif_matches_cpp_preprocessor(self):
-        filename = os.path.join(uth.samplesdir(), "cppflags_macros/elif_test.cpp")
+        filename = self._get_sample_path("cppflags_macros/elif_test.cpp")
         scenarios = [
             ("VERSION_1_defined", f"-I{uth.samplesdir()} -DVERSION_1"),
             ("VERSION_2_defined", f"-I{uth.samplesdir()} -DVERSION_2"),
@@ -262,7 +260,7 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         _run_scenario_test(filename, scenarios)
 
     def test_advanced_preprocessor_features(self):
-        filename = os.path.join(uth.samplesdir(), "cppflags_macros/advanced_preprocessor_test.cpp")
+        filename = self._get_sample_path("cppflags_macros/advanced_preprocessor_test.cpp")
         result_set = uth.headerdeps_result(
             filename,
             "direct",
@@ -274,7 +272,7 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         _assert_headers_absent(result_set, forbidden_headers)
 
     def test_advanced_preprocessor_matches_cpp_preprocessor(self):
-        filename = os.path.join(uth.samplesdir(), "cppflags_macros/advanced_preprocessor_test.cpp")
+        filename = self._get_sample_path("cppflags_macros/advanced_preprocessor_test.cpp")
         scenarios = [
             ("FEATURE_A_and_ALT_FORM_TEST", f"-I{uth.samplesdir()} -DFEATURE_A -DALT_FORM_TEST"),
             ("FEATURE_A_and_FEATURE_B", f"-I{uth.samplesdir()} -DFEATURE_A -DFEATURE_B"),
@@ -284,7 +282,7 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
         _run_scenario_test(filename, scenarios)
 
     def test_multiply_nested_macros_with_complex_logic(self):
-        filename = os.path.join(uth.samplesdir(), "cppflags_macros/nested_macros_test.cpp")
+        filename = self._get_sample_path("cppflags_macros/nested_macros_test.cpp")
         scenarios = [
             ("level2_linux_threading_numa", f"-I{uth.samplesdir()} -DBUILD_CONFIG=2 -D__linux__ -DUSE_EPOLL=1 -DENABLE_THREADING -DTHREAD_COUNT=4 -DNUMA_SUPPORT=1"),
             ("level3_expert_mode_with_profiling", f"-I{uth.samplesdir()} -DBUILD_CONFIG=3 -DENABLE_EXPERT_MODE=1 -DCUSTOM_ALLOCATOR -DALLOCATOR_TYPE=2 -DMEMORY_TRACKING=1 -DLEAK_DETECTION=1 -DSTACK_TRACE=1 -DENABLE_PROFILING=1 -DPROFILING_LEVEL=3 -DMEMORY_PROFILING=1 -DCPU_PROFILING=1 -DCACHE_PROFILING=1"),

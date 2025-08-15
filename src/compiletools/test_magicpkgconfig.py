@@ -1,6 +1,5 @@
 import os
 import shutil
-import tempfile
 import subprocess
 import configargparse
 import compiletools.unittesthelper as uth
@@ -25,7 +24,7 @@ class TestMagicPKGCONFIG(tb.BaseCompileToolsTestCase):
             # Copy the magicpkgconfig test files to the temp directory and compile
             # using ct-cake
             tmpmagicpkgconfig = os.path.join(tmpdir, "magicpkgconfig")
-            shutil.copytree(os.path.join(uth.samplesdir(), "magicpkgconfig"), tmpmagicpkgconfig)
+            shutil.copytree(self._get_sample_path("magicpkgconfig"), tmpmagicpkgconfig)
             
             with uth.DirectoryContext(tmpmagicpkgconfig):
                 argv = [
@@ -50,7 +49,7 @@ class TestMagicPKGCONFIG(tb.BaseCompileToolsTestCase):
             # Copy the pkgconfig test files to the temp directory and compile
             # using ct-cake
             tmppkgconfig = os.path.join(tmpdir, "pkgconfig")
-            shutil.copytree(os.path.join(uth.samplesdir(), "pkgconfig"), tmppkgconfig)
+            shutil.copytree(self._get_sample_path("pkgconfig"), tmppkgconfig)
             
             with uth.DirectoryContext(tmppkgconfig):
                 argv = [
@@ -72,7 +71,7 @@ class TestMagicPKGCONFIG(tb.BaseCompileToolsTestCase):
         with uth.CompileToolsTestContext() as (tmpdir, config_path):
             # Copy the magicpkgconfig test files to the temp directory
             tmpmagicpkgconfig = os.path.join(tmpdir, "magicpkgconfig")
-            shutil.copytree(os.path.join(uth.samplesdir(), "magicpkgconfig"), tmpmagicpkgconfig)
+            shutil.copytree(self._get_sample_path("magicpkgconfig"), tmpmagicpkgconfig)
             
             with uth.DirectoryContext(tmpmagicpkgconfig):
                 # Create a minimal args object for testing

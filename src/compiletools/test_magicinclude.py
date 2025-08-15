@@ -1,7 +1,5 @@
 import os
 import shutil
-import tempfile
-import configargparse
 import compiletools.unittesthelper as uth
 import compiletools.utils
 import compiletools.cake
@@ -24,7 +22,7 @@ class TestMagicInclude(tb.BaseCompileToolsTestCase):
             # Copy the magicinclude test files to the temp directory and compile
             # using cake
             tmpmagicinclude = os.path.join(tmpdir, "magicinclude")
-            shutil.copytree(os.path.join(uth.samplesdir(), "magicinclude"), tmpmagicinclude)
+            shutil.copytree(self._get_sample_path("magicinclude"), tmpmagicinclude)
             
             with uth.DirectoryContext(tmpmagicinclude):
                 argv = [
@@ -53,7 +51,7 @@ class TestMagicInclude(tb.BaseCompileToolsTestCase):
             # Copy the magicinclude test files to the temp directory and compile
             # using cake
             tmpmagicinclude = os.path.join(tmpdir, "magicinclude")
-            shutil.copytree(os.path.join(uth.samplesdir(), "magicinclude"), tmpmagicinclude)
+            shutil.copytree(self._get_sample_path("magicinclude"), tmpmagicinclude)
             
             with uth.DirectoryContext(tmpmagicinclude):
                 argv = [

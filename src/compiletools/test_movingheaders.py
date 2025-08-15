@@ -20,7 +20,7 @@ class TestMovingHeaders(compiletools.test_base.BaseCompileToolsTestCase):
                 # Copy the movingheaders test files to the temp directory and compile using cake
                 relativepaths = ["movingheaders/main.cpp", "movingheaders/someheader.hpp"]
                 realpaths = [
-                    os.path.join(uth.samplesdir(), filename) for filename in relativepaths
+                    self._get_sample_path(filename) for filename in relativepaths
                 ]
                 for ff in realpaths:
                     shutil.copy2(ff, tmpdir)
