@@ -44,6 +44,10 @@ class BaseCompileToolsTestCase:
         }
         assert expected_exes == actual_exes
 
+    def _get_sample_path(self, relative_path):
+        """Helper to get full path for sample file"""
+        return os.path.join(uth.samplesdir(), relative_path)
+
 
 def create_magic_parser(extraargs=None, cache_home="None", tempdir=None):
     """Factory function for creating magic flag parsers"""

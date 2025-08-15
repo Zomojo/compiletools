@@ -1,50 +1,46 @@
 import os
-import shutil
-import configargparse
-import tempfile
 
 import compiletools.unittesthelper as uth
 import compiletools.test_base as tb
 
 
 class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
-    def test_parsing_CFLAGS(self):
-        os.chdir(self._tmpdir)
+    
+    def _check_flags(self, result, flag_type, expected_flags, unexpected_flags):
+        """Helper to verify flags of given type contain expected flags and not unexpected ones"""
+        flags_str = " ".join(result[flag_type])
+        return (all(flag in flags_str for flag in expected_flags) and
+                not any(flag in flags_str for flag in unexpected_flags))
 
-        relativepath = "simple/test_cflags.c"
-        samplesdir = uth.samplesdir()
-        realpath = os.path.join(samplesdir, relativepath)
-        magicparser = tb.create_magic_parser(tempdir=self._tmpdir)
-        assert set(magicparser.parse(realpath).get("CFLAGS")) == set(["-std=gnu99"])
+    def _parse_with_magic(self, magic_type, source_file, extra_args=None):
+        """Helper to create parser and parse file with given magic type"""
+        args = ["--magic", magic_type] if magic_type else []
+        if extra_args:
+            args.extend(extra_args)
+        return tb.create_magic_parser(args, tempdir=self._tmpdir).parse(
+            self._get_sample_path(source_file)
+        )
+
+    def test_parsing_CFLAGS(self):
+        """Test parsing CFLAGS from magic comments"""
+        result = self._parse_with_magic(None, "simple/test_cflags.c")
+        assert self._check_flags(result, "CFLAGS", ["-std=gnu99"], [])
 
     def test_SOURCE_direct(self):
-        os.chdir(self._tmpdir)
-
-        relativepath = "cross_platform/cross_platform.cpp"
-        samplesdir = uth.samplesdir()
-        realpath = os.path.join(samplesdir, relativepath)
-        magicparser = tb.create_magic_parser(["--magic", "direct"], tempdir=self._tmpdir)
-        assert set(magicparser.parse(realpath).get("SOURCE")) == \
-            {os.path.join(samplesdir, "cross_platform/cross_platform_lin.cpp")}
+        """Test SOURCE detection using direct magic"""
+        result = self._parse_with_magic("direct", "cross_platform/cross_platform.cpp")
+        expected_source = {self._get_sample_path("cross_platform/cross_platform_lin.cpp")}
+        assert set(result.get("SOURCE")) == expected_source
 
     def test_SOURCE_cpp(self):
-        os.chdir(self._tmpdir)
-
-        relativepath = "cross_platform/cross_platform.cpp"
-        samplesdir = uth.samplesdir()
-        realpath = os.path.join(samplesdir, relativepath)
-        magicparser = tb.create_magic_parser(["--magic", "cpp"], tempdir=self._tmpdir)
-        assert set(magicparser.parse(realpath).get("SOURCE")) == \
-            {os.path.join(samplesdir, "cross_platform/cross_platform_lin.cpp")}
+        """Test SOURCE detection using cpp magic"""
+        result = self._parse_with_magic("cpp", "cross_platform/cross_platform.cpp")
+        expected_source = {self._get_sample_path("cross_platform/cross_platform_lin.cpp")}
+        assert set(result.get("SOURCE")) == expected_source
 
     def test_lotsofmagic(self):
-        os.chdir(self._tmpdir)
-
-        relativepath = "lotsofmagic/lotsofmagic.cpp"
-        samplesdir = uth.samplesdir()
-        realpath = os.path.join(samplesdir, relativepath)
-        magicparser = tb.create_magic_parser(["--magic", "cpp"], tempdir=self._tmpdir)
-
+        """Test parsing multiple magic flags from a complex file"""
+        result = self._parse_with_magic("cpp", "lotsofmagic/lotsofmagic.cpp")
         expected = {
             "LDFLAGS": ["-lm"],
             "F1": ["1"],
@@ -52,43 +48,25 @@ class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
             "F2": ["2"],
             "F3": ["3"],
         }
-        assert magicparser.parse(realpath) == expected
+        assert result == expected
 
     def test_SOURCE_in_header(self):
-        os.chdir(self._tmpdir)
-
-        relativepath = "magicsourceinheader/main.cpp"
-        samplesdir = uth.samplesdir()
-        realpath = os.path.join(samplesdir, relativepath)
-        magicparser = tb.create_magic_parser(["--magic", "cpp"], tempdir=self._tmpdir)
+        """Test SOURCE detection from header files using cpp magic"""
+        result = self._parse_with_magic("cpp", "magicsourceinheader/main.cpp")
         expected = {
             "LDFLAGS": ["-lm"],
-            "SOURCE": [
-                os.path.join(
-                    samplesdir,
-                    "magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp",
-                )
-            ]
+            "SOURCE": [self._get_sample_path("magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp")]
         }
-        assert magicparser.parse(realpath) == expected
+        assert result == expected
 
     def test_SOURCE_in_header_direct(self):
-        os.chdir(self._tmpdir)
-
-        relativepath = "magicsourceinheader/main.cpp"
-        samplesdir = uth.samplesdir()
-        realpath = os.path.join(samplesdir, relativepath)
-        magicparser = tb.create_magic_parser(["--magic", "direct"], tempdir=self._tmpdir)
+        """Test SOURCE detection from header files using direct magic"""
+        result = self._parse_with_magic("direct", "magicsourceinheader/main.cpp")
         expected = {
             "LDFLAGS": ["-lm"],
-            "SOURCE": [
-                os.path.join(
-                    samplesdir,
-                    "magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp",
-                )
-            ]
+            "SOURCE": [self._get_sample_path("magicsourceinheader/include_dir/sub_dir/the_code_lin.cpp")]
         }
-        assert magicparser.parse(realpath) == expected
+        assert result == expected
 
     def test_direct_and_cpp_magic_generate_same_results(self):
         """Test that DirectMagicFlags and CppMagicFlags produce identical results on conditional compilation samples"""
@@ -104,18 +82,13 @@ class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
 
     def test_macro_deps_cross_file(self):
         """Test that macros defined in source files affect header magic flags"""
-        os.chdir(self._tmpdir)
-
-        relativepath = "macro_deps/main.cpp"
-        samplesdir = uth.samplesdir()
-        realpath = os.path.join(samplesdir, relativepath)
+        source_file = "macro_deps/main.cpp"
         
         # First verify both parsers give same results
-        tb.compare_direct_cpp_magic(self, relativepath, self._tmpdir)
+        tb.compare_direct_cpp_magic(self, source_file, self._tmpdir)
         
         # Then test specific behavior with direct parser
-        magicparser_direct = tb.create_magic_parser(["--magic", "direct"], tempdir=self._tmpdir)
-        result_direct = magicparser_direct.parse(realpath)
+        result_direct = self._parse_with_magic("direct", source_file)
         
         # Should only contain feature X dependencies, not feature Y
         assert "PKG-CONFIG" in result_direct
@@ -123,72 +96,51 @@ class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
         assert "libcrypt" not in result_direct.get("PKG-CONFIG", [])
         
         assert "SOURCE" in result_direct
-        feature_x_source = os.path.join(samplesdir, "macro_deps/feature_x_impl.cpp")
-        feature_y_source = os.path.join(samplesdir, "macro_deps/feature_y_impl.cpp")
+        feature_x_source = self._get_sample_path("macro_deps/feature_x_impl.cpp")
+        feature_y_source = self._get_sample_path("macro_deps/feature_y_impl.cpp")
         assert feature_x_source in result_direct["SOURCE"]
         assert feature_y_source not in result_direct["SOURCE"]
 
     def test_conditional_ldflags_with_command_line_macro(self):
         """Test that conditional LDFLAGS work with command-line defined macros"""
-        os.chdir(self._tmpdir)
-
-        realpath = os.path.join(uth.samplesdir(), "ldflags/conditional_ldflags_test.cpp")
+        
+        source_file = "ldflags/conditional_ldflags_test.cpp"
         debug_flags = ["-ldebug_library", "-ltest_framework"]
         production_flags = ["-lproduction_library", "-loptimized_framework"]
         
-        def check_ldflags(result, expected_flags, unexpected_flags):
-            ldflags_str = " ".join(result["LDFLAGS"])
-            return (all(flag in ldflags_str for flag in expected_flags) and
-                    not any(flag in ldflags_str for flag in unexpected_flags))
-        
         # Without macro - should get debug LDFLAGS
-        result_debug = tb.create_magic_parser(["--magic", "direct"], tempdir=self._tmpdir).parse(realpath)
-        assert check_ldflags(result_debug, debug_flags, production_flags)
+        result_debug = self._parse_with_magic("direct", source_file)
+        assert self._check_flags(result_debug, "LDFLAGS", debug_flags, production_flags)
         
-        # With macro using direct magic - should get production LDFLAGS (currently fails due to bug)
-        result_direct = tb.create_magic_parser(
-            ["--magic", "direct", "--append-CPPFLAGS=-DUSE_PRODUCTION_LIBS"], 
-            tempdir=self._tmpdir
-        ).parse(realpath)
-        assert check_ldflags(result_direct, production_flags, debug_flags), \
+        # With macro using direct magic via CPPFLAGS
+        result_direct = self._parse_with_magic("direct", source_file, ["--append-CPPFLAGS=-DUSE_PRODUCTION_LIBS"])
+        assert self._check_flags(result_direct, "LDFLAGS", production_flags, debug_flags), \
             "Direct magic should handle command-line macros correctly"
         
         # With macro using cpp magic - should work correctly
-        result_cpp = tb.create_magic_parser(
-            ["--magic", "cpp", "--append-CPPFLAGS=-DUSE_PRODUCTION_LIBS"],
-            tempdir=self._tmpdir
-        ).parse(realpath)
-        assert check_ldflags(result_cpp, production_flags, debug_flags), \
+        result_cpp = self._parse_with_magic("cpp", source_file, ["--append-CPPFLAGS=-DUSE_PRODUCTION_LIBS"])
+        assert self._check_flags(result_cpp, "LDFLAGS", production_flags, debug_flags), \
             "CPP magic should handle command-line macros correctly"
         
-        # Test that direct magic also works with CXXFLAGS (alternate way users might define macros)
-        result_direct_cxx = tb.create_magic_parser(
-            ["--magic", "direct", "--append-CXXFLAGS=-DUSE_PRODUCTION_LIBS"],
-            tempdir=self._tmpdir
-        ).parse(realpath)
-        assert check_ldflags(result_direct_cxx, production_flags, debug_flags), \
+        # Test that direct magic also works with CXXFLAGS
+        result_direct_cxx = self._parse_with_magic("direct", source_file, ["--append-CXXFLAGS=-DUSE_PRODUCTION_LIBS"])
+        assert self._check_flags(result_direct_cxx, "LDFLAGS", production_flags, debug_flags), \
             "Direct magic should handle macros from CXXFLAGS correctly"
 
     def test_version_dependent_ldflags_requires_feature_parity(self):
         """Test that DirectMagicFlags must have feature parity with CppMagicFlags for complex #if expressions"""
-        os.chdir(self._tmpdir)
-
-        realpath = os.path.join(uth.samplesdir(), "ldflags/version_dependent_ldflags.cpp")
+        
+        source_file = "ldflags/version_dependent_ldflags.cpp"
         new_api_flags = ["-lnewapi", "-ladvanced_features"]
         old_api_flags = ["-loldapi", "-lbasic_features"]
         
-        def check_ldflags(result, expected_flags, unexpected_flags):
-            ldflags_str = " ".join(result["LDFLAGS"])
-            return (all(flag in ldflags_str for flag in expected_flags) and
-                    not any(flag in ldflags_str for flag in unexpected_flags))
+        # Both magic types should produce identical results for complex #if expressions
+        result_cpp = self._parse_with_magic("cpp", source_file)
+        result_direct = self._parse_with_magic("direct", source_file)
         
-        # CppMagicFlags correctly evaluates complex #if expressions
-        result_cpp = tb.create_magic_parser(["--magic", "cpp"], tempdir=self._tmpdir).parse(realpath)
-        assert check_ldflags(result_cpp, new_api_flags, old_api_flags), \
+        # Both should correctly evaluate the complex expression and choose new API
+        assert self._check_flags(result_cpp, "LDFLAGS", new_api_flags, old_api_flags), \
             "CPP magic should correctly evaluate complex #if expressions"
-        
-        # DirectMagicFlags MUST have feature parity - it should evaluate the same expressions
-        result_direct = tb.create_magic_parser(["--magic", "direct"], tempdir=self._tmpdir).parse(realpath)
-        assert check_ldflags(result_direct, new_api_flags, old_api_flags), \
+        assert self._check_flags(result_direct, "LDFLAGS", new_api_flags, old_api_flags), \
             "DirectMagicFlags must have feature parity with CppMagicFlags for complex #if expressions"
 
