@@ -4,7 +4,7 @@ import os
 # Add the parent directory to sys.path so we can import ct modules
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
-from compiletools.headerdeps import SimplePreprocessor
+from compiletools.simple_preprocessor import SimplePreprocessor
 
 
 class TestSimplePreprocessor:
@@ -235,5 +235,98 @@ class TestSimplePreprocessor:
         # These should be included
         assert '#include "linux_epoll_threading.hpp"' in result
         assert '#include "numa_threading.hpp"' in result
+
+    def test_recursive_macro_expansion(self):
+        """Test recursive macro expansion functionality"""
+        # Test simple case
+        result = self.processor._recursive_expand_macros('VERSION')
+        assert result == '3'
+        
+        # Test recursive expansion
+        processor_with_recursive = SimplePreprocessor({
+            'A': 'B',
+            'B': 'C', 
+            'C': '42'
+        }, verbose=0)
+        
+        result = processor_with_recursive._recursive_expand_macros('A')
+        assert result == '42'
+        
+        # Test max iterations protection (prevent infinite loops)
+        processor_with_loop = SimplePreprocessor({
+            'X': 'Y',
+            'Y': 'X'
+        }, verbose=0)
+        
+        result = processor_with_loop._recursive_expand_macros('X', max_iterations=5)
+        # Should stop after max_iterations and return last value
+        assert result in ['X', 'Y']  # Could be either depending on iteration count
+
+    def test_comment_stripping(self):
+        """Test C++ style comment stripping from expressions"""
+        # Test basic comment stripping
+        result = self.processor._strip_comments('1 + 1 // this is a comment')
+        assert result == '1 + 1'
+        
+        # Test expression without comments
+        result = self.processor._strip_comments('1 + 1')
+        assert result == '1 + 1'
+        
+        # Test comment at beginning
+        result = self.processor._strip_comments('// comment only')
+        assert result == ''
+
+    def test_platform_macros(self):
+        """Test platform-specific macro addition"""
+        processor = SimplePreprocessor({}, verbose=0)
+        processor.add_platform_macros()
+        
+        # At least one platform macro should be defined based on current platform
+        import sys
+        if sys.platform.startswith('linux'):
+            assert '__linux__' in processor.macros
+            assert processor.macros['__linux__'] == '1'
+        elif sys.platform.startswith('win'):
+            assert '_WIN32' in processor.macros
+            assert processor.macros['_WIN32'] == '1'
+        elif sys.platform.startswith('darwin'):
+            assert '__APPLE__' in processor.macros
+            assert processor.macros['__APPLE__'] == '1'
+
+    def test_if_with_comments(self):
+        """Test #if directive with C++ style comments"""
+        text = '''
+#if 1 // this should be true
+    included_line
+#endif
+'''
+        result = self.processor.process(text)
+        assert 'included_line' in result
+
+    def test_block_comment_stripping(self):
+        """Test that block comments do not break expression parsing"""
+        text = '''
+#if /* block */ 1 /* more */
+ok
+#endif
+'''
+        result = self.processor.process(text)
+        assert 'ok' in result
+
+    def test_numeric_literal_parsing(self):
+        """Test hex, binary, and octal numeric literals in expressions"""
+        assert self.processor._evaluate_expression('0x10 == 16') == 1
+        assert self.processor._evaluate_expression('0b1010 == 10') == 1
+        assert self.processor._evaluate_expression('010 == 8') == 1  # octal
+        assert self.processor._evaluate_expression('0 == 0') == 1
+
+    def test_bitwise_operators(self):
+        """Test bitwise and shift operators in expressions"""
+        assert self.processor._evaluate_expression('1 & 1') == 1
+        assert self.processor._evaluate_expression('1 | 0') == 1
+        assert self.processor._evaluate_expression('1 ^ 1') == 0
+        assert self.processor._evaluate_expression('~0 == -1') == 1
+        assert self.processor._evaluate_expression('(1 << 3) == 8') == 1
+        assert self.processor._evaluate_expression('(8 >> 2) == 2') == 1
 
 

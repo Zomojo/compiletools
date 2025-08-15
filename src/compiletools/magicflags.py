@@ -282,7 +282,7 @@ class DirectMagicFlags(MagicFlagsBase):
         condition_stack = [(True, False)]  # Start with active context
         
         # Create SimplePreprocessor for expression evaluation
-        from compiletools.headerdeps import SimplePreprocessor
+        from compiletools.simple_preprocessor import SimplePreprocessor
         macro_dict = self._create_macro_dict()
         preprocessor = SimplePreprocessor(macro_dict, verbose=self._args.verbose)
         
