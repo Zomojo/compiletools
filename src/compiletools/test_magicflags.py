@@ -169,3 +169,26 @@ class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
         assert check_ldflags(result_direct_cxx, production_flags, debug_flags), \
             "Direct magic should handle macros from CXXFLAGS correctly"
 
+    def test_version_dependent_ldflags_requires_feature_parity(self):
+        """Test that DirectMagicFlags must have feature parity with CppMagicFlags for complex #if expressions"""
+        os.chdir(self._tmpdir)
+
+        realpath = os.path.join(uth.samplesdir(), "ldflags/version_dependent_ldflags.cpp")
+        new_api_flags = ["-lnewapi", "-ladvanced_features"]
+        old_api_flags = ["-loldapi", "-lbasic_features"]
+        
+        def check_ldflags(result, expected_flags, unexpected_flags):
+            ldflags_str = " ".join(result["LDFLAGS"])
+            return (all(flag in ldflags_str for flag in expected_flags) and
+                    not any(flag in ldflags_str for flag in unexpected_flags))
+        
+        # CppMagicFlags correctly evaluates complex #if expressions
+        result_cpp = tb.create_magic_parser(["--magic", "cpp"], tempdir=self._tmpdir).parse(realpath)
+        assert check_ldflags(result_cpp, new_api_flags, old_api_flags), \
+            "CPP magic should correctly evaluate complex #if expressions"
+        
+        # DirectMagicFlags MUST have feature parity - it should evaluate the same expressions
+        result_direct = tb.create_magic_parser(["--magic", "direct"], tempdir=self._tmpdir).parse(realpath)
+        assert check_ldflags(result_direct, new_api_flags, old_api_flags), \
+            "DirectMagicFlags must have feature parity with CppMagicFlags for complex #if expressions"
+

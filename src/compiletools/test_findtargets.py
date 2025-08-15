@@ -22,6 +22,7 @@ class TestFindTargetsModule:
             "dottypaths/dottypaths.cpp",
             "feature_headers/main.cpp",
             "ldflags/conditional_ldflags_test.cpp",
+            "ldflags/version_dependent_ldflags.cpp",
             "library/main.cpp",
             "lotsofmagic/lotsofmagic.cpp",
             "macro_deps/main.cpp",

@@ -207,6 +207,8 @@ class DirectMagicFlags(MagicFlagsBase):
         MagicFlagsBase.__init__(self, args, headerdeps)
         # Track defined macros during processing
         self.defined_macros = set()
+        # Track macro values for expression evaluation
+        self.macro_values = {}
 
     def _add_macros_from_command_line_flags(self):
         """Extract -D macros from command-line CPPFLAGS and CXXFLAGS and add them to defined_macros"""
@@ -223,13 +225,52 @@ class DirectMagicFlags(MagicFlagsBase):
             flags = shlex.split(flag_string)
             for flag in flags:
                 if flag.startswith('-D'):
-                    # Extract macro name (handle both -DMACRO and -DMACRO=value)
+                    # Extract macro name and value (handle both -DMACRO and -DMACRO=value)
                     macro_def = flag[2:]  # Remove the -D
-                    macro_name = macro_def.split('=')[0] if '=' in macro_def else macro_def
+                    if '=' in macro_def:
+                        macro_name, macro_value = macro_def.split('=', 1)
+                    else:
+                        macro_name = macro_def
+                        macro_value = "1"
+                    
                     if macro_name:
                         self.defined_macros.add(macro_name)
+                        self.macro_values[macro_name] = macro_value
                         if self._args.verbose >= 9:
-                            print(f"DirectMagicFlags: added command-line macro {macro_name} from {source_name}")
+                            print(f"DirectMagicFlags: added command-line macro {macro_name} = {macro_value} from {source_name}")
+
+    def _create_macro_dict(self):
+        """Convert defined_macros and macro_values to a dict for SimplePreprocessor"""
+        # Return a copy of our macro_values dict
+        return self.macro_values.copy()
+
+    def _recursive_expand_macros(self, expr, macros, max_iterations=10):
+        """Recursively expand macros until no more changes occur"""
+        import re
+        
+        def replace_macro(match):
+            macro_name = match.group(0)
+            if macro_name in macros:
+                value = macros[macro_name]
+                # Try to convert to int if possible
+                try:
+                    return str(int(value))
+                except ValueError:
+                    return value
+            else:
+                # Undefined macro defaults to 0
+                return "0"
+        
+        previous_expr = None
+        iteration = 0
+        
+        while expr != previous_expr and iteration < max_iterations:
+            previous_expr = expr
+            # Replace macro names (identifiers) with their values
+            expr = re.sub(r'(?<![0-9])\b[A-Za-z_][A-Za-z0-9_]*\b(?![0-9])', replace_macro, expr)
+            iteration += 1
+            
+        return expr
 
     def _process_conditional_compilation(self, text):
         """Process conditional compilation directives and return only active sections"""
@@ -240,6 +281,11 @@ class DirectMagicFlags(MagicFlagsBase):
         # Each entry is (is_active, seen_else)
         condition_stack = [(True, False)]  # Start with active context
         
+        # Create SimplePreprocessor for expression evaluation
+        from compiletools.headerdeps import SimplePreprocessor
+        macro_dict = self._create_macro_dict()
+        preprocessor = SimplePreprocessor(macro_dict, verbose=self._args.verbose)
+        
         for line in lines:
             stripped = line.strip()
             
@@ -248,9 +294,13 @@ class DirectMagicFlags(MagicFlagsBase):
                 parts = stripped.split(' ', 2)
                 if len(parts) >= 2:
                     macro_name = parts[1]
+                    macro_value = parts[2] if len(parts) > 2 else "1"
                     self.defined_macros.add(macro_name)
+                    self.macro_values[macro_name] = macro_value
+                    # Also update the preprocessor's macro dict
+                    preprocessor.macros[macro_name] = macro_value
                     if self._args.verbose >= 9:
-                        print(f"DirectMagicFlags: defined macro {macro_name}")
+                        print(f"DirectMagicFlags: defined macro {macro_name} = {macro_value}")
             
             # Handle conditional compilation directives
             elif stripped.startswith('#ifdef '):
@@ -266,6 +316,31 @@ class DirectMagicFlags(MagicFlagsBase):
                 condition_stack.append((not is_defined and condition_stack[-1][0], False))
                 if self._args.verbose >= 9:
                     print(f"DirectMagicFlags: #ifndef {macro} -> {not is_defined}")
+            
+            elif stripped.startswith('#if '):
+                expr = stripped[4:].strip()
+                # Strip C++ style comments from the expression
+                if '//' in expr:
+                    expr = expr[:expr.find('//')].strip()
+                    
+                try:
+                    # Use our recursive macro expansion
+                    expanded_expr = self._recursive_expand_macros(expr, self.macro_values)
+                    if self._args.verbose >= 9:
+                        print(f"DirectMagicFlags: expanding #if '{expr}' -> '{expanded_expr}'")
+                    
+                    # Now evaluate with SimplePreprocessor's safe evaluator
+                    result = preprocessor._safe_eval(expanded_expr)
+                    is_true = bool(result)
+                    is_active = is_true and condition_stack[-1][0]
+                    condition_stack.append((is_active, False))
+                    if self._args.verbose >= 9:
+                        print(f"DirectMagicFlags: #if {expr} -> {result} ({is_active})")
+                except Exception as e:
+                    # If evaluation fails, assume false
+                    if self._args.verbose >= 8:
+                        print(f"DirectMagicFlags: #if evaluation failed for '{expr}': {e}")
+                    condition_stack.append((False, False))
                     
             elif stripped.startswith('#else'):
                 if len(condition_stack) > 1:
@@ -295,6 +370,7 @@ class DirectMagicFlags(MagicFlagsBase):
         """Read the first chunk of the file and all the headers it includes"""
         # Reset defined macros for each new parse
         self.defined_macros = set()
+        self.macro_values = {}
         
         # Add macros from command-line CPPFLAGS and CXXFLAGS (e.g., from --append-CPPFLAGS/--append-CXXFLAGS)
         self._add_macros_from_command_line_flags()
@@ -303,10 +379,13 @@ class DirectMagicFlags(MagicFlagsBase):
         # These are basic ones that don't require a compiler invocation
         if sys.platform.startswith('linux'):
             self.defined_macros.add('__linux__')
+            self.macro_values['__linux__'] = "1"
         elif sys.platform.startswith('win'):
             self.defined_macros.add('_WIN32')
+            self.macro_values['_WIN32'] = "1"
         elif sys.platform.startswith('darwin'):
             self.defined_macros.add('__APPLE__')
+            self.macro_values['__APPLE__'] = "1"
         
         headers = self._headerdeps.process(filename)
         
