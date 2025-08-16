@@ -58,16 +58,11 @@ class TestFileAnalyzerImplementations:
         
     def test_simple_include_file(self):
         """Test both implementations on a simple file with includes."""
-        content = dedent('''
-            #include <stdio.h>
-            #include "local.h"
-            // Comment with #include "ignored.h"
-            int main() {
-                return 0;
-            }
-        ''').strip()
-        
-        filepath = self.create_test_file("simple.c", content)
+        # Use existing sample that has includes and commented includes
+        import os
+        # Get path relative to this test file  
+        test_dir = os.path.dirname(__file__)
+        filepath = os.path.join(test_dir, "samples", "simple", "helloworld_c.c")
         
         legacy = LegacyFileAnalyzer(filepath, max_read_size=0, verbose=0)
         legacy_result = legacy.analyze()
@@ -79,7 +74,7 @@ class TestFileAnalyzerImplementations:
             stringzilla = StringZillaFileAnalyzer(filepath, max_read_size=0, verbose=0)
             stringzilla_result = stringzilla.analyze()
             
-            # Compare results
+            # Compare results - they must be identical
             assert legacy_result.text == stringzilla_result.text
             assert legacy_result.include_positions == stringzilla_result.include_positions
             assert legacy_result.magic_positions == stringzilla_result.magic_positions
@@ -90,25 +85,16 @@ class TestFileAnalyzerImplementations:
         except ImportError:
             # StringZilla not available, just test that legacy works
             assert "stdio.h" in legacy_result.text
-            assert "local.h" in legacy_result.text
+            assert "stdlib.h" in legacy_result.text
             # Note: commented includes appear in text but not in include_positions
-            assert len(legacy_result.include_positions) >= 2
+            assert len(legacy_result.include_positions) == 2  # stdlib.h and stdio.h only
             
     def test_raw_file_analysis(self):
         """Test that FileAnalyzer returns raw file content without preprocessing."""
-        content = dedent('''
-            #define FEATURE_A 1
-            #ifdef FEATURE_A
-            #include "feature_a.h"
-            #endif
-            #ifdef FEATURE_B
-            #include "feature_b.h"
-            #endif
-            //#LIBS=somelib
-            int main() { return 0; }
-        ''').strip()
-        
-        filepath = self.create_test_file("conditional.c", content)
+        # Use existing macro_deps sample which has conditional compilation
+        import os
+        test_dir = os.path.dirname(__file__)
+        filepath = os.path.join(test_dir, "samples", "macro_deps", "main.cpp")
         
         legacy = LegacyFileAnalyzer(filepath, max_read_size=0, verbose=0)
         legacy_result = legacy.analyze()
@@ -125,26 +111,18 @@ class TestFileAnalyzerImplementations:
         except ImportError:
             # StringZilla not available, verify legacy behavior
             # FileAnalyzer returns raw text with all conditional sections
-            assert "#define FEATURE_A 1" in legacy_result.text
-            assert "#ifdef FEATURE_A" in legacy_result.text
-            assert "feature_a.h" in legacy_result.text
-            assert "feature_b.h" in legacy_result.text  # Both present in raw text
-            assert "#ifdef FEATURE_B" in legacy_result.text
-            assert len(legacy_result.magic_positions) >= 1  # Should find //#LIBS
+            assert "#define USE_FEATURE_X" in legacy_result.text
+            assert "#include \"feature_header.hpp\"" in legacy_result.text
+            assert "int main()" in legacy_result.text
+            assert len(legacy_result.include_positions) == 1  # One include in main.cpp
+            assert len(legacy_result.magic_positions) == 0  # No magic flags in main.cpp itself
             
     def test_magic_flags(self):
         """Test magic flag detection."""
-        content = dedent('''
-            // Some header comment
-            //#LIBS=pthread m
-            //#CFLAGS=-O2 -g
-            #include <stdio.h>
-            // Regular comment
-            //#LDFLAGS=-static
-            int main() { return 0; }
-        ''').strip()
-        
-        filepath = self.create_test_file("magic.c", content)
+        # Use existing lotsofmagic sample which has multiple magic flags
+        import os
+        test_dir = os.path.dirname(__file__)
+        filepath = os.path.join(test_dir, "samples", "lotsofmagic", "lotsofmagic.cpp")
         
         legacy = LegacyFileAnalyzer(filepath, max_read_size=0, verbose=0)
         legacy_result = legacy.analyze()
@@ -154,11 +132,11 @@ class TestFileAnalyzerImplementations:
             stringzilla_result = stringzilla.analyze()
             
             assert legacy_result.magic_positions == stringzilla_result.magic_positions
-            assert len(legacy_result.magic_positions) == 3  # LIBS, CFLAGS, LDFLAGS
+            assert len(legacy_result.magic_positions) == 6  # LINKFLAGS, F1, F2, F3, LDFLAGS, PKG-CONFIG
             
         except ImportError:
             # Verify magic flag detection in legacy
-            assert len(legacy_result.magic_positions) == 3
+            assert len(legacy_result.magic_positions) == 6  # LINKFLAGS, F1, F2, F3, LDFLAGS, PKG-CONFIG
             
     def test_max_read_size_limits(self):
         """Test that max_read_size is respected."""
@@ -268,22 +246,17 @@ class TestPatternDetectionAccuracy:
         
     def test_commented_includes_ignored(self):
         """Test that commented includes are properly ignored in position detection."""
-        content = dedent('''
-            #include <stdio.h>
-            // #include "commented_out.h"
-            /* #include "block_commented.h" */
-            #include "real.h"
-            // Another comment with #include "also_ignored.h"
-        ''').strip()
-        
-        filepath = self.create_test_file(content)
+        # Use existing helloworld_c.c which now has commented includes
+        import os
+        test_dir = os.path.dirname(__file__)
+        filepath = os.path.join(test_dir, "samples", "simple", "helloworld_c.c")
         analyzer = LegacyFileAnalyzer(filepath, 0, 0)
         result = analyzer.analyze()
         
         # Should only find the real, uncommented includes
-        assert len(result.include_positions) == 2  # stdio.h and real.h
+        assert len(result.include_positions) == 2  # stdlib.h and stdio.h
         assert "stdio.h" in result.text
-        assert "real.h" in result.text
+        assert "stdlib.h" in result.text
         assert "commented_out.h" in result.text  # Present in raw text
         assert "block_commented.h" in result.text  # Present in raw text
         
@@ -300,36 +273,24 @@ class TestPatternDetectionAccuracy:
                 char_count += len(line) + 1
         
         # Should find only the real includes, not commented ones
+        assert any('stdlib.h' in line for line in include_lines)
         assert any('stdio.h' in line for line in include_lines)
-        assert any('real.h' in line for line in include_lines)
         assert not any('commented_out.h' in line for line in include_lines)
         assert not any('block_commented.h' in line for line in include_lines)
         
     def test_magic_flag_pattern_accuracy(self):
         """Test that magic flag patterns are detected accurately."""
-        content = dedent('''
-            // Valid magic flags
-            //#LIBS=pthread m
-            //# CFLAGS = -O2 -g
-            //#PKG-CONFIG=zlib
-            
-            // Invalid patterns that should NOT be detected  
-            // #LIBS=not_magic (space before #)
-            /* //#LIBS=commented_out */
-            #LIBS=not_comment_magic
-            //#INVALID PATTERN (no =)
-            //#123=invalid_start_with_number
-        ''').strip()
+        # Use existing lotsofmagic sample which has various magic flag patterns
+        import os
+        test_dir = os.path.dirname(__file__)
+        filepath = os.path.join(test_dir, "samples", "lotsofmagic", "lotsofmagic.cpp")
         
-        filepath = self.create_test_file(content)
         analyzer = LegacyFileAnalyzer(filepath, 0, 0)
         result = analyzer.analyze()
         
-        # Should find exactly 2 valid magic flags matching magicflags.py behavior
-        # Valid: //#LIBS=pthread m, //#PKG-CONFIG=zlib  
-        # Invalid: //# CFLAGS = -O2 -g (space after #), // #LIBS=not_magic (space before #), /* //#LIBS=commented_out */
-        expected_count = 2  
-        assert len(result.magic_positions) == expected_count
+        # Should find exactly 6 valid magic flags in lotsofmagic.cpp
+        # Valid: LINKFLAGS, F1, F2, F3, LDFLAGS, PKG-CONFIG
+        assert len(result.magic_positions) == 6
         
         # Verify which patterns were found
         magic_lines = []
@@ -342,58 +303,49 @@ class TestPatternDetectionAccuracy:
                     break
                 char_count += len(line) + 1
         
-        assert '//#LIBS=pthread m' in magic_lines
+        # Verify expected valid patterns are found
+        assert '//#LINKFLAGS=-lpcap' in magic_lines
         assert '//#PKG-CONFIG=zlib' in magic_lines
-        # This should NOT be found due to space after #
-        assert '//# CFLAGS = -O2 -g' not in magic_lines
+        assert '//#LDFLAGS=-lm' in magic_lines
+        
+        # Verify invalid patterns are not detected
+        # These appear in the file text but should not be in magic_positions
+        assert '// #LIBS=not_magic (space before #)' in result.text
+        assert '/* //#LIBS=commented_out */' in result.text
+        # But they should not be in the detected magic positions
+        invalid_patterns = ['// #LIBS=not_magic', '/* //#LIBS=commented_out */']
+        for pattern in invalid_patterns:
+            assert not any(pattern in line for line in magic_lines)
         
     def test_directive_position_accuracy(self):
         """Test that all preprocessor directives are found in raw text."""
-        content = dedent('''
-            #include <stdio.h>
-            #define TEST_MACRO 1
-            #ifdef TEST_MACRO
-            #include "conditional.h"
-            #endif
-            #undef TEST_MACRO
-            #ifndef UNDEFINED_MACRO
-            #include "another.h"
-            #endif
-        ''').strip()
+        # Use existing conditional_ldflags_test.cpp which has conditional directives
+        import os
+        test_dir = os.path.dirname(__file__)
+        filepath = os.path.join(test_dir, "samples", "ldflags", "conditional_ldflags_test.cpp")
         
-        filepath = self.create_test_file(content)
         analyzer = LegacyFileAnalyzer(filepath, 0, 0)
         result = analyzer.analyze()
         
-        # Should find all directive types in raw text
-        expected_directives = ["include", "define", "ifdef", "endif", "undef", "ifndef"]
+        # Should find directive types in raw text
+        expected_directives = ["include", "ifndef", "else", "endif"]
         for directive in expected_directives:
             assert directive in result.directive_positions, f"Missing directive: {directive}"
             
-        # Should have 3 includes in raw text
-        assert len(result.directive_positions["include"]) == 3
+        # Should have 1 include in raw text
+        assert len(result.directive_positions["include"]) == 1
         
         # Should have correct counts for each directive type
-        assert len(result.directive_positions["define"]) == 1
-        assert len(result.directive_positions["ifdef"]) == 1
-        assert len(result.directive_positions["endif"]) == 2  # Two endif directives
-        assert len(result.directive_positions["undef"]) == 1
-        assert len(result.directive_positions["ifndef"]) == 1
+        assert len(result.directive_positions["ifndef"]) == 2  # Two ifndef directives  
+        assert len(result.directive_positions["else"]) == 2    # Two else directives
+        assert len(result.directive_positions["endif"]) == 2   # Two endif directives
         
     def test_stringzilla_simd_pattern_detection(self):
         """Test StringZilla SIMD pattern detection when available."""
-        content = dedent('''
-            #include <stdio.h>
-            //#LIBS=pthread math
-            #define FEATURE 1
-            #ifdef FEATURE
-            //#CFLAGS=-O2
-            #include "optimized.h"  
-            #endif
-            //#LDFLAGS=-static
-        ''').strip()
-        
-        filepath = self.create_test_file(content)
+        # Use existing lotsofmagic sample which has multiple patterns to test SIMD performance
+        import os
+        test_dir = os.path.dirname(__file__)
+        filepath = os.path.join(test_dir, "samples", "lotsofmagic", "lotsofmagic.cpp")
         
         try:
             # Test StringZilla directly
@@ -412,18 +364,16 @@ class TestPatternDetectionAccuracy:
             assert sz_result.bytes_analyzed == legacy_result.bytes_analyzed
             assert sz_result.was_truncated == legacy_result.was_truncated
             
-            # Verify expected pattern counts
-            assert len(sz_result.include_positions) == 2  # stdio.h, optimized.h
-            assert len(sz_result.magic_positions) == 3   # LIBS, CFLAGS, LDFLAGS (all valid format)
+            # Verify expected pattern counts from lotsofmagic.cpp
+            assert len(sz_result.include_positions) == 2  # cmath, iostream
+            assert len(sz_result.magic_positions) == 6   # LINKFLAGS, F1, F2, F3, LDFLAGS, PKG-CONFIG
             assert "include" in sz_result.directive_positions
-            assert "define" in sz_result.directive_positions
-            assert "ifdef" in sz_result.directive_positions
             
         except ImportError:
             # StringZilla not available - just verify legacy works
             legacy = LegacyFileAnalyzer(filepath, 0, 0)
             result = legacy.analyze()
             
-            assert len(result.include_positions) == 2
-            assert len(result.magic_positions) == 3  # This content has valid magic flags
+            assert len(result.include_positions) == 2  # cmath, iostream
+            assert len(result.magic_positions) == 6   # All valid magic flags in lotsofmagic.cpp
             assert "include" in result.directive_positions

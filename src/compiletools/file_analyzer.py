@@ -140,13 +140,15 @@ class LegacyFileAnalyzer(FileAnalyzer):
         directive_positions = {}
         
         # Pattern to match preprocessor directives
-        pattern = re.compile(r'^\s*#\s*([a-zA-Z_]+)', re.MULTILINE)
+        pattern = re.compile(r'^(\s*)#\s*([a-zA-Z_]+)', re.MULTILINE)
         
         for match in pattern.finditer(text):
-            directive_name = match.group(1)
+            directive_name = match.group(2)
             if directive_name not in directive_positions:
                 directive_positions[directive_name] = []
-            directive_positions[directive_name].append(match.start())
+            # Position should be at the # character, not at start of whitespace
+            hash_position = match.start() + len(match.group(1))  # Skip leading whitespace
+            directive_positions[directive_name].append(hash_position)
             
         return directive_positions
 

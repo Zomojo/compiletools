@@ -41,14 +41,36 @@ class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
     def test_lotsofmagic(self):
         """Test parsing multiple magic flags from a complex file"""
         result = self._parse_with_magic("cpp", "lotsofmagic/lotsofmagic.cpp")
-        expected = {
-            "LDFLAGS": ["-lm"],
-            "F1": ["1"],
-            "LINKFLAGS": ["-lpcap"],
-            "F2": ["2"],
-            "F3": ["3"],
-        }
-        assert result == expected
+        
+        # Check that basic magic flags are present
+        assert "F1" in result and result["F1"] == ["1"]
+        assert "F2" in result and result["F2"] == ["2"] 
+        assert "F3" in result and result["F3"] == ["3"]
+        assert "LINKFLAGS" in result and result["LINKFLAGS"] == ["-lpcap"]
+        assert "PKG-CONFIG" in result and result["PKG-CONFIG"] == ["zlib"]
+        
+        # Check that PKG-CONFIG processing adds flags to LDFLAGS
+        assert "LDFLAGS" in result
+        ldflags = result["LDFLAGS"]
+        assert "-lm" in ldflags  # From explicit //#LDFLAGS=-lm
+        
+        # Check that pkg-config flags were added (if pkg-config available)
+        try:
+            import subprocess
+            zlib_libs = subprocess.run(["pkg-config", "--libs", "zlib"], 
+                                     capture_output=True, text=True, check=True)
+            if zlib_libs.stdout.strip():
+                # If pkg-config returns flags, they should be in LDFLAGS
+                for flag in zlib_libs.stdout.strip().split():
+                    assert flag in ldflags, f"Expected {flag} from pkg-config to be in LDFLAGS"
+        except (subprocess.CalledProcessError, FileNotFoundError):
+            # pkg-config not available or zlib not found - that's ok
+            pass
+            
+        # Check that PKG-CONFIG processing adds empty entries for flag types
+        assert "CPPFLAGS" in result
+        assert "CFLAGS" in result  
+        assert "CXXFLAGS" in result
 
     def test_SOURCE_in_header(self):
         """Test SOURCE detection from header files using cpp magic"""
