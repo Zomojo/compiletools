@@ -60,9 +60,9 @@ class TestMagicFlagsModule(tb.BaseCompileToolsTestCase):
             zlib_libs = subprocess.run(["pkg-config", "--libs", "zlib"], 
                                      capture_output=True, text=True, check=True)
             if zlib_libs.stdout.strip():
-                # If pkg-config returns flags, they should be in LDFLAGS
-                for flag in zlib_libs.stdout.strip().split():
-                    assert flag in ldflags, f"Expected {flag} from pkg-config to be in LDFLAGS"
+                # The entire pkg-config output should be in LDFLAGS as a single item
+                pkg_output = zlib_libs.stdout.strip()
+                assert pkg_output in ldflags, f"Expected '{pkg_output}' from pkg-config to be in LDFLAGS"
         except (subprocess.CalledProcessError, FileNotFoundError):
             # pkg-config not available or zlib not found - that's ok
             pass
