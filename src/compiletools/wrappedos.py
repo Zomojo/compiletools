@@ -42,18 +42,6 @@ def isc(trialpath):
     return os.path.splitext(trialpath)[1] == ".c"
 
 
-def makedirs(path):
-    """ When we no longer have to support Python 2.7 use the following instead:
-        os.makedirs(path, exist_ok=True)
-    """
-    if isdir(path):
-        return
-    try:
-        os.makedirs(path)
-    except OSError:
-        if not os.path.isdir(path):
-            raise
-
 
 def copy(src, dest):
     """ copy the src to the dest and print any errors """

@@ -158,6 +158,38 @@ class TestFileAnalyzerImplementations:
         # Large read should get more content
         assert result_large.bytes_analyzed > result_small.bytes_analyzed
         
+    def test_truncation_flag_accuracy(self):
+        """Test that was_truncated flag is accurate for edge cases."""
+        # Test case: file size exactly equals max_read_size (should NOT be truncated)
+        exact_content = "#include <stdio.h>\n" + "// filler\n" * 10  # Make it a specific size
+        exact_size = len(exact_content.encode('utf-8'))
+        
+        filepath = self.create_test_file("exact_size.c", exact_content)
+        
+        # Test with max_read_size exactly equal to file size
+        analyzer = LegacyFileAnalyzer(filepath, max_read_size=exact_size, verbose=0)
+        result = analyzer.analyze()
+        
+        # Should read entire file and NOT be truncated
+        assert result.bytes_analyzed == exact_size
+        assert result.was_truncated is False, "File should NOT be truncated when size exactly equals max_read_size"
+        
+        # Test with max_read_size smaller than file size
+        analyzer_small = LegacyFileAnalyzer(filepath, max_read_size=exact_size - 10, verbose=0)
+        result_small = analyzer_small.analyze()
+        
+        # Should be truncated
+        assert result_small.bytes_analyzed < exact_size
+        assert result_small.was_truncated is True, "File should be truncated when size exceeds max_read_size"
+        
+        # Test with max_read_size=0 (entire file)
+        analyzer_full = LegacyFileAnalyzer(filepath, max_read_size=0, verbose=0)
+        result_full = analyzer_full.analyze()
+        
+        # Should read entire file and NOT be truncated
+        assert result_full.bytes_analyzed == exact_size
+        assert result_full.was_truncated is False, "File should NOT be truncated when max_read_size=0"
+        
     def test_nonexistent_file(self):
         """Test handling of nonexistent files."""
         filepath = os.path.join(self.temp_dir, "nonexistent.c")
@@ -377,3 +409,60 @@ class TestPatternDetectionAccuracy:
             assert len(result.include_positions) == 2  # cmath, iostream
             assert len(result.magic_positions) == 6   # All valid magic flags in lotsofmagic.cpp
             assert "include" in result.directive_positions
+            
+    def test_multiline_block_comments_ignored(self):
+        """Test that includes inside multi-line block comments are properly ignored."""
+        # Use enhanced lotsofmagic sample which now includes multi-line comment test cases
+        import os
+        test_dir = os.path.dirname(__file__)
+        filepath = os.path.join(test_dir, "samples", "lotsofmagic", "lotsofmagic.cpp")
+        
+        # Test Legacy implementation
+        legacy = LegacyFileAnalyzer(filepath, 0, 0)
+        legacy_result = legacy.analyze()
+        
+        try:
+            # Test StringZilla implementation  
+            stringzilla = StringZillaFileAnalyzer(filepath, 0, 0)
+            sz_result = stringzilla.analyze()
+            
+            # Both should produce identical results - this is the key test
+            assert sz_result.include_positions == legacy_result.include_positions
+            
+            # Should find exactly 2 includes: cmath and iostream (not stdlib.h or math.h in comments)
+            assert len(legacy_result.include_positions) == 2
+            assert len(sz_result.include_positions) == 2
+            
+            # Verify that stdlib.h and math.h inside block comments are NOT detected
+            # by checking that the text contains them but they're not at detected positions
+            assert '#include <stdlib.h>' in legacy_result.text
+            assert '#include <math.h>' in legacy_result.text
+            
+            # Get the actual detected includes by examining what's at each position
+            detected_includes = []
+            for pos in legacy_result.include_positions:
+                # Extract a reasonable substring around each position
+                start = max(0, pos - 5)
+                end = min(len(legacy_result.text), pos + 30)
+                substring = legacy_result.text[start:end]
+                detected_includes.append(substring)
+            
+            # Should have detected cmath and iostream but not stdlib.h or math.h
+            cmath_found = any('cmath' in inc for inc in detected_includes)
+            iostream_found = any('iostream' in inc for inc in detected_includes)  
+            stdlib_found = any('stdlib.h' in inc for inc in detected_includes)
+            math_found = any('math.h' in inc for inc in detected_includes)
+            
+            assert cmath_found, "cmath should be detected"
+            assert iostream_found, "iostream should be detected"
+            assert not stdlib_found, "stdlib.h in block comment should NOT be detected"
+            assert not math_found, "math.h in block comment should NOT be detected"
+            
+        except ImportError:
+            # StringZilla not available - just verify legacy works correctly
+            assert len(legacy_result.include_positions) == 2
+            
+            # Verify that commented includes are not detected
+            assert '#include <stdlib.h>' in legacy_result.text  # Present in text
+            assert '#include <math.h>' in legacy_result.text  # Present in text
+            # But only 2 positions detected (cmath and iostream)

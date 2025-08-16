@@ -159,7 +159,7 @@ class Cake(object):
     def _callmakefile(self):
         makefile_creator = compiletools.makefile.MakefileCreator(self.args, self.hunter)
         makefilename = makefile_creator.create()
-        compiletools.wrappedos.makedirs(self.namer.executable_dir())
+        os.makedirs(self.namer.executable_dir(), exist_ok=True)
         cmd = ["make"]
         if self.args.verbose <= 1:
             cmd.append("-s")

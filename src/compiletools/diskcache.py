@@ -46,7 +46,7 @@ class diskcache:
         self.magic_mode = magic_mode
         self.cachedir = compiletools.dirnamer.user_cache_dir(appname="ct")
         if self.cachedir != "None":
-            compiletools.wrappedos.makedirs(self.cachedir)
+            os.makedirs(self.cachedir, exist_ok=True)
 
         # Keep a copy of the cachefile in memory to reduce disk IO
         # Call it "cache" to match the memoizer "cache" (for ease of clearing)
@@ -187,7 +187,7 @@ class diskcache:
             # that we are currently interested in.
             newargs = args[:-1] + (filename,)
             result = func(*newargs)
-            compiletools.wrappedos.makedirs(compiletools.wrappedos.dirname(cachefile))
+            os.makedirs(compiletools.wrappedos.dirname(cachefile), exist_ok=True)
             with open(cachefile, mode="wb") as cf:
                 pickle.dump(result, cf)
             self.cache[cachefile] = result

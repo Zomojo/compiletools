@@ -426,7 +426,7 @@ class MakefileCreator:
 
         # Find the realpaths of the given filenames (to avoid this being
         # duplicated many times)
-        compiletools.wrappedos.makedirs(self.namer.executable_dir())
+        os.makedirs(self.namer.executable_dir(), exist_ok=True)
         rule = self._create_all_rule()
         self.rules[rule.target] = rule
         buildoutputs = self._gather_build_outputs()
