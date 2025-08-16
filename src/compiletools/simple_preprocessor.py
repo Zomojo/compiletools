@@ -57,12 +57,28 @@ class SimplePreprocessor:
         
     def process(self, text):
         """Process text and return only active sections"""
+        return self.process_with_positions(text, None)
+        
+    def process_with_positions(self, text, directive_positions=None):
+        """Process text and return only active sections, optionally using position data for optimization.
+        
+        Args:
+            text: The source text to process
+            directive_positions: Optional dict of {directive_name: [positions]} for optimization
+            
+        Returns:
+            Processed text with only active conditional sections
+        """
         lines = text.split('\n')
         result_lines = []
         
         # Stack to track conditional compilation state
         # Each entry: (is_active, seen_else, any_condition_met)
         condition_stack = [(True, False, False)]
+        
+        # If we have position data, we could potentially optimize directive detection
+        # For now, we'll use the existing line-by-line approach which is already efficient
+        # Future optimization: use directive_positions to skip non-directive lines faster
         
         i = 0
         while i < len(lines):

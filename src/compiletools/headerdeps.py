@@ -12,6 +12,7 @@ import compiletools.tree as tree
 import compiletools.preprocessor
 from compiletools.diskcache import diskcache
 from compiletools.simple_preprocessor import SimplePreprocessor
+from compiletools.file_analyzer import create_file_analyzer
 
 
 
@@ -34,6 +35,12 @@ def add_arguments(cap):
         choices=alldepscls,
         default="direct",
         help="Methodology for determining header dependencies",
+    )
+    cap.add(
+        "--max-file-read-size",
+        type=int,
+        default=0,
+        help="Maximum bytes to read from files (0 = entire file)",
     )
 
 
@@ -104,7 +111,13 @@ class DirectHeaderDeps(HeaderDepsBase):
         
         for flag_name, flag_value in flag_sources:
             if flag_value:  # Only process if flag_value is not empty
-                flag_macros = define_pat.findall(flag_value)
+                # Handle both string and list types for flag_value
+                if isinstance(flag_value, list):
+                    flag_string = ' '.join(flag_value)
+                else:
+                    flag_string = flag_value
+                    
+                flag_macros = define_pat.findall(flag_string)
                 for macro in flag_macros:
                     # Handle -DMACRO=value by splitting on first = to get name and value
                     if '=' in macro:
@@ -162,11 +175,16 @@ class DirectHeaderDeps(HeaderDepsBase):
     @functools.lru_cache(maxsize=None)
     def _create_include_list(self, realpath):
         """Internal use. Create the list of includes for the given file"""
-        with open(realpath, encoding="utf-8", errors="ignore") as ff:
-            # Assume that all includes occur at the top of the file
-            text = ff.read(8192)
+        max_read_size = getattr(self.args, 'max_file_read_size', 0)
+        
+        # Use FileAnalyzer for efficient file reading and pattern detection  
+        # Note: create_file_analyzer() handles StringZilla/Legacy fallback internally
+        from compiletools.file_analyzer import create_file_analyzer
+        analyzer = create_file_analyzer(realpath, max_read_size, self.args.verbose)
+        analysis_result = analyzer.analyze()
+        text = analysis_result.text
 
-        # Process conditional compilation first
+        # Process conditional compilation - this updates self.defined_macros as it encounters #define
         processed_text = self._process_conditional_compilation(text)
 
         # The pattern is intended to match all include statements but

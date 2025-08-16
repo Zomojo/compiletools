@@ -27,6 +27,7 @@ dependencies = [
     "psutil>=5.9.0", 
     "rich>=12.0.0",
     "rich_rst>=1.1.7",
+    "stringzilla>=3.0.0",
 ]
 
 [project.optional-dependencies]

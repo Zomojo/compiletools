@@ -12,6 +12,7 @@ import compiletools.headerdeps
 import compiletools.wrappedos
 import compiletools.configutils
 import compiletools.apptools
+from compiletools.file_analyzer import create_file_analyzer
 
 
 def create(args, headerdeps):
@@ -36,6 +37,12 @@ def add_arguments(cap, variant=None):
         choices=alldepscls,
         default="direct",
         help="Methodology for reading file when processing magic flags",
+    )
+    cap.add(
+        "--max-file-read-size",
+        type=int,
+        default=0,
+        help="Maximum bytes to read from files (0 = entire file)",
     )
 
 
@@ -221,7 +228,13 @@ class DirectMagicFlags(MagicFlagsBase):
         if hasattr(self._args, 'CXXFLAGS') and self._args.CXXFLAGS:
             flag_sources.append(('CXXFLAGS', self._args.CXXFLAGS))
             
-        for source_name, flag_string in flag_sources:
+        for source_name, flag_value in flag_sources:
+            # Handle both string and list types for flag_value
+            if isinstance(flag_value, list):
+                flag_string = ' '.join(flag_value)
+            else:
+                flag_string = flag_value
+                
             flags = shlex.split(flag_string)
             for flag in flags:
                 if flag.startswith('-D'):
@@ -410,15 +423,24 @@ class DirectMagicFlags(MagicFlagsBase):
             for fname in all_files:
                 if self._args.verbose >= 9:
                     print("DirectMagicFlags::readfile is processing " + fname)
-                with open(fname, encoding="utf-8", errors="ignore") as ff:
-                    # To match the output of the C Pre Processor we insert
-                    # the filename before the text
-                    file_header = '# 1 "' + compiletools.wrappedos.realpath(fname) + '"\n'
-                    file_content = ff.read(8192)
-                    
-                    # Process conditional compilation for this file
-                    processed_content = self._process_conditional_compilation(file_content)
-                    text += file_header + processed_content
+                
+                # To match the output of the C Pre Processor we insert
+                # the filename before the text
+                file_header = '# 1 "' + compiletools.wrappedos.realpath(fname) + '"\n'
+                
+                # Read file content using FileAnalyzer respecting max_file_read_size configuration
+                max_read_size = getattr(self._args, 'max_file_read_size', 0)
+                
+                # Use FileAnalyzer for efficient file reading
+                # Note: create_file_analyzer() handles StringZilla/Legacy fallback internally
+                analyzer = create_file_analyzer(fname, max_read_size, self._args.verbose)
+                analysis_result = analyzer.analyze()
+                file_content = analysis_result.text
+                
+                # Process conditional compilation for this file
+                processed_content = self._process_conditional_compilation(file_content)
+                
+                text += file_header + processed_content
 
         return text
 
