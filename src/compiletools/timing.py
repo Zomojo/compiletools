@@ -66,9 +66,12 @@ class Timer:
         return self.timings.get(operation_name, 0.0)
     
     def format_time(self, seconds):
-        """Format time in human-readable format."""
-        if seconds < 1.0:
-            return f"{seconds * 1000:.1f}ms"
+        """Format time in microseconds for precision."""
+        microseconds = seconds * 1_000_000
+        if microseconds < 1000:
+            return f"{microseconds:.0f}µs"
+        elif microseconds < 1_000_000:
+            return f"{microseconds / 1000:.1f}ms"
         elif seconds < 60.0:
             return f"{seconds:.1f}s"
         else:
@@ -86,17 +89,22 @@ class Timer:
         
         total_time = sum(self.timings.values())
         
-        if verbose_level >= 1:
+        if verbose_level >= 0:
             print(f"Total build time: {self.format_time(total_time)}", file=file)
         
-        if verbose_level >= 3:
+        if verbose_level >= 1:
             print("\nDetailed timing breakdown:", file=file)
-            self._report_detailed(file=file)
+            # Each verbose level allows one more level of indentation
+            max_depth = verbose_level
+            self._report_detailed(file=file, max_depth=max_depth)
     
-    def _report_detailed(self, file=None, indent=0):
+    def _report_detailed(self, file=None, indent=0, shown_operations=None, max_depth=None):
         """Generate detailed hierarchical timing report."""
         if file is None:
             file = sys.stderr
+        
+        if shown_operations is None:
+            shown_operations = set()
         
         # Find top-level operations (not nested under others)
         top_level = []
@@ -108,17 +116,25 @@ class Timer:
             if op_name not in all_nested:
                 top_level.append(op_name)
         
-        # Report top-level operations
+        # Report top-level operations recursively
         for op_name in top_level:
-            elapsed = self.timings.get(op_name, 0.0)
-            print(f"{'  ' * indent}{op_name}: {self.format_time(elapsed)}", file=file)
-            
-            # Report nested operations
-            if op_name in self.nested_timings:
-                for child_name in self.nested_timings[op_name]:
-                    if child_name in self.timings:
-                        child_elapsed = self.timings[child_name]
-                        print(f"{'  ' * (indent + 1)}{child_name}: {self.format_time(child_elapsed)}", file=file)
+            if op_name not in shown_operations:
+                self._report_operation_recursive(op_name, file, indent, shown_operations, max_depth)
+    
+    def _report_operation_recursive(self, op_name, file, indent, shown_operations, max_depth):
+        """Recursively report an operation and all its nested operations."""
+        if op_name in shown_operations:
+            return
+        
+        shown_operations.add(op_name)
+        elapsed = self.timings.get(op_name, 0.0)
+        print(f"{'  ' * indent}{op_name}: {self.format_time(elapsed)}", file=file)
+        
+        # Report nested operations recursively, respecting max_depth
+        if op_name in self.nested_timings and (max_depth is None or indent < max_depth):
+            for child_name in self.nested_timings[op_name]:
+                if child_name in self.timings:
+                    self._report_operation_recursive(child_name, file, indent + 1, shown_operations, max_depth)
     
     def get_summary(self):
         """Get a summary dictionary of timing information."""

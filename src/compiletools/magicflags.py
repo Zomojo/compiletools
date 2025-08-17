@@ -129,20 +129,23 @@ class MagicFlagsBase:
         flagsforfilename = defaultdict(list)
         for pkg in flag.split():
             # TODO: when we move to python 3.7, use text=True rather than universal_newlines=True and capture_output=True,
-            cflags = (
-                subprocess.run(
-                    ["pkg-config", "--cflags", pkg],
+            with compiletools.timing.time_operation(f"pkg_config_cflags_{pkg}"):
+                cflags = (
+                    subprocess.run(
+                        ["pkg-config", "--cflags", pkg],
+                        stdout=subprocess.PIPE,
+                        universal_newlines=True,
+                    )
+                    .stdout.rstrip()
+                    .replace("-I", "-isystem ")
+                )  # This helps the CppHeaderDeps avoid searching packages
+            
+            with compiletools.timing.time_operation(f"pkg_config_libs_{pkg}"):
+                libs = subprocess.run(
+                    ["pkg-config", "--libs", pkg],
                     stdout=subprocess.PIPE,
                     universal_newlines=True,
-                )
-                .stdout.rstrip()
-                .replace("-I", "-isystem ")
-            )  # This helps the CppHeaderDeps avoid searching packages
-            libs = subprocess.run(
-                ["pkg-config", "--libs", pkg],
-                stdout=subprocess.PIPE,
-                universal_newlines=True,
-            ).stdout.rstrip()
+                ).stdout.rstrip()
             flagsforfilename["CPPFLAGS"].append(cflags)
             flagsforfilename["CFLAGS"].append(cflags)
             flagsforfilename["CXXFLAGS"].append(cflags)

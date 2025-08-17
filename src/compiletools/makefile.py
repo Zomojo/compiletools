@@ -115,7 +115,7 @@ class LinkRuleCreator(object):
         # Add timing for link operations if enabled
         link_timing_prefix = ""
         link_timing_suffix = ""
-        if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 1:
+        if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 2:
             link_timing_prefix = "@START=$$(date +%s%N); "
             link_timing_suffix = f"; END=$$(date +%s%N); echo \"... linking {outputname} ($$(( ($$END-$$START)/1000000 ))ms)\""
         
@@ -123,7 +123,7 @@ class LinkRuleCreator(object):
             recipe += " ".join(["+@echo ...", outputname, ";"])
         
         link_flags = [linker, "-o", outputname] + list(object_names) + list(all_magic_ldflags) + [linkerflags]
-        if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 3:
+        if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 2:
             # Add -time flag for detailed linker timing
             link_flags.insert(1, "-time")
         
@@ -581,7 +581,7 @@ class MakefileCreator:
         # Add timing wrapper if enabled
         timing_prefix = ""
         timing_suffix = ""
-        if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 1:
+        if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 2:
             # Simple timing with elapsed time display
             timing_prefix = "@START=$$(date +%s%N); "
             timing_suffix = f"; END=$$(date +%s%N); echo \"... {filename} ($$(( ($$END-$$START)/1000000 ))ms)\""
@@ -594,13 +594,13 @@ class MakefileCreator:
         if compiletools.wrappedos.isc(filename):
             magic_c_flags = magicflags.get("CFLAGS", [])
             compile_flags = [self.args.CC, self.args.CFLAGS] + list(magic_cpp_flags) + list(magic_c_flags)
-            if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 3:
+            if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 2:
                 compile_flags.append("-time")
             compile_cmd = " ".join(compile_flags + ["-c", "-o", obj_name, filename])
         else:
             magic_cxx_flags = magicflags.get("CXXFLAGS", [])
             compile_flags = [self.args.CXX, self.args.CXXFLAGS] + list(magic_cpp_flags) + list(magic_cxx_flags)
-            if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 3:
+            if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 2:
                 compile_flags.append("-time")
             compile_cmd = " ".join(compile_flags + ["-c", "-o", obj_name, filename])
         

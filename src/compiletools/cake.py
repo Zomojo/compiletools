@@ -158,40 +158,50 @@ class Cake(object):
                     compiletools.wrappedos.copy(src, outputdir)
 
     def _callmakefile(self):
-        makefile_creator = compiletools.makefile.MakefileCreator(self.args, self.hunter)
-        makefilename = makefile_creator.create()
-        os.makedirs(self.namer.executable_dir(), exist_ok=True)
-        cmd = ["make"]
-        if self.args.verbose <= 1:
-            cmd.append("-s")
-        if self.args.verbose >= 4:
-            # --trace first comes in GNU make 4.0
-            make_version = (
-                subprocess.check_output(["make", "--version"], universal_newlines=True)
-                .splitlines()[0]
-                .split(" ")[-1]
-                .split(".")[0]
-            )
-            if int(make_version) >= 4:
-                cmd.append("--trace")
-        cmd.extend(["-j", str(self.args.parallel), "-f", self.args.makefilename])
-        if self.args.clean:
-            cmd.append("realclean")
-        else:
-            cmd.append("build")
-        if self.args.verbose >= 1:
-            print(" ".join(cmd))
-        subprocess.check_call(cmd, universal_newlines=True)
-
-        if self.args.tests and not self.args.clean:
+        with compiletools.timing.time_operation("makefile_creation"):
+            makefile_creator = compiletools.makefile.MakefileCreator(self.args, self.hunter)
+            makefilename = makefile_creator.create()
+            os.makedirs(self.namer.executable_dir(), exist_ok=True)
+        with compiletools.timing.time_operation("makefile_execution"):
             cmd = ["make"]
-            cmd.extend(["-j", str(self.args.parallel)])
-            if self.args.verbose < 2:
+            if self.args.verbose <= 1:
                 cmd.append("-s")
-            cmd.extend(["-f", self.args.makefilename, "runtests"])
-            if self.args.verbose >= 2:
+            if self.args.verbose >= 4:
+                # --trace first comes in GNU make 4.0
+                with compiletools.timing.time_operation("make_version_check"):
+                    make_version = (
+                        subprocess.check_output(["make", "--version"], universal_newlines=True)
+                        .splitlines()[0]
+                        .split(" ")[-1]
+                        .split(".")[0]
+                    )
+                if int(make_version) >= 4:
+                    cmd.append("--trace")
+            cmd.extend(["-j", str(self.args.parallel), "-f", self.args.makefilename])
+            if self.args.clean:
+                cmd.append("realclean")
+            else:
+                cmd.append("build")
+            if self.args.verbose >= 1:
                 print(" ".join(cmd))
-            subprocess.check_call(cmd, universal_newlines=True)
+            
+            # Time the main build subprocess
+            operation_name = "make_realclean" if self.args.clean else "make_build"
+            with compiletools.timing.time_operation(operation_name):
+                subprocess.check_call(cmd, universal_newlines=True)
+
+            if self.args.tests and not self.args.clean:
+                cmd = ["make"]
+                cmd.extend(["-j", str(self.args.parallel)])
+                if self.args.verbose < 2:
+                    cmd.append("-s")
+                cmd.extend(["-f", self.args.makefilename, "runtests"])
+                if self.args.verbose >= 2:
+                    print(" ".join(cmd))
+                
+                # Time the test execution subprocess
+                with compiletools.timing.time_operation("make_runtests"):
+                    subprocess.check_call(cmd, universal_newlines=True)
 
         if self.args.clean:
             # Remove the extra executables we copied
@@ -261,8 +271,7 @@ class Cake(object):
             with compiletools.timing.time_operation("filelist_generation"):
                 self._callfilelist()
         else:
-            with compiletools.timing.time_operation("makefile_creation_and_execution"):
-                self._callmakefile()
+            self._callmakefile()
 
     def clear_cache(self):
         """ Only useful in test scenarios where you need to reset to a pristine state """

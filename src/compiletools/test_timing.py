@@ -54,7 +54,8 @@ class TestTimer(unittest.TestCase):
     
     def test_format_time(self):
         """Test time formatting"""
-        self.assertEqual(self.timer.format_time(0.0005), "0.5ms")
+        self.assertEqual(self.timer.format_time(0.0005), "500µs")
+        self.assertEqual(self.timer.format_time(0.0015), "1.5ms")
         self.assertEqual(self.timer.format_time(1.5), "1.5s")
         self.assertEqual(self.timer.format_time(65.5), "1m5.5s")
     
