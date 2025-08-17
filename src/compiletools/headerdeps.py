@@ -13,6 +13,7 @@ import compiletools.preprocessor
 from compiletools.diskcache import diskcache
 from compiletools.simple_preprocessor import SimplePreprocessor
 from compiletools.file_analyzer import create_file_analyzer
+import compiletools.timing
 
 
 
@@ -59,15 +60,16 @@ class HeaderDepsBase(object):
     def process(self, filename):
         """Return the set of dependencies for a given filename"""
         realpath = compiletools.wrappedos.realpath(filename)
-        try:
-            result = self._process_impl(realpath)
-        except IOError:
-            # If there was any error the first time around, an error correcting removal would have occured
-            # So strangely, the best thing to do is simply try again
-            result = None
+        with compiletools.timing.time_operation(f"header_dependency_analysis_{os.path.basename(filename)}"):
+            try:
+                result = self._process_impl(realpath)
+            except IOError:
+                # If there was any error the first time around, an error correcting removal would have occured
+                # So strangely, the best thing to do is simply try again
+                result = None
 
-        if not result:
-            result = self._process_impl(realpath)
+            if not result:
+                result = self._process_impl(realpath)
 
         return result
 
@@ -175,25 +177,29 @@ class DirectHeaderDeps(HeaderDepsBase):
     @functools.lru_cache(maxsize=None)
     def _create_include_list(self, realpath):
         """Internal use. Create the list of includes for the given file"""
-        max_read_size = getattr(self.args, 'max_file_read_size', 0)
-        
-        # Use FileAnalyzer for efficient file reading and pattern detection  
-        # Note: create_file_analyzer() handles StringZilla/Legacy fallback internally
-        from compiletools.file_analyzer import create_file_analyzer
-        analyzer = create_file_analyzer(realpath, max_read_size, self.args.verbose)
-        analysis_result = analyzer.analyze()
-        text = analysis_result.text
+        with compiletools.timing.time_operation(f"include_analysis_{os.path.basename(realpath)}"):
+            max_read_size = getattr(self.args, 'max_file_read_size', 0)
+            
+            # Use FileAnalyzer for efficient file reading and pattern detection  
+            # Note: create_file_analyzer() handles StringZilla/Legacy fallback internally
+            from compiletools.file_analyzer import create_file_analyzer
+            with compiletools.timing.time_operation(f"file_read_{os.path.basename(realpath)}"):
+                analyzer = create_file_analyzer(realpath, max_read_size, self.args.verbose)
+                analysis_result = analyzer.analyze()
+                text = analysis_result.text
 
-        # Process conditional compilation - this updates self.defined_macros as it encounters #define
-        processed_text = self._process_conditional_compilation(text)
+            # Process conditional compilation - this updates self.defined_macros as it encounters #define
+            with compiletools.timing.time_operation(f"conditional_compilation_{os.path.basename(realpath)}"):
+                processed_text = self._process_conditional_compilation(text)
 
-        # The pattern is intended to match all include statements but
-        # not the ones with either C or C++ commented out.
-        pat = re.compile(
-            r'/\*.*?\*/|//.*?$|^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]',
-            re.MULTILINE | re.DOTALL,
-        )
-        return [group for group in pat.findall(processed_text) if group]
+            # The pattern is intended to match all include statements but
+            # not the ones with either C or C++ commented out.
+            with compiletools.timing.time_operation(f"pattern_matching_{os.path.basename(realpath)}"):
+                pat = re.compile(
+                    r'/\*.*?\*/|//.*?$|^[\s]*#include[\s]*["<][\s]*([\S]*)[\s]*[">]',
+                    re.MULTILINE | re.DOTALL,
+                )
+                return [group for group in pat.findall(processed_text) if group]
 
     def _generate_tree_impl(self, realpath, node=None):
         """Return a tree that describes the header includes

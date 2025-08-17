@@ -13,6 +13,7 @@ import compiletools.wrappedos
 import compiletools.configutils
 import compiletools.apptools
 from compiletools.file_analyzer import create_file_analyzer
+import compiletools.timing
 
 
 def create(args, headerdeps):
@@ -79,7 +80,8 @@ class MagicFlagsBase:
         raise NotImplemented
 
     def __call__(self, filename):
-        return self.parse(filename)
+        with compiletools.timing.time_operation(f"magic_flags_analysis_{os.path.basename(filename)}"):
+            return self.parse(filename)
 
     def _handle_source(self, flag, text):
         # Find the include before the //#SOURCE=
@@ -160,43 +162,49 @@ class MagicFlagsBase:
         # When used in the "usual" fashion this is true.
         # However, it is possible to call directly so we must
         # ensure that the headerdeps exist manually.
-        self._headerdeps.process(filename)
+        with compiletools.timing.time_operation(f"magic_flags_headerdeps_{os.path.basename(filename)}"):
+            self._headerdeps.process(filename)
 
-        text = self.readfile(filename)
-        flagsforfilename = defaultdict(list)
-
-        for match in self.magicpattern.finditer(text):
-            magic, flag = match.groups()
-
-            # If the magic was SOURCE then fix up the path in the flag
-            if magic == "SOURCE":
-                flag = self._handle_source(flag, text)
-
-            # If the magic was INCLUDE then modify that into the equivalent CPPFLAGS, CFLAGS, and CXXFLAGS
-            if magic == "INCLUDE":
-                extrafff = self._handle_include(flag)
-                for key, values in extrafff.items():
-                    for value in values:
-                        flagsforfilename[key].append(value)
-
-            # If the magic was PKG-CONFIG then call pkg-config
-            if magic == "PKG-CONFIG":
-                extrafff = self._handle_pkg_config(flag)
-                for key, values in extrafff.items():
-                    for value in values:
-                        flagsforfilename[key].append(value)
-
-            flagsforfilename[magic].append(flag)
-            if self._args.verbose >= 5:
-                print(
-                    "Using magic flag {0}={1} extracted from {2}".format(
-                        magic, flag, filename
-                    )
-                )
+        with compiletools.timing.time_operation(f"magic_flags_readfile_{os.path.basename(filename)}"):
+            text = self.readfile(filename)
         
-        # Deduplicate all flags while preserving order
-        for key in flagsforfilename:
-            flagsforfilename[key] = compiletools.utils.ordered_unique(flagsforfilename[key])
+        with compiletools.timing.time_operation(f"magic_flags_parsing_{os.path.basename(filename)}"):
+            flagsforfilename = defaultdict(list)
+
+            for match in self.magicpattern.finditer(text):
+                magic, flag = match.groups()
+
+                # If the magic was SOURCE then fix up the path in the flag
+                if magic == "SOURCE":
+                    flag = self._handle_source(flag, text)
+
+                # If the magic was INCLUDE then modify that into the equivalent CPPFLAGS, CFLAGS, and CXXFLAGS
+                if magic == "INCLUDE":
+                    with compiletools.timing.time_operation(f"magic_flags_include_handling_{flag}"):
+                        extrafff = self._handle_include(flag)
+                        for key, values in extrafff.items():
+                            for value in values:
+                                flagsforfilename[key].append(value)
+
+                # If the magic was PKG-CONFIG then call pkg-config
+                if magic == "PKG-CONFIG":
+                    with compiletools.timing.time_operation(f"magic_flags_pkgconfig_{flag}"):
+                        extrafff = self._handle_pkg_config(flag)
+                        for key, values in extrafff.items():
+                            for value in values:
+                                flagsforfilename[key].append(value)
+
+                flagsforfilename[magic].append(flag)
+                if self._args.verbose >= 5:
+                    print(
+                        "Using magic flag {0}={1} extracted from {2}".format(
+                            magic, flag, filename
+                        )
+                    )
+            
+            # Deduplicate all flags while preserving order
+            for key in flagsforfilename:
+                flagsforfilename[key] = compiletools.utils.ordered_unique(flagsforfilename[key])
 
         return flagsforfilename
 

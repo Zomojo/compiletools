@@ -13,6 +13,7 @@ import compiletools.magicflags
 import compiletools.hunter
 import compiletools.namer
 import compiletools.configutils
+import compiletools.timing
 
 
 class Rule:
@@ -110,9 +111,24 @@ class LinkRuleCreator(object):
                 all_magic_ldflags.extend(magic_flags.get("LINKFLAGS", []))  # For backward compatibility with cake
             all_magic_ldflags = compiletools.utils.ordered_unique(all_magic_ldflags)
         recipe = ""
-        if self.args.verbose >= 1:
+        
+        # Add timing for link operations if enabled
+        link_timing_prefix = ""
+        link_timing_suffix = ""
+        if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 1:
+            link_timing_prefix = "@START=$$(date +%s%N); "
+            link_timing_suffix = f"; END=$$(date +%s%N); echo \"... linking {outputname} ($$(( ($$END-$$START)/1000000 ))ms)\""
+        
+        if self.args.verbose >= 1 and not (hasattr(self.args, 'time') and self.args.time):
             recipe += " ".join(["+@echo ...", outputname, ";"])
-        recipe += " ".join([linker, "-o", outputname] + list(object_names) + list(all_magic_ldflags) + [linkerflags])
+        
+        link_flags = [linker, "-o", outputname] + list(object_names) + list(all_magic_ldflags) + [linkerflags]
+        if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 3:
+            # Add -time flag for detailed linker timing
+            link_flags.insert(1, "-time")
+        
+        link_cmd = " ".join(link_flags)
+        recipe += link_timing_prefix + link_cmd + link_timing_suffix
         return Rule(target=outputname, prerequisites=allprerequisites, recipe=recipe)
 
 
@@ -561,19 +577,34 @@ class MakefileCreator:
 
         magicflags = self.hunter.magicflags(filename)
         recipe = ""
-        if self.args.verbose >= 1:
+        
+        # Add timing wrapper if enabled
+        timing_prefix = ""
+        timing_suffix = ""
+        if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 1:
+            # Simple timing with elapsed time display
+            timing_prefix = "@START=$$(date +%s%N); "
+            timing_suffix = f"; END=$$(date +%s%N); echo \"... {filename} ($$(( ($$END-$$START)/1000000 ))ms)\""
+        
+        if self.args.verbose >= 1 and not (hasattr(self.args, 'time') and self.args.time):
             recipe = " ".join(["@echo ...", filename, ";"])
+        
         magic_cpp_flags = magicflags.get("CPPFLAGS", [])
+        compile_cmd = ""
         if compiletools.wrappedos.isc(filename):
             magic_c_flags = magicflags.get("CFLAGS", [])
-            recipe += " ".join(
-                [self.args.CC, self.args.CFLAGS] + list(magic_cpp_flags) + list(magic_c_flags) + ["-c", "-o", obj_name, filename]
-            )
+            compile_flags = [self.args.CC, self.args.CFLAGS] + list(magic_cpp_flags) + list(magic_c_flags)
+            if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 3:
+                compile_flags.append("-time")
+            compile_cmd = " ".join(compile_flags + ["-c", "-o", obj_name, filename])
         else:
             magic_cxx_flags = magicflags.get("CXXFLAGS", [])
-            recipe += " ".join(
-                [self.args.CXX, self.args.CXXFLAGS] + list(magic_cpp_flags) + list(magic_cxx_flags) + ["-c", "-o", obj_name, filename]
-            )
+            compile_flags = [self.args.CXX, self.args.CXXFLAGS] + list(magic_cpp_flags) + list(magic_cxx_flags)
+            if hasattr(self.args, 'time') and self.args.time and self.args.verbose >= 3:
+                compile_flags.append("-time")
+            compile_cmd = " ".join(compile_flags + ["-c", "-o", obj_name, filename])
+        
+        recipe += timing_prefix + compile_cmd + timing_suffix
 
         if self.args.verbose >= 3:
             print("Creating rule for ", obj_name)

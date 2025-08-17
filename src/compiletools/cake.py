@@ -15,6 +15,7 @@ import compiletools.filelist
 import compiletools.findtargets
 import compiletools.jobs
 import compiletools.wrappedos
+import compiletools.timing
 
 
 class Cake(object):
@@ -220,23 +221,27 @@ class Cake(object):
         if self.args.verbose > 4:
             print("Early scanning. Cake determining targets and implied files")
 
-        self._createctobjs()
+        with compiletools.timing.time_operation("create_ct_objects"):
+            self._createctobjs()
         recreateobjs = False
         if self.args.static and len(self.args.static) == 1:
-            self.args.static.extend(
-                self.hunter.required_source_files(self.args.static[0])
-            )
+            with compiletools.timing.time_operation("static_source_hunting"):
+                self.args.static.extend(
+                    self.hunter.required_source_files(self.args.static[0])
+                )
             recreateobjs = True
 
         if self.args.dynamic and len(self.args.dynamic) == 1:
-            self.args.dynamic.extend(
-                self.hunter.required_source_files(self.args.dynamic[0])
-            )
+            with compiletools.timing.time_operation("dynamic_source_hunting"):
+                self.args.dynamic.extend(
+                    self.hunter.required_source_files(self.args.dynamic[0])
+                )
             recreateobjs = True
 
         if self.args.auto:
-            findtargets = compiletools.findtargets.FindTargets(self.args)
-            findtargets.process(self.args)
+            with compiletools.timing.time_operation("target_detection"):
+                findtargets = compiletools.findtargets.FindTargets(self.args)
+                findtargets.process(self.args)
             recreateobjs = True
 
         if recreateobjs:
@@ -246,15 +251,18 @@ class Cake(object):
             # targets. And recreate the ct objects
             if self.args.verbose > 4:
                 print("Cake recreating objects and reparsing for second stage processing")
-            compiletools.apptools.substitutions(self.args, verbose=0)
-            self._createctobjs()
+            with compiletools.timing.time_operation("recreate_ct_objects"):
+                compiletools.apptools.substitutions(self.args, verbose=0)
+                self._createctobjs()
 
         compiletools.apptools.verboseprintconfig(self.args)
 
         if self.args.filelist:
-            self._callfilelist()
+            with compiletools.timing.time_operation("filelist_generation"):
+                self._callfilelist()
         else:
-            self._callmakefile()
+            with compiletools.timing.time_operation("makefile_creation_and_execution"):
+                self._callmakefile()
 
     def clear_cache(self):
         """ Only useful in test scenarios where you need to reset to a pristine state """
@@ -279,6 +287,10 @@ def main(argv=None):
 
     args = compiletools.apptools.parseargs(cap, argv)
 
+    # Initialize timing if enabled
+    timing_enabled = hasattr(args, 'time') and args.time
+    compiletools.timing.initialize_timer(timing_enabled)
+
     if not any([args.filename, args.static, args.dynamic, args.tests, args.auto]):
         print(
             "Nothing for cake to do.  Did you mean cake --auto? Use cake --help for help."
@@ -290,7 +302,8 @@ def main(argv=None):
 
     try:
         cake = Cake(args)
-        cake.process()
+        with compiletools.timing.time_operation("total_build_time"):
+            cake.process()
         # For testing purposes, clear out the memcaches for the times when main is called more than once.
         cake.clear_cache()
     except IOError as ioe:
@@ -305,5 +318,9 @@ def main(argv=None):
             return 1
         else:
             raise
+    
+    # Report timing information if enabled
+    if timing_enabled:
+        compiletools.timing.report_timing(args.verbose)
 
     return 0
