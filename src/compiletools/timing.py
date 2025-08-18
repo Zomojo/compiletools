@@ -87,7 +87,13 @@ class Timer:
         if file is None:
             file = sys.stderr
         
-        total_time = sum(self.timings.values())
+        # Calculate total time from top-level operations only to avoid double-counting
+        all_nested = set()
+        for children in self.nested_timings.values():
+            all_nested.update(children)
+        
+        top_level_ops = [op for op in self.timings if op not in all_nested]
+        total_time = sum(self.timings[op] for op in top_level_ops) if top_level_ops else sum(self.timings.values())
         
         if verbose_level >= 0:
             print(f"Total build time: {self.format_time(total_time)}", file=file)
