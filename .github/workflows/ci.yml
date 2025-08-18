@@ -46,7 +46,7 @@ jobs:
             ${{ runner.os }}-venv-
 
       - name: Install dependencies
-        run: uv sync
+        run: uv sync --extra dev
 
       - name: Run tests
-        run: uv run pytest -n auto
+        run: uv run -m pytest -n auto
