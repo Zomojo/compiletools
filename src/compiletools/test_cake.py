@@ -7,7 +7,7 @@ import configargparse
 
 # import pdb
 
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 import compiletools.cake
 import compiletools.apptools
 import compiletools.dirnamer

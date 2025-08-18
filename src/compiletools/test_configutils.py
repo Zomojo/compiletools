@@ -4,7 +4,7 @@ import shutil
 import tempfile
 import configargparse
 
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 import compiletools.configutils
 import compiletools.apptools
 
@@ -44,7 +44,7 @@ class TestVariant:
     def test_extract_variant_from_ct_conf(self):
         # Should find the one in the temp directory ct.conf
         with uth.TempDirContext() as ctx:
-            local_ct_conf = compiletools.unittesthelper.create_temp_ct_conf(os.getcwd())
+            local_ct_conf = compiletools.testhelper.create_temp_ct_conf(os.getcwd())
             variant = compiletools.configutils.extract_item_from_ct_conf(
                 key="variant",
                 user_config_dir="/var",
@@ -57,7 +57,7 @@ class TestVariant:
     def test_extract_variant_from_blank_argv(self):
         # Force to find the temp directory ct.conf
         with uth.TempDirContext() as ctx:
-            local_ct_conf = compiletools.unittesthelper.create_temp_ct_conf(os.getcwd())
+            local_ct_conf = compiletools.testhelper.create_temp_ct_conf(os.getcwd())
             variant = compiletools.configutils.extract_variant(
                 argv=[],
                 user_config_dir="/var",
@@ -71,8 +71,8 @@ class TestVariant:
 
     def test_default_configs(self):
         with uth.TempDirContext() as ctx:
-            local_ct_conf = compiletools.unittesthelper.create_temp_ct_conf(os.getcwd())
-            local_config_name = compiletools.unittesthelper.create_temp_config(os.getcwd())
+            local_ct_conf = compiletools.testhelper.create_temp_ct_conf(os.getcwd())
+            local_config_name = compiletools.testhelper.create_temp_config(os.getcwd())
 
             configs = compiletools.configutils.defaultconfigs(
                 user_config_dir="/var",
@@ -89,10 +89,10 @@ class TestVariant:
 
     def test_config_files_from_variant(self):
         with uth.TempDirContext() as ctx:
-            local_ct_conf = compiletools.unittesthelper.create_temp_ct_conf(os.getcwd())
+            local_ct_conf = compiletools.testhelper.create_temp_ct_conf(os.getcwd())
             # Deliberately call the next config gcc.debug.conf to verify that
             # the hierarchy of directories is working
-            local_config_name = compiletools.unittesthelper.create_temp_config(
+            local_config_name = compiletools.testhelper.create_temp_config(
                 os.getcwd(), "gcc.debug.conf"
             )
 

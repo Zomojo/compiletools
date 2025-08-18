@@ -20,7 +20,7 @@ ruff check src/compiletools/
 #
 # Running tests
 #
-Tests use pytest. The codebase has been migrated from unittest to pytest style. First install development dependencies:
+The project uses pytest as its testing framework. First install development dependencies:
 
 uv pip install -e ".[dev]"
 
@@ -41,7 +41,7 @@ pytest src/compiletools -v
 #
 # Test Style Guidelines
 #
-For new tests, prefer function-based pytest style over class-based:
+All tests should follow pytest conventions. Prefer function-based style over class-based:
 
 # Preferred (function-based)
 def test_something():
@@ -57,6 +57,49 @@ class TestComplexFeature:
 
 Simple tests with single test methods should use function-based style.
 Use class-based style only when tests share complex setup/teardown logic.
+
+#
+# pytest Features and Best Practices
+#
+pytest provides powerful features for testing:
+
+**Fixtures**: Use fixtures for reusable setup and teardown
+def test_with_temp_dir(tmp_path):
+    # tmp_path is a pytest built-in fixture providing temp directory
+    test_file = tmp_path / "test.txt"
+    test_file.write_text("content")
+    assert test_file.exists()
+
+**Parametrization**: Test multiple inputs with single test function
+@pytest.mark.parametrize("input,expected", [
+    (2, 4),
+    (3, 9),
+    (4, 16),
+])
+def test_square(input, expected):
+    assert input ** 2 == expected
+
+**Markers**: Mark tests for selective execution
+@pytest.mark.slow
+def test_slow_operation():
+    # Run with: pytest -m "not slow" to skip slow tests
+    pass
+
+**Assertions**: Use simple assert statements
+def test_equality():
+    assert result == expected  # pytest provides detailed failure messages
+
+**Mocking**: unittest.mock works seamlessly with pytest
+from unittest.mock import Mock, patch
+
+def test_with_mock():
+    mock_obj = Mock(return_value=42)
+    assert mock_obj() == 42
+
+**Test Discovery**: pytest automatically discovers tests
+- Files matching test_*.py or *_test.py
+- Functions named test_*
+- Classes named Test* with test_* methods
 
 #
 # Caches/Performance

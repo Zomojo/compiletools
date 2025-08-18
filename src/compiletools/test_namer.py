@@ -1,7 +1,7 @@
 import sys
 import os
 import configargparse
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 import compiletools.namer
 import compiletools.configutils
 import compiletools.apptools

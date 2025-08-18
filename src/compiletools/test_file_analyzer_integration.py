@@ -13,7 +13,7 @@ from unittest.mock import patch, MagicMock
 import compiletools.test_base as tb
 import compiletools.headerdeps
 import compiletools.magicflags
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 
 
 class TestHeaderDepsIntegration(tb.BaseCompileToolsTestCase):

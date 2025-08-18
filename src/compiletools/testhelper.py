@@ -8,7 +8,7 @@ import textwrap
 from pathlib import Path
 import compiletools.apptools
 
-# The abbreviation "uth" is often used for this "unittesthelper"
+# The abbreviation "uth" is often used for this "testhelper"
 
 
 def reset():
@@ -18,7 +18,7 @@ def reset():
 
 def delete_existing_parsers():
     """The singleton parsers supplied by configargparse
-    don't play well with the unittest framework.
+    don't play well with the test framework.
     This function will delete them so you are
     starting with a clean slate
     """

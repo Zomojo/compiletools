@@ -7,7 +7,7 @@ import configargparse
 
 import compiletools.utils
 import compiletools.makefile
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 
 class TestMakefile:
     def setup_method(self):

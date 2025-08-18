@@ -1,6 +1,6 @@
 import os
 import textwrap
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 import compiletools.listvariants
 
 
@@ -10,7 +10,7 @@ def test_none_found():
     with uth.TempDirContextWithChange() as tempdir:
         with uth.ParserContext():
             # Create temp config with variant aliases
-            compiletools.unittesthelper.create_temp_ct_conf(tempdir)
+            compiletools.testhelper.create_temp_ct_conf(tempdir)
             
             # These values are deliberately chosen so that we can know that
             # no config files will be found except those in the temp directory

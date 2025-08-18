@@ -1,7 +1,7 @@
 
 import configargparse
 
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 
 
 def add_to_parser_in_func(recursion_depth=0):

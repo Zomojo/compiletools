@@ -10,7 +10,7 @@ from importlib import reload
 
 import compiletools.dirnamer
 import compiletools.headerdeps
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 
 
 def _make_cppflags_path(relative_path):

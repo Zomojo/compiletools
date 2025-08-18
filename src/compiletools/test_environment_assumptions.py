@@ -3,7 +3,7 @@ import shutil
 import os
 import pytest
 
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 import compiletools.configutils
 import compiletools.apptools
 

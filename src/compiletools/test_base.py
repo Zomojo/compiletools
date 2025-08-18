@@ -1,6 +1,6 @@
 import os
 import configargparse
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 import compiletools.uth_reload as uthr
 import compiletools.dirnamer
 import compiletools.apptools

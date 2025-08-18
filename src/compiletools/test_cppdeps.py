@@ -8,7 +8,7 @@ from contextlib import redirect_stdout
 from importlib import reload
 
 import compiletools.cppdeps
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 
 
 def _reload_ct_with_cache(cache_home):

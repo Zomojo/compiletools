@@ -1,6 +1,6 @@
 import os
 
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 import compiletools.test_base as tb
 
 

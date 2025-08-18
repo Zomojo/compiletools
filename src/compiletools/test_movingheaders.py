@@ -1,6 +1,6 @@
 import os
 import shutil
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 import compiletools.cake
 import compiletools.utils
 import compiletools.test_base

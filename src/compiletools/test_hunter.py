@@ -4,11 +4,11 @@ import shutil
 import sys
 import tempfile
 import configargparse
-import compiletools.unittesthelper
+import compiletools.testhelper
 
 from importlib import reload
 
-import compiletools.unittesthelper as uth
+import compiletools.testhelper as uth
 import compiletools.wrappedos
 import compiletools.headerdeps
 import compiletools.magicflags
