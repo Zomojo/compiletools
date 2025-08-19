@@ -277,21 +277,36 @@ class TestSimplePreprocessor:
         assert result == ''
 
     def test_platform_macros(self):
-        """Test platform-specific macro addition"""
-        processor = SimplePreprocessor({}, verbose=0)
-        processor.add_platform_macros()
+        """Test platform-specific macro initialization via compiler_macros"""
+        import compiletools.compiler_macros
         
-        # At least one platform macro should be defined based on current platform
-        import sys
-        if sys.platform.startswith('linux'):
+        # Since our simplified compiler_macros only queries the compiler,
+        # and doesn't add platform macros without a compiler,
+        # we'll test both with and without a compiler
+        
+        # Test 1: Without compiler (empty path)
+        macros_empty = compiletools.compiler_macros.get_compiler_macros('', verbose=0)
+        processor_empty = SimplePreprocessor(macros_empty, verbose=0)
+        # Should work with empty macros
+        assert processor_empty.macros == macros_empty
+        
+        # Test 2: With mocked compiler response
+        from unittest.mock import patch, MagicMock
+        mock_result = MagicMock()
+        mock_result.returncode = 0
+        mock_result.stdout = "#define __linux__ 1\n#define __GNUC__ 11\n#define __x86_64__ 1"
+        
+        with patch('subprocess.run', return_value=mock_result):
+            # Clear cache to ensure fresh call
+            compiletools.compiler_macros.clear_cache()
+            macros = compiletools.compiler_macros.get_compiler_macros('gcc', verbose=0)
+            processor = SimplePreprocessor(macros, verbose=0)
+            
+            # Verify the mocked macros are present
             assert '__linux__' in processor.macros
             assert processor.macros['__linux__'] == '1'
-        elif sys.platform.startswith('win'):
-            assert '_WIN32' in processor.macros
-            assert processor.macros['_WIN32'] == '1'
-        elif sys.platform.startswith('darwin'):
-            assert '__APPLE__' in processor.macros
-            assert processor.macros['__APPLE__'] == '1'
+            assert '__GNUC__' in processor.macros
+            assert processor.macros['__GNUC__'] == '11'
 
     def test_if_with_comments(self):
         """Test #if directive with C++ style comments"""

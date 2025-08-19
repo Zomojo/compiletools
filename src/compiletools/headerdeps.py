@@ -10,6 +10,7 @@ import compiletools.wrappedos
 import compiletools.apptools
 import compiletools.tree as tree
 import compiletools.preprocessor
+import compiletools.compiler_macros
 from compiletools.diskcache import diskcache
 from compiletools.simple_preprocessor import SimplePreprocessor
 from compiletools.file_analyzer import create_file_analyzer
@@ -131,10 +132,10 @@ class DirectHeaderDeps(HeaderDepsBase):
                     if self.args.verbose >= 3:
                         print(f"Added macro from {flag_name}: {macro_name} = {macro_value}")
         
-        # Add platform, compiler, and architecture built-in macros
-        self._add_platform_macros()
-        self._add_compiler_macros()
-        self._add_architecture_macros()
+        # Get compiler, platform, and architecture macros dynamically
+        compiler = getattr(self.args, 'CXX', 'g++')
+        macros = compiletools.compiler_macros.get_compiler_macros(compiler, self.args.verbose)
+        self.defined_macros.update(macros)
 
     @functools.lru_cache(maxsize=None)
     def _search_project_includes(self, include):
@@ -274,102 +275,6 @@ class DirectHeaderDeps(HeaderDepsBase):
         results.discard(realpath)
         return results
 
-    def _add_platform_macros(self):
-        """Add platform-specific built-in macros"""
-        import sys
-        if sys.platform.startswith('linux'):
-            for macro in ['__linux__', '__unix__', 'unix']:
-                self.defined_macros[macro] = "1"
-        elif sys.platform.startswith('win'):
-            for macro in ['_WIN32', 'WIN32']:
-                self.defined_macros[macro] = "1"
-        elif sys.platform.startswith('darwin'):
-            for macro in ['__APPLE__', '__MACH__', '__unix__', 'unix']:
-                self.defined_macros[macro] = "1"
-            
-        if self.args.verbose >= 3:
-            print(f"Added platform macros for {sys.platform}")
-
-    def _add_compiler_macros(self):
-        """Add compiler-specific built-in macros"""
-        compiler = getattr(self.args, 'CXX', 'g++').lower()
-        
-        if 'armcc' in compiler or 'armclang' in compiler:
-            for macro in ['__ARMCC_VERSION', '__arm__']:
-                self.defined_macros[macro] = "1"
-            # ARM Compiler 6+ is based on clang
-            if 'armclang' in compiler:
-                for macro in ['__clang__', '__GNUC__']:
-                    self.defined_macros[macro] = "1"
-            if self.args.verbose >= 3:
-                print("Added ARM compiler built-in macros")
-                
-        elif 'clang' in compiler:
-            for macro in ['__clang__', '__clang_major__', '__clang_minor__', '__clang_patchlevel__',
-                         '__GNUC__', '__GNUC_MINOR__']:  # Clang compatibility macros
-                self.defined_macros[macro] = "1"
-            if self.args.verbose >= 3:
-                print("Added Clang compiler built-in macros")
-                
-        elif 'gcc' in compiler or 'g++' in compiler:
-            for macro in ['__GNUC__', '__GNUG__', '__GNUC_MINOR__', '__GNUC_PATCHLEVEL__']:
-                self.defined_macros[macro] = "1"
-            if self.args.verbose >= 3:
-                print("Added GCC compiler built-in macros")
-                
-        elif 'tcc' in compiler:
-            for macro in ['__TINYC__', '__GNUC__']:  # TCC compatibility macros
-                self.defined_macros[macro] = "1"
-            if self.args.verbose >= 3:
-                print("Added TCC compiler built-in macros")
-                
-        elif 'cl' in compiler or 'msvc' in compiler:
-            for macro in ['_MSC_VER', '_MSC_FULL_VER', '_WIN32']:
-                self.defined_macros[macro] = "1"
-            if self.args.verbose >= 3:
-                print("Added MSVC compiler built-in macros")
-                
-        elif 'icc' in compiler or 'icx' in compiler or 'intel' in compiler:
-            for macro in ['__INTEL_COMPILER', '__ICC', '__GNUC__']:  # Intel + GCC compatibility
-                self.defined_macros[macro] = "1"
-            if self.args.verbose >= 3:
-                print("Added Intel compiler built-in macros")
-                
-        elif 'emcc' in compiler or 'emscripten' in compiler:
-            for macro in ['__EMSCRIPTEN__', '__clang__', '__GNUC__']:  # Emscripten is based on clang
-                self.defined_macros[macro] = "1"
-            if self.args.verbose >= 3:
-                print("Added Emscripten compiler built-in macros")
-
-    def _add_architecture_macros(self):
-        """Add architecture-specific built-in macros"""
-        import platform
-        arch = platform.machine().lower()
-        
-        if arch in ['x86_64', 'amd64']:
-            for macro in ['__x86_64__', '__amd64__', '__LP64__']:
-                self.defined_macros[macro] = "1"
-        elif arch in ['i386', 'i686', 'x86']:
-            for macro in ['__i386__', '__i386']:
-                self.defined_macros[macro] = "1"
-        elif arch.startswith('arm') or arch.startswith('aarch'):
-            if arch.startswith('aarch') or '64' in arch:
-                # 64-bit ARM (aarch64, arm64)
-                for macro in ['__aarch64__', '__LP64__']:
-                    self.defined_macros[macro] = "1"
-            else:
-                # 32-bit ARM (armv6l, armv7l, etc.)
-                self.defined_macros['__arm__'] = "1"
-        elif arch.startswith('riscv') or 'riscv' in arch:
-            self.defined_macros['__riscv'] = "1"
-            if '64' in arch:
-                for macro in ['__riscv64__', '__LP64__']:
-                    self.defined_macros[macro] = "1"
-            elif '32' in arch:
-                self.defined_macros['__riscv32__'] = "1"
-                
-        if self.args.verbose >= 3:
-            print(f"Added architecture macros for {arch}")
 
     @staticmethod
     def clear_cache():

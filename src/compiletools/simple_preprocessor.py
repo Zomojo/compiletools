@@ -1,6 +1,7 @@
 """Simple C preprocessor for handling conditional compilation directives."""
 
 import sys
+import compiletools.compiler_macros
 
 
 class SimplePreprocessor:
@@ -29,14 +30,6 @@ class SimplePreprocessor:
                 self.macros[macro] = "1"  # Default value for macros without explicit values
         self.verbose = verbose
         
-    def add_platform_macros(self):
-        """Add common platform-specific macros"""
-        if sys.platform.startswith('linux'):
-            self.macros['__linux__'] = "1"
-        elif sys.platform.startswith('win'):
-            self.macros['_WIN32'] = "1"
-        elif sys.platform.startswith('darwin'):
-            self.macros['__APPLE__'] = "1"
     
     def _strip_comments(self, expr):
         """Strip C/C++ style comments from expressions.

@@ -12,6 +12,7 @@ import compiletools.headerdeps
 import compiletools.wrappedos
 import compiletools.configutils
 import compiletools.apptools
+import compiletools.compiler_macros
 from compiletools.file_analyzer import create_file_analyzer
 import compiletools.timing
 
@@ -399,17 +400,12 @@ class DirectMagicFlags(MagicFlagsBase):
         # Add macros from command-line CPPFLAGS and CXXFLAGS (e.g., from --append-CPPFLAGS/--append-CXXFLAGS)
         self._add_macros_from_command_line_flags()
         
-        # Add some common predefined macros that are typically available
-        # These are basic ones that don't require a compiler invocation
-        if sys.platform.startswith('linux'):
-            self.defined_macros.add('__linux__')
-            self.macro_values['__linux__'] = "1"
-        elif sys.platform.startswith('win'):
-            self.defined_macros.add('_WIN32')
-            self.macro_values['_WIN32'] = "1"
-        elif sys.platform.startswith('darwin'):
-            self.defined_macros.add('__APPLE__')
-            self.macro_values['__APPLE__'] = "1"
+        # Get compiler, platform, and architecture macros dynamically
+        compiler = getattr(self._args, 'CXX', 'g++')
+        macros = compiletools.compiler_macros.get_compiler_macros(compiler, self._args.verbose)
+        for macro_name, macro_value in macros.items():
+            self.defined_macros.add(macro_name)
+            self.macro_values[macro_name] = macro_value
         
         headers = self._headerdeps.process(filename)
         
