@@ -175,7 +175,6 @@ class DirectHeaderDeps(HeaderDepsBase):
         
         return processed_text
 
-    @functools.lru_cache(maxsize=None)
     def _create_include_list(self, realpath):
         """Internal use. Create the list of includes for the given file"""
         with compiletools.timing.time_operation(f"include_analysis_{os.path.basename(realpath)}"):
@@ -265,7 +264,8 @@ class DirectHeaderDeps(HeaderDepsBase):
     # TODO: Stop writing to the same cache as CPPHeaderDeps.
     # Because the magic flags rely on the .deps cache, this hack was put in
     # place.
-    @diskcache("deps", deps_mode=True)
+    # NOTE: Cache removed due to macro state dependency - cache was keyed only on file path
+    # but results depend on self.defined_macros which can change between calls
     def _process_impl(self, realpath):
         if self.args.verbose >= 9:
             print("DirectHeaderDeps::_process_impl: " + realpath)
@@ -282,7 +282,6 @@ class DirectHeaderDeps(HeaderDepsBase):
         diskcache.clear_cache()
         DirectHeaderDeps._search_project_includes.cache_clear()
         DirectHeaderDeps._find_include.cache_clear()
-        DirectHeaderDeps._create_include_list.cache_clear()
 
 
 class CppHeaderDeps(HeaderDepsBase):

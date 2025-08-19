@@ -12,6 +12,7 @@ class TestFindTargetsModule:
 
     def _find_samples_targets(self, disable_tests, disable_exes=False):
         relativeexpectedexes = {
+            "macro_state_dependency/sample.cpp",
             "conditional_includes/main.cpp",
             "cppflags_macros/main.cpp",
             "cppflags_macros/multi_flag_test.cpp",

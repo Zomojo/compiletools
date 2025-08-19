@@ -451,7 +451,6 @@ class DirectMagicFlags(MagicFlagsBase):
 
         return text
 
-    @diskcache("directmagic", magic_mode=True)
     def parse(self, filename):
         return self._parse(filename)
 
@@ -472,7 +471,6 @@ class CppMagicFlags(MagicFlagsBase):
             realpath=filename, extraargs="-C -E", redirect_stderr_to_stdout=True
         )
 
-    @diskcache("cppmagic", magic_mode=True)
     def parse(self, filename):
         return self._parse(filename)
 
