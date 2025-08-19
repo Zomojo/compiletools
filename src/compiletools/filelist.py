@@ -100,14 +100,14 @@ class Filelist(object):
     def process(self):
         filterclass = globals()[self.args.filter.title() + "PassFilter"]
         filterobject = filterclass()
-        extras = []
+        extras = set()
 
         # Add all the command line specified extras
         if self.args.extrafile:
-            extras.extend(self.args.extrafile)
+            extras.update(self.args.extrafile)
         if self.args.extradir:
             for ed in self.args.extradir:
-                extras.extend([
+                extras.update([
                     os.path.join(ed, ff)
                     for ff in os.listdir(ed)
                     if compiletools.wrappedos.isfile(os.path.join(ed, ff))
@@ -115,16 +115,16 @@ class Filelist(object):
         if self.args.extrafilelist:
             for fname in self.args.extrafilelist:
                 with open(fname) as ff:
-                    extras.extend([line.strip() for line in ff.readlines()])
+                    extras.update([line.strip() for line in ff.readlines()])
 
         # Add all the files in the same directory as test files
         if self.args.tests:
             for testfile in self.args.tests:
                 testdir = compiletools.wrappedos.dirname(compiletools.wrappedos.realpath(testfile))
                 extras |= {
-                    fileintestdir
+                    os.path.join(testdir, fileintestdir)
                     for fileintestdir in os.listdir(testdir)
-                    if compiletools.wrappedos.isfile(fileintestdir)
+                    if compiletools.wrappedos.isfile(os.path.join(testdir, fileintestdir))
                 }
 
         mergedfiles = []
