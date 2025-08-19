@@ -9,7 +9,6 @@ import configargparse
 
 import compiletools.utils
 import compiletools.wrappedos
-from compiletools.diskcache import diskcache
 import compiletools.headerdeps
 import compiletools.magicflags
 
@@ -93,7 +92,6 @@ class Hunter(object):
             print("Hunter::_required_files_impl. ", realpath, " Returning ", processed)
         return list(processed)
 
-    @functools.lru_cache(maxsize=None)
     def required_source_files(self, filename):
         """ Create the list of source files that also need to be compiled
             to complete the linkage of the given file. If filename is a source
@@ -110,7 +108,6 @@ class Hunter(object):
             ]
         )
 
-    @functools.lru_cache(maxsize=None)
     def required_files(self, filename):
         """ Create the list of files (both header and source)
             that are either directly or indirectly utilised by the given file.
@@ -125,8 +122,6 @@ class Hunter(object):
     def clear_cache():
         # print("Hunter::clear_cache")
         compiletools.wrappedos.clear_cache()
-        Hunter.required_source_files.cache_clear()
-        Hunter.required_files.cache_clear()
         compiletools.headerdeps.HeaderDepsBase.clear_cache()
         compiletools.magicflags.MagicFlagsBase.clear_cache()
 
