@@ -9,6 +9,7 @@ from importlib import reload
 
 import compiletools.dirnamer
 import compiletools.headerdeps
+import compiletools.apptools
 import compiletools.testhelper as uth
 
 
@@ -308,5 +309,45 @@ class TestHeaderDepsModule(tb.BaseCompileToolsTestCase):
             expectations = scenario_expectations[name]
             _assert_headers_present(direct, expectations["expected"])
             _assert_headers_absent(direct, expectations["forbidden"])
+
+    def test_include_flag_parsing(self):
+        """Test that -I flags are parsed correctly with and without spaces"""
+        test_cases = [
+            ("-I /usr/include -I/opt/local/include", ["/usr/include", "/opt/local/include"]),
+            ("-Isrc -I build/include", ["src", "build/include"]),
+            ("-I src", ["src"]),
+            ("-Isrc", ["src"]),
+        ]
+        
+        for cppflags, expected_includes in test_cases:
+            cap = configargparse.getArgumentParser()
+            compiletools.headerdeps.add_arguments(cap)
+            compiletools.apptools.add_common_arguments(cap)
+            
+            argv = [f"--CPPFLAGS={cppflags}", "-q"]
+            args = compiletools.apptools.parseargs(cap, argv)
+            
+            deps = compiletools.headerdeps.DirectHeaderDeps(args)
+            assert deps.includes == expected_includes, f"CPPFLAGS: {cppflags}, Expected: {expected_includes}, Got: {deps.includes}"
+
+    def test_isystem_flag_parsing(self):
+        """Test that -isystem flags are parsed correctly with and without spaces"""
+        test_cases = [
+            "-isystem /usr/include -isystem/opt/local/include",
+            "-isystemsrc -isystem build/include", 
+            "-isystem src",
+            "-isystemsrc",
+        ]
+        
+        for cppflags in test_cases:
+            cap = configargparse.getArgumentParser()
+            compiletools.headerdeps.add_arguments(cap)
+            compiletools.apptools.add_common_arguments(cap)
+            
+            argv = [f"--CPPFLAGS={cppflags}", "-q"]
+            args = compiletools.apptools.parseargs(cap, argv)
+            
+            # This should not raise an exception - the isystem parsing should work
+            deps = compiletools.headerdeps.DirectHeaderDeps(args)
 
 

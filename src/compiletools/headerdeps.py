@@ -93,7 +93,8 @@ class DirectHeaderDeps(HeaderDepsBase):
         # By default, exclude system paths
         # TODO: include system paths if the user sets (the currently nonexistent) "use-system" flag
         #pat = re.compile(r"-(?:I|isystem)\s+([\S]+)")
-        pat = re.compile(r"-(?:I)\s+([\S]+)")
+        # Handle both -I src and -Isrc formats
+        pat = re.compile(r"-(?:I)(?:\s+|)([^\s]+)")
         self.includes = pat.findall(self.args.CPPFLAGS)
 
         if self.args.verbose >= 3:
@@ -296,7 +297,8 @@ class CppHeaderDeps(HeaderDepsBase):
         """
         # By default, exclude system paths
         # TODO: include system paths if the user sets (the currently nonexistent) "use-system" flag
-        regex = r"-isystem ([^\s]+)"  # Regex to find paths following -isystem
+        # Handle both -isystem path and -isystempath formats
+        regex = r"-isystem(?:\s+|)([^\s]+)"  # Regex to find paths following -isystem
         system_paths = re.findall(regex, self.args.CPPFLAGS)
         system_paths = tuple(item for pth in system_paths for item in (pth, compiletools.wrappedos.realpath(pth)))
         if realpath.startswith(system_paths):
