@@ -11,7 +11,6 @@ import compiletools.apptools
 import compiletools.tree as tree
 import compiletools.preprocessor
 import compiletools.compiler_macros
-from compiletools.diskcache import diskcache
 from compiletools.simple_preprocessor import SimplePreprocessor
 from compiletools.file_analyzer import create_file_analyzer
 import compiletools.timing
@@ -77,7 +76,6 @@ class HeaderDepsBase(object):
     @staticmethod
     def clear_cache():
         # print("HeaderDepsBase::clear_cache")
-        diskcache.clear_cache()
         DirectHeaderDeps.clear_cache()
         CppHeaderDeps.clear_cache()
 
@@ -279,7 +277,6 @@ class DirectHeaderDeps(HeaderDepsBase):
     @staticmethod
     def clear_cache():
         # print("DirectHeaderDeps::clear_cache")
-        diskcache.clear_cache()
         DirectHeaderDeps._search_project_includes.cache_clear()
         DirectHeaderDeps._find_include.cache_clear()
 
@@ -291,7 +288,6 @@ class CppHeaderDeps(HeaderDepsBase):
         HeaderDepsBase.__init__(self, args)
         self.preprocessor = compiletools.preprocessor.PreProcessor(args)
 
-    @diskcache("deps", deps_mode=True)
     def _process_impl(self, realpath):
         """Use the -MM option to the compiler to generate the list of dependencies
         If you supply a header file rather than a source file then
@@ -331,4 +327,4 @@ class CppHeaderDeps(HeaderDepsBase):
     @staticmethod
     def clear_cache():
         # print("CppHeaderDeps::clear_cache")
-        diskcache.clear_cache()
+        pass

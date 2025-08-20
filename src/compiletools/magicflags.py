@@ -5,7 +5,6 @@ import re
 import configargparse
 from collections import defaultdict
 from io import open
-from compiletools.diskcache import diskcache
 import compiletools.utils
 import compiletools.git_utils
 import compiletools.headerdeps
@@ -161,7 +160,7 @@ class MagicFlagsBase:
         if self._args.verbose >= 4:
             print("Parsing magic flags for " + filename)
 
-        # diskcache assumes that headerdeps _always_ exist
+        # We assume that headerdeps _always_ exist
         # before the magic flags are called.
         # When used in the "usual" fashion this is true.
         # However, it is possible to call directly so we must
@@ -456,7 +455,7 @@ class DirectMagicFlags(MagicFlagsBase):
 
     @staticmethod
     def clear_cache():
-        compiletools.diskcache.diskcache.clear_cache()
+        pass
 
 
 class CppMagicFlags(MagicFlagsBase):
@@ -476,7 +475,7 @@ class CppMagicFlags(MagicFlagsBase):
 
     @staticmethod
     def clear_cache():
-        compiletools.diskcache.diskcache.clear_cache()
+        pass
 
 
 class NullStyle(compiletools.git_utils.NameAdjuster):
